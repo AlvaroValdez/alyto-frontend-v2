@@ -67,6 +67,12 @@ export default function Step4Confirm({ stepData, onNext }) {
         beneficiaryData: beneficiary,  // nombre que espera el backend
       })
       console.log('[initPayment] respuesta completa:', JSON.stringify(res))
+
+      // Guardar transactionId para PaymentSuccessPage (destino del redirect de Fintoc)
+      if (res.transactionId) {
+        sessionStorage.setItem('lastTransactionId', res.transactionId)
+      }
+
       onNext({
         transactionId: res.transactionId,
         // Algunos backends retornan widgetUrl en lugar de payinUrl (Fintoc)

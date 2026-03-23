@@ -54,6 +54,9 @@ import SettlementView     from '../components/SettlementView'
 import VitaPayoutView     from '../components/VitaPayoutView'
 import VitaPayinView      from '../components/VitaPayinView'
 
+// ── Payment Success (redirect de Fintoc tras pago) ───────────────────────────
+import PaymentSuccessPage from '../pages/PaymentSuccess/PaymentSuccessPage'
+
 // ── 404 ──────────────────────────────────────────────────────────────────────
 import NotFoundPage from '../pages/NotFound/NotFoundPage'
 
@@ -134,6 +137,19 @@ export default function AppRouter() {
       <Route path="/notifications" element={
         <ProtectedRoute>
           <Navigate to="/dashboard" replace />
+        </ProtectedRoute>
+      } />
+
+      {/* ── Payment Success — Fintoc redirige aquí tras completar el pago ─── */}
+      <Route path="/payment-success" element={
+        <ProtectedRoute>
+          <PaymentSuccessPage />
+        </ProtectedRoute>
+      } />
+      {/* Alias /success para redirect_url de Fintoc */}
+      <Route path="/success" element={
+        <ProtectedRoute>
+          <PaymentSuccessPage />
         </ProtectedRoute>
       } />
 
