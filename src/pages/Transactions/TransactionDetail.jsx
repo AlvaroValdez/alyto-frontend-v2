@@ -20,6 +20,8 @@ import {
   MessageCircle,
   Mail,
   RotateCcw,
+  ExternalLink,
+  Link2,
 } from 'lucide-react'
 import { fetchTransactionDetail } from '../../services/transactionsService.js'
 
@@ -65,6 +67,11 @@ const TIMELINE_STEPS = [
 ]
 
 // ── Utilidades ────────────────────────────────────────────────────────────────
+
+function truncateTxId(txId) {
+  if (!txId || txId.length <= 20) return txId
+  return `${txId.slice(0, 8)}...${txId.slice(-8)}`
+}
 
 function formatAmount(amount, currency) {
   if (amount == null || !currency) return '—'
@@ -122,7 +129,8 @@ export default function TransactionDetail() {
   const [tx, setTx]           = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(null)
-  const [copied, setCopied]   = useState(false)
+  const [copied, setCopied]         = useState(false)
+  const [copiedTxid, setCopiedTxid] = useState(false)
 
   const supportWhatsApp = import.meta.env.VITE_SUPPORT_WHATSAPP
   const supportEmail    = 'soporte@alyto.app'
@@ -397,7 +405,81 @@ export default function TransactionDetail() {
             </button>
           </div>
 
-          {/* ── 5. SOPORTE — solo si falló ────────────────────────────────── */}
+          {/* ── 5. COMPROBANTE BLOCKCHAIN — solo si completada ────────────── */}
+          {tx.status === 'completed' && (
+            <div className="bg-[#1A2340] rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-7 h-7 rounded-lg bg-[#C4CBD81A] flex items-center justify-center flex-shrink-0">
+                  <Link2 size={14} className="text-[#C4CBD8]" />
+                </div>
+                <p className="text-[0.6875rem] font-semibold text-[#4E5A7A] uppercase tracking-wider">
+                  Verificado en blockchain
+                </p>
+              </div>
+
+              {tx.stellarTxId ? (
+                <div className="flex flex-col gap-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[0.8125rem] text-[#8A96B8]">Red</span>
+                    <span className="text-[0.8125rem] font-medium text-white">
+                      {import.meta.env.VITE_STELLAR_NETWORK === 'mainnet'
+                        ? 'Stellar Mainnet'
+                        : 'Stellar Testnet'}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center gap-3">
+                    <span className="text-[0.8125rem] text-[#8A96B8] flex-shrink-0">TXID</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-[0.8125rem] font-mono text-[#C4CBD8] truncate">
+                        {truncateTxId(tx.stellarTxId)}
+                      </span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard?.writeText(tx.stellarTxId).then(() => {
+                            setCopiedTxid(true)
+                            setTimeout(() => setCopiedTxid(false), 2000)
+                          })
+                        }}
+                        className="flex-shrink-0 text-[#4E5A7A] hover:text-[#C4CBD8] transition-colors"
+                        title="Copiar TXID completo"
+                      >
+                        {copiedTxid
+                          ? <CheckCircle size={14} className="text-[#22C55E]" />
+                          : <Copy size={14} />
+                        }
+                      </button>
+                    </div>
+                  </div>
+
+                  {copiedTxid && (
+                    <p className="text-[0.6875rem] text-[#22C55E] text-right -mt-1">¡TXID copiado!</p>
+                  )}
+
+                  <a
+                    href={`https://stellar.expert/explorer/${
+                      import.meta.env.VITE_STELLAR_NETWORK === 'mainnet' ? 'public' : 'testnet'
+                    }/tx/${tx.stellarTxId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#C4CBD833] text-[#C4CBD8] text-sm font-medium transition-colors hover:bg-[#C4CBD81A]"
+                  >
+                    Ver en Stellar Explorer
+                    <ExternalLink size={14} />
+                  </a>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 py-1">
+                  <RefreshCw size={13} className="text-[#4E5A7A] animate-spin" style={{ animationDuration: '3s' }} />
+                  <span className="text-[0.8125rem] text-[#4E5A7A]">
+                    Registro blockchain en proceso…
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── 6. SOPORTE — solo si falló ────────────────────────────────── */}
           {isFailed && (
             <div className="rounded-2xl p-5 border border-[#EF444433]" style={{ background: '#EF44441A' }}>
               <p className="text-white font-semibold mb-1">¿Necesitas ayuda?</p>
