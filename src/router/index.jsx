@@ -141,17 +141,10 @@ export default function AppRouter() {
       } />
 
       {/* ── Payment Success — Fintoc redirige aquí tras completar el pago ─── */}
-      <Route path="/payment-success" element={
-        <ProtectedRoute>
-          <PaymentSuccessPage />
-        </ProtectedRoute>
-      } />
+      {/* Ruta pública: el usuario llega aquí desde Fintoc, sin sesión activa */}
+      <Route path="/payment-success" element={<PaymentSuccessPage />} />
       {/* Alias /success para redirect_url de Fintoc */}
-      <Route path="/success" element={
-        <ProtectedRoute>
-          <PaymentSuccessPage />
-        </ProtectedRoute>
-      } />
+      <Route path="/success" element={<PaymentSuccessPage />} />
 
       {/* ── Rutas legacy — mantener compatibilidad ───────────────────────── */}
       <Route path="/transfer" element={
