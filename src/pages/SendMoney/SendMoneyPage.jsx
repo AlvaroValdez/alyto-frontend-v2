@@ -10,6 +10,7 @@
  *   6. Step6Success      — ¡Tu dinero está en camino!
  */
 
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, X } from 'lucide-react'
 
@@ -36,6 +37,13 @@ export default function SendMoneyPage() {
   const { step, stepData, nextStep, prevStep, resetFlow } = useSendMoney()
 
   const isSuccess = step === 6
+
+  // Limpiar datos residuales de sessionStorage (versiones anteriores del app)
+  // al entrar y al salir de la página de envío.
+  useEffect(() => {
+    resetFlow()
+    return () => resetFlow()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleBack() {
     if (step <= 1) {
