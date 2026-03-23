@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: alyto-frontend-v2
+    env: static
+    buildCommand: npm run build:production
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

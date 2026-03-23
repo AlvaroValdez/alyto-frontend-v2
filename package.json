@@ -1,0 +1,29 @@
+{
+  "name": "alyto-frontend-v2",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check:production": "node scripts/checkProduction.js",
+    "build:production": "npm run check:production && vite build"
+  },
+  "dependencies": {
+    "@sentry/react": "^10.45.0",
+    "@stripe/stripe-js": "^8.11.0",
+    "firebase": "^12.11.0",
+    "lucide-react": "^0.469.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.0.5"
+  }
+}

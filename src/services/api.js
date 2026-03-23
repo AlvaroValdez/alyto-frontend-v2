@@ -1,0 +1,364 @@
+/**
+ * api.js — Capa de Comunicación con el Backend Alyto V2.0
+ *
+ * La función `request()` inyecta automáticamente el header
+ * Authorization: Bearer <token> si existe un token en localStorage.
+ *
+ * Endpoints de autenticación:
+ *   loginUser(credentials)  → POST /auth/login
+ *   registerUser(data)      → POST /auth/register
+ */
+
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1'
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+/** Lee el JWT — prioriza sessionStorage (login sin rememberMe) sobre localStorage. */
+function getStoredToken() {
+  return sessionStorage.getItem('alyto_token') || localStorage.getItem('alyto_token')
+}
+
+// ── Request base ──────────────────────────────────────────────────────────
+
+/**
+ * Wrapper sobre fetch que:
+ *  1. Añade Content-Type: application/json
+ *  2. Inyecta Authorization: Bearer <token> si existe token guardado
+ *  3. Lanza un Error enriquecido en respuestas no-ok
+ */
+export async function request(path, options = {}) {
+  const token = getStoredToken()
+
+  const headers = {
+    'Content-Type': 'application/json',
+    // Bypass del interstitial de ngrok en desarrollo (ignorado en producción)
+    'ngrok-skip-browser-warning': 'true',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  }
+
+  const res = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    headers,
+  })
+
+  // Respuestas no-JSON (ej. PDF binario) se manejan fuera de este wrapper
+  const contentType = res.headers.get('Content-Type') ?? ''
+  if (!contentType.includes('application/json')) {
+    if (!res.ok) {
+      const err = new Error(`Error ${res.status}`)
+      err.status = res.status
+      throw err
+    }
+    return res
+  }
+
+  const data = await res.json()
+
+  if (!res.ok) {
+    // 401 → sesión expirada o token inválido: disparar evento global para auto-logout
+    if (res.status === 401) {
+      window.dispatchEvent(new CustomEvent('alyto:unauthorized'))
+    }
+    const err = new Error(data.error || data.message || `Error ${res.status}`)
+    err.status  = res.status
+    err.data    = data
+    throw err
+  }
+
+  return data
+}
+
+// ── Auth ───────────────────────────────────────────────────────────────────
+
+/**
+ * Valida el token activo y devuelve el perfil fresco del usuario.
+ * Llamado por AuthContext al montar la app para evitar sesiones fantasma.
+ * @returns {Promise<{ user: object }>}
+ */
+export function getMe() {
+  return request('/auth/me')
+}
+
+/**
+ * Inicia sesión en el backend.
+ * @param {{ email: string, password: string }} credentials
+ * @returns {Promise<{ token: string, user: { id, email, legalEntity, kycStatus } }>}
+ */
+export function loginUser(credentials) {
+  return request('/auth/login', {
+    method: 'POST',
+    body:   JSON.stringify(credentials),
+  })
+}
+
+/**
+ * Registra un nuevo usuario. El backend asigna legalEntity según el country.
+ * @param {{ email, password, country, firstName?, lastName?, phone? }} data
+ * @returns {Promise<{ token: string, user: { id, email, legalEntity, kycStatus } }>}
+ */
+export function registerUser(data) {
+  return request('/auth/register', {
+    method: 'POST',
+    body:   JSON.stringify(data),
+  })
+}
+
+// ── Pagos ──────────────────────────────────────────────────────────────────
+
+/**
+ * Inicia un Pay-in vía Fintoc (corredor Chile → SpA).
+ * Requiere usuario autenticado con legalEntity: 'SpA'.
+ * @param {number} amount  Monto en CLP
+ * @param {string} userId  ID del usuario autenticado
+ */
+export function initiatePayin(amount, userId) {
+  return request('/payments/payin/fintoc', {
+    method: 'POST',
+    body:   JSON.stringify({ amount, userId }),
+  })
+}
+
+/**
+ * Procesa la liquidación manual del Corredor Bolivia (AV Finance SRL).
+ * El backend responde con PDF binario (application/pdf).
+ * @param {string} transactionId  MongoDB ObjectId (status: in_transit, legalEntity: SRL)
+ * @returns {Promise<{ blob: Blob, filename: string }>}
+ */
+export async function processBoliviaPayout(transactionId) {
+  const token = getStoredToken()
+
+  const res = await fetch(`${BASE_URL}/payouts/bolivia/manual`, {
+    method:  'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ transactionId }),
+  })
+
+  if (!res.ok) {
+    let errMsg = `Error ${res.status}`
+    try {
+      const data = await res.json()
+      errMsg = data.error || errMsg
+    } catch { /* body no es JSON */ }
+    const err = new Error(errMsg)
+    err.status = res.status
+    throw err
+  }
+
+  const blob        = await res.blob()
+  const disposition = res.headers.get('Content-Disposition') ?? ''
+  const filename    = disposition.match(/filename="(.+?)"/)?.[1] ?? 'comprobante.pdf'
+
+  return { blob, filename }
+}
+
+/**
+ * Inicia un On-Ramp institucional B2B vía OwlPay Harbor (corredor LLC).
+ * Exclusivo para clientes corporativos bajo AV Finance LLC.
+ * @param {number} amountUSD          Monto en USD
+ * @param {string} destinationWallet  Stellar public key (G...)
+ * @param {string} userId             ID del cliente corporativo
+ */
+export function initiateCorporateOnRamp(amountUSD, destinationWallet, userId) {
+  return request('/institutional/onramp/owlpay', {
+    method: 'POST',
+    body:   JSON.stringify({ amountUSD, destinationWallet, userId }),
+  })
+}
+
+// ── Identity (Stripe Identity) ─────────────────────────────────────────────
+
+/**
+ * Crea una VerificationSession de Stripe Identity en el backend.
+ * El backend genera la sesión biométrica y devuelve la client_secret
+ * necesaria para abrir el modal nativo de Stripe en el frontend.
+ *
+ * @returns {Promise<{ clientSecret: string, sessionId: string }>}
+ */
+export function createIdentitySession() {
+  return request('/identity/verify', { method: 'POST' })
+}
+
+// ── Admin ──────────────────────────────────────────────────────────────────
+
+/**
+ * Obtiene todos los usuarios del sistema (solo accesible con role = 'admin').
+ * @returns {Promise<{ total: number, users: Array }>}
+ */
+export function fetchAdminUsers() {
+  return request('/admin/users')
+}
+
+/**
+ * Obtiene las últimas 100 operaciones del libro mayor global (solo admin).
+ * @returns {Promise<{ total: number, transactions: Array }>}
+ */
+export function fetchAdminLedger() {
+  return request('/admin/ledger')
+}
+
+// ── Vita Wallet — Regional (LatAm) ────────────────────────────────────
+
+/**
+ * Obtiene las reglas de formulario dinámico para retiros por país.
+ * @returns {Promise<{ rules: Array }>}
+ */
+export function fetchWithdrawalRules() {
+  return request('/regional/withdrawal-rules')
+}
+
+/**
+ * Obtiene los métodos de pago disponibles para un país.
+ * @param {string} countryIso — AR | CL | CO | MX | BR
+ * @returns {Promise<{ methods: Array, country: string }>}
+ */
+export function fetchPaymentMethods(countryIso) {
+  return request(`/regional/payment-methods/${countryIso}`)
+}
+
+/**
+ * Crea un retiro bancario (off-ramp) vía Vita Wallet.
+ * @param {object} payload — Campos fijos + dinámicos del país
+ */
+export function createVitaPayout(payload) {
+  return request('/regional/payout', {
+    method: 'POST',
+    body:   JSON.stringify(payload),
+  })
+}
+
+/**
+ * Crea una orden de pago (on-ramp / payin) vía Vita Wallet.
+ * @param {object} payload — { amount, country_iso_code, issue, currency_destiny? }
+ */
+export function createVitaPayin(payload) {
+  return request('/regional/payin', {
+    method: 'POST',
+    body:   JSON.stringify(payload),
+  })
+}
+
+/**
+ * Precios en tiempo real para calcular montos finales.
+ */
+export function fetchVitaPrices() {
+  return request('/regional/prices')
+}
+
+/**
+ * Obtiene una VerificationSession de Stripe Identity para iniciar el KYC.
+ * @returns {Promise<{ clientSecret: string, sessionId: string }>}
+ */
+export function createKycSession() {
+  return request('/kyc/session')
+}
+
+/**
+ * Consulta el estado KYC actual del usuario. Usar para polling post-verificación.
+ * @returns {Promise<{ kycStatus: string, kycApprovedAt: string|null }>}
+ */
+export function getKycStatus() {
+  return request('/kyc/status')
+}
+
+// ── Notificaciones Push ─────────────────────────────────────────────────────
+
+/**
+ * Registra el token FCM del dispositivo en el backend para habilitar
+ * notificaciones push (pagos recibidos, actualizaciones de transferencia, etc).
+ * @param {string} token — Token FCM generado por Firebase Messaging
+ */
+export function registerFcmToken(token) {
+  return request('/auth/fcm-token', {
+    method: 'POST',
+    body:   JSON.stringify({ token }),
+  })
+}
+
+// ── Dashboard ───────────────────────────────────────────────────────────────
+
+/**
+ * Obtiene todos los datos agregados del dashboard del usuario autenticado.
+ *
+ * @returns {Promise<{
+ *   user: { firstName, lastName, entity, kycStatus },
+ *   stats: { totalSent, totalTransactions, completedTransactions, activeTransactions },
+ *   recentTransactions: Array,
+ *   availableCorridors: Array,
+ * }>}
+ */
+export function fetchDashboard() {
+  return request('/dashboard')
+}
+
+// ── Auth: recuperación de contraseña ───────────────────────────────────────
+
+/**
+ * Solicita el email de recuperación de contraseña.
+ * Siempre responde 200 (no revela si el email existe).
+ * @param {string} email
+ */
+export function forgotPassword(email) {
+  return request('/auth/forgot-password', {
+    method: 'POST',
+    body:   JSON.stringify({ email }),
+  })
+}
+
+/**
+ * Restablece la contraseña usando el token recibido por email.
+ * @param {{ token: string, newPassword: string }} data
+ */
+export function resetPassword(data) {
+  return request('/auth/reset-password', {
+    method: 'POST',
+    body:   JSON.stringify(data),
+  })
+}
+
+// ── KYC ────────────────────────────────────────────────────────────────────
+
+/**
+ * Envía la documentación KYC del usuario al backend.
+ *
+ * Espera un FormData con los campos:
+ *   - documentFront  (File) Frente del documento de identidad
+ *   - documentBack   (File) Reverso del documento
+ *   - selfie         (File) Fotografía de liveness
+ *   - tosAccepted    (string 'true') Aceptación de los Términos de Servicio
+ *   - legalEntity    (string 'SpA' | 'SRL' | 'LLC') Entidad operativa
+ *   - tosVersion     (string) Fecha de versión del contrato aceptado
+ *
+ * El backend actualiza kycStatus a 'under_review' (o 'approved' en dev)
+ * y retorna el usuario actualizado.
+ *
+ * @param {FormData} formData
+ * @returns {Promise<{ message: string, user: object }>}
+ */
+export async function submitKyc(formData) {
+  const token = getStoredToken()
+
+  const res = await fetch(`${BASE_URL}/user/kyc`, {
+    method: 'POST',
+    headers: {
+      // No incluir Content-Type: el browser lo setea automáticamente con el boundary de multipart
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: formData,
+  })
+
+  const contentType = res.headers.get('Content-Type') ?? ''
+  const data = contentType.includes('application/json') ? await res.json() : {}
+
+  if (!res.ok) {
+    const err = new Error(data.error || data.message || `Error ${res.status}`)
+    err.status = res.status
+    err.data   = data
+    throw err
+  }
+
+  return data
+}
