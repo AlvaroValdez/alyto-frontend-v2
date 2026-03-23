@@ -79,15 +79,43 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
   useEffect(() => {
     console.log('[Step5] payinMethod:', payinMethod)
     console.log('[Step5] payinUrl:', payinUrl)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    if (payinMethod === 'fintoc') {
+      console.log('[Fintoc] SDK disponible:', !!window.Fintoc)
+      console.log('[Fintoc] widgetToken:', payinUrl)
+    }
+  }, [payinUrl]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Handler botón ─────────────────────────────────────────────────────────
 
   function handleOpenWidget() {
     if (!payinUrl) return
-    window.open(payinUrl, '_blank', 'noopener,noreferrer')
-    setWidgetOpened(true)
-    if (!polling && !timedOut) startPolling()
+
+    if (payinMethod === 'fintoc') {
+      if (!window.Fintoc) {
+        console.error('[Fintoc] SDK no disponible')
+        return
+      }
+      const widget = window.Fintoc.create({
+        widgetToken: payinUrl,
+        onSuccess: (paymentIntent) => {
+          console.log('[Fintoc] Éxito:', paymentIntent)
+          setWidgetOpened(true)
+          if (!polling && !timedOut) startPolling()
+        },
+        onExit: () => {
+          console.log('[Fintoc] Cerrado por usuario')
+        },
+        onError: (error) => {
+          console.error('[Fintoc] Error:', error)
+        },
+      })
+      widget.open()
+      setWidgetOpened(true)
+    } else {
+      window.open(payinUrl, '_blank', 'noopener,noreferrer')
+      setWidgetOpened(true)
+      if (!polling && !timedOut) startPolling()
+    }
   }
 
   // ── Render: payinUrl ausente ──────────────────────────────────────────────
@@ -173,7 +201,7 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
         </h2>
         <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
           {isFintoc
-            ? 'Se abrirá el portal de pago de Fintoc en una nueva pestaña.'
+            ? 'Se abrirá el widget de Fintoc para autorizar la transferencia.'
             : 'Se abrirá la ventana de pago de tu proveedor.'}
         </p>
       </div>
@@ -196,8 +224,8 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
           onClick={handleOpenWidget}
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#C4CBD8] text-[#0F1628] font-bold text-[0.9375rem] shadow-[0_4px_20px_rgba(196,203,216,0.3)] active:scale-[0.98] transition-all"
         >
-          <ExternalLink size={16} />
-          {widgetOpened ? 'Abrir de nuevo' : (isFintoc ? 'Ir a pagar con Fintoc' : 'Ir a pagar')}
+          {!isFintoc && <ExternalLink size={16} />}
+          {widgetOpened ? 'Abrir de nuevo' : (isFintoc ? 'Pagar con mi banco' : 'Ir a pagar')}
         </button>
       </div>
 
