@@ -78,7 +78,7 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
 
   useEffect(() => {
     console.log('[Step5] payinMethod:', payinMethod)
-    console.log('[Step5] payinUrl:', payinUrl ? '[PRESENTE]' : '[AUSENTE]')
+    console.log('[Step5] payinUrl completo:', payinUrl)
     console.log('[Fintoc] SDK disponible:', !!window.Fintoc)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
