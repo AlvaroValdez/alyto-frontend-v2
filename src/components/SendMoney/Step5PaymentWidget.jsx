@@ -2,7 +2,7 @@
  * Step5PaymentWidget.jsx — Widget de pago del proveedor.
  *
  * Abre la payinUrl en nueva pestaña (tanto Fintoc como vitaWallet).
- * Fintoc devuelve una URL de checkout completa (https://checkout.fintoc.com/...).
+ * Fintoc devuelve una redirect_url completa (https://app.fintoc.com/...) — NO usar SDK.
  * vitaWallet también devuelve una URL de checkout.
  *
  * Polling cada 5s a GET /payments/:transactionId/status.
@@ -79,7 +79,6 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
   useEffect(() => {
     console.log('[Step5] payinMethod:', payinMethod)
     console.log('[Step5] payinUrl completo:', payinUrl)
-    console.log('[Fintoc] SDK disponible:', !!window.Fintoc)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Handler botón ─────────────────────────────────────────────────────────
@@ -87,24 +86,10 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
   function handleOpenWidget() {
     if (!payinUrl) return
 
-    if (payinMethod === 'fintoc') {
-      if (!window.Fintoc) {
-        console.error('[Fintoc] SDK no disponible')
-        return
-      }
-      // IMPORTANTE: NO pasar callbacks en create(). El SDK Fintoc v1 tiene un bug
-      // donde intenta clonar la config completa (incluidas las funciones) via
-      // postMessage → structuredClone, lo que lanza DOMException.
-      // La detección de éxito se hace via polling (getTransactionStatus cada 5s).
-      const widget = window.Fintoc.create({ widgetToken: payinUrl })
-      widget.open()
-      setWidgetOpened(true)
-      if (!polling && !timedOut) startPolling()
-    } else {
-      window.open(payinUrl, '_blank', 'noopener,noreferrer')
-      setWidgetOpened(true)
-      if (!polling && !timedOut) startPolling()
-    }
+    // Fintoc ahora devuelve una redirect_url completa — abrir directamente, sin SDK
+    window.open(payinUrl, '_blank', 'noopener,noreferrer')
+    setWidgetOpened(true)
+    if (!polling && !timedOut) startPolling()
   }
 
   // ── Render: payinUrl ausente ──────────────────────────────────────────────
@@ -186,11 +171,11 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
       {/* ── Título ── */}
       <div>
         <h2 className="text-[1.125rem] font-bold text-white">
-          {isFintoc ? 'Autoriza la transferencia' : 'Realiza el pago'}
+          Completa tu pago
         </h2>
         <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
           {isFintoc
-            ? 'Se abrirá el widget de Fintoc para autorizar la transferencia.'
+            ? 'Se abrirá una nueva ventana para que autorices la transferencia desde tu banco.'
             : 'Se abrirá la ventana de pago de tu proveedor.'}
         </p>
       </div>
@@ -205,7 +190,7 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
         </h3>
         <p className="text-[0.8125rem] text-[#8A96B8] mb-4">
           {isFintoc
-            ? 'Selecciona tu banco y autoriza el pago de forma segura. Esta pantalla avanzará automáticamente al confirmar.'
+            ? 'Serás redirigido a la página de tu banco para autorizar la transferencia. Esta pantalla avanzará automáticamente al confirmar.'
             : 'Se abrirá en una nueva pestaña. Una vez que completes el pago, esta pantalla se actualizará automáticamente.'}
         </p>
 
@@ -213,8 +198,8 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
           onClick={handleOpenWidget}
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#C4CBD8] text-[#0F1628] font-bold text-[0.9375rem] shadow-[0_4px_20px_rgba(196,203,216,0.3)] active:scale-[0.98] transition-all"
         >
-          {!isFintoc && <ExternalLink size={16} />}
-          {widgetOpened ? 'Abrir de nuevo' : (isFintoc ? 'Pagar con mi banco' : 'Ir a pagar')}
+          <ExternalLink size={16} />
+          {widgetOpened ? 'Abrir de nuevo' : (isFintoc ? 'Ir a pagar con mi banco →' : 'Ir a pagar')}
         </button>
       </div>
 
