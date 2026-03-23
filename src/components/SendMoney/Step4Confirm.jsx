@@ -69,8 +69,11 @@ export default function Step4Confirm({ stepData, onNext }) {
       console.log('[initPayment] respuesta completa:', JSON.stringify(res))
       onNext({
         transactionId: res.transactionId,
-        payinUrl:      res.payinUrl,
-        payinMethod:   res.payinMethod,  // 'fintoc' | 'vitaWallet' — determina el widget en Step5
+        // Algunos backends retornan widgetUrl en lugar de payinUrl (Fintoc)
+        payinUrl: res.payinUrl || res.widgetUrl || res.widgetToken,
+        // Solo sobreescribir payinMethod si el backend lo retorna explícitamente;
+        // de lo contrario preservar el valor ya guardado en stepData (ej. 'fintoc' del skip)
+        ...(res.payinMethod ? { payinMethod: res.payinMethod } : {}),
       })
     } catch (err) {
       setError(err.message || 'Error al procesar el pago. Intenta nuevamente.')

@@ -97,13 +97,10 @@ export default function SendMoneyPage() {
           <Step1Amount
             initialData={stepData}
             onNext={(data) => {
-              const payinMethod = data.quote?.payinMethod || stepData.quote?.payinMethod
-              if (payinMethod) {
-                // El corredor ya define el método de pago → saltar Step 2
-                nextStep({ ...data, payinMethod, _skipStep2: true }, 3)
-              } else {
-                nextStep(data)
-              }
+              // V2.0: origen siempre CL → Fintoc es el único método disponible.
+              // Saltar Step 2 directamente. Step 2 queda como fallback para
+              // futuros corredores con múltiples métodos de pago.
+              nextStep({ ...data, payinMethod: 'fintoc', _skipStep2: true }, 3)
             }}
           />
         )}

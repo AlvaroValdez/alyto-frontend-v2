@@ -78,12 +78,9 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
 
   useEffect(() => {
     console.log('[Step5] payinMethod:', payinMethod)
-    console.log('[Step5] payinUrl:', payinUrl)
-    if (payinMethod === 'fintoc') {
-      console.log('[Fintoc] SDK disponible:', !!window.Fintoc)
-      console.log('[Fintoc] widgetToken:', payinUrl)
-    }
-  }, [payinUrl]) // eslint-disable-line react-hooks/exhaustive-deps
+    console.log('[Step5] payinUrl:', payinUrl ? '[PRESENTE]' : '[AUSENTE]')
+    console.log('[Fintoc] SDK disponible:', !!window.Fintoc)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Handler botón ─────────────────────────────────────────────────────────
 
@@ -95,22 +92,14 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
         console.error('[Fintoc] SDK no disponible')
         return
       }
-      const widget = window.Fintoc.create({
-        widgetToken: payinUrl,
-        onSuccess: (paymentIntent) => {
-          console.log('[Fintoc] Éxito:', paymentIntent)
-          setWidgetOpened(true)
-          if (!polling && !timedOut) startPolling()
-        },
-        onExit: () => {
-          console.log('[Fintoc] Cerrado por usuario')
-        },
-        onError: (error) => {
-          console.error('[Fintoc] Error:', error)
-        },
-      })
+      // IMPORTANTE: NO pasar callbacks en create(). El SDK Fintoc v1 tiene un bug
+      // donde intenta clonar la config completa (incluidas las funciones) via
+      // postMessage → structuredClone, lo que lanza DOMException.
+      // La detección de éxito se hace via polling (getTransactionStatus cada 5s).
+      const widget = window.Fintoc.create({ widgetToken: payinUrl })
       widget.open()
       setWidgetOpened(true)
+      if (!polling && !timedOut) startPolling()
     } else {
       window.open(payinUrl, '_blank', 'noopener,noreferrer')
       setWidgetOpened(true)
