@@ -1,11 +1,15 @@
 /**
- * StepIndicator.jsx — Barra de progreso visual para el flujo de 5 pasos.
+ * StepIndicator.jsx — Barra de progreso visual para el flujo de pasos.
  * El paso 6 (éxito) no necesita indicador.
+ *
+ * skipStep2=false (default) → 5 pasos: Monto · Pago · Destinatario · Confirmar · Transferencia
+ * skipStep2=true            → 4 pasos: Monto · Destinatario · Confirmar · Transferencia
+ *   (el número visual es 1-4; el `number` interno sigue siendo el step real del hook)
  */
 
 import { Check } from 'lucide-react'
 
-const STEPS = [
+const STEPS_FULL = [
   { number: 1, label: 'Monto' },
   { number: 2, label: 'Pago' },
   { number: 3, label: 'Destinatario' },
@@ -13,13 +17,23 @@ const STEPS = [
   { number: 5, label: 'Transferencia' },
 ]
 
-export default function StepIndicator({ currentStep }) {
+const STEPS_SKIP2 = [
+  { number: 1, label: 'Monto' },
+  { number: 3, label: 'Destinatario' },
+  { number: 4, label: 'Confirmar' },
+  { number: 5, label: 'Transferencia' },
+]
+
+export default function StepIndicator({ currentStep, skipStep2 = false }) {
+  const steps = skipStep2 ? STEPS_SKIP2 : STEPS_FULL
+
   return (
     <div className="flex items-center justify-between px-4 py-3">
-      {STEPS.map((s, idx) => {
-        const isDone    = currentStep > s.number
-        const isActive  = currentStep === s.number
-        const isLast    = idx === STEPS.length - 1
+      {steps.map((s, idx) => {
+        const isDone      = currentStep > s.number
+        const isActive    = currentStep === s.number
+        const isLast      = idx === steps.length - 1
+        const displayNum  = idx + 1   // número visual 1-based
 
         return (
           <div key={s.number} className="flex items-center flex-1">
@@ -34,7 +48,7 @@ export default function StepIndicator({ currentStep }) {
                       : 'bg-[#1A2340] border border-[#263050] text-[#4E5A7A]'
                 }`}
               >
-                {isDone ? <Check size={13} /> : s.number}
+                {isDone ? <Check size={13} /> : displayNum}
               </div>
               <span
                 className={`text-[0.5625rem] font-medium mt-1 whitespace-nowrap ${

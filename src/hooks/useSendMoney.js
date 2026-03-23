@@ -77,12 +77,13 @@ export function useSendMoney() {
     })
   }, [])
 
-  // Avanza al siguiente paso (opcionalmente guardando datos)
-  const nextStep = useCallback((dataForCurrentStep = {}) => {
+  // Avanza al siguiente paso (opcionalmente guardando datos).
+  // targetStep permite saltar pasos (ej. ir directo a 3 desde 1 cuando se salta el Step 2).
+  const nextStep = useCallback((dataForCurrentStep = {}, targetStep = null) => {
     setState(prev => {
       if (prev.step >= TOTAL_STEPS) return prev
       const next = {
-        step: prev.step + 1,
+        step: targetStep ?? (prev.step + 1),
         stepData: { ...prev.stepData, ...dataForCurrentStep },
       }
       if (prev.step === 3) {
@@ -93,11 +94,14 @@ export function useSendMoney() {
     })
   }, [])
 
-  // Retrocede al paso anterior
+  // Retrocede al paso anterior.
+  // Si _skipStep2 está activo y estamos en Step 3, vuelve directamente al Step 1.
   const prevStep = useCallback(() => {
     setState(prev => {
       if (prev.step <= 1) return prev
-      const next = { ...prev, step: prev.step - 1 }
+      const prevStepNum =
+        prev.step === 3 && prev.stepData._skipStep2 ? 1 : prev.step - 1
+      const next = { ...prev, step: prevStepNum }
       saveToSession(next)
       return next
     })

@@ -87,7 +87,7 @@ export default function SendMoneyPage() {
       {/* ── Step Indicator (no se muestra en success) ── */}
       {!isSuccess && (
         <div className="flex-shrink-0">
-          <StepIndicator currentStep={step} />
+          <StepIndicator currentStep={step} skipStep2={!!stepData._skipStep2} />
         </div>
       )}
 
@@ -96,7 +96,15 @@ export default function SendMoneyPage() {
         {step === 1 && (
           <Step1Amount
             initialData={stepData}
-            onNext={(data) => nextStep(data)}
+            onNext={(data) => {
+              const payinMethod = data.quote?.payinMethod || stepData.quote?.payinMethod
+              if (payinMethod) {
+                // El corredor ya define el método de pago → saltar Step 2
+                nextStep({ ...data, payinMethod, _skipStep2: true }, 3)
+              } else {
+                nextStep(data)
+              }
+            }}
           />
         )}
 
