@@ -7,7 +7,7 @@
  */
 
 import { useState } from 'react'
-import { Loader2, AlertCircle } from 'lucide-react'
+import { Loader2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { initPayment } from '../../services/paymentsService'
 
 const COUNTRY_NAMES = {
@@ -33,9 +33,10 @@ function Row({ label, value, valueClass = 'text-white text-[0.9375rem]' }) {
 }
 
 export default function Step4Confirm({ stepData, onNext }) {
-  const [confirmed, setConfirmed] = useState(false)
-  const [loading, setLoading]     = useState(false)
-  const [error, setError]         = useState(null)
+  const [confirmed, setConfirmed]   = useState(false)
+  const [loading, setLoading]       = useState(false)
+  const [error, setError]           = useState(null)
+  const [feesExpanded, setFeesExpanded] = useState(false)
 
   // Step3 guarda los datos bajo la key "beneficiaryData" (campos dinámicos de Vita)
   const { quote, originAmount, destinationCountry, payinMethod, beneficiaryData } = stepData
@@ -44,10 +45,14 @@ export default function Step4Confirm({ stepData, onNext }) {
   console.log('[Step4] beneficiary recibido:', JSON.stringify(beneficiary))
   const fees = quote?.fees || {}
 
-  const visibleFees =
+  const costoEnvio =
     (fees.alytoCSpread || 0) +
     (fees.fixedFee     || 0) +
-    (fees.payinFee     || 0)
+    (fees.payinFee     || 0) +
+    (fees.payoutFee    || 0)
+
+  const comisionServicio = (fees.alytoCSpread || 0) + (fees.fixedFee || 0)
+  const feeProcesamiento = (fees.payinFee     || 0) + (fees.payoutFee || 0)
 
   const payinMethodLabel = {
     fintoc: 'Fintoc — Transferencia bancaria',
@@ -112,36 +117,45 @@ export default function Step4Confirm({ stepData, onNext }) {
           value={`1 CLP = ${Number(quote?.exchangeRate || 0).toFixed(4)} ${quote?.destinationCurrency || ''}`}
           valueClass="text-[#C4CBD8] text-[0.8125rem]"
         />
-        {fees.alytoCSpread > 0 && (
-          <Row
-            label="Fee de servicio Alyto"
-            value={`$${Number(fees.alytoCSpread).toLocaleString('es-CL')} CLP`}
-            valueClass="text-[#8A96B8] text-[0.8125rem]"
-          />
-        )}
-        {fees.fixedFee > 0 && (
-          <Row
-            label="Fee fijo"
-            value={`$${Number(fees.fixedFee).toLocaleString('es-CL')} CLP`}
-            valueClass="text-[#8A96B8] text-[0.8125rem]"
-          />
-        )}
-        {fees.payinFee > 0 && (
-          <Row
-            label="Fee de pago local"
-            value={`$${Number(fees.payinFee).toLocaleString('es-CL')} CLP`}
-            valueClass="text-[#8A96B8] text-[0.8125rem]"
-          />
-        )}
+        {/* Costo del envío — una sola línea con detalle opcional */}
+        <div className="py-2.5">
+          <button
+            onClick={() => setFeesExpanded(v => !v)}
+            className="w-full flex justify-between items-center"
+          >
+            <div className="flex items-center gap-1.5">
+              <span className="text-[0.8125rem] text-[#8A96B8]">Costo del envío</span>
+              {feesExpanded
+                ? <ChevronUp   size={13} className="text-[#4E5A7A]" />
+                : <ChevronDown size={13} className="text-[#4E5A7A]" />
+              }
+            </div>
+            <span className="text-[0.8125rem] font-semibold text-[#8A96B8]">
+              {costoEnvio > 0 ? `$${costoEnvio.toLocaleString('es-CL')} CLP` : '—'}
+            </span>
+          </button>
 
-        {/* Total fees row */}
-        {visibleFees > 0 && (
-          <Row
-            label="Total de costos"
-            value={`$${visibleFees.toLocaleString('es-CL')} CLP`}
-            valueClass="text-[#8A96B8] text-[0.8125rem]"
-          />
-        )}
+          {feesExpanded && costoEnvio > 0 && (
+            <div className="mt-2.5 space-y-1.5 pl-1">
+              {comisionServicio > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-[0.75rem] text-[#4E5A7A]">· Comisión de servicio</span>
+                  <span className="text-[0.75rem] text-[#4E5A7A]">
+                    ${comisionServicio.toLocaleString('es-CL')} CLP
+                  </span>
+                </div>
+              )}
+              {feeProcesamiento > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-[0.75rem] text-[#4E5A7A]">· Fee de procesamiento</span>
+                  <span className="text-[0.75rem] text-[#4E5A7A]">
+                    ${feeProcesamiento.toLocaleString('es-CL')} CLP
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Divider highlight */}
         <div className="py-3">

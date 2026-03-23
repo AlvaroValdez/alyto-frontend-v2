@@ -298,48 +298,57 @@ export default function Step1Amount({ initialData, onNext }) {
                 </div>
               </div>
 
-              {/* Fee total (con toggle) */}
-              <button
-                onClick={() => setFeesExpanded(v => !v)}
-                className="w-full flex justify-between items-center py-1"
-              >
-                <span className="text-[0.75rem] text-[#8A96B8]">
-                  Costo del envío
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[0.8125rem] font-semibold text-white">
-                    {quote.fees
-                      ? `$${(
-                          (quote.fees.alytoCSpread || 0) +
-                          (quote.fees.fixedFee     || 0) +
-                          (quote.fees.payinFee     || 0)
-                        ).toLocaleString('es-CL')} CLP`
-                      : '—'}
-                  </span>
-                  {feesExpanded
-                    ? <ChevronUp   size={14} className="text-[#4E5A7A]" />
-                    : <ChevronDown size={14} className="text-[#4E5A7A]" />
-                  }
-                </div>
-              </button>
+              {/* Costo del envío (una sola línea, con toggle de detalle) */}
+              {(() => {
+                const f = quote.fees || {}
+                const totalCosto =
+                  (f.alytoCSpread || 0) +
+                  (f.fixedFee     || 0) +
+                  (f.payinFee     || 0) +
+                  (f.payoutFee    || 0)
+                const comisionServicio = (f.alytoCSpread || 0) + (f.fixedFee || 0)
+                const feeProcesamiento = (f.payinFee     || 0) + (f.payoutFee || 0)
+                return (
+                  <>
+                    <button
+                      onClick={() => setFeesExpanded(v => !v)}
+                      className="w-full flex justify-between items-center py-1"
+                    >
+                      <span className="text-[0.75rem] text-[#8A96B8]">Costo del envío</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[0.8125rem] font-semibold text-white">
+                          {totalCosto > 0 ? `$${totalCosto.toLocaleString('es-CL')} CLP` : '—'}
+                        </span>
+                        {feesExpanded
+                          ? <ChevronUp   size={14} className="text-[#4E5A7A]" />
+                          : <ChevronDown size={14} className="text-[#4E5A7A]" />
+                        }
+                      </div>
+                    </button>
 
-              {/* Desglose de fees (colapsable) */}
-              {feesExpanded && quote.fees && (
-                <div className="mt-2 pt-3 border-t border-[#263050] space-y-2">
-                  {[
-                    { label: 'Fee de servicio Alyto', value: quote.fees.alytoCSpread },
-                    { label: 'Fee fijo',               value: quote.fees.fixedFee },
-                    { label: 'Fee de pago local',      value: quote.fees.payinFee },
-                  ].map(({ label, value }) => value > 0 && (
-                    <div key={label} className="flex justify-between">
-                      <span className="text-[0.6875rem] text-[#4E5A7A]">{label}</span>
-                      <span className="text-[0.6875rem] text-[#8A96B8]">
-                        ${Number(value).toLocaleString('es-CL')} CLP
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    {feesExpanded && (
+                      <div className="mt-2 pt-3 border-t border-[#263050] space-y-2">
+                        {comisionServicio > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-[0.6875rem] text-[#4E5A7A]">· Comisión de servicio</span>
+                            <span className="text-[0.6875rem] text-[#8A96B8]">
+                              ${comisionServicio.toLocaleString('es-CL')} CLP
+                            </span>
+                          </div>
+                        )}
+                        {feeProcesamiento > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-[0.6875rem] text-[#4E5A7A]">· Fee de procesamiento</span>
+                            <span className="text-[0.6875rem] text-[#8A96B8]">
+                              ${feeProcesamiento.toLocaleString('es-CL')} CLP
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
 
               {/* Divider */}
               <div className="my-3 border-t border-[#263050]" />
