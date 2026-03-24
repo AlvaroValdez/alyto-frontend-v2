@@ -124,7 +124,7 @@ function StatusBadge({ status }) {
 
 export default function Step1Amount({ initialData, onNext }) {
   const { user } = useAuth()
-  const origin   = ENTITY_ORIGIN[user?.entity] ?? ENTITY_ORIGIN.SpA
+  const origin   = ENTITY_ORIGIN[user?.legalEntity] ?? ENTITY_ORIGIN.SpA
 
   const [rawAmount,      setRawAmount]      = useState(initialData?.originAmount || 0)
   const [displayAmount,  setDisplayAmount]  = useState(

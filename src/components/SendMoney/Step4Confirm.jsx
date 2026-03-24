@@ -47,7 +47,7 @@ export default function Step4Confirm({ stepData, onNext }) {
   const { quote, originAmount, destinationCountry, payinMethod, beneficiaryData } = stepData
 
   const originCurrency = quote?.originCurrency
-    ?? ENTITY_ORIGIN_CURRENCY[user?.entity]
+    ?? ENTITY_ORIGIN_CURRENCY[user?.legalEntity]
     ?? 'CLP'
   // Alias de compatibilidad — puede llegar como "beneficiary" (legado) o "beneficiaryData" (nuevo)
   const beneficiary = beneficiaryData ?? stepData.beneficiary ?? {}
