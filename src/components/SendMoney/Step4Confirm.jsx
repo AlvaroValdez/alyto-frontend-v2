@@ -9,6 +9,9 @@
 import { useState } from 'react'
 import { Loader2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { initPayment } from '../../services/paymentsService'
+import { useAuth } from '../../context/AuthContext'
+
+const ENTITY_ORIGIN_CURRENCY = { SpA: 'CLP', LLC: 'USD', SRL: 'BOB' }
 
 const COUNTRY_NAMES = {
   CO: 'Colombia',       PE: 'Perú',     BO: 'Bolivia',
@@ -33,6 +36,8 @@ function Row({ label, value, valueClass = 'text-white text-[0.9375rem]' }) {
 }
 
 export default function Step4Confirm({ stepData, onNext }) {
+  const { user } = useAuth()
+
   const [confirmed, setConfirmed]   = useState(false)
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState(null)
@@ -40,6 +45,10 @@ export default function Step4Confirm({ stepData, onNext }) {
 
   // Step3 guarda los datos bajo la key "beneficiaryData" (campos dinámicos de Vita)
   const { quote, originAmount, destinationCountry, payinMethod, beneficiaryData } = stepData
+
+  const originCurrency = quote?.originCurrency
+    ?? ENTITY_ORIGIN_CURRENCY[user?.entity]
+    ?? 'CLP'
   // Alias de compatibilidad — puede llegar como "beneficiary" (legado) o "beneficiaryData" (nuevo)
   const beneficiary = beneficiaryData ?? stepData.beneficiary ?? {}
   console.log('[Step4] beneficiary recibido:', JSON.stringify(beneficiary))
@@ -109,12 +118,12 @@ export default function Step4Confirm({ stepData, onNext }) {
 
         <Row
           label="Envías"
-          value={`$${Number(originAmount).toLocaleString('es-CL')} CLP`}
+          value={`$${Number(originAmount).toLocaleString('es-CL')} ${originCurrency}`}
           valueClass="text-white text-[0.9375rem]"
         />
         <Row
           label="Tasa aplicada"
-          value={`1 CLP = ${Number(quote?.exchangeRate || 0).toFixed(4)} ${quote?.destinationCurrency || ''}`}
+          value={`1 ${originCurrency} = ${Number(quote?.exchangeRate || 0).toFixed(4)} ${quote?.destinationCurrency || ''}`}
           valueClass="text-[#C4CBD8] text-[0.8125rem]"
         />
         {/* Costo del envío — una sola línea con detalle opcional */}

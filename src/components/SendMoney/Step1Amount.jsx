@@ -13,6 +13,14 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp, Clock, AlertCircle, RefreshCw, WifiOff, Loader2 } from 'lucide-react'
 import { useQuoteSocket } from '../../hooks/useQuoteSocket'
+import { useAuth } from '../../context/AuthContext'
+
+// Moneda y país de origen según la entidad legal del usuario
+const ENTITY_ORIGIN = {
+  SpA: { country: 'Chile',   currency: 'CLP', flag: '🇨🇱' },
+  LLC: { country: 'EE.UU.',  currency: 'USD', flag: '🇺🇸' },
+  SRL: { country: 'Bolivia', currency: 'BOB', flag: '🇧🇴' },
+}
 
 const DESTINATION_COUNTRIES = [
   { code: 'CO', name: 'Colombia',        currency: 'COP', flag: '🇨🇴' },
@@ -92,6 +100,9 @@ function StatusBadge({ status }) {
 }
 
 export default function Step1Amount({ initialData, onNext }) {
+  const { user } = useAuth()
+  const origin   = ENTITY_ORIGIN[user?.entity] ?? ENTITY_ORIGIN.SpA
+
   const [rawAmount, setRawAmount]         = useState(initialData?.originAmount || 0)
   const [displayAmount, setDisplayAmount] = useState(
     initialData?.originAmount ? formatCLP(String(initialData.originAmount)) : '',
@@ -139,7 +150,7 @@ export default function Step1Amount({ initialData, onNext }) {
       <div>
         <h2 className="text-[1.125rem] font-bold text-white">¿Cuánto envías?</h2>
         <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
-          Tu cuenta está en Chile · CLP
+          {origin.flag} Tu cuenta está en {origin.country} · {origin.currency}
         </p>
       </div>
 
@@ -161,7 +172,7 @@ export default function Step1Amount({ initialData, onNext }) {
             className="w-full bg-[#1A2340] border border-[#263050] rounded-xl pl-8 pr-16 py-4 text-white text-[1.5rem] font-bold focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] transition-all placeholder:text-[#4E5A7A]"
           />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[0.75rem] font-semibold text-[#4E5A7A]">
-            CLP
+            {quote?.originCurrency ?? origin.currency}
           </span>
         </div>
       </div>
@@ -317,7 +328,7 @@ export default function Step1Amount({ initialData, onNext }) {
                       <span className="text-[0.75rem] text-[#8A96B8]">Costo del envío</span>
                       <div className="flex items-center gap-1.5">
                         <span className="text-[0.8125rem] font-semibold text-white">
-                          {totalCosto > 0 ? `$${totalCosto.toLocaleString('es-CL')} CLP` : '—'}
+                          {totalCosto > 0 ? `$${totalCosto.toLocaleString('es-CL')} ${quote?.originCurrency ?? origin.currency}` : '—'}
                         </span>
                         {feesExpanded
                           ? <ChevronUp   size={14} className="text-[#4E5A7A]" />
@@ -332,7 +343,7 @@ export default function Step1Amount({ initialData, onNext }) {
                           <div className="flex justify-between">
                             <span className="text-[0.6875rem] text-[#4E5A7A]">· Comisión de servicio</span>
                             <span className="text-[0.6875rem] text-[#8A96B8]">
-                              ${comisionServicio.toLocaleString('es-CL')} CLP
+                              ${comisionServicio.toLocaleString('es-CL')} {quote?.originCurrency ?? origin.currency}
                             </span>
                           </div>
                         )}
@@ -340,7 +351,7 @@ export default function Step1Amount({ initialData, onNext }) {
                           <div className="flex justify-between">
                             <span className="text-[0.6875rem] text-[#4E5A7A]">· Fee de procesamiento</span>
                             <span className="text-[0.6875rem] text-[#8A96B8]">
-                              ${feeProcesamiento.toLocaleString('es-CL')} CLP
+                              ${feeProcesamiento.toLocaleString('es-CL')} {quote?.originCurrency ?? origin.currency}
                             </span>
                           </div>
                         )}
