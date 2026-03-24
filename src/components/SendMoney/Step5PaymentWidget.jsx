@@ -1,17 +1,22 @@
 /**
  * Step5PaymentWidget.jsx — Widget de pago del proveedor.
  *
- * Abre la payinUrl en nueva pestaña (tanto Fintoc como vitaWallet).
- * Fintoc devuelve una redirect_url completa (https://app.fintoc.com/...) — NO usar SDK.
- * vitaWallet también devuelve una URL de checkout.
+ * Tres modos según payinMethod:
+ *   • fintoc / vita / url → abre redirect_url en nueva pestaña + polling
+ *   • manual             → muestra instrucciones de transferencia bancaria
+ *                          sin polling (admin confirma manualmente)
  *
  * Polling cada 5s a GET /payments/:transactionId/status.
- * Avanza automáticamente cuando status === 'payin_confirmed' | 'completed' | 'in_transit'.
+ * Avanza automáticamente cuando status ∈ FINAL_STATUSES.
  * Timeout de 15 minutos con pantalla de soporte.
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { Loader2, ExternalLink, AlertCircle, MessageCircle } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  Loader2, ExternalLink, AlertCircle, MessageCircle,
+  Copy, CheckCheck, Clock,
+} from 'lucide-react'
 import { getTransactionStatus } from '../../services/paymentsService'
 import Sentry from '../../services/sentry.js'
 
@@ -24,18 +29,163 @@ function formatTransactionId(id) {
   return `${id.slice(0, 8)}...${id.slice(-6)}`
 }
 
+// ── InfoRow — fila de datos de la cuenta bancaria ─────────────────────────────
+
+function InfoRow({ label, value, mono = false, highlight = false }) {
+  return (
+    <div className="flex items-start justify-between gap-3 py-2 border-b border-[#26305050] last:border-0">
+      <span className="text-[0.75rem] text-[#4E5A7A] flex-shrink-0">{label}</span>
+      <span className={`text-[0.875rem] text-right break-all ${
+        highlight ? 'font-bold text-[#22C55E]' :
+        mono      ? 'font-mono text-[#C4CBD8]' :
+                    'text-white font-semibold'
+      }`}>
+        {value}
+      </span>
+    </div>
+  )
+}
+
+// ── ManualPayinScreen — instrucciones bancarias Bolivia ───────────────────────
+
+function ManualPayinScreen({ stepData }) {
+  const navigate = useNavigate()
+  const { transactionId, originAmount, originCurrency, payinInstructions } = stepData
+  const bank     = payinInstructions ?? {}
+  const currency = originCurrency ?? 'BOB'
+
+  const [copiedRef, setCopiedRef] = useState(false)
+
+  const copyRef = () => {
+    if (!transactionId) return
+    navigator.clipboard.writeText(transactionId)
+    setCopiedRef(true)
+    setTimeout(() => setCopiedRef(false), 2000)
+  }
+
+  const handleDone = () => {
+    if (transactionId) navigate(`/transactions/${transactionId}`)
+    else navigate('/transactions')
+  }
+
+  return (
+    <div className="flex flex-col gap-5 px-4 pb-4">
+
+      {/* Título */}
+      <div>
+        <h2 className="text-[1.125rem] font-bold text-white">Instrucciones de pago</h2>
+        <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
+          Realiza una transferencia bancaria a la cuenta indicada.
+        </p>
+      </div>
+
+      {/* Card de datos bancarios */}
+      <div className="bg-[#1A2340] border border-[#263050] rounded-2xl overflow-hidden">
+        <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-[#263050]">
+          <span className="text-xl">🏦</span>
+          <p className="text-[0.875rem] font-bold text-white">Transferencia bancaria</p>
+        </div>
+        <div className="px-5 py-1">
+          <InfoRow label="Banco"   value={bank.bankName    ?? 'Banco Bisa'} />
+          <InfoRow label="Titular" value={bank.holder      ?? 'AV Finance SRL'} />
+          <InfoRow label="Cuenta"  value={bank.accountNumber ?? '—'} mono />
+          <InfoRow label="Tipo"    value={bank.accountType  ?? 'Cuenta Corriente'} />
+          <InfoRow
+            label="Monto"
+            value={`Bs ${Number(originAmount ?? 0).toLocaleString('es-CL')} ${currency}`}
+            highlight
+          />
+        </div>
+
+        {/* Fila referencia con botón copiar */}
+        <div className="flex items-center justify-between px-5 py-3 border-t border-[#263050]">
+          <div className="min-w-0">
+            <p className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-0.5">
+              Referencia (copiar en el concepto)
+            </p>
+            <p className="text-[0.75rem] font-mono font-semibold text-[#C4CBD8] truncate">
+              {transactionId ?? '—'}
+            </p>
+          </div>
+          <button
+            onClick={copyRef}
+            className="ml-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#263050] hover:border-[#C4CBD833] transition-colors text-[0.75rem] text-[#8A96B8] hover:text-white flex-shrink-0"
+          >
+            {copiedRef
+              ? <><CheckCheck size={12} className="text-[#22C55E]" /> Copiado</>
+              : <><Copy size={12} /> Copiar</>
+            }
+          </button>
+        </div>
+      </div>
+
+      {/* Warning referencia */}
+      <div className="flex items-start gap-2.5 px-4 py-3.5 rounded-2xl bg-[#F59E0B0F] border border-[#F59E0B33]">
+        <span className="text-base flex-shrink-0 leading-none mt-0.5">⚠️</span>
+        <div>
+          <p className="text-[0.8125rem] font-semibold text-[#FBBF24] leading-tight">
+            Incluye el número de referencia
+          </p>
+          <p className="text-[0.75rem] text-[#8A96B8] mt-0.5">
+            Escribe el ID de transacción en el concepto de tu transferencia para que podamos identificar tu pago.
+          </p>
+        </div>
+      </div>
+
+      {/* Tiempo de verificación */}
+      <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[#1A2340] border border-[#263050]">
+        <Clock size={14} className="text-[#8A96B8] flex-shrink-0" />
+        <p className="text-[0.8125rem] text-[#8A96B8]">
+          Tu pago será verificado en{' '}
+          <span className="text-white font-semibold">2–4 horas hábiles</span>.
+          Te notificaremos cuando sea confirmado.
+        </p>
+      </div>
+
+      {/* Botón */}
+      <button
+        onClick={handleDone}
+        className="w-full py-4 rounded-2xl bg-[#C4CBD8] text-[#0F1628] text-[0.9375rem] font-bold shadow-[0_4px_20px_rgba(196,203,216,0.3)] active:scale-[0.98] transition-all"
+      >
+        Ya realicé la transferencia
+      </button>
+
+      {/* ID para soporte */}
+      <p className="text-center text-[0.6875rem] text-[#4E5A7A]">
+        ID de referencia: <span className="font-mono">{formatTransactionId(transactionId)}</span>
+      </p>
+    </div>
+  )
+}
+
+// ── Step5PaymentWidget ────────────────────────────────────────────────────────
+
 export default function Step5PaymentWidget({ stepData, onNext }) {
   const { transactionId, payinUrl, payinMethod } = stepData
 
+  // ── Payin manual — sin polling, sin URL ──────────────────────────────────
+
+  if (payinMethod === 'manual') {
+    return <ManualPayinScreen stepData={stepData} />
+  }
+
+  // ── Resto de modos: fintoc / vita / url (con redirect + polling) ─────────
+
+  return <PollingPayinScreen stepData={stepData} onNext={onNext} />
+}
+
+// ── PollingPayinScreen — flujo con URL + polling ──────────────────────────────
+
+function PollingPayinScreen({ stepData, onNext }) {
+  const { transactionId, payinUrl, payinMethod } = stepData
+
   const [widgetOpened, setWidgetOpened] = useState(false)
-  const [polling, setPolling]           = useState(false)
-  const [timedOut, setTimedOut]         = useState(false)
-  const [pollError, setPollError]       = useState(null)
+  const [polling,      setPolling]      = useState(false)
+  const [timedOut,     setTimedOut]     = useState(false)
+  const [pollError,    setPollError]    = useState(null)
 
   const pollTimer    = useRef(null)
   const timeoutTimer = useRef(null)
-
-  // ── Polling ──────────────────────────────────────────────────────────────
 
   const stopPolling = useCallback(() => {
     setPolling(false)
@@ -71,28 +221,21 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
     }, TIMEOUT_MS)
   }, [transactionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Cleanup de polling al desmontar
   useEffect(() => () => stopPolling(), [stopPolling])
-
-  // ── Logs de diagnóstico al montar ────────────────────────────────────────
 
   useEffect(() => {
     console.log('[Step5] payinMethod:', payinMethod)
-    console.log('[Step5] payinUrl completo:', payinUrl)
+    console.log('[Step5] payinUrl:', payinUrl)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Handler botón ─────────────────────────────────────────────────────────
 
   function handleOpenWidget() {
     if (!payinUrl) return
-
-    // Fintoc ahora devuelve una redirect_url completa — abrir directamente, sin SDK
     window.open(payinUrl, '_blank', 'noopener,noreferrer')
     setWidgetOpened(true)
     if (!polling && !timedOut) startPolling()
   }
 
-  // ── Render: payinUrl ausente ──────────────────────────────────────────────
+  // ── Sin URL ─────────────────────────────────────────────────────────────
 
   if (!payinUrl) {
     return (
@@ -111,14 +254,12 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
             </div>
           </div>
         </div>
-
         <div className="bg-[#1A2340] rounded-2xl p-4">
           <p className="text-[0.75rem] text-[#8A96B8] mb-1">ID de transacción</p>
           <p className="text-[0.8125rem] font-mono font-semibold text-[#C4CBD8] break-all">
             {transactionId || '—'}
           </p>
         </div>
-
         <a
           href={`mailto:soporte@alyto.com?subject=URL%20de%20pago%20no%20disponible%20-%20${transactionId}`}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#1A2340] border border-[#263050] text-white text-[0.9375rem] font-semibold no-underline hover:border-[#C4CBD833] transition-colors"
@@ -130,7 +271,7 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
     )
   }
 
-  // ── Render: timeout ───────────────────────────────────────────────────────
+  // ── Timeout ─────────────────────────────────────────────────────────────
 
   if (timedOut) {
     return (
@@ -142,14 +283,10 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
             No recibimos confirmación del pago en 15 minutos.
           </p>
         </div>
-
         <div className="bg-[#1A2340] rounded-2xl p-4">
           <p className="text-[0.75rem] text-[#8A96B8] mb-1">Referencia de tu operación</p>
-          <p className="text-[0.8125rem] font-mono font-semibold text-[#C4CBD8]">
-            {transactionId}
-          </p>
+          <p className="text-[0.8125rem] font-mono font-semibold text-[#C4CBD8]">{transactionId}</p>
         </div>
-
         <a
           href={`mailto:soporte@alyto.com?subject=Pago%20pendiente%20${transactionId}`}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#1A2340] border border-[#263050] text-white text-[0.9375rem] font-semibold no-underline hover:border-[#C4CBD833] transition-colors"
@@ -161,18 +298,15 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
     )
   }
 
-  // ── Render: principal ─────────────────────────────────────────────────────
+  // ── Principal ────────────────────────────────────────────────────────────
 
   const isFintoc = payinMethod === 'fintoc'
 
   return (
     <div className="flex flex-col gap-5 px-4 pb-4">
 
-      {/* ── Título ── */}
       <div>
-        <h2 className="text-[1.125rem] font-bold text-white">
-          Completa tu pago
-        </h2>
+        <h2 className="text-[1.125rem] font-bold text-white">Completa tu pago</h2>
         <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
           {isFintoc
             ? 'Se abrirá una nueva ventana para que autorices la transferencia desde tu banco.'
@@ -180,7 +314,6 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
         </p>
       </div>
 
-      {/* ── Card del widget ── */}
       <div className="bg-[#1A2340] border border-[#263050] rounded-2xl p-5 text-center">
         <div className="w-16 h-16 rounded-2xl bg-[#263050] flex items-center justify-center mx-auto mb-4 text-3xl">
           🏦
@@ -193,7 +326,6 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
             ? 'Serás redirigido a la página de tu banco para autorizar la transferencia. Esta pantalla avanzará automáticamente al confirmar.'
             : 'Se abrirá en una nueva pestaña. Una vez que completes el pago, esta pantalla se actualizará automáticamente.'}
         </p>
-
         <button
           onClick={handleOpenWidget}
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#C4CBD8] text-[#0F1628] font-bold text-[0.9375rem] shadow-[0_4px_20px_rgba(196,203,216,0.3)] active:scale-[0.98] transition-all"
@@ -203,32 +335,22 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
         </button>
       </div>
 
-      {/* ── Estado del polling ── */}
       {widgetOpened && (
         <div className="flex flex-col items-center gap-3 py-2">
           <div className="flex items-center gap-2.5">
             <Loader2 size={16} className="text-[#C4CBD8] animate-spin flex-shrink-0" />
-            <span className="text-[0.8125rem] text-[#8A96B8]">
-              Esperando confirmación de pago...
-            </span>
+            <span className="text-[0.8125rem] text-[#8A96B8]">Esperando confirmación de pago...</span>
           </div>
-
           <div className="bg-[#1A2340] rounded-xl px-4 py-2.5 w-full">
-            <p className="text-[0.6875rem] text-[#4E5A7A] mb-0.5">
-              ID de transacción (para soporte)
-            </p>
+            <p className="text-[0.6875rem] text-[#4E5A7A] mb-0.5">ID de transacción (para soporte)</p>
             <p className="text-[0.8125rem] font-mono font-semibold text-[#C4CBD8]">
               {formatTransactionId(transactionId)}
             </p>
           </div>
-
-          {pollError && (
-            <p className="text-[0.75rem] text-[#EF4444]">{pollError}</p>
-          )}
+          {pollError && <p className="text-[0.75rem] text-[#EF4444]">{pollError}</p>}
         </div>
       )}
 
-      {/* Nota */}
       <p className="text-[0.6875rem] text-[#4E5A7A] text-center">
         No cierres esta pantalla hasta recibir la confirmación.
         Tienes hasta 15 minutos para completar el pago.

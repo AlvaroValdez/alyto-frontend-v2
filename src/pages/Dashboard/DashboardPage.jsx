@@ -91,12 +91,18 @@ const COUNTRY_META = {
 }
 
 function DestinationCountryCard({ country }) {
+  const isManual = country.payinMethod === 'manual'
   return (
     <div className="flex-shrink-0 bg-[#1A2340] rounded-2xl p-3.5 border border-[#263050] min-w-[108px] flex flex-col items-center gap-2">
       <span className="text-[2rem] leading-none">{country.flag}</span>
       <div className="text-center">
         <p className="text-[0.75rem] font-semibold text-white leading-tight">{country.name}</p>
         <p className="text-[0.625rem] text-[#4E5A7A] mt-0.5">{country.currency}</p>
+        {isManual && (
+          <span className="inline-block mt-1 text-[0.5625rem] font-semibold text-[#FBBF24] bg-[#F59E0B1A] border border-[#F59E0B33] px-1.5 py-0.5 rounded-full leading-none">
+            Verificación manual
+          </span>
+        )}
       </div>
     </div>
   )
@@ -125,9 +131,10 @@ export default function DashboardPage() {
           const meta = COUNTRY_META[code] ?? {}
           list.push({
             code,
-            name:     meta.name ?? code,
-            flag:     meta.flag ?? '🌍',
-            currency: c.destinationCurrency ?? '—',
+            name:        meta.name ?? code,
+            flag:        meta.flag ?? '🌍',
+            currency:    c.destinationCurrency ?? '—',
+            payinMethod: c.payinMethod ?? null,
           })
         }
         setDestCountries(list)

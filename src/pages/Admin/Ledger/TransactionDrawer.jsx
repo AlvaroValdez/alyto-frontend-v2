@@ -16,27 +16,31 @@ import { getTransactionDetail, updateTransactionStatus } from '../../../services
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 const STATUS_STYLES = {
-  initiated:        { bg: '#1D346140', text: '#8AB4F8',  label: 'Iniciada'       },
-  payin_pending:    { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'Pay-in pend.'   },
-  payin_completed:  { bg: '#22C55E1A', text: '#22C55E',  label: 'Pay-in OK'      },
-  in_transit:       { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'En tránsito'    },
-  payout_pending:   { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'Payout pend.'   },
-  completed:        { bg: '#22C55E1A', text: '#22C55E',  label: 'Completada'     },
-  failed:           { bg: '#EF44441A', text: '#F87171',  label: 'Fallida'        },
-  refunded:         { bg: '#EF44441A', text: '#F87171',  label: 'Reembolsada'    },
+  initiated:        { bg: '#1D346140', text: '#8AB4F8',  label: 'Iniciada'         },
+  payin_pending:    { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'Pay-in pend.'     },
+  payin_confirmed:  { bg: '#22C55E1A', text: '#22C55E',  label: 'Payin confirmado' },
+  payin_completed:  { bg: '#22C55E1A', text: '#22C55E',  label: 'Pay-in OK'        },
+  in_transit:       { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'En tránsito'      },
+  payout_pending:   { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'Payout pend.'     },
+  completed:        { bg: '#22C55E1A', text: '#22C55E',  label: 'Completada'       },
+  failed:           { bg: '#EF44441A', text: '#F87171',  label: 'Fallida'          },
+  refunded:         { bg: '#EF44441A', text: '#F87171',  label: 'Reembolsada'      },
 }
 
 const VALID_STATUSES = [
-  'initiated', 'payin_pending', 'payin_completed',
+  'initiated', 'payin_pending', 'payin_confirmed', 'payin_completed',
   'in_transit', 'payout_pending', 'completed', 'failed', 'refunded',
 ]
 
 const STATUS_LABELS = {
   initiated: 'Iniciada', payin_pending: 'Pay-in pendiente',
-  payin_completed: 'Pay-in completado', in_transit: 'En tránsito',
-  payout_pending: 'Payout pendiente', completed: 'Completada',
-  failed: 'Fallida', refunded: 'Reembolsada',
+  payin_confirmed: 'Payin confirmado', payin_completed: 'Pay-in completado',
+  in_transit: 'En tránsito', payout_pending: 'Payout pendiente',
+  completed: 'Completada', failed: 'Fallida', refunded: 'Reembolsada',
 }
+
+// Statuses que requieren confirmación manual SRL
+const SRL_MANUAL_PENDING = new Set(['initiated', 'payin_pending'])
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -163,6 +167,144 @@ function IpnLogEntry({ entry, index }) {
         </div>
       )}
     </div>
+  )
+}
+
+// ── Modal de confirmación payin manual ────────────────────────────────────────
+
+function ConfirmPayinModal({ tx, onClose, onConfirmed }) {
+  const [note,   setNote]   = useState('Confirmado via transferencia bancaria Banco Bisa ref. ')
+  const [saving, setSaving] = useState(false)
+  const [error,  setError]  = useState(null)
+
+  const handleConfirm = async () => {
+    if (!note.trim()) { setError('La nota es requerida.'); return }
+    setSaving(true)
+    setError(null)
+    try {
+      await updateTransactionStatus(tx.alytoTransactionId, 'payin_confirmed', note.trim())
+      onConfirmed()
+      onClose()
+    } catch (err) {
+      setError(err.message || 'Error al confirmar.')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="relative w-full max-w-md rounded-2xl flex flex-col overflow-hidden"
+        style={{ background: '#111827', border: '1px solid #263050' }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#263050]">
+          <h3 className="text-[0.9375rem] font-bold text-white">Confirmar pago recibido</h3>
+          <button onClick={onClose} className="text-[#4E5A7A] hover:text-white transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-5 py-5 space-y-4">
+          {/* Resumen */}
+          <div className="p-3 rounded-xl bg-[#1A2340] border border-[#263050] space-y-1">
+            <p className="text-[0.75rem] text-[#4E5A7A]">Transacción</p>
+            <p className="text-[0.8125rem] font-mono text-[#C4CBD8]">{tx.alytoTransactionId}</p>
+            <p className="text-[1rem] font-bold text-[#22C55E]">
+              Bs {tx.originalAmount?.toLocaleString('es-CL')} BOB
+            </p>
+          </div>
+
+          <p className="text-[0.8125rem] text-[#8A96B8]">
+            Esto marcará el pago como <span className="text-[#22C55E] font-semibold">payin_confirmed</span> y
+            disparará el payout automático a Vita Wallet.
+          </p>
+
+          {/* Nota */}
+          <div>
+            <label className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5 block">
+              Nota de auditoría <span className="text-[#EF4444]">*</span>
+            </label>
+            <textarea
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              rows={3}
+              placeholder="Ej: Confirmado via transferencia bancaria Banco Bisa ref. XXXXX"
+              className="w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white border border-[#263050] bg-[#1A2340] focus:outline-none focus:border-[#C4CBD8] resize-none placeholder-[#4E5A7A]"
+            />
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
+              <AlertCircle size={13} className="text-[#F87171] flex-shrink-0" />
+              <p className="text-[0.8125rem] text-[#F87171]">{error}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 px-5 pb-5">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 rounded-xl border border-[#263050] text-[#8A96B8] text-[0.875rem] font-semibold hover:text-white transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={saving || !note.trim()}
+            className="flex-1 py-3 rounded-xl bg-[#22C55E] text-white text-[0.875rem] font-bold disabled:opacity-40 flex items-center justify-center gap-2 transition-all"
+          >
+            {saving && <Loader size={14} className="animate-spin" />}
+            {saving ? 'Confirmando…' : '✅ Confirmar pago'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Banner payin manual SRL ───────────────────────────────────────────────────
+
+function PayinManualBanner({ tx, onConfirmed }) {
+  const [showModal, setShowModal] = useState(false)
+
+  return (
+    <>
+      <div className="mb-5 p-4 rounded-2xl border border-[#FBBF2440] bg-[#F59E0B0A]">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-lg leading-none">⏳</span>
+          <p className="text-[0.875rem] font-bold text-[#FBBF24]">
+            Payin manual pendiente — Bolivia
+          </p>
+        </div>
+        <div className="space-y-1 mb-4 pl-1">
+          <p className="text-[0.8125rem] text-[#8A96B8]">El usuario debe transferir:</p>
+          <p className="text-[1.125rem] font-extrabold text-white tabular-nums">
+            Bs {tx.originalAmount?.toLocaleString('es-CL')} BOB
+          </p>
+          <p className="text-[0.75rem] font-mono text-[#4E5A7A]">
+            Ref: {tx.alytoTransactionId}
+          </p>
+        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="w-full py-2.5 rounded-xl bg-[#22C55E] text-white text-[0.875rem] font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all"
+        >
+          ✅ Confirmar pago recibido
+        </button>
+      </div>
+
+      {showModal && (
+        <ConfirmPayinModal
+          tx={tx}
+          onClose={() => setShowModal(false)}
+          onConfirmed={onConfirmed}
+        />
+      )}
+    </>
   )
 }
 
@@ -307,6 +449,14 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
 
           {tx && (
             <div>
+
+              {/* ── Banner payin manual Bolivia ────────────────────────── */}
+              {tx.legalEntity === 'SRL' && SRL_MANUAL_PENDING.has(tx.status) && (
+                <PayinManualBanner
+                  tx={tx}
+                  onConfirmed={() => { load(); onStatusUpdated?.() }}
+                />
+              )}
 
               {/* ── 1. Flujo de pago (timeline) ─────────────────────────── */}
               <SectionTitle icon={ArrowRight}>Flujo de pago</SectionTitle>
