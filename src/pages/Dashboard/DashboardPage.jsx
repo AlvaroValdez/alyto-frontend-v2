@@ -12,9 +12,11 @@
  */
 
 import { useLocation, Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { Bell, Home, BarChart2, FileText, User, Shield, LogOut } from 'lucide-react'
 import { useAuth }            from '../../context/AuthContext'
 import { useDashboard }       from '../../hooks/useDashboard'
+import { listUserCorridors }  from '../../services/paymentsService'
 import WelcomeBanner          from './WelcomeBanner'
 import QuickActions           from './QuickActions'
 import RecentTransactions     from './RecentTransactions'
@@ -73,19 +75,20 @@ function StatsSkeletons() {
 
 // ── Destination countries section ─────────────────────────────────────────────
 
-const DESTINATION_COUNTRIES = [
-  { code: 'CO', name: 'Colombia',       currency: 'COP', flag: '🇨🇴' },
-  { code: 'PE', name: 'Perú',           currency: 'PEN', flag: '🇵🇪' },
-  { code: 'BO', name: 'Bolivia',        currency: 'BOB', flag: '🇧🇴' },
-  { code: 'AR', name: 'Argentina',      currency: 'ARS', flag: '🇦🇷' },
-  { code: 'MX', name: 'México',         currency: 'MXN', flag: '🇲🇽' },
-  { code: 'BR', name: 'Brasil',         currency: 'BRL', flag: '🇧🇷' },
-  { code: 'US', name: 'Estados Unidos', currency: 'USD', flag: '🇺🇸' },
-  { code: 'EC', name: 'Ecuador',        currency: 'USD', flag: '🇪🇨' },
-  { code: 'VE', name: 'Venezuela',      currency: 'USD', flag: '🇻🇪' },
-  { code: 'PY', name: 'Paraguay',       currency: 'PYG', flag: '🇵🇾' },
-  { code: 'UY', name: 'Uruguay',        currency: 'UYU', flag: '🇺🇾' },
-]
+const COUNTRY_META = {
+  CO: { name: 'Colombia',       flag: '🇨🇴' },
+  PE: { name: 'Perú',           flag: '🇵🇪' },
+  BO: { name: 'Bolivia',        flag: '🇧🇴' },
+  AR: { name: 'Argentina',      flag: '🇦🇷' },
+  MX: { name: 'México',         flag: '🇲🇽' },
+  BR: { name: 'Brasil',         flag: '🇧🇷' },
+  US: { name: 'Estados Unidos', flag: '🇺🇸' },
+  EC: { name: 'Ecuador',        flag: '🇪🇨' },
+  VE: { name: 'Venezuela',      flag: '🇻🇪' },
+  PY: { name: 'Paraguay',       flag: '🇵🇾' },
+  UY: { name: 'Uruguay',        flag: '🇺🇾' },
+  CL: { name: 'Chile',          flag: '🇨🇱' },
+}
 
 function DestinationCountryCard({ country }) {
   return (
@@ -107,6 +110,30 @@ export default function DashboardPage() {
   const { user, logout } = useAuth()
 
   const { data, loading, error } = useDashboard()
+
+  // Corredores disponibles para el usuario (lista dinámica del backend)
+  const [destCountries, setDestCountries] = useState([])
+  useEffect(() => {
+    listUserCorridors()
+      .then(res => {
+        const seen = new Set()
+        const list = []
+        for (const c of (res.corridors ?? res)) {
+          const code = c.destinationCountry
+          if (!code || seen.has(code)) continue
+          seen.add(code)
+          const meta = COUNTRY_META[code] ?? {}
+          list.push({
+            code,
+            name:     meta.name ?? code,
+            flag:     meta.flag ?? '🌍',
+            currency: c.destinationCurrency ?? '—',
+          })
+        }
+        setDestCountries(list)
+      })
+      .catch(() => {}) // silencioso — no es crítico para el dashboard
+  }, [])
 
   function handleLogout() {
     logout()
@@ -267,15 +294,25 @@ export default function DashboardPage() {
         <div className="mb-4">
           <div className="flex items-center justify-between px-4 mb-3">
             <p className="text-base font-bold text-white">¿A dónde puedes enviar?</p>
-            <span className="text-[0.6875rem] font-medium text-[#4E5A7A]">
-              {DESTINATION_COUNTRIES.length} países
-            </span>
+            {destCountries.length > 0 && (
+              <span className="text-[0.6875rem] font-medium text-[#4E5A7A]">
+                {destCountries.length} país{destCountries.length !== 1 ? 'es' : ''}
+              </span>
+            )}
           </div>
-          <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-1">
-            {DESTINATION_COUNTRIES.map((c) => (
-              <DestinationCountryCard key={c.code} country={c} />
-            ))}
-          </div>
+          {destCountries.length === 0 ? (
+            <div className="mx-4 px-4 py-4 rounded-2xl bg-[#1A2340] border border-[#263050] text-center">
+              <p className="text-[0.8125rem] text-[#4E5A7A]">
+                Sin destinos disponibles aún.
+              </p>
+            </div>
+          ) : (
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-1">
+              {destCountries.map((c) => (
+                <DestinationCountryCard key={c.code} country={c} />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Error global — solo si no hay datos previos */}

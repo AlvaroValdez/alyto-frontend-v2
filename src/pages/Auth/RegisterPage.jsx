@@ -26,10 +26,10 @@ const COUNTRIES = [
   { value: 'OTHER', label: '🌐  Otro país',        entity: 'LLC' },
 ]
 
-const ENTITY_LABELS = {
-  SpA: 'AV Finance SpA — Chile',
-  SRL: 'AV Finance SRL — Bolivia',
-  LLC: 'AV Finance LLC — Delaware',
+const ENTITY_INFO = {
+  SpA: { label: 'AV Finance SpA',  detail: 'Chile',   currency: 'CLP', flag: '🇨🇱' },
+  SRL: { label: 'AV Finance SRL',  detail: 'Bolivia', currency: 'BOB', flag: '🇧🇴' },
+  LLC: { label: 'AV Finance LLC',  detail: 'Global',  currency: 'USD', flag: '🌐'  },
 }
 
 // Prefijos de países más comunes
@@ -581,15 +581,25 @@ export default function RegisterPage() {
                 ))}
               </select>
 
-              {selectedCountry && (
-                <div className="flex items-center gap-2 mt-1">
-                  <CheckCircle2 size={13} className="text-[#22C55E] flex-shrink-0" />
-                  <p className="text-[0.75rem] text-[#8A96B8]">
-                    Tu cuenta operará bajo{' '}
-                    <span className="text-[#C4CBD8] font-semibold">{ENTITY_LABELS[selectedCountry.entity]}</span>
-                  </p>
-                </div>
-              )}
+              {selectedCountry && (() => {
+                const ei = ENTITY_INFO[selectedCountry.entity] ?? ENTITY_INFO.LLC
+                return (
+                  <div
+                    className="flex items-start gap-3 mt-2 px-3.5 py-3 rounded-xl border"
+                    style={{ background: 'rgba(196,203,216,0.05)', borderColor: 'rgba(196,203,216,0.15)' }}
+                  >
+                    <span className="text-xl leading-none flex-shrink-0">{ei.flag}</span>
+                    <div>
+                      <p className="text-[0.8125rem] font-semibold text-white leading-tight">
+                        Operarás con {ei.label} ({ei.detail}) · {ei.currency}
+                      </p>
+                      <p className="text-[0.6875rem] text-[#4E5A7A] mt-0.5">
+                        Tu moneda de origen será <span className="text-[#8A96B8] font-semibold">{ei.currency}</span>
+                      </p>
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
 
             <button

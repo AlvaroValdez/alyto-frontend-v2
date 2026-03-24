@@ -1,50 +1,71 @@
 /**
  * Step1Amount.jsx — "¿Cuánto envías y a dónde?"
  *
- * - Input numérico en CLP con separador de miles
- * - Select de país destino (11 países Vita) con banderas
- * - Cotización en tiempo real vía WebSocket (useQuoteSocket)
- * - Desglose de fees colapsable
- * - Contador regresivo de la cotización
- * - Indicadores de estado: En vivo / Actualizando / Desconectado / Error / Caducado
- * - Corredores no disponibles → badge "Próximamente"
+ * - Lista de países destino obtenida del backend (GET /payments/corridors)
+ *   filtrada por la entidad del usuario autenticado — sin hardcode.
+ * - Input en la moneda del usuario (CLP/BOB/USD según legalEntity).
+ * - Cotización en tiempo real vía WebSocket (useQuoteSocket).
+ * - Desglose de fees colapsable.
+ * - Contador regresivo de la cotización.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronDown, ChevronUp, Clock, AlertCircle, RefreshCw, WifiOff, Loader2 } from 'lucide-react'
 import { useQuoteSocket } from '../../hooks/useQuoteSocket'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth }        from '../../context/AuthContext'
+import { listUserCorridors } from '../../services/paymentsService'
 
-// Moneda y país de origen según la entidad legal del usuario
+// ── Origen según entidad legal ────────────────────────────────────────────────
+
 const ENTITY_ORIGIN = {
-  SpA: { country: 'Chile',   currency: 'CLP', flag: '🇨🇱' },
-  LLC: { country: 'EE.UU.',  currency: 'USD', flag: '🇺🇸' },
-  SRL: { country: 'Bolivia', currency: 'BOB', flag: '🇧🇴' },
+  SpA: { country: 'Chile',   currency: 'CLP', flag: '🇨🇱', symbol: '$'  },
+  LLC: { country: 'EE.UU.',  currency: 'USD', flag: '🇺🇸', symbol: '$'  },
+  SRL: { country: 'Bolivia', currency: 'BOB', flag: '🇧🇴', symbol: 'Bs' },
 }
 
-const DESTINATION_COUNTRIES = [
-  { code: 'CO', name: 'Colombia',        currency: 'COP', flag: '🇨🇴' },
-  { code: 'PE', name: 'Perú',            currency: 'PEN', flag: '🇵🇪' },
-  { code: 'BO', name: 'Bolivia',         currency: 'BOB', flag: '🇧🇴' },
-  { code: 'AR', name: 'Argentina',       currency: 'ARS', flag: '🇦🇷' },
-  { code: 'MX', name: 'México',          currency: 'MXN', flag: '🇲🇽' },
-  { code: 'BR', name: 'Brasil',          currency: 'BRL', flag: '🇧🇷' },
-  { code: 'US', name: 'Estados Unidos',  currency: 'USD', flag: '🇺🇸' },
-  { code: 'EC', name: 'Ecuador',         currency: 'USD', flag: '🇪🇨' },
-  { code: 'VE', name: 'Venezuela',       currency: 'USD', flag: '🇻🇪' },
-  { code: 'PY', name: 'Paraguay',        currency: 'PYG', flag: '🇵🇾' },
-  { code: 'UY', name: 'Uruguay',         currency: 'UYU', flag: '🇺🇾' },
-]
+// ── Info de países para enriquecer la respuesta del backend ──────────────────
 
-function formatCLP(value) {
+const COUNTRY_INFO = {
+  CO: { name: 'Colombia',        currency: 'COP', flag: '🇨🇴' },
+  PE: { name: 'Perú',            currency: 'PEN', flag: '🇵🇪' },
+  BO: { name: 'Bolivia',         currency: 'BOB', flag: '🇧🇴' },
+  AR: { name: 'Argentina',       currency: 'ARS', flag: '🇦🇷' },
+  MX: { name: 'México',          currency: 'MXN', flag: '🇲🇽' },
+  BR: { name: 'Brasil',          currency: 'BRL', flag: '🇧🇷' },
+  US: { name: 'Estados Unidos',  currency: 'USD', flag: '🇺🇸' },
+  EC: { name: 'Ecuador',         currency: 'USD', flag: '🇪🇨' },
+  VE: { name: 'Venezuela',       currency: 'USD', flag: '🇻🇪' },
+  PY: { name: 'Paraguay',        currency: 'PYG', flag: '🇵🇾' },
+  UY: { name: 'Uruguay',         currency: 'UYU', flag: '🇺🇾' },
+  CL: { name: 'Chile',           currency: 'CLP', flag: '🇨🇱' },
+}
+
+/** Convierte la lista de corredores en opciones de país destino únicas */
+function corridorsToCountries(corridors) {
+  const seen = new Set()
+  const result = []
+  for (const c of corridors) {
+    const code = c.destinationCountry
+    if (!code || seen.has(code)) continue
+    seen.add(code)
+    const info = COUNTRY_INFO[code] ?? {}
+    result.push({
+      code,
+      name:     info.name     ?? code,
+      currency: c.destinationCurrency ?? info.currency ?? '—',
+      flag:     info.flag     ?? '🌍',
+    })
+  }
+  return result
+}
+
+// ── Formatters ────────────────────────────────────────────────────────────────
+
+function formatAmount(value) {
   if (!value) return ''
   const num = parseInt(value.replace(/\D/g, ''), 10)
   if (isNaN(num)) return ''
   return num.toLocaleString('es-CL')
-}
-
-function parseCLP(formatted) {
-  return parseInt(formatted.replace(/\./g, '').replace(/,/g, ''), 10) || 0
 }
 
 function formatDestAmount(amount, currency) {
@@ -59,7 +80,7 @@ function formatCountdown(secs) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-// ── Skeleton shimmer para la cotización en carga ──────────────────────────────
+// ── Skeleton ──────────────────────────────────────────────────────────────────
 
 function QuoteSkeleton() {
   return (
@@ -74,7 +95,7 @@ function QuoteSkeleton() {
   )
 }
 
-// ── Indicador de estado del WebSocket ─────────────────────────────────────────
+// ── StatusBadge ───────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }) {
   if (status === 'connected') {
@@ -99,21 +120,52 @@ function StatusBadge({ status }) {
   return null
 }
 
+// ── Step1Amount ───────────────────────────────────────────────────────────────
+
 export default function Step1Amount({ initialData, onNext }) {
   const { user } = useAuth()
   const origin   = ENTITY_ORIGIN[user?.entity] ?? ENTITY_ORIGIN.SpA
 
-  const [rawAmount, setRawAmount]         = useState(initialData?.originAmount || 0)
-  const [displayAmount, setDisplayAmount] = useState(
-    initialData?.originAmount ? formatCLP(String(initialData.originAmount)) : '',
+  const [rawAmount,      setRawAmount]      = useState(initialData?.originAmount || 0)
+  const [displayAmount,  setDisplayAmount]  = useState(
+    initialData?.originAmount ? formatAmount(String(initialData.originAmount)) : '',
   )
-  const [selectedCountry, setSelectedCountry] = useState(
-    DESTINATION_COUNTRIES.find(c => c.code === initialData?.destinationCountry) || null,
-  )
-  const [feesExpanded, setFeesExpanded] = useState(false)
+  const [selectedCountry, setSelectedCountry] = useState(null)
+  const [countries,        setCountries]       = useState([])
+  const [corridorsLoading, setCorridorsLoading] = useState(true)
+  const [corridorsError,   setCorridorsError]   = useState(null)
+  const [feesExpanded,     setFeesExpanded]      = useState(false)
+
+  // ── Cargar corredores del backend ─────────────────────────────────────────
+
+  useEffect(() => {
+    let cancelled = false
+    setCorridorsLoading(true)
+    setCorridorsError(null)
+    listUserCorridors()
+      .then(res => {
+        if (cancelled) return
+        const list = corridorsToCountries(res.corridors ?? res)
+        setCountries(list)
+        // Restaurar selección si venimos de initialData
+        if (initialData?.destinationCountry) {
+          const found = list.find(c => c.code === initialData.destinationCountry)
+          if (found) setSelectedCountry(found)
+        }
+      })
+      .catch(err => {
+        if (!cancelled) setCorridorsError(err.message || 'No se pudieron cargar los destinos.')
+      })
+      .finally(() => { if (!cancelled) setCorridorsLoading(false) })
+    return () => { cancelled = true }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── WebSocket quote ───────────────────────────────────────────────────────
 
   const { quote, status, error, isStale, countdown, reconnect } =
     useQuoteSocket(rawAmount || null, selectedCountry?.code || null)
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
   function handleAmountChange(e) {
     const digits = e.target.value.replace(/\D/g, '')
@@ -123,9 +175,11 @@ export default function Step1Amount({ initialData, onNext }) {
   }
 
   function handleCountryChange(e) {
-    const found = DESTINATION_COUNTRIES.find(c => c.code === e.target.value)
+    const found = countries.find(c => c.code === e.target.value)
     setSelectedCountry(found || null)
   }
+
+  const activeCurrency = quote?.originCurrency ?? origin.currency
 
   const isBlocked   = status === 'connecting' || status === 'expired' ||
                       status === 'disconnected' || status === 'error'
@@ -133,15 +187,13 @@ export default function Step1Amount({ initialData, onNext }) {
 
   function handleNext() {
     if (!canContinue) return
-    onNext({
-      originAmount:       rawAmount,
-      destinationCountry: selectedCountry.code,
-      quote,
-    })
+    onNext({ originAmount: rawAmount, destinationCountry: selectedCountry.code, quote })
   }
 
-  const destCountry = selectedCountry || DESTINATION_COUNTRIES[0]
+  const destCountry    = selectedCountry || countries[0]
   const showQuoteBlock = rawAmount > 0 && selectedCountry
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col gap-5 px-4 pb-4">
@@ -161,7 +213,7 @@ export default function Step1Amount({ initialData, onNext }) {
         </label>
         <div className="relative">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8A96B8] font-bold text-[1.125rem]">
-            $
+            {origin.symbol}
           </span>
           <input
             type="text"
@@ -172,7 +224,7 @@ export default function Step1Amount({ initialData, onNext }) {
             className="w-full bg-[#1A2340] border border-[#263050] rounded-xl pl-8 pr-16 py-4 text-white text-[1.5rem] font-bold focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] transition-all placeholder:text-[#4E5A7A]"
           />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[0.75rem] font-semibold text-[#4E5A7A]">
-            {quote?.originCurrency ?? origin.currency}
+            {activeCurrency}
           </span>
         </div>
       </div>
@@ -182,34 +234,52 @@ export default function Step1Amount({ initialData, onNext }) {
         <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide mb-2">
           País de destino
         </label>
-        <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl pointer-events-none">
-            {selectedCountry?.flag || '🌎'}
-          </span>
-          <select
-            value={selectedCountry?.code || ''}
-            onChange={handleCountryChange}
-            className="w-full appearance-none bg-[#1A2340] border border-[#263050] rounded-xl pl-11 pr-10 py-4 text-white text-[0.9375rem] font-semibold focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] transition-all cursor-pointer"
-          >
-            <option value="" disabled>Selecciona un país</option>
-            {DESTINATION_COUNTRIES.map(c => (
-              <option key={c.code} value={c.code}>
-                {c.name} ({c.currency})
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4E5A7A] pointer-events-none" />
-        </div>
+
+        {corridorsLoading ? (
+          /* Skeleton del selector */
+          <div className="h-14 rounded-xl bg-[#1A2340] border border-[#263050] animate-pulse" />
+        ) : corridorsError ? (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
+            <AlertCircle size={14} className="text-[#EF4444] flex-shrink-0" />
+            <p className="text-[0.8125rem] text-[#EF4444]">{corridorsError}</p>
+          </div>
+        ) : countries.length === 0 ? (
+          <div className="px-4 py-4 rounded-xl bg-[#1A2340] border border-[#263050] text-center">
+            <p className="text-[0.8125rem] text-[#8A96B8]">
+              No hay destinos disponibles para tu cuenta.
+            </p>
+            <p className="text-[0.75rem] text-[#4E5A7A] mt-1">
+              Contáctanos para más información.
+            </p>
+          </div>
+        ) : (
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl pointer-events-none">
+              {selectedCountry?.flag || '🌎'}
+            </span>
+            <select
+              value={selectedCountry?.code || ''}
+              onChange={handleCountryChange}
+              className="w-full appearance-none bg-[#1A2340] border border-[#263050] rounded-xl pl-11 pr-10 py-4 text-white text-[0.9375rem] font-semibold focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] transition-all cursor-pointer"
+            >
+              <option value="" disabled>Selecciona un país</option>
+              {countries.map(c => (
+                <option key={c.code} value={c.code}>
+                  {c.name} ({c.currency})
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4E5A7A] pointer-events-none" />
+          </div>
+        )}
       </div>
 
       {/* ── Bloque de cotización ── */}
       {showQuoteBlock && (
         <div className="bg-[#1A2340] border border-[#263050] rounded-2xl p-4">
 
-          {/* Esqueleto — conectando */}
           {status === 'connecting' && <QuoteSkeleton />}
 
-          {/* Banner — desconectado con backoff */}
           {status === 'disconnected' && (
             <div className="flex items-center gap-3">
               <WifiOff size={15} className="text-[#F97316] flex-shrink-0" />
@@ -225,10 +295,8 @@ export default function Step1Amount({ initialData, onNext }) {
             </div>
           )}
 
-          {/* Banner — error irrecuperable */}
           {status === 'error' && (
             error?.includes('Corredor no disponible') ? (
-              /* Corredor sin cobertura → Próximamente */
               <div className="flex items-center gap-3">
                 <div
                   className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -251,13 +319,10 @@ export default function Step1Amount({ initialData, onNext }) {
                 </div>
               </div>
             ) : (
-              /* Error genérico con reintentar */
               <div className="flex items-start gap-3">
                 <AlertCircle size={16} className="text-[#EF4444] flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-[0.8125rem] text-[#EF4444] font-medium">
-                    Error de cotización
-                  </p>
+                  <p className="text-[0.8125rem] text-[#EF4444] font-medium">Error de cotización</p>
                   <p className="text-[0.75rem] text-[#8A96B8] mt-0.5">{error}</p>
                 </div>
                 <button
@@ -270,25 +335,20 @@ export default function Step1Amount({ initialData, onNext }) {
             )
           )}
 
-          {/* Cotización disponible (connected / updating / expired) */}
           {quote && status !== 'connecting' && status !== 'disconnected' && status !== 'error' && (
             <>
-              {/* Fila principal: recibe */}
+              {/* Recibe */}
               <div className="flex justify-between items-center mb-3">
-                <span className="text-[0.8125rem] text-[#8A96B8]">
-                  {destCountry.name} recibe
-                </span>
+                <span className="text-[0.8125rem] text-[#8A96B8]">{destCountry?.name} recibe</span>
                 <div className="flex items-center gap-2">
-                  {status === 'updating' && (
-                    <Loader2 size={13} className="animate-spin text-[#C4CBD8]" />
-                  )}
+                  {status === 'updating' && <Loader2 size={13} className="animate-spin text-[#C4CBD8]" />}
                   <span className="text-[1.125rem] font-bold text-[#22C55E]">
                     {formatDestAmount(quote.destinationAmount, quote.destinationCurrency)}
                   </span>
                 </div>
               </div>
 
-              {/* Tasa de cambio + badge de estado */}
+              {/* Tasa */}
               <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-[0.75rem] text-[#8A96B8]">Tasa aplicada</span>
@@ -304,19 +364,17 @@ export default function Step1Amount({ initialData, onNext }) {
                 <div className="flex items-center gap-2">
                   <StatusBadge status={status} />
                   <span className="text-[0.8125rem] font-semibold text-[#C4CBD8]">
-                    1 CLP = {Number(quote.exchangeRate).toFixed(4)} {quote.destinationCurrency}
+                    1 {activeCurrency} = {Number(quote.exchangeRate).toFixed(4)} {quote.destinationCurrency}
                   </span>
                 </div>
               </div>
 
-              {/* Costo del envío (una sola línea, con toggle de detalle) */}
+              {/* Costo del envío */}
               {(() => {
                 const f = quote.fees || {}
                 const totalCosto =
-                  (f.alytoCSpread || 0) +
-                  (f.fixedFee     || 0) +
-                  (f.payinFee     || 0) +
-                  (f.payoutFee    || 0)
+                  (f.alytoCSpread || 0) + (f.fixedFee || 0) +
+                  (f.payinFee     || 0) + (f.payoutFee || 0)
                 const comisionServicio = (f.alytoCSpread || 0) + (f.fixedFee || 0)
                 const feeProcesamiento = (f.payinFee     || 0) + (f.payoutFee || 0)
                 return (
@@ -328,7 +386,7 @@ export default function Step1Amount({ initialData, onNext }) {
                       <span className="text-[0.75rem] text-[#8A96B8]">Costo del envío</span>
                       <div className="flex items-center gap-1.5">
                         <span className="text-[0.8125rem] font-semibold text-white">
-                          {totalCosto > 0 ? `$${totalCosto.toLocaleString('es-CL')} ${quote?.originCurrency ?? origin.currency}` : '—'}
+                          {totalCosto > 0 ? `${origin.symbol}${totalCosto.toLocaleString('es-CL')} ${activeCurrency}` : '—'}
                         </span>
                         {feesExpanded
                           ? <ChevronUp   size={14} className="text-[#4E5A7A]" />
@@ -343,7 +401,7 @@ export default function Step1Amount({ initialData, onNext }) {
                           <div className="flex justify-between">
                             <span className="text-[0.6875rem] text-[#4E5A7A]">· Comisión de servicio</span>
                             <span className="text-[0.6875rem] text-[#8A96B8]">
-                              ${comisionServicio.toLocaleString('es-CL')} {quote?.originCurrency ?? origin.currency}
+                              {origin.symbol}{comisionServicio.toLocaleString('es-CL')} {activeCurrency}
                             </span>
                           </div>
                         )}
@@ -351,7 +409,7 @@ export default function Step1Amount({ initialData, onNext }) {
                           <div className="flex justify-between">
                             <span className="text-[0.6875rem] text-[#4E5A7A]">· Fee de procesamiento</span>
                             <span className="text-[0.6875rem] text-[#8A96B8]">
-                              ${feeProcesamiento.toLocaleString('es-CL')} {quote?.originCurrency ?? origin.currency}
+                              {origin.symbol}{feeProcesamiento.toLocaleString('es-CL')} {activeCurrency}
                             </span>
                           </div>
                         )}
@@ -361,10 +419,9 @@ export default function Step1Amount({ initialData, onNext }) {
                 )
               })()}
 
-              {/* Divider */}
               <div className="my-3 border-t border-[#263050]" />
 
-              {/* Pie: tiempo estimado + countdown / banner caducado */}
+              {/* Pie */}
               {status === 'expired' ? (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-[#F59E0B]">
@@ -382,11 +439,8 @@ export default function Step1Amount({ initialData, onNext }) {
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-1.5 text-[#8A96B8]">
                     <Clock size={13} />
-                    <span className="text-[0.75rem]">
-                      {quote.estimatedDelivery || '1 día hábil'}
-                    </span>
+                    <span className="text-[0.75rem]">{quote.estimatedDelivery || '1 día hábil'}</span>
                   </div>
-
                   {countdown !== null && (
                     <div className="flex items-center gap-1 text-[0.6875rem] text-[#4E5A7A]">
                       <span>Cotización válida</span>

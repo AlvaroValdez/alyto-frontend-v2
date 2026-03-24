@@ -63,6 +63,15 @@ export function getTransactionStatus(transactionId) {
 }
 
 /**
+ * Lista los corredores disponibles para el usuario autenticado.
+ * El backend filtra por legalEntity del JWT.
+ * @returns {Promise<{ corridors: Array }>}
+ */
+export function listUserCorridors() {
+  return request('/payments/corridors')
+}
+
+/**
  * Obtiene los campos de formulario dinámicos para el país destino indicado.
  * La respuesta proviene del backend (cacheada 1h), que a su vez la obtiene de Vita.
  * @param {string} countryCode  ISO alpha-2 mayúsculas (ej. 'CO', 'PE', 'AR')
