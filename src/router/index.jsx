@@ -47,6 +47,7 @@ import KycReturnPage     from '../pages/Kyc/KycReturnPage'
 import LedgerPage     from '../pages/Admin/Ledger/LedgerPage'
 import CorridorsPanel from '../pages/Admin/Ledger/CorridorsPanel'
 import AnalyticsPage  from '../pages/Admin/Analytics/AnalyticsPage'
+import FundingPage    from '../pages/Admin/Funding/FundingPage'
 
 // ── Páginas legacy (mantener compatibilidad) ─────────────────────────────────
 import TransferView       from '../components/TransferView'
@@ -183,6 +184,7 @@ export default function AppRouter() {
         <Route path="/admin/ledger"     element={<LedgerPage />}     />
         <Route path="/admin/corridors"  element={<CorridorsPanel />}  />
         <Route path="/admin/analytics"  element={<AnalyticsPage />}   />
+        <Route path="/admin/funding"    element={<FundingPage />}     />
       </Route>
 
       {/* ── 404 ─────────────────────────────────────────────────────────── */}

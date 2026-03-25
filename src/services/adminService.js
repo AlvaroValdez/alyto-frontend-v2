@@ -148,3 +148,43 @@ export function getCorridorChangeLog(corridorId) {
 export function getTransactionComprobante(transactionId) {
   return request(`/admin/transactions/${encodeURIComponent(transactionId)}/comprobante`)
 }
+
+// ── Fondeo ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Balances USDC disponibles por entidad legal.
+ * @returns {Promise<{ SRL: number, SpA: number, LLC: number }>}
+ */
+export function getFundingBalances() {
+  return request('/admin/funding/balances')
+}
+
+/**
+ * Registra una operación de fondeo manual.
+ * @param {{ entity, type, asset, amount, originCurrency, originAmount, exchangeRate,
+ *           binanceOrderId?, stellarTxId?, bankReference?, note }} data
+ * @returns {Promise<{ funding }>}
+ */
+export function registerFunding(data) {
+  return request('/admin/funding', {
+    method: 'POST',
+    body:   JSON.stringify(data),
+  })
+}
+
+/**
+ * Lista el historial de fondeos con filtros opcionales.
+ * @param {{ entity?, asset?, startDate?, endDate?, page?, limit? }} params
+ * @returns {Promise<{ fundings, pagination }>}
+ */
+export function listFundings(params = {}) {
+  const qs = new URLSearchParams()
+  if (params.entity)    qs.set('entity',    params.entity)
+  if (params.asset)     qs.set('asset',     params.asset)
+  if (params.startDate) qs.set('startDate', params.startDate)
+  if (params.endDate)   qs.set('endDate',   params.endDate)
+  if (params.page)      qs.set('page',      String(params.page))
+  if (params.limit)     qs.set('limit',     String(params.limit))
+  const query = qs.toString()
+  return request(`/admin/funding${query ? `?${query}` : ''}`)
+}
