@@ -48,6 +48,13 @@ import LedgerPage     from '../pages/Admin/Ledger/LedgerPage'
 import CorridorsPanel from '../pages/Admin/Ledger/CorridorsPanel'
 import AnalyticsPage  from '../pages/Admin/Analytics/AnalyticsPage'
 import FundingPage    from '../pages/Admin/Funding/FundingPage'
+import KybListPage    from '../pages/Admin/Kyb/KybListPage'
+import KybDetailPage  from '../pages/Admin/Kyb/KybDetailPage'
+
+// ── Páginas KYB (usuario) ─────────────────────────────────────────────────────
+import KybPage        from '../pages/Kyb/KybPage'
+import KybForm        from '../pages/Kyb/KybForm'
+import KybStatusPage  from '../pages/Kyb/KybStatusPage'
 
 // ── Páginas legacy (mantener compatibilidad) ─────────────────────────────────
 import TransferView       from '../components/TransferView'
@@ -135,6 +142,23 @@ export default function AppRouter() {
         </ProtectedRoute>
       } />
 
+      {/* ── KYB — Cuenta Business ────────────────────────────────────────── */}
+      <Route path="/kyb" element={
+        <ProtectedRoute>
+          <KybPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/kyb/apply" element={
+        <ProtectedRoute>
+          <KybForm />
+        </ProtectedRoute>
+      } />
+      <Route path="/kyb/status" element={
+        <ProtectedRoute>
+          <KybStatusPage />
+        </ProtectedRoute>
+      } />
+
       {/* ── Notificaciones (futuro) ────────────────────────────────────── */}
       <Route path="/notifications" element={
         <ProtectedRoute>
@@ -181,10 +205,12 @@ export default function AppRouter() {
           <AdminLayout />
         </AdminRoute>
       }>
-        <Route path="/admin/ledger"     element={<LedgerPage />}     />
-        <Route path="/admin/corridors"  element={<CorridorsPanel />}  />
-        <Route path="/admin/analytics"  element={<AnalyticsPage />}   />
-        <Route path="/admin/funding"    element={<FundingPage />}     />
+        <Route path="/admin/ledger"          element={<LedgerPage />}     />
+        <Route path="/admin/corridors"       element={<CorridorsPanel />}  />
+        <Route path="/admin/analytics"       element={<AnalyticsPage />}   />
+        <Route path="/admin/funding"         element={<FundingPage />}     />
+        <Route path="/admin/kyb"             element={<KybListPage />}     />
+        <Route path="/admin/kyb/:businessId" element={<KybDetailPage />}   />
       </Route>
 
       {/* ── 404 ─────────────────────────────────────────────────────────── */}

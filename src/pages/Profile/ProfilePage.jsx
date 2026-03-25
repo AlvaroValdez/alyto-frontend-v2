@@ -17,6 +17,7 @@ import KycStatusCard           from './KycStatusCard'
 import PersonalInfoTab         from './PersonalInfoTab'
 import SecurityTab             from './SecurityTab'
 import NotificationsTab        from './NotificationsTab'
+import KybTab                  from './KybTab'
 
 // ── Entity badge ──────────────────────────────────────────────────────────────
 
@@ -59,9 +60,10 @@ function Avatar({ firstName, lastName, size = 72 }) {
 // ── Tab navigation ────────────────────────────────────────────────────────────
 
 const TABS = [
-  { key: 'info',    label: 'Datos personales' },
-  { key: 'security', label: 'Seguridad'       },
-  { key: 'notif',   label: 'Notificaciones'   },
+  { key: 'info',     label: 'Datos personales' },
+  { key: 'security', label: 'Seguridad'        },
+  { key: 'notif',    label: 'Notificaciones'   },
+  { key: 'business', label: 'Business'         },
 ]
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -210,6 +212,9 @@ export default function ProfilePage() {
             saving={saving}
             onUpdate={updateProfile}
           />
+        )}
+        {activeTab === 'business' && (
+          <KybTab kycStatus={kycStatus} />
         )}
 
       </div>
