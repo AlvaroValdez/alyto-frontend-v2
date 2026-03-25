@@ -5,7 +5,7 @@
  * Todas usan request() de api.js (inyecta JWT automáticamente).
  */
 
-import { request } from './api'
+import { request, requestFormData } from './api'
 
 // ── Transacciones ─────────────────────────────────────────────────────────────
 
@@ -211,5 +211,52 @@ export function updateExchangeRate(pair, rate, source, note) {
   return request('/admin/exchange-rates', {
     method: 'POST',
     body:   JSON.stringify({ pair, rate, source, note: note || null }),
+  })
+}
+
+// ── SRL Config — QR de pago Bolivia ───────────────────────────────────────────
+
+/**
+ * Obtiene la configuración SRL, incluyendo el array de qrImages.
+ * @returns {Promise<{ qrImages: Array<{ _id, label, imageBase64, isActive, uploadedAt }> }>}
+ */
+export function getSRLConfig() {
+  return request('/admin/srl-config')
+}
+
+/**
+ * Sube un nuevo QR de pago para Bolivia.
+ * @param {string} label — ej. "Tigo Money", "Banco Bisa QR"
+ * @param {File}   file  — imagen PNG/JPG/WebP del QR, máx 2 MB
+ * @returns {Promise<{ qrImage }>}
+ */
+export function uploadSRLQR(label, file) {
+  const fd = new FormData()
+  fd.append('label', label)
+  fd.append('qr', file, file.name)
+  return requestFormData('/admin/srl-config/qr', fd)
+}
+
+/**
+ * Activa o desactiva un QR existente.
+ * @param {string}  qrId
+ * @param {boolean} isActive
+ * @returns {Promise<{ qrImage }>}
+ */
+export function toggleSRLQR(qrId, isActive) {
+  return request(`/admin/srl-config/qr/${encodeURIComponent(qrId)}`, {
+    method: 'PATCH',
+    body:   JSON.stringify({ isActive }),
+  })
+}
+
+/**
+ * Elimina un QR de pago.
+ * @param {string} qrId
+ * @returns {Promise<{ ok }>}
+ */
+export function deleteSRLQR(qrId) {
+  return request(`/admin/srl-config/qr/${encodeURIComponent(qrId)}`, {
+    method: 'DELETE',
   })
 }
