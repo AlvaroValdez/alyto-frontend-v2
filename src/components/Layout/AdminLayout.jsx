@@ -5,7 +5,7 @@
  */
 
 import { Outlet, NavLink, Link } from 'react-router-dom'
-import { BarChart2, Layers, ArrowLeft, ShieldCheck, TrendingUp, Wallet, Building2 } from 'lucide-react'
+import { BarChart2, Layers, ArrowLeft, ShieldCheck, TrendingUp, Wallet, Building2, QrCode } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
 function SidebarLink({ to, icon: Icon, label, end }) {
@@ -53,6 +53,7 @@ export default function AdminLayout() {
         <SidebarLink to="/admin/corridors"  icon={Layers}     label="Corredores"  />
         <SidebarLink to="/admin/analytics"  icon={TrendingUp} label="Analytics"   />
         <SidebarLink to="/admin/funding"    icon={Wallet}     label="Fondeo"      />
+        <SidebarLink to="/admin/srl-config" icon={QrCode}     label="Bolivia — QR" />
         <SidebarLink to="/admin/kyb"        icon={Building2}  label="KYB"         />
 
         <div className="mt-auto">

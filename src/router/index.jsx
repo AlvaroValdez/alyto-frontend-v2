@@ -50,6 +50,7 @@ import AnalyticsPage  from '../pages/Admin/Analytics/AnalyticsPage'
 import FundingPage    from '../pages/Admin/Funding/FundingPage'
 import KybListPage    from '../pages/Admin/Kyb/KybListPage'
 import KybDetailPage  from '../pages/Admin/Kyb/KybDetailPage'
+import SRLConfigPage  from '../pages/Admin/SRLConfig/SRLConfigPage'
 
 // ── Páginas KYB (usuario) ─────────────────────────────────────────────────────
 import KybPage        from '../pages/Kyb/KybPage'
@@ -211,6 +212,7 @@ export default function AppRouter() {
         <Route path="/admin/funding"         element={<FundingPage />}     />
         <Route path="/admin/kyb"             element={<KybListPage />}     />
         <Route path="/admin/kyb/:businessId" element={<KybDetailPage />}   />
+        <Route path="/admin/srl-config"      element={<SRLConfigPage />}   />
       </Route>
 
       {/* ── 404 ─────────────────────────────────────────────────────────── */}
