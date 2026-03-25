@@ -170,141 +170,117 @@ function IpnLogEntry({ entry, index }) {
   )
 }
 
-// ── Modal de confirmación payin manual ────────────────────────────────────────
+// ── Banner payin manual SRL — formulario inline ───────────────────────────────
 
-function ConfirmPayinModal({ tx, onClose, onConfirmed }) {
-  const [note,   setNote]   = useState('Confirmado via transferencia bancaria Banco Bisa ref. ')
-  const [saving, setSaving] = useState(false)
-  const [error,  setError]  = useState(null)
+function PayinManualBanner({ tx, onConfirmed }) {
+  const [bankRef, setBankRef] = useState('')
+  const [note,    setNote]    = useState('')
+  const [saving,  setSaving]  = useState(false)
+  const [error,   setError]   = useState(null)
+  const [success, setSuccess] = useState(false)
 
   const handleConfirm = async () => {
-    if (!note.trim()) { setError('La nota es requerida.'); return }
+    if (!bankRef.trim()) { setError('La referencia bancaria es requerida.'); return }
     setSaving(true)
     setError(null)
     try {
-      await updateTransactionStatus(tx.alytoTransactionId, 'payin_confirmed', note.trim())
+      const auditNote = note.trim() || `Confirmado via transferencia bancaria ref. ${bankRef.trim()}`
+      await updateTransactionStatus(
+        tx.alytoTransactionId,
+        'payin_confirmed',
+        auditNote,
+        { bankReference: bankRef.trim() },
+      )
+      setSuccess(true)
       onConfirmed()
-      onClose()
     } catch (err) {
       setError(err.message || 'Error al confirmar.')
       setSaving(false)
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div
-        className="relative w-full max-w-md rounded-2xl flex flex-col overflow-hidden"
-        style={{ background: '#111827', border: '1px solid #263050' }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#263050]">
-          <h3 className="text-[0.9375rem] font-bold text-white">Confirmar pago recibido</h3>
-          <button onClick={onClose} className="text-[#4E5A7A] hover:text-white transition-colors">
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="px-5 py-5 space-y-4">
-          {/* Resumen */}
-          <div className="p-3 rounded-xl bg-[#1A2340] border border-[#263050] space-y-1">
-            <p className="text-[0.75rem] text-[#4E5A7A]">Transacción</p>
-            <p className="text-[0.8125rem] font-mono text-[#C4CBD8]">{tx.alytoTransactionId}</p>
-            <p className="text-[1rem] font-bold text-[#22C55E]">
-              Bs {tx.originalAmount?.toLocaleString('es-CL')} BOB
-            </p>
-          </div>
-
-          <p className="text-[0.8125rem] text-[#8A96B8]">
-            Esto marcará el pago como <span className="text-[#22C55E] font-semibold">payin_confirmed</span> y
-            disparará el payout automático a Vita Wallet.
+  if (success) {
+    return (
+      <div className="mb-5 flex items-center gap-3 p-4 rounded-2xl border border-[#22C55E40] bg-[#22C55E0A]">
+        <CheckCircle2 size={20} className="text-[#22C55E] flex-shrink-0" />
+        <div>
+          <p className="text-[0.875rem] font-bold text-[#22C55E]">
+            ✅ Pago confirmado
           </p>
-
-          {/* Nota */}
-          <div>
-            <label className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5 block">
-              Nota de auditoría <span className="text-[#EF4444]">*</span>
-            </label>
-            <textarea
-              value={note}
-              onChange={e => setNote(e.target.value)}
-              rows={3}
-              placeholder="Ej: Confirmado via transferencia bancaria Banco Bisa ref. XXXXX"
-              className="w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white border border-[#263050] bg-[#1A2340] focus:outline-none focus:border-[#C4CBD8] resize-none placeholder-[#4E5A7A]"
-            />
-          </div>
-
-          {error && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
-              <AlertCircle size={13} className="text-[#F87171] flex-shrink-0" />
-              <p className="text-[0.8125rem] text-[#F87171]">{error}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex gap-3 px-5 pb-5">
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 rounded-xl border border-[#263050] text-[#8A96B8] text-[0.875rem] font-semibold hover:text-white transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleConfirm}
-            disabled={saving || !note.trim()}
-            className="flex-1 py-3 rounded-xl bg-[#22C55E] text-white text-[0.875rem] font-bold disabled:opacity-40 flex items-center justify-center gap-2 transition-all"
-          >
-            {saving && <Loader size={14} className="animate-spin" />}
-            {saving ? 'Confirmando…' : '✅ Confirmar pago'}
-          </button>
+          <p className="text-[0.75rem] text-[#8A96B8] mt-0.5">
+            Payout disparado automáticamente a Vita Wallet.
+          </p>
         </div>
       </div>
-    </div>
-  )
-}
-
-// ── Banner payin manual SRL ───────────────────────────────────────────────────
-
-function PayinManualBanner({ tx, onConfirmed }) {
-  const [showModal, setShowModal] = useState(false)
+    )
+  }
 
   return (
-    <>
-      <div className="mb-5 p-4 rounded-2xl border border-[#FBBF2440] bg-[#F59E0B0A]">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-lg leading-none">⏳</span>
-          <p className="text-[0.875rem] font-bold text-[#FBBF24]">
-            Payin manual pendiente — Bolivia
-          </p>
-        </div>
-        <div className="space-y-1 mb-4 pl-1">
-          <p className="text-[0.8125rem] text-[#8A96B8]">El usuario debe transferir:</p>
-          <p className="text-[1.125rem] font-extrabold text-white tabular-nums">
-            Bs {tx.originalAmount?.toLocaleString('es-CL')} BOB
-          </p>
-          <p className="text-[0.75rem] font-mono text-[#4E5A7A]">
-            Ref: {tx.alytoTransactionId}
-          </p>
-        </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="w-full py-2.5 rounded-xl bg-[#22C55E] text-white text-[0.875rem] font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all"
-        >
-          ✅ Confirmar pago recibido
-        </button>
+    <div className="mb-5 p-4 rounded-2xl border border-[#FBBF2440] bg-[#F59E0B0A] space-y-4">
+
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <span className="text-lg leading-none">⏳</span>
+        <p className="text-[0.875rem] font-bold text-[#FBBF24]">
+          Payin manual pendiente — Bolivia
+        </p>
       </div>
 
-      {showModal && (
-        <ConfirmPayinModal
-          tx={tx}
-          onClose={() => setShowModal(false)}
-          onConfirmed={onConfirmed}
+      {/* Resumen */}
+      <div className="pl-1 space-y-0.5">
+        <p className="text-[0.8125rem] text-[#8A96B8]">El usuario debe transferir:</p>
+        <p className="text-[1.125rem] font-extrabold text-white tabular-nums">
+          Bs {tx.originalAmount?.toLocaleString('es-CL')} BOB
+        </p>
+        <p className="text-[0.75rem] font-mono text-[#4E5A7A]">
+          Ref: {tx.alytoTransactionId}
+        </p>
+      </div>
+
+      {/* Referencia bancaria */}
+      <div>
+        <label className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5 block">
+          Referencia bancaria <span className="text-[#EF4444]">*</span>
+        </label>
+        <input
+          type="text"
+          value={bankRef}
+          onChange={e => setBankRef(e.target.value)}
+          placeholder="Nro. de transacción del banco"
+          className="w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white border border-[#FBBF2430] bg-[#1A2340] focus:outline-none focus:border-[#FBBF24] transition-colors placeholder-[#4E5A7A]"
         />
+      </div>
+
+      {/* Nota de confirmación */}
+      <div>
+        <label className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5 block">
+          Nota de confirmación
+        </label>
+        <textarea
+          value={note}
+          onChange={e => setNote(e.target.value)}
+          rows={2}
+          placeholder='Ej: "Confirmado Banco Bisa — transferencia recibida"'
+          className="w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white border border-[#FBBF2430] bg-[#1A2340] focus:outline-none focus:border-[#FBBF24] transition-colors resize-none placeholder-[#4E5A7A]"
+        />
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
+          <AlertCircle size={12} className="text-[#F87171] flex-shrink-0" />
+          <p className="text-[0.75rem] text-[#F87171]">{error}</p>
+        </div>
       )}
-    </>
+
+      <button
+        onClick={handleConfirm}
+        disabled={saving || !bankRef.trim()}
+        className="w-full py-2.5 rounded-xl bg-[#22C55E] text-white text-[0.875rem] font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] disabled:opacity-40 transition-all"
+      >
+        {saving && <Loader size={13} className="animate-spin" />}
+        {saving ? 'Confirmando…' : '✅ Confirmar pago recibido'}
+      </button>
+    </div>
   )
 }
 

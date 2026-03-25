@@ -72,6 +72,15 @@ export function listUserCorridors() {
 }
 
 /**
+ * Obtiene el QR de pago de una transacción manual (Bolivia).
+ * @param {string} transactionId
+ * @returns {Promise<{ qrDataUrl?, qrUrl?, qr? }>}
+ */
+export function getPaymentQR(transactionId) {
+  return request(`/payments/${encodeURIComponent(transactionId)}/qr`)
+}
+
+/**
  * Obtiene los campos de formulario dinámicos para el país destino indicado.
  * La respuesta proviene del backend (cacheada 1h), que a su vez la obtiene de Vita.
  * @param {string} countryCode  ISO alpha-2 mayúsculas (ej. 'CO', 'PE', 'AR')

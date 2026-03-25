@@ -19,11 +19,167 @@ import {
   Printer,
   MessageCircle,
   Mail,
-  RotateCcw,
   ExternalLink,
   Link2,
+  X,
+  Download,
+  CheckCheck,
 } from 'lucide-react'
+
+// ── QR helpers ────────────────────────────────────────────────────────────────
+
+function toQrSrc(raw) {
+  if (!raw) return null
+  if (raw.startsWith('data:') || raw.startsWith('http')) return raw
+  return `data:image/png;base64,${raw}`
+}
+
+// ── PaymentInstructionsModal — muestra QR + datos bancarios ──────────────────
+
+function PaymentInstructionsModal({ tx, onClose }) {
+  const [qrSrc,     setQrSrc]     = useState(null)
+  const [qrLoading, setQrLoading] = useState(true)
+  const [copiedRef, setCopiedRef] = useState(false)
+
+  useEffect(() => {
+    if (!tx.transactionId) { setQrLoading(false); return }
+    let cancelled = false
+    getPaymentQR(tx.transactionId)
+      .then(res => {
+        if (cancelled) return
+        const raw = res.qrDataUrl ?? res.qrUrl ?? res.qr
+        if (raw) setQrSrc(toQrSrc(raw))
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setQrLoading(false) })
+    return () => { cancelled = true }
+  }, [tx.transactionId])
+
+  const copyRef = () => {
+    navigator.clipboard?.writeText(tx.transactionId)
+    setCopiedRef(true)
+    setTimeout(() => setCopiedRef(false), 2000)
+  }
+
+  const downloadQR = () => {
+    if (!qrSrc) return
+    const a = document.createElement('a')
+    a.download = `qr-alyto-${tx.transactionId}.png`
+    a.href = qrSrc
+    a.click()
+  }
+
+  const bank = tx.payinInstructions ?? {}
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="relative w-full max-w-[430px] rounded-t-3xl overflow-hidden flex flex-col"
+        style={{ background: '#0F1628', maxHeight: '90vh' }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#263050] flex-shrink-0">
+          <h3 className="text-[1rem] font-bold text-white">Instrucciones de pago</h3>
+          <button onClick={onClose} className="text-[#4E5A7A] hover:text-white transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Body scrolleable */}
+        <div className="overflow-y-auto flex-1 px-5 py-5 space-y-4">
+
+          {/* QR */}
+          {(qrLoading || qrSrc) && (
+            <div className="bg-[#1A2340] border border-[#263050] rounded-2xl p-5 flex flex-col items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">📱</span>
+                <p className="text-[0.875rem] font-bold text-white">Paga con QR</p>
+              </div>
+              {qrLoading ? (
+                <div className="w-[180px] h-[180px] rounded-2xl bg-[#263050] animate-pulse" />
+              ) : (
+                <img src={qrSrc} alt="QR de pago" className="w-[180px] h-[180px] rounded-2xl bg-white p-2 object-contain" />
+              )}
+              <p className="text-[0.75rem] text-[#8A96B8] text-center">Escanea desde tu app bancaria</p>
+              {qrSrc && (
+                <button
+                  onClick={downloadQR}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#263050] text-[0.8125rem] text-[#8A96B8] hover:text-white hover:border-[#C4CBD833] transition-colors"
+                >
+                  <Download size={13} /> Descargar QR
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Separador */}
+          {qrSrc && (
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-[#263050]" />
+              <span className="text-[0.75rem] text-[#4E5A7A] flex-shrink-0">O transfiere manualmente</span>
+              <div className="h-px flex-1 bg-[#263050]" />
+            </div>
+          )}
+
+          {/* Datos bancarios */}
+          <div className="bg-[#1A2340] border border-[#263050] rounded-2xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3.5 border-b border-[#263050]">
+              <span className="text-xl">🏦</span>
+              <p className="text-[0.875rem] font-bold text-white">Transferencia bancaria</p>
+            </div>
+            <div className="px-4 divide-y divide-[#26305050]">
+              {[
+                ['Banco',   bank.bankName     ?? 'Banco Bisa'],
+                ['Titular', bank.holder       ?? 'AV Finance SRL'],
+                ['Cuenta',  bank.accountNumber ?? '—'],
+                ['Tipo',    bank.accountType   ?? 'Cuenta Corriente'],
+                ['Monto',   `Bs ${Number(tx.originAmount ?? 0).toLocaleString('es-CL')} BOB`],
+              ].map(([label, value]) => (
+                <div key={label} className="flex items-center justify-between py-2.5">
+                  <span className="text-[0.75rem] text-[#4E5A7A]">{label}</span>
+                  <span className={`text-[0.875rem] font-semibold ${label === 'Monto' ? 'text-[#22C55E]' : 'text-white'}`}>{value}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between px-4 py-3 border-t border-[#263050]">
+              <div className="min-w-0">
+                <p className="text-[0.625rem] text-[#4E5A7A] uppercase tracking-wider mb-0.5">Referencia (copiar en el concepto)</p>
+                <p className="text-[0.75rem] font-mono font-semibold text-[#C4CBD8] truncate">{tx.transactionId}</p>
+              </div>
+              <button
+                onClick={copyRef}
+                className="ml-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#263050] text-[0.75rem] text-[#8A96B8] hover:text-white transition-colors flex-shrink-0"
+              >
+                {copiedRef
+                  ? <><CheckCheck size={12} className="text-[#22C55E]" /> Copiado</>
+                  : <><Copy size={12} /> Copiar</>
+                }
+              </button>
+            </div>
+          </div>
+
+          {/* Warning */}
+          <div className="flex items-start gap-2.5 px-4 py-3.5 rounded-2xl bg-[#F59E0B0F] border border-[#F59E0B33]">
+            <span className="text-base flex-shrink-0">⚠️</span>
+            <p className="text-[0.8125rem] text-[#FBBF24] font-medium">
+              Incluye el número de referencia en el concepto de tu transferencia.
+            </p>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-2xl border border-[#263050] text-[#8A96B8] text-[0.875rem] font-semibold hover:text-white transition-colors"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 import { fetchTransactionDetail } from '../../services/transactionsService.js'
+import { getPaymentQR }           from '../../services/paymentsService.js'
 
 // ── Configuración de estados ──────────────────────────────────────────────────
 
@@ -131,6 +287,7 @@ export default function TransactionDetail() {
   const [error, setError]     = useState(null)
   const [copied, setCopied]         = useState(false)
   const [copiedTxid, setCopiedTxid] = useState(false)
+  const [showPaymentInstructions, setShowPaymentInstructions] = useState(false)
 
   const supportWhatsApp = import.meta.env.VITE_SUPPORT_WHATSAPP
   const supportEmail    = 'soporte@alyto.app'
@@ -217,6 +374,8 @@ export default function TransactionDetail() {
 
   const cfg      = STATUS_CONFIG[tx.status] ?? { label: tx.status, color: '#8A96B8', bg: '#8A96B81A' }
   const isFailed = tx.status === 'failed' || tx.status === 'refunded'
+  const isManualPending = tx.payinMethod === 'manual' &&
+    (tx.status === 'initiated' || tx.status === 'payin_pending')
 
   return (
     <>
@@ -310,6 +469,28 @@ export default function TransactionDetail() {
               </div>
             )}
           </div>
+
+          {/* ── 1b. INSTRUCCIONES PAYIN MANUAL (Bolivia) ─────────────────── */}
+          {isManualPending && (
+            <div className="bg-[#1A2340] rounded-2xl p-5 border border-[#FBBF2430]">
+              <div className="flex items-start gap-3 mb-4">
+                <span className="text-xl flex-shrink-0">⏳</span>
+                <div>
+                  <p className="text-[0.875rem] font-bold text-[#FBBF24]">Verificando tu pago</p>
+                  <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
+                    Estamos verificando tu transferencia. Te notificaremos cuando sea confirmada.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPaymentInstructions(true)}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#FBBF2430] text-[#FBBF24] text-[0.875rem] font-semibold hover:bg-[#FBBF2410] transition-colors"
+              >
+                <span>🏦</span>
+                Ver instrucciones de pago
+              </button>
+            </div>
+          )}
 
           {/* ── 2. RESUMEN FINANCIERO ────────────────────────────────────── */}
           <Section title="Resumen financiero">
@@ -521,6 +702,14 @@ export default function TransactionDetail() {
 
         </div>
       </div>
+
+      {/* Modal instrucciones payin manual */}
+      {showPaymentInstructions && (
+        <PaymentInstructionsModal
+          tx={tx}
+          onClose={() => setShowPaymentInstructions(false)}
+        />
+      )}
 
       {/* Sección oculta para imprimir */}
       <div id="comprobante-print" style={{ display: 'none' }}>

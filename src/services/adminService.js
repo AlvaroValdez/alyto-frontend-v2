@@ -43,10 +43,16 @@ export function getTransactionDetail(transactionId) {
  * @param {string} note    — razón del cambio (requerido por backend)
  * @returns {Promise<{ transaction }>}
  */
-export function updateTransactionStatus(transactionId, status, note) {
+/**
+ * @param {string} transactionId
+ * @param {string} status
+ * @param {string} note                — nota de auditoría (requerida)
+ * @param {object} [extras]            — campos adicionales, ej. { bankReference }
+ */
+export function updateTransactionStatus(transactionId, status, note, extras = {}) {
   return request(`/admin/transactions/${encodeURIComponent(transactionId)}/status`, {
     method: 'PATCH',
-    body:   JSON.stringify({ status, note }),
+    body:   JSON.stringify({ status, note, ...extras }),
   })
 }
 
