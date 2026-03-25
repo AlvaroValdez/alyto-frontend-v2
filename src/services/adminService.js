@@ -188,3 +188,28 @@ export function listFundings(params = {}) {
   const query = qs.toString()
   return request(`/admin/funding${query ? `?${query}` : ''}`)
 }
+
+// ── Tasas de cambio ────────────────────────────────────────────────────────────
+
+/**
+ * Obtiene las tasas de cambio activas (admin).
+ * @returns {Promise<{ rates: Array<{ pair, rate, source, note, updatedAt, updatedBy }> }>}
+ */
+export function getExchangeRates() {
+  return request('/admin/exchange-rates')
+}
+
+/**
+ * Actualiza (o crea) una tasa de cambio manual.
+ * @param {string} pair    — ej. 'BOB/USDT'
+ * @param {number} rate    — ej. 9.31
+ * @param {string} source  — 'Binance P2P' | 'Manual'
+ * @param {string} [note]  — nota de auditoría
+ * @returns {Promise<{ rate }>}
+ */
+export function updateExchangeRate(pair, rate, source, note) {
+  return request('/admin/exchange-rates', {
+    method: 'POST',
+    body:   JSON.stringify({ pair, rate, source, note: note || null }),
+  })
+}

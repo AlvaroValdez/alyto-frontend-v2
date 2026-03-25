@@ -112,3 +112,12 @@ export function uploadComprobante(transactionId, file) {
   formData.append('comprobante', file)
   return requestFormData(`/payments/${encodeURIComponent(transactionId)}/comprobante`, formData)
 }
+
+/**
+ * Obtiene las tasas de cambio activas visibles para el usuario.
+ * Usado en el cotizador para mostrar la tasa BOB/USDT vigente.
+ * @returns {Promise<{ rates: Array<{ pair, rate, source, updatedAt }> }>}
+ */
+export function getCurrentExchangeRates() {
+  return request('/payments/exchange-rates')
+}

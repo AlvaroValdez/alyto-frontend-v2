@@ -13,7 +13,7 @@ import { useState, useEffect } from 'react'
 import { ChevronDown, ChevronUp, Clock, AlertCircle, RefreshCw, WifiOff, Loader2 } from 'lucide-react'
 import { useQuoteSocket } from '../../hooks/useQuoteSocket'
 import { useAuth }        from '../../context/AuthContext'
-import { listUserCorridors } from '../../services/paymentsService'
+import { listUserCorridors, getCurrentExchangeRates } from '../../services/paymentsService'
 
 // ── Origen según entidad legal ────────────────────────────────────────────────
 
@@ -71,6 +71,23 @@ function formatAmount(value) {
 function formatDestAmount(amount, currency) {
   if (!amount) return '—'
   return `${Number(amount).toLocaleString('es-CL')} ${currency}`
+}
+
+function timeAgoShort(iso) {
+  if (!iso) return null
+  const diff  = Date.now() - new Date(iso).getTime()
+  const mins  = Math.floor(diff / 60_000)
+  const hours = Math.floor(diff / 3_600_000)
+  const days  = Math.floor(diff / 86_400_000)
+  if (mins  < 1)  return 'ahora'
+  if (mins  < 60) return `${mins} min`
+  if (hours < 24) return `${hours}h`
+  return `${days}d`
+}
+
+function isBobRateStale(iso) {
+  if (!iso) return true
+  return (Date.now() - new Date(iso).getTime()) > 24 * 3_600_000
 }
 
 function formatCountdown(secs) {
@@ -135,6 +152,23 @@ export default function Step1Amount({ initialData, onNext }) {
   const [corridorsLoading, setCorridorsLoading] = useState(true)
   const [corridorsError,   setCorridorsError]   = useState(null)
   const [feesExpanded,     setFeesExpanded]      = useState(false)
+  const [bobRateInfo,      setBobRateInfo]       = useState(null)  // { rate, source, updatedAt }
+
+  // ── Cargar tasa BOB/USDT cuando el origen es Bolivia ─────────────────────
+
+  useEffect(() => {
+    if (origin.currency !== 'BOB') return
+    let cancelled = false
+    getCurrentExchangeRates()
+      .then(res => {
+        if (cancelled) return
+        const rates   = res.rates ?? res ?? []
+        const bobUsdt = rates.find(r => r.pair === 'BOB/USDT' || r.pair === 'BOB/USDC')
+        if (bobUsdt) setBobRateInfo(bobUsdt)
+      })
+      .catch(() => { /* opcional — no bloquea la cotización */ })
+    return () => { cancelled = true }
+  }, [origin.currency])
 
   // ── Cargar corredores del backend ─────────────────────────────────────────
 
@@ -420,6 +454,29 @@ export default function Step1Amount({ initialData, onNext }) {
               })()}
 
               <div className="my-3 border-t border-[#263050]" />
+
+              {/* Tasa BOB/USDT — solo para corredores Bolivia */}
+              {activeCurrency === 'BOB' && bobRateInfo && (
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[0.75rem] text-[#4E5A7A]">Tasa usada:</span>
+                    <span className="text-[0.8125rem] font-semibold text-[#C4CBD8]">
+                      1 {bobRateInfo.pair?.split('/')[1] ?? 'USDT'} = {Number(bobRateInfo.rate).toFixed(2)} BOB
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {isBobRateStale(bobRateInfo.updatedAt) ? (
+                      <span className="text-[0.6875rem] font-semibold px-2 py-0.5 rounded-full bg-[#F59E0B0F] border border-[#FBBF2430] text-[#FBBF24]">
+                        ⚠️ Tasa desactualizada
+                      </span>
+                    ) : (
+                      <span className="text-[0.6875rem] text-[#4E5A7A]">
+                        {bobRateInfo.source ?? 'Binance P2P'} · {timeAgoShort(bobRateInfo.updatedAt)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Pie */}
               {status === 'expired' ? (

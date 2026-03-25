@@ -1,21 +1,24 @@
 /**
  * FundingPage.jsx — Gestión de Fondeo Manual
  *
+ * Sección 0: Panel de tasas de cambio activas (BOB/USDT, CLP/USD, etc.)
  * Sección 1: Cards de balance USDC disponible por entidad (SRL/SpA/LLC)
  * Sección 2: Botón "Registrar fondeo +" → modal con formulario completo
- * Sección 3: Historial de fondeos con filtros por entidad, activo y fechas
+ * Sección 3: Historial de fondeos con filtros
  */
 
 import { useState, useEffect, useCallback } from 'react'
 import {
   Plus, RefreshCw, X, AlertTriangle, CheckCircle2,
-  Loader, Filter, Download, TrendingUp, Wallet,
-  ChevronDown, Calendar,
+  Loader, Filter, TrendingUp, Wallet, Calendar,
+  Edit2, BarChart3, ArrowRight,
 } from 'lucide-react'
 import {
   getFundingBalances,
   registerFunding,
   listFundings,
+  getExchangeRates,
+  updateExchangeRate,
 } from '../../../services/adminService'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -28,15 +31,17 @@ const ENTITY_META = {
   LLC: { label: 'AV Finance LLC', flag: '🌐',  currency: 'USD', color: '#8AB4F8' },
 }
 
-const FUNDING_TYPES = [
-  'Binance P2P',
-  'Transferencia bancaria',
-  'Stellar',
-  'Otro',
-]
+const FUNDING_TYPES = ['Binance P2P', 'Transferencia bancaria', 'Stellar', 'Otro']
+const ASSETS        = ['USDC', 'USDT', 'USD']
+const CURRENCIES    = ['BOB', 'CLP', 'USD']
+const RATE_SOURCES  = ['Binance P2P', 'Manual']
 
-const ASSETS   = ['USDC', 'USDT', 'USD']
-const CURRENCIES = ['BOB', 'CLP', 'USD']
+// Pares de tasas que el sistema gestiona
+const RATE_PAIRS = [
+  { pair: 'BOB/USDT', label: 'Bolivia · Binance P2P',  flag: '🇧🇴' },
+  { pair: 'CLP/USD',  label: 'Chile · cambio oficial',  flag: '🇨🇱' },
+  { pair: 'BOB/USDC', label: 'Bolivia · corredor USDC', flag: '🇧🇴' },
+]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -53,10 +58,358 @@ function formatDate(iso) {
   })
 }
 
+function timeAgo(iso) {
+  if (!iso) return null
+  const diff  = Date.now() - new Date(iso).getTime()
+  const mins  = Math.floor(diff / 60_000)
+  const hours = Math.floor(diff / 3_600_000)
+  const days  = Math.floor(diff / 86_400_000)
+  if (mins  < 1)  return 'justo ahora'
+  if (mins  < 60) return `hace ${mins} min`
+  if (hours < 24) return `hace ${hours}h`
+  return days === 1 ? 'hace 1 día' : `hace ${days} días`
+}
+
+function isStaleRate(iso, maxHours = 24) {
+  if (!iso) return true
+  return (Date.now() - new Date(iso).getTime()) > maxHours * 3_600_000
+}
+
 function statusForBalance(balance) {
-  if (balance < 100)  return { color: '#EF4444', bg: '#EF44441A', border: '#EF444440', badge: '⚠️ Fondear',    ring: '#EF444460' }
-  if (balance < 300)  return { color: '#FBBF24', bg: '#F59E0B0F', border: '#FBBF2440', badge: '⚠️ Saldo bajo', ring: '#FBBF2440' }
-  return               { color: '#22C55E', bg: '#22C55E0A', border: '#22C55E40', badge: '✅ OK',           ring: '#22C55E40' }
+  if (balance < 100)  return { color: '#EF4444', bg: '#EF44441A', border: '#EF444440', badge: '⚠️ Fondear'    }
+  if (balance < 300)  return { color: '#FBBF24', bg: '#F59E0B0F', border: '#FBBF2440', badge: '⚠️ Saldo bajo' }
+  return               { color: '#22C55E', bg: '#22C55E0A', border: '#22C55E40', badge: '✅ OK'           }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+
+function Toast({ message, onHide }) {
+  useEffect(() => {
+    const t = setTimeout(onHide, 4000)
+    return () => clearTimeout(t)
+  }, [onHide])
+
+  return (
+    <div
+      className="fixed bottom-6 right-6 z-[60] flex items-center gap-3 px-5 py-3.5 rounded-2xl"
+      style={{ background: '#1A2340', border: '1px solid #22C55E40', boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}
+    >
+      <CheckCircle2 size={18} className="text-[#22C55E] flex-shrink-0" />
+      <p className="text-[0.875rem] font-semibold text-white">{message}</p>
+    </div>
+  )
+}
+
+// ── RateUpdateModal ───────────────────────────────────────────────────────────
+
+function RateUpdateModal({ rateEntry, onClose, onSaved }) {
+  const { pair, rate: prevRate } = rateEntry
+
+  const [newRate, setNewRate] = useState('')
+  const [source,  setSource]  = useState('Binance P2P')
+  const [note,    setNote]    = useState('')
+  const [saving,  setSaving]  = useState(false)
+  const [error,   setError]   = useState(null)
+
+  const handleSave = async () => {
+    const val = parseFloat(newRate)
+    if (!val || val <= 0) { setError('Introduce una tasa válida mayor que 0.'); return }
+    setSaving(true)
+    setError(null)
+    try {
+      await updateExchangeRate(pair, val, source, note)
+      onSaved(`Tasa ${pair} actualizada: ${prevRate ?? '—'} → ${val} ✅`)
+    } catch (err) {
+      setError(err.message || 'Error al actualizar la tasa.')
+      setSaving(false)
+    }
+  }
+
+  const inputCls  = 'w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white border border-[#263050] bg-[#1A2340] focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] placeholder-[#4E5A7A] transition-colors'
+  const labelCls  = 'block text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5'
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: '#0F162899', backdropFilter: 'blur(8px)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl overflow-hidden flex flex-col"
+        style={{ background: '#0F1628', border: '1px solid #263050' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-between px-5 py-4"
+          style={{ borderBottom: '1px solid #263050', background: 'linear-gradient(180deg, #1A2340 0%, #0F1628 100%)' }}
+        >
+          <div>
+            <p className="text-[0.75rem] text-[#4E5A7A] uppercase tracking-wider font-semibold">Actualizar tasa</p>
+            <h3 className="text-[1.0625rem] font-bold text-white mt-0.5">{pair}</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-[#1A2340] border border-[#263050] flex items-center justify-center hover:border-[#C4CBD833] transition-colors"
+          >
+            <X size={14} className="text-[#8A96B8]" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-5 py-5 flex flex-col gap-4">
+
+          {/* Tasa anterior */}
+          {prevRate != null && (
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#1A2340] border border-[#263050]">
+              <span className="text-[0.75rem] text-[#4E5A7A]">Tasa anterior:</span>
+              <span className="text-[0.875rem] font-bold text-[#C4CBD8] tabular-nums">{prevRate}</span>
+              <ArrowRight size={12} className="text-[#4E5A7A] mx-1" />
+              <span className="text-[0.75rem] text-[#4E5A7A]">Nueva →</span>
+            </div>
+          )}
+
+          {/* Nueva tasa */}
+          <div>
+            <label className={labelCls}>
+              Nueva tasa <span className="text-[#EF4444]">*</span>
+              <span className="text-[#4E5A7A] normal-case font-normal ml-1">
+                ({pair.split('/')[1]}/{pair.split('/')[0]})
+              </span>
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="0.0001"
+              placeholder={String(prevRate ?? '0.00')}
+              value={newRate}
+              onChange={e => setNewRate(e.target.value)}
+              className={inputCls}
+              autoFocus
+            />
+          </div>
+
+          {/* Fuente */}
+          <div>
+            <label className={labelCls}>Fuente</label>
+            <div className="flex gap-3">
+              {RATE_SOURCES.map(s => (
+                <label key={s} className="flex items-center gap-2 cursor-pointer group">
+                  <div
+                    className="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors"
+                    style={{
+                      borderColor: source === s ? '#C4CBD8' : '#263050',
+                      background:  source === s ? '#C4CBD8' : 'transparent',
+                    }}
+                    onClick={() => setSource(s)}
+                  >
+                    {source === s && <div className="w-1.5 h-1.5 rounded-full bg-[#0F1628]" />}
+                  </div>
+                  <span
+                    className="text-[0.8125rem] transition-colors"
+                    style={{ color: source === s ? '#FFFFFF' : '#8A96B8' }}
+                    onClick={() => setSource(s)}
+                  >
+                    {s}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Nota */}
+          <div>
+            <label className={labelCls}>Nota <span className="text-[#4E5A7A] normal-case font-normal">(opcional)</span></label>
+            <input
+              type="text"
+              placeholder='Ej: "compra orden #12345"'
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              className={inputCls}
+            />
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
+              <AlertTriangle size={12} className="text-[#F87171] flex-shrink-0" />
+              <p className="text-[0.8125rem] text-[#F87171]">{error}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div
+          className="flex gap-3 px-5 py-4"
+          style={{ borderTop: '1px solid #263050' }}
+        >
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl border border-[#263050] text-[#8A96B8] text-[0.875rem] font-semibold hover:text-white hover:border-[#C4CBD833] transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving || !newRate}
+            className="flex-1 py-2.5 rounded-xl text-[#0F1628] text-[0.875rem] font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+            style={{
+              background:  saving || !newRate ? '#C4CBD840' : '#C4CBD8',
+              boxShadow:   saving || !newRate ? 'none' : '0 4px 20px rgba(196,203,216,0.3)',
+            }}
+          >
+            {saving
+              ? <><Loader size={13} className="animate-spin" /> Guardando...</>
+              : 'Guardar tasa'
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── ExchangeRatesPanel (Sección 0) ────────────────────────────────────────────
+
+function ExchangeRatesPanel({ onToast }) {
+  const [rates,      setRates]      = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [editEntry,  setEditEntry]  = useState(null)   // { pair, rate } | null
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await getExchangeRates()
+      // Normalizar: combinar pares conocidos con datos del backend
+      const byPair = {}
+      ;(data.rates ?? data ?? []).forEach(r => { byPair[r.pair] = r })
+      setRates(RATE_PAIRS.map(p => ({ ...p, ...(byPair[p.pair] ?? {}) })))
+    } catch {
+      setRates(RATE_PAIRS.map(p => ({ ...p })))
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const handleSaved = (msg) => {
+    setEditEntry(null)
+    onToast(msg)
+    load()
+  }
+
+  return (
+    <>
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={{ background: '#1A2340', border: '1px solid #263050' }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-between px-5 py-3.5"
+          style={{ borderBottom: '1px solid #263050' }}
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-xl bg-[#C4CBD81A] border border-[#C4CBD833] flex items-center justify-center">
+              <BarChart3 size={13} className="text-[#C4CBD8]" />
+            </div>
+            <div>
+              <p className="text-[0.9375rem] font-bold text-white">Tasas de cambio activas</p>
+              <p className="text-[0.6875rem] text-[#4E5A7A]">Usadas en cotizaciones y fondeos</p>
+            </div>
+          </div>
+          <button
+            onClick={load}
+            className="w-7 h-7 rounded-xl bg-[#1F2B4D] border border-[#263050] flex items-center justify-center hover:border-[#C4CBD833] text-[#4E5A7A] hover:text-white transition-colors"
+            title="Refrescar tasas"
+          >
+            <RefreshCw size={12} />
+          </button>
+        </div>
+
+        {/* Lista de tasas */}
+        <div className="divide-y divide-[#26305040]">
+          {loading ? (
+            [1, 2, 3].map(i => (
+              <div key={i} className="flex items-center justify-between px-5 py-3.5">
+                <div className="h-4 bg-[#263050] rounded w-24 animate-pulse" />
+                <div className="h-4 bg-[#263050] rounded w-16 animate-pulse" />
+              </div>
+            ))
+          ) : (
+            rates.map(r => {
+              const stale  = isStaleRate(r.updatedAt)
+              const ago    = timeAgo(r.updatedAt)
+
+              return (
+                <div
+                  key={r.pair}
+                  className="flex items-center gap-3 px-5 py-3.5"
+                >
+                  {/* Par */}
+                  <span className="text-base leading-none flex-shrink-0">{r.flag}</span>
+                  <div className="min-w-[80px]">
+                    <p className="text-[0.8125rem] font-bold text-white">{r.pair}</p>
+                    <p className="text-[0.625rem] text-[#4E5A7A]">{r.label}</p>
+                  </div>
+
+                  {/* Tasa */}
+                  <div className="flex-1">
+                    {r.rate != null ? (
+                      <span className="text-[1.0625rem] font-extrabold tabular-nums text-[#C4CBD8]">
+                        {Number(r.rate).toFixed(4)}
+                      </span>
+                    ) : (
+                      <span className="text-[0.875rem] text-[#4E5A7A]">Sin configurar</span>
+                    )}
+                  </div>
+
+                  {/* Meta: fuente + tiempo */}
+                  <div className="flex items-center gap-2 mr-3">
+                    {r.source && (
+                      <span className="text-[0.6875rem] text-[#8A96B8] hidden sm:block">
+                        {r.source}
+                      </span>
+                    )}
+                    {ago && (
+                      <span
+                        className="text-[0.6875rem] font-medium px-2 py-0.5 rounded-full"
+                        style={{
+                          background: stale ? '#F59E0B0F' : '#22C55E0A',
+                          color:      stale ? '#FBBF24'   : '#22C55E',
+                          border:     `1px solid ${stale ? '#FBBF2430' : '#22C55E30'}`,
+                        }}
+                      >
+                        {stale ? `⚠️ ${ago}` : ago}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Botón editar */}
+                  <button
+                    onClick={() => setEditEntry(r)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#263050] text-[0.75rem] text-[#8A96B8] hover:text-white hover:border-[#C4CBD833] transition-colors flex-shrink-0"
+                  >
+                    <Edit2 size={12} />
+                    Actualizar
+                  </button>
+                </div>
+              )
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Mini modal actualizar tasa */}
+      {editEntry && (
+        <RateUpdateModal
+          rateEntry={editEntry}
+          onClose={() => setEditEntry(null)}
+          onSaved={handleSaved}
+        />
+      )}
+    </>
+  )
 }
 
 // ── BalanceCard ───────────────────────────────────────────────────────────────
@@ -70,7 +423,6 @@ function BalanceCard({ entity, balance, loading }) {
       className="rounded-2xl p-5 flex flex-col gap-3 transition-all"
       style={{ background: '#1A2340', border: `1px solid ${loading ? '#263050' : status.border}` }}
     >
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-xl leading-none">{meta.flag}</span>
@@ -87,15 +439,11 @@ function BalanceCard({ entity, balance, loading }) {
         </span>
       </div>
 
-      {/* Balance */}
       {loading ? (
         <div className="h-9 rounded-xl bg-[#263050] animate-pulse w-3/4" />
       ) : (
         <div>
-          <p
-            className="text-[1.875rem] font-extrabold tabular-nums leading-none"
-            style={{ color: status.color }}
-          >
+          <p className="text-[1.875rem] font-extrabold tabular-nums leading-none" style={{ color: status.color }}>
             ${formatAmount(balance ?? 0)}
           </p>
           <p className="text-[0.75rem] text-[#8A96B8] mt-1">USDC disponible</p>
@@ -135,8 +483,9 @@ function FundingModal({ onClose, onSuccess }) {
     bankReference:   '',
     note:            '',
   })
-  const [saving, setSaving]   = useState(false)
-  const [error,  setError]    = useState(null)
+  const [updateRateToo, setUpdateRateToo] = useState(true)  // checkbox — default ON
+  const [saving,        setSaving]        = useState(false)
+  const [error,         setError]         = useState(null)
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }))
 
@@ -144,6 +493,11 @@ function FundingModal({ onClose, onSuccess }) {
   const showBinanceId    = form.type === 'Binance P2P'
   const showStellarTxId  = form.type === 'Stellar'
   const showBankRef      = form.type === 'Transferencia bancaria'
+
+  // Par de tasa inferido de la compra actual
+  const ratePair = form.originCurrency !== 'USD'
+    ? `${form.originCurrency}/${form.asset}`
+    : null
 
   const handleSave = async () => {
     if (!form.amount || !form.exchangeRate) {
@@ -153,6 +507,7 @@ function FundingModal({ onClose, onSuccess }) {
     setSaving(true)
     setError(null)
     try {
+      // 1. Registrar fondeo
       await registerFunding({
         entity:         form.entity,
         type:           form.type,
@@ -166,6 +521,19 @@ function FundingModal({ onClose, onSuccess }) {
         bankReference:  form.bankReference  || null,
         note:           form.note           || null,
       })
+
+      // 2. Actualizar tasa si checkbox activo y hay par válido
+      if (updateRateToo && ratePair && form.exchangeRate) {
+        try {
+          await updateExchangeRate(
+            ratePair,
+            Number(form.exchangeRate),
+            form.type === 'Binance P2P' ? 'Binance P2P' : 'Manual',
+            form.note || `Actualizado al registrar fondeo ${form.type}`,
+          )
+        } catch { /* no bloquear el fondeo si falla actualizar tasa */ }
+      }
+
       onSuccess()
     } catch (err) {
       setError(err.message || 'Error al registrar el fondeo.')
@@ -173,7 +541,7 @@ function FundingModal({ onClose, onSuccess }) {
     }
   }
 
-  const inputCls = 'w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white border border-[#263050] bg-[#1A2340] focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] placeholder-[#4E5A7A] transition-colors'
+  const inputCls  = 'w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white border border-[#263050] bg-[#1A2340] focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] placeholder-[#4E5A7A] transition-colors'
   const selectCls = inputCls + ' appearance-none'
   const labelCls  = 'block text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5'
 
@@ -240,12 +608,8 @@ function FundingModal({ onClose, onSuccess }) {
             <div>
               <label className={labelCls}>Monto recibido <span className="text-[#EF4444]">*</span></label>
               <input
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                value={form.amount}
-                onChange={e => set('amount', e.target.value)}
+                type="number" min="0" step="0.01" placeholder="0.00"
+                value={form.amount} onChange={e => set('amount', e.target.value)}
                 className={inputCls}
               />
             </div>
@@ -263,85 +627,90 @@ function FundingModal({ onClose, onSuccess }) {
               <div>
                 <label className={labelCls}>Monto origen</label>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={form.originAmount}
-                  onChange={e => set('originAmount', e.target.value)}
+                  type="number" min="0" step="0.01" placeholder="0.00"
+                  value={form.originAmount} onChange={e => set('originAmount', e.target.value)}
                   className={inputCls}
                 />
               </div>
             )}
           </div>
 
-          {/* Tasa de cambio */}
+          {/* Tasa de cambio usada en esta compra */}
           <div>
             <label className={labelCls}>
-              Tasa de cambio <span className="text-[#EF4444]">*</span>
+              Tasa usada en esta compra <span className="text-[#EF4444]">*</span>
               <span className="text-[#4E5A7A] normal-case font-normal ml-1">
-                (ej: 6.96 {form.originCurrency}/{form.asset})
+                (ej: 9.31 {form.originCurrency}/{form.asset})
               </span>
             </label>
             <input
-              type="number"
-              min="0"
-              step="0.0001"
-              placeholder="6.96"
-              value={form.exchangeRate}
-              onChange={e => set('exchangeRate', e.target.value)}
+              type="number" min="0" step="0.0001" placeholder="9.31"
+              value={form.exchangeRate} onChange={e => set('exchangeRate', e.target.value)}
               className={inputCls}
             />
+
+            {/* Checkbox actualizar tasa del sistema */}
+            {ratePair && (
+              <label className="flex items-center gap-2.5 mt-2.5 cursor-pointer group">
+                <div
+                  className="w-4 h-4 rounded flex items-center justify-center transition-colors flex-shrink-0"
+                  style={{
+                    background:  updateRateToo ? '#22C55E' : '#1A2340',
+                    border:      `1.5px solid ${updateRateToo ? '#22C55E' : '#263050'}`,
+                  }}
+                  onClick={() => setUpdateRateToo(v => !v)}
+                >
+                  {updateRateToo && (
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                      <path d="M1 4L3.5 6.5L9 1" stroke="#0F1628" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+                <span
+                  className="text-[0.8125rem] transition-colors"
+                  style={{ color: updateRateToo ? '#FFFFFF' : '#8A96B8' }}
+                  onClick={() => setUpdateRateToo(v => !v)}
+                >
+                  ✅ Actualizar tasa{' '}
+                  <span className="font-bold text-[#C4CBD8]">{ratePair}</span>
+                  {' '}con este valor
+                </span>
+              </label>
+            )}
           </div>
 
-          {/* Referencia — condicional según tipo */}
+          {/* Referencias condicionales */}
           {showBinanceId && (
             <div>
               <label className={labelCls}>ID orden Binance</label>
-              <input
-                type="text"
-                placeholder="P2P-XXXXXX"
-                value={form.binanceOrderId}
-                onChange={e => set('binanceOrderId', e.target.value)}
-                className={inputCls}
-              />
+              <input type="text" placeholder="P2P-XXXXXX"
+                value={form.binanceOrderId} onChange={e => set('binanceOrderId', e.target.value)}
+                className={inputCls} />
             </div>
           )}
           {showStellarTxId && (
             <div>
               <label className={labelCls}>TXID Stellar</label>
-              <input
-                type="text"
-                placeholder="a1b2c3d4..."
-                value={form.stellarTxId}
-                onChange={e => set('stellarTxId', e.target.value)}
-                className={inputCls}
-              />
+              <input type="text" placeholder="a1b2c3d4..."
+                value={form.stellarTxId} onChange={e => set('stellarTxId', e.target.value)}
+                className={inputCls} />
             </div>
           )}
           {showBankRef && (
             <div>
               <label className={labelCls}>Referencia bancaria</label>
-              <input
-                type="text"
-                placeholder="Nro. de transferencia"
-                value={form.bankReference}
-                onChange={e => set('bankReference', e.target.value)}
-                className={inputCls}
-              />
+              <input type="text" placeholder="Nro. de transferencia"
+                value={form.bankReference} onChange={e => set('bankReference', e.target.value)}
+                className={inputCls} />
             </div>
           )}
 
           {/* Nota */}
           <div>
             <label className={labelCls}>Nota</label>
-            <textarea
-              rows={2}
-              placeholder='Ej: "Fondeo mensual para liquidar payouts Bolivia"'
-              value={form.note}
-              onChange={e => set('note', e.target.value)}
-              className={inputCls + ' resize-none'}
-            />
+            <textarea rows={2} placeholder='Ej: "Fondeo mensual para liquidar payouts Bolivia"'
+              value={form.note} onChange={e => set('note', e.target.value)}
+              className={inputCls + ' resize-none'} />
           </div>
 
           {error && (
@@ -353,10 +722,7 @@ function FundingModal({ onClose, onSuccess }) {
         </div>
 
         {/* Footer */}
-        <div
-          className="flex gap-3 px-6 py-4 flex-shrink-0"
-          style={{ borderTop: '1px solid #263050' }}
-        >
+        <div className="flex gap-3 px-6 py-4 flex-shrink-0" style={{ borderTop: '1px solid #263050' }}>
           <button
             onClick={onClose}
             className="flex-1 py-3 rounded-xl border border-[#263050] text-[#8A96B8] text-[0.875rem] font-semibold hover:text-white hover:border-[#C4CBD833] transition-colors"
@@ -367,36 +733,12 @@ function FundingModal({ onClose, onSuccess }) {
             onClick={handleSave}
             disabled={saving}
             className="flex-1 py-3 rounded-xl text-[#0F1628] text-[0.875rem] font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-            style={{
-              background:  saving ? '#C4CBD840' : '#C4CBD8',
-              boxShadow:   saving ? 'none' : '0 4px 20px rgba(196,203,216,0.3)',
-            }}
+            style={{ background: saving ? '#C4CBD840' : '#C4CBD8', boxShadow: saving ? 'none' : '0 4px 20px rgba(196,203,216,0.3)' }}
           >
-            {saving
-              ? <><Loader size={14} className="animate-spin" /> Guardando...</>
-              : '✅ Registrar fondeo'
-            }
+            {saving ? <><Loader size={14} className="animate-spin" /> Guardando...</> : '✅ Registrar fondeo'}
           </button>
         </div>
       </div>
-    </div>
-  )
-}
-
-// ── Toast ─────────────────────────────────────────────────────────────────────
-
-function Toast({ message, onHide }) {
-  useEffect(() => {
-    const t = setTimeout(onHide, 3500)
-    return () => clearTimeout(t)
-  }, [onHide])
-
-  return (
-    <div className="fixed bottom-6 right-6 z-[60] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-4"
-      style={{ background: '#1A2340', border: '1px solid #22C55E40', boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}
-    >
-      <CheckCircle2 size={18} className="text-[#22C55E] flex-shrink-0" />
-      <p className="text-[0.875rem] font-semibold text-white">{message}</p>
     </div>
   )
 }
@@ -414,9 +756,7 @@ function FundingHistoryTable({ fundings, loading }) {
   if (loading) {
     return (
       <div className="space-y-2">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="h-12 rounded-xl bg-[#1A2340] animate-pulse" />
-        ))}
+        {[1, 2, 3].map(i => <div key={i} className="h-12 rounded-xl bg-[#1A2340] animate-pulse" />)}
       </div>
     )
   }
@@ -436,10 +776,7 @@ function FundingHistoryTable({ fundings, loading }) {
         <thead>
           <tr style={{ borderBottom: '1px solid #263050' }}>
             {['Fecha', 'Entidad', 'Tipo', 'Activo', 'Monto', 'USD equiv.', 'Fuente', 'Registrado por', 'Nota'].map(h => (
-              <th
-                key={h}
-                className="text-left pb-3 pr-4 text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider whitespace-nowrap"
-              >
+              <th key={h} className="text-left pb-3 pr-4 text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider whitespace-nowrap">
                 {h}
               </th>
             ))}
@@ -449,27 +786,14 @@ function FundingHistoryTable({ fundings, loading }) {
           {fundings.map((f, i) => {
             const src = sourceDisplay(f)
             return (
-              <tr
-                key={f._id ?? i}
-                className="border-b border-[#26305040] hover:bg-[#1A234020] transition-colors"
-              >
-                <td className="py-3 pr-4 text-[0.8125rem] text-[#8A96B8] whitespace-nowrap">
-                  {formatDate(f.createdAt)}
-                </td>
+              <tr key={f._id ?? i} className="border-b border-[#26305040] hover:bg-[#1A234020] transition-colors">
+                <td className="py-3 pr-4 text-[0.8125rem] text-[#8A96B8] whitespace-nowrap">{formatDate(f.createdAt)}</td>
+                <td className="py-3 pr-4"><EntityBadge entity={f.entity} /></td>
+                <td className="py-3 pr-4 text-[0.8125rem] text-white whitespace-nowrap">{f.type}</td>
                 <td className="py-3 pr-4">
-                  <EntityBadge entity={f.entity} />
+                  <span className="text-[0.75rem] font-bold px-2 py-0.5 rounded-full bg-[#C4CBD81A] text-[#C4CBD8]">{f.asset}</span>
                 </td>
-                <td className="py-3 pr-4 text-[0.8125rem] text-white whitespace-nowrap">
-                  {f.type}
-                </td>
-                <td className="py-3 pr-4">
-                  <span className="text-[0.75rem] font-bold px-2 py-0.5 rounded-full bg-[#C4CBD81A] text-[#C4CBD8]">
-                    {f.asset}
-                  </span>
-                </td>
-                <td className="py-3 pr-4 text-[0.9rem] font-bold text-[#22C55E] tabular-nums whitespace-nowrap">
-                  ${formatAmount(f.amount)}
-                </td>
+                <td className="py-3 pr-4 text-[0.9rem] font-bold text-[#22C55E] tabular-nums whitespace-nowrap">${formatAmount(f.amount)}</td>
                 <td className="py-3 pr-4 text-[0.8125rem] text-white tabular-nums whitespace-nowrap">
                   {f.usdEquivalent != null ? `$${formatAmount(f.usdEquivalent)}` : '—'}
                 </td>
@@ -497,14 +821,11 @@ function FundingHistoryTable({ fundings, loading }) {
 export default function FundingPage() {
   const [balances,     setBalances]     = useState({ SRL: null, SpA: null, LLC: null })
   const [balLoading,   setBalLoading]   = useState(true)
-
   const [fundings,     setFundings]     = useState([])
   const [funLoading,   setFunLoading]   = useState(true)
-
   const [modalOpen,    setModalOpen]    = useState(false)
   const [toast,        setToast]        = useState(null)
 
-  // Filtros
   const [filterEntity, setFilterEntity] = useState('')
   const [filterAsset,  setFilterAsset]  = useState('')
   const [filterStart,  setFilterStart]  = useState('')
@@ -515,11 +836,7 @@ export default function FundingPage() {
     try {
       const data = await getFundingBalances()
       setBalances(data)
-    } catch {
-      /* silencioso — usa placeholders */
-    } finally {
-      setBalLoading(false)
-    }
+    } catch { /* silencioso */ } finally { setBalLoading(false) }
   }, [])
 
   const loadFundings = useCallback(async () => {
@@ -532,17 +849,13 @@ export default function FundingPage() {
       if (filterEnd)    params.endDate   = filterEnd
       const data = await listFundings(params)
       setFundings(data.fundings ?? data ?? [])
-    } catch {
-      setFundings([])
-    } finally {
-      setFunLoading(false)
-    }
+    } catch { setFundings([]) } finally { setFunLoading(false) }
   }, [filterEntity, filterAsset, filterStart, filterEnd])
 
   useEffect(() => { loadBalances() }, [loadBalances])
   useEffect(() => { loadFundings() }, [loadFundings])
 
-  const handleSuccess = () => {
+  const handleFundingSuccess = () => {
     setModalOpen(false)
     setToast('Fondeo registrado ✅')
     loadBalances()
@@ -552,27 +865,27 @@ export default function FundingPage() {
   const selectCls = 'rounded-xl px-3 py-2 text-[0.8125rem] text-white border border-[#263050] bg-[#1A2340] focus:outline-none focus:border-[#C4CBD8] transition-colors appearance-none cursor-pointer'
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-7">
 
-      {/* ── Título ── */}
+      {/* ── Título + acciones ── */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-[1.5rem] font-bold text-white">Gestión de Fondeo</h1>
           <p className="text-[0.875rem] text-[#8A96B8] mt-0.5">
-            Balances disponibles y registro de operaciones de fondeo manual
+            Tasas activas, balances disponibles y registro de fondeos manuales
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => { loadBalances(); loadFundings() }}
-            className="w-9 h-9 rounded-xl bg-[#1A2340] border border-[#263050] flex items-center justify-center hover:border-[#C4CBD833] hover:text-white text-[#8A96B8] transition-colors"
-            title="Actualizar"
+            className="w-9 h-9 rounded-xl bg-[#1A2340] border border-[#263050] flex items-center justify-center hover:border-[#C4CBD833] text-[#8A96B8] hover:text-white transition-colors"
+            title="Actualizar todo"
           >
             <RefreshCw size={15} />
           </button>
           <button
             onClick={() => setModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[0.875rem] font-bold text-[#0F1628] transition-all hover:opacity-90 active:scale-[0.98]"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[0.875rem] font-bold text-[#0F1628] hover:opacity-90 active:scale-[0.98] transition-all"
             style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.3)' }}
           >
             <Plus size={16} />
@@ -581,6 +894,9 @@ export default function FundingPage() {
         </div>
       </div>
 
+      {/* ── SECCIÓN 0: Tasas de cambio activas ── */}
+      <ExchangeRatesPanel onToast={setToast} />
+
       {/* ── SECCIÓN 1: Balance cards ── */}
       <div>
         <p className="text-[0.75rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-3">
@@ -588,76 +904,32 @@ export default function FundingPage() {
         </p>
         <div className="grid grid-cols-3 gap-4">
           {ENTITIES.map(entity => (
-            <BalanceCard
-              key={entity}
-              entity={entity}
-              balance={balances[entity]}
-              loading={balLoading}
-            />
+            <BalanceCard key={entity} entity={entity} balance={balances[entity]} loading={balLoading} />
           ))}
         </div>
       </div>
 
-      {/* ── SECCIÓN 3: Historial con filtros ── */}
-      <div
-        className="rounded-2xl overflow-hidden"
-        style={{ background: '#1A2340', border: '1px solid #263050' }}
-      >
-        {/* Header con filtros */}
-        <div
-          className="flex flex-wrap items-center gap-3 px-6 py-4"
-          style={{ borderBottom: '1px solid #263050' }}
-        >
+      {/* ── SECCIÓN 3: Historial ── */}
+      <div className="rounded-2xl overflow-hidden" style={{ background: '#1A2340', border: '1px solid #263050' }}>
+        <div className="flex flex-wrap items-center gap-3 px-6 py-4" style={{ borderBottom: '1px solid #263050' }}>
           <div className="flex items-center gap-2 mr-auto">
             <Filter size={15} className="text-[#C4CBD8]" />
             <h2 className="text-[0.9375rem] font-bold text-white">Historial de fondeos</h2>
           </div>
-
-          {/* Filtro entidad */}
-          <div className="relative">
-            <select
-              value={filterEntity}
-              onChange={e => setFilterEntity(e.target.value)}
-              className={selectCls}
-            >
-              <option value="">Todas las entidades</option>
-              {ENTITIES.map(e => <option key={e} value={e}>{e}</option>)}
-            </select>
-          </div>
-
-          {/* Filtro activo */}
-          <div className="relative">
-            <select
-              value={filterAsset}
-              onChange={e => setFilterAsset(e.target.value)}
-              className={selectCls}
-            >
-              <option value="">Todos los activos</option>
-              {ASSETS.map(a => <option key={a} value={a}>{a}</option>)}
-            </select>
-          </div>
-
-          {/* Filtro fechas */}
+          <select value={filterEntity} onChange={e => setFilterEntity(e.target.value)} className={selectCls}>
+            <option value="">Todas las entidades</option>
+            {ENTITIES.map(e => <option key={e} value={e}>{e}</option>)}
+          </select>
+          <select value={filterAsset} onChange={e => setFilterAsset(e.target.value)} className={selectCls}>
+            <option value="">Todos los activos</option>
+            {ASSETS.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
           <div className="flex items-center gap-2">
             <Calendar size={14} className="text-[#4E5A7A] flex-shrink-0" />
-            <input
-              type="date"
-              value={filterStart}
-              onChange={e => setFilterStart(e.target.value)}
-              className={selectCls + ' w-36'}
-              placeholder="Desde"
-            />
+            <input type="date" value={filterStart} onChange={e => setFilterStart(e.target.value)} className={selectCls + ' w-36'} />
             <span className="text-[#4E5A7A] text-sm">—</span>
-            <input
-              type="date"
-              value={filterEnd}
-              onChange={e => setFilterEnd(e.target.value)}
-              className={selectCls + ' w-36'}
-              placeholder="Hasta"
-            />
+            <input type="date" value={filterEnd} onChange={e => setFilterEnd(e.target.value)} className={selectCls + ' w-36'} />
           </div>
-
-          {/* Limpiar filtros */}
           {(filterEntity || filterAsset || filterStart || filterEnd) && (
             <button
               onClick={() => { setFilterEntity(''); setFilterAsset(''); setFilterStart(''); setFilterEnd('') }}
@@ -668,17 +940,12 @@ export default function FundingPage() {
           )}
         </div>
 
-        {/* Tabla */}
         <div className="px-6 py-4">
           <FundingHistoryTable fundings={fundings} loading={funLoading} />
         </div>
 
-        {/* Totales footer */}
         {!funLoading && fundings.length > 0 && (
-          <div
-            className="flex items-center justify-between px-6 py-3"
-            style={{ borderTop: '1px solid #263050' }}
-          >
+          <div className="flex items-center justify-between px-6 py-3" style={{ borderTop: '1px solid #263050' }}>
             <p className="text-[0.75rem] text-[#4E5A7A]">
               {fundings.length} operación{fundings.length !== 1 ? 'es' : ''}
             </p>
@@ -692,16 +959,8 @@ export default function FundingPage() {
         )}
       </div>
 
-      {/* ── Modal ── */}
-      {modalOpen && (
-        <FundingModal
-          onClose={() => setModalOpen(false)}
-          onSuccess={handleSuccess}
-        />
-      )}
-
-      {/* ── Toast ── */}
-      {toast && <Toast message={toast} onHide={() => setToast(null)} />}
+      {modalOpen && <FundingModal onClose={() => setModalOpen(false)} onSuccess={handleFundingSuccess} />}
+      {toast     && <Toast message={toast} onHide={() => setToast(null)} />}
     </div>
   )
 }
