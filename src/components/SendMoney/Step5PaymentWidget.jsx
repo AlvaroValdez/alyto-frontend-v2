@@ -15,9 +15,9 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Loader2, ExternalLink, AlertCircle, MessageCircle,
-  Copy, CheckCheck, Clock, Download,
+  Copy, CheckCheck, Clock, Download, Paperclip, Upload, CheckCircle2,
 } from 'lucide-react'
-import { getTransactionStatus, getPaymentQR } from '../../services/paymentsService'
+import { getTransactionStatus, getPaymentQR, uploadComprobante } from '../../services/paymentsService'
 import Sentry from '../../services/sentry.js'
 
 const POLL_INTERVAL_MS = 5_000
@@ -62,9 +62,14 @@ function ManualPayinScreen({ stepData }) {
   const bank     = payinInstructions ?? {}
   const currency = originCurrency ?? 'BOB'
 
-  const [copiedRef, setCopiedRef] = useState(false)
-  const [qrSrc,     setQrSrc]     = useState(() => toQrSrc(paymentQR))
-  const [qrLoading, setQrLoading] = useState(!paymentQR && !!transactionId)
+  const [copiedRef,    setCopiedRef]    = useState(false)
+  const [qrSrc,        setQrSrc]        = useState(() => toQrSrc(paymentQR))
+  const [qrLoading,    setQrLoading]    = useState(!paymentQR && !!transactionId)
+  const [proofFile,    setProofFile]    = useState(null)
+  const [proofPreview, setProofPreview] = useState(null)
+  const [uploading,    setUploading]    = useState(false)
+  const [uploadDone,   setUploadDone]   = useState(false)
+  const [uploadError,  setUploadError]  = useState(null)
 
   // Cargar QR del backend si no vino en stepData
   useEffect(() => {
@@ -99,6 +104,38 @@ function ManualPayinScreen({ stepData }) {
   const handleDone = () => {
     if (transactionId) navigate(`/transactions/${transactionId}`)
     else navigate('/transactions')
+  }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('El archivo supera el límite de 5MB.')
+      return
+    }
+    setProofFile(file)
+    setUploadError(null)
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = (ev) => setProofPreview(ev.target.result)
+      reader.readAsDataURL(file)
+    } else {
+      setProofPreview(null)
+    }
+  }
+
+  const handleUpload = async () => {
+    if (!proofFile || !transactionId) return
+    setUploading(true)
+    setUploadError(null)
+    try {
+      await uploadComprobante(transactionId, proofFile)
+      setUploadDone(true)
+    } catch (err) {
+      setUploadError(err.message || 'Error al subir el comprobante.')
+    } finally {
+      setUploading(false)
+    }
   }
 
   const showQRSection = qrLoading || !!qrSrc
@@ -220,13 +257,106 @@ function ManualPayinScreen({ stepData }) {
         </p>
       </div>
 
-      {/* Botón CTA */}
-      <button
-        onClick={handleDone}
-        className="w-full py-4 rounded-2xl bg-[#C4CBD8] text-[#0F1628] text-[0.9375rem] font-bold shadow-[0_4px_20px_rgba(196,203,216,0.3)] active:scale-[0.98] transition-all"
-      >
-        Ya realicé el pago →
-      </button>
+      {/* ── Subir comprobante ── */}
+      {uploadDone ? (
+        <div className="flex flex-col items-center gap-3 p-5 rounded-2xl bg-[#22C55E0A] border border-[#22C55E33]">
+          <CheckCircle2 size={28} className="text-[#22C55E]" />
+          <div className="text-center">
+            <p className="text-[0.9375rem] font-bold text-[#22C55E]">
+              ✅ Comprobante recibido
+            </p>
+            <p className="text-[0.8125rem] text-[#8A96B8] mt-1">
+              Verificaremos tu pago en 2–4 horas hábiles.
+            </p>
+          </div>
+          <button
+            onClick={handleDone}
+            className="mt-1 px-5 py-2.5 rounded-xl bg-[#C4CBD8] text-[#0F1628] text-[0.875rem] font-bold shadow-[0_4px_20px_rgba(196,203,216,0.3)] active:scale-[0.98] transition-all"
+          >
+            Ver estado de mi transferencia →
+          </button>
+        </div>
+      ) : (
+        <div className="rounded-2xl bg-[#1A2340] border border-[#263050] overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-[#263050]">
+            <Paperclip size={15} className="text-[#C4CBD8] flex-shrink-0" />
+            <p className="text-[0.875rem] font-bold text-white">¿Ya realizaste el pago?</p>
+          </div>
+
+          <div className="px-5 py-4 flex flex-col gap-3">
+            <p className="text-[0.8125rem] text-[#8A96B8]">
+              Sube tu comprobante para agilizar la verificación.
+            </p>
+
+            {/* Preview si es imagen */}
+            {proofPreview && (
+              <div className="rounded-xl overflow-hidden border border-[#263050]">
+                <img
+                  src={proofPreview}
+                  alt="Vista previa del comprobante"
+                  className="w-full max-h-48 object-contain bg-[#0F1628]"
+                />
+              </div>
+            )}
+
+            {/* Nombre del archivo PDF */}
+            {proofFile && !proofPreview && (
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#0F1628] border border-[#263050]">
+                <Paperclip size={14} className="text-[#C4CBD8] flex-shrink-0" />
+                <span className="text-[0.8125rem] text-[#C4CBD8] truncate">{proofFile.name}</span>
+              </div>
+            )}
+
+            {/* Selector de archivo */}
+            <label className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-dashed border-[#C4CBD833] text-[0.875rem] text-[#8A96B8] hover:text-white hover:border-[#C4CBD850] transition-colors cursor-pointer">
+              <Upload size={15} />
+              {proofFile ? 'Cambiar archivo' : 'Seleccionar archivo'}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,application/pdf"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </label>
+
+            <p className="text-[0.6875rem] text-[#4E5A7A] -mt-1">JPG, PNG o PDF — máx. 5MB</p>
+
+            {uploadError && (
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
+                <AlertCircle size={13} className="text-[#F87171] flex-shrink-0" />
+                <p className="text-[0.8125rem] text-[#F87171]">{uploadError}</p>
+              </div>
+            )}
+
+            <button
+              onClick={handleUpload}
+              disabled={!proofFile || uploading}
+              className="w-full py-3 rounded-xl text-[0.875rem] font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{
+                background:  proofFile && !uploading ? '#C4CBD8' : '#C4CBD840',
+                color:       '#0F1628',
+                boxShadow:   proofFile && !uploading ? '0 4px 20px rgba(196,203,216,0.3)' : 'none',
+              }}
+            >
+              {uploading
+                ? <><Loader2 size={14} className="animate-spin" /> Enviando...</>
+                : <><Upload size={14} /> Enviar comprobante</>
+              }
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Botón CTA — solo si aún no subió comprobante */}
+      {!uploadDone && (
+        <button
+          onClick={handleDone}
+          className="w-full py-4 rounded-2xl bg-transparent border border-[#263050] text-[#8A96B8] text-[0.875rem] font-semibold hover:border-[#C4CBD833] hover:text-white active:scale-[0.98] transition-all"
+        >
+          Ya realicé el pago, lo verifico después →
+        </button>
+      )}
 
       <p className="text-center text-[0.6875rem] text-[#4E5A7A]">
         ID de referencia: <span className="font-mono">{formatTransactionId(transactionId)}</span>

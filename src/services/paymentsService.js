@@ -7,7 +7,7 @@
  *   getTransactionStatus(transactionId)         → GET /payments/status/:id
  */
 
-import { request } from './api'
+import { request, requestFormData } from './api'
 
 /**
  * Obtiene una cotización en tiempo real para el corredor indicado.
@@ -99,4 +99,16 @@ export function getPaymentQR(transactionId) {
  */
 export function getWithdrawalRules(countryCode, signal) {
   return request(`/payments/withdrawal-rules/${countryCode}`, { signal })
+}
+
+/**
+ * Sube el comprobante de pago del usuario (Bolivia / payin manual).
+ * @param {string} transactionId
+ * @param {File}   file  — JPG, PNG o PDF, máx. 5MB
+ * @returns {Promise<{ ok: boolean, message: string }>}
+ */
+export function uploadComprobante(transactionId, file) {
+  const formData = new FormData()
+  formData.append('comprobante', file)
+  return requestFormData(`/payments/${encodeURIComponent(transactionId)}/comprobante`, formData)
 }

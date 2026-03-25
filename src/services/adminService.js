@@ -139,3 +139,12 @@ export function getGlobalAnalytics(params = {}) {
 export function getCorridorChangeLog(corridorId) {
   return request(`/admin/corridors/${encodeURIComponent(corridorId)}/changelog`)
 }
+
+/**
+ * Obtiene el comprobante de pago subido por el usuario (base64).
+ * @param {string} transactionId
+ * @returns {Promise<{ base64: string, mimeType: string, filename: string, uploadedAt: string }>}
+ */
+export function getTransactionComprobante(transactionId) {
+  return request(`/admin/transactions/${encodeURIComponent(transactionId)}/comprobante`)
+}

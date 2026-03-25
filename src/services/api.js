@@ -26,6 +26,32 @@ function getStoredToken() {
  *  2. Inyecta Authorization: Bearer <token> si existe token guardado
  *  3. Lanza un Error enriquecido en respuestas no-ok
  */
+/**
+ * Wrapper sobre fetch para subir archivos (FormData / multipart).
+ * No setea Content-Type — el browser lo inyecta con el boundary correcto.
+ */
+export async function requestFormData(path, formData, method = 'POST') {
+  const token = getStoredToken()
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method,
+    headers: {
+      'ngrok-skip-browser-warning': 'true',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: formData,
+  })
+  const contentType = res.headers.get('Content-Type') ?? ''
+  const data = contentType.includes('application/json') ? await res.json() : {}
+  if (!res.ok) {
+    if (res.status === 401) window.dispatchEvent(new CustomEvent('alyto:unauthorized'))
+    const err = new Error(data.error || data.message || `Error ${res.status}`)
+    err.status = res.status
+    err.data   = data
+    throw err
+  }
+  return data
+}
+
 export async function request(path, options = {}) {
   const token = getStoredToken()
 
