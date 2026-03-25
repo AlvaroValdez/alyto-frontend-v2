@@ -8,9 +8,6 @@
 import { useState } from 'react'
 import { Check, Zap, Clock } from 'lucide-react'
 
-// País origen hardcodeado CL en V2.0
-const ORIGIN_COUNTRY = 'CL'
-
 const PAYIN_METHODS = {
   CL: [
     {
@@ -19,6 +16,26 @@ const PAYIN_METHODS = {
       description: 'Transferencia bancaria instantánea A2A',
       badge: 'Instantáneo',
       badgeType: 'instant',
+      available: true,
+      logo: '🏦',
+    },
+  ],
+  BO: [
+    {
+      id: 'qr',
+      name: 'Pago con QR',
+      description: 'Escanea el QR desde tu app bancaria',
+      badge: 'Fácil',
+      badgeType: 'instant',
+      available: true,
+      logo: '📱',
+    },
+    {
+      id: 'manual',
+      name: 'Transferencia bancaria',
+      description: 'Transfiere al número de cuenta AV Finance SRL',
+      badge: 'Manual',
+      badgeType: 'slow',
       available: true,
       logo: '🏦',
     },
@@ -102,15 +119,30 @@ function MethodCard({ method, selected, onSelect }) {
   )
 }
 
-export default function Step2PayinMethod({ onNext }) {
+// BO usa anchor manual para ambos métodos (qr y manual).
+// La diferencia es solo visual en Step5PaymentWidget.
+const BO_MANUAL_IDS = new Set(['qr', 'manual'])
+
+const COUNTRY_LABELS = {
+  CL: 'Chile',
+  BO: 'Bolivia',
+}
+
+export default function Step2PayinMethod({ onNext, originCountry = 'CL' }) {
   const [selected, setSelected] = useState(null)
 
-  const methods = PAYIN_METHODS[ORIGIN_COUNTRY] || []
+  const methods = PAYIN_METHODS[originCountry] || []
 
   function handleNext() {
     if (!selected) return
-    onNext({ payinMethod: selected.id })
+    // Ambos métodos BO mapean a payinMethod: 'manual' en el backend
+    const payinMethod = originCountry === 'BO' && BO_MANUAL_IDS.has(selected.id)
+      ? 'manual'
+      : selected.id
+    onNext({ payinMethod, payinVariant: selected.id })
   }
+
+  const countryLabel = COUNTRY_LABELS[originCountry] ?? originCountry
 
   return (
     <div className="flex flex-col gap-5 px-4 pb-4">
@@ -119,7 +151,7 @@ export default function Step2PayinMethod({ onNext }) {
       <div>
         <h2 className="text-[1.125rem] font-bold text-white">¿Cómo pagas?</h2>
         <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
-          Selecciona el método de pago en Chile
+          Selecciona el método de pago en {countryLabel}
         </p>
       </div>
 
@@ -138,8 +170,10 @@ export default function Step2PayinMethod({ onNext }) {
       {/* Nota informativa */}
       <div className="bg-[#1A2340] rounded-xl px-4 py-3">
         <p className="text-[0.75rem] text-[#8A96B8] leading-relaxed">
-          El débito se realizará desde tu cuenta bancaria chilena en tiempo real.
-          El monto será reservado durante el proceso del pago.
+          {originCountry === 'BO'
+            ? 'Tu pago será procesado manualmente por AV Finance SRL. Recibirás una confirmación una vez verificado el depósito.'
+            : 'El débito se realizará desde tu cuenta bancaria chilena en tiempo real. El monto será reservado durante el proceso del pago.'
+          }
         </p>
       </div>
 
