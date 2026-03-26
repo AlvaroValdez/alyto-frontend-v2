@@ -13,7 +13,7 @@
 
 import { useLocation, Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Bell, Home, BarChart2, FileText, User, Shield, LogOut } from 'lucide-react'
+import { Bell, Home, BarChart2, FileText, User, Shield, LogOut, ChevronRight } from 'lucide-react'
 import { useAuth }            from '../../context/AuthContext'
 import { useDashboard }       from '../../hooks/useDashboard'
 import { listUserCorridors }  from '../../services/paymentsService'
@@ -286,6 +286,33 @@ export default function DashboardPage() {
         {/* SECCIÓN 3 — QuickActions                                    */}
         {/* ─────────────────────────────────────────────────────────── */}
         <QuickActions kycStatus={kycStatus} />
+
+        {/* ─────────────────────────────────────────────────────────── */}
+        {/* SECCIÓN 3b — Acceso Plataforma Institucional (solo LLC)    */}
+        {/* ─────────────────────────────────────────────────────────── */}
+        {legalEntity === 'LLC' && (
+          <div className="mx-4 mb-4">
+            <Link
+              to="/institutional"
+              className="flex items-center justify-between px-4 py-4 rounded-2xl bg-[#1A2340] border border-[#263050] no-underline hover:border-[#C4CBD833] transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#C4CBD81A] flex items-center justify-center flex-shrink-0">
+                  <Shield size={18} className="text-[#C4CBD8]" />
+                </div>
+                <div>
+                  <p className="text-[0.9375rem] font-bold text-white leading-tight">
+                    Plataforma Institucional
+                  </p>
+                  <p className="text-[0.75rem] text-[#4E5A7A]">
+                    On-ramp B2B · OwlPay Harbor · AV Finance LLC
+                  </p>
+                </div>
+              </div>
+              <ChevronRight size={18} className="text-[#4E5A7A] group-hover:text-[#C4CBD8] transition-colors flex-shrink-0" />
+            </Link>
+          </div>
+        )}
 
         {/* ─────────────────────────────────────────────────────────── */}
         {/* SECCIÓN 4 — RecentTransactions                              */}
