@@ -61,11 +61,14 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [session,   setSession]   = useState(() => loadPersistedSession())
-  const [isLoading, setIsLoading] = useState(true)
+  // isLoading solo es true si NO hay sesión cacheada válida.
+  // Si ya hay token+usuario en storage, la app renderiza de inmediato y
+  // getMe() corre en background para refrescar datos sin bloquear la UI.
+  const [isLoading, setIsLoading] = useState(() => !loadPersistedSession().token)
 
   // ── Validación server-side del token al montar la app ─────────────────────
-  // Evita que tokens previos (de sesiones de testing) accedan al dashboard
-  // sin verificación real con el backend.
+  // Corre siempre: si hay token válido, actualiza datos en background;
+  // si el token falló server-side, limpia la sesión y redirige a login.
   useEffect(() => {
     const { token, storage } = loadPersistedSession()
 

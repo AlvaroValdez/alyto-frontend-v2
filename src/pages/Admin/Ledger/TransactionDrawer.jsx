@@ -286,31 +286,35 @@ function PayinManualBanner({ tx, onConfirmed }) {
 
 // ── PaymentProofSection — comprobante subido por el usuario ──────────────────
 
-function PaymentProofSection({ transactionId, paymentProof }) {
-  const [proof,      setProof]      = useState(null)   // { base64, mimeType, filename, uploadedAt }
-  const [loading,    setLoading]    = useState(false)
-  const [error,      setError]      = useState(null)
+function PaymentProofSection({ paymentProof }) {
   const [modalOpen,  setModalOpen]  = useState(false)
+  const [blobUrl,    setBlobUrl]    = useState(null)
 
+  // paymentProof viene del detalle de transacción ya cargado.
+  // El campo mimetype llega en minúsculas desde el modelo MongoDB.
+  const mimeType = paymentProof?.mimeType ?? paymentProof?.mimetype ?? 'image/jpeg'
+
+  // Convertir base64 → Blob URL para evitar el límite de ~2MB de los data URLs en <img>
   useEffect(() => {
-    if (!transactionId) return
-    setLoading(true)
-    setError(null)
-    getTransactionComprobante(transactionId)
-      .then(data => setProof(data))
-      .catch(err  => setError(err.message || 'No se pudo cargar el comprobante.'))
-      .finally(() => setLoading(false))
-  }, [transactionId])
+    if (!paymentProof?.data) return
+    try {
+      const byteChars = atob(paymentProof.data)
+      const bytes = new Uint8Array(byteChars.length)
+      for (let i = 0; i < byteChars.length; i++) bytes[i] = byteChars.charCodeAt(i)
+      const blob = new Blob([bytes], { type: mimeType })
+      const url  = URL.createObjectURL(blob)
+      setBlobUrl(url)
+      return () => URL.revokeObjectURL(url)
+    } catch {
+      // Si el base64 es inválido, no hacer nada
+    }
+  }, [paymentProof?.data, mimeType])
 
-  const dataSrc = proof?.base64
-    ? `data:${proof.mimeType ?? 'image/jpeg'};base64,${proof.base64}`
-    : null
+  const isPdf   = mimeType === 'application/pdf'
+  const isImage = !isPdf
 
-  const isImage = proof?.mimeType?.startsWith('image/')
-  const isPdf   = proof?.mimeType === 'application/pdf'
-
-  const uploadedLabel = proof?.uploadedAt
-    ? new Date(proof.uploadedAt).toLocaleString('es-CL', {
+  const uploadedLabel = paymentProof?.uploadedAt
+    ? new Date(paymentProof.uploadedAt).toLocaleString('es-CL', {
         day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
       })
     : null
@@ -325,71 +329,63 @@ function PaymentProofSection({ transactionId, paymentProof }) {
         </div>
 
         <div className="px-4 py-4">
-          {loading && (
-            <div className="flex items-center gap-2">
-              <Loader size={13} className="animate-spin text-[#4E5A7A]" />
-              <span className="text-[0.8125rem] text-[#4E5A7A]">Cargando comprobante…</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
-              <AlertCircle size={12} className="text-[#F87171] flex-shrink-0" />
-              <p className="text-[0.75rem] text-[#F87171]">{error}</p>
-            </div>
-          )}
-
-          {proof && (
-            <div className="flex flex-col gap-3">
-              {/* Metadata */}
-              <div className="flex items-center justify-between">
-                <div className="min-w-0">
-                  <p className="text-[0.8125rem] font-semibold text-white truncate">
-                    {proof.filename ?? 'comprobante'}
-                  </p>
-                  {uploadedLabel && (
-                    <p className="text-[0.6875rem] text-[#4E5A7A] mt-0.5">{uploadedLabel}</p>
-                  )}
-                </div>
+          <div className="flex flex-col gap-3">
+            {/* Metadata */}
+            <div className="flex items-center justify-between">
+              <div className="min-w-0">
+                <p className="text-[0.8125rem] font-semibold text-white truncate">
+                  {paymentProof?.filename ?? 'comprobante'}
+                </p>
+                {uploadedLabel && (
+                  <p className="text-[0.6875rem] text-[#4E5A7A] mt-0.5">{uploadedLabel}</p>
+                )}
               </div>
-
-              {/* Thumbnail imagen */}
-              {isImage && dataSrc && (
-                <button
-                  onClick={() => setModalOpen(true)}
-                  className="group relative w-full rounded-xl overflow-hidden border border-[#263050] bg-[#0F1628] hover:border-[#C4CBD833] transition-colors"
-                  title="Ver imagen completa"
-                >
-                  <img
-                    src={dataSrc}
-                    alt="Comprobante de pago"
-                    className="w-full max-h-48 object-contain"
-                  />
-                  <div className="absolute inset-0 bg-[#0F162860] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <ZoomIn size={22} className="text-white" />
-                  </div>
-                </button>
-              )}
-
-              {/* Botón PDF */}
-              {isPdf && dataSrc && (
-                <a
-                  href={dataSrc}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#263050] text-[0.8125rem] text-[#8A96B8] hover:text-white hover:border-[#C4CBD833] transition-colors no-underline w-fit"
-                >
-                  <FileText size={14} className="text-[#C4CBD8]" />
-                  Ver PDF
-                </a>
-              )}
             </div>
-          )}
+
+            {/* Thumbnail imagen — usa Blob URL para evitar el límite de ~2MB de data URLs */}
+            {isImage && blobUrl && (
+              <button
+                onClick={() => setModalOpen(true)}
+                className="group relative w-full rounded-xl overflow-hidden border border-[#263050] bg-[#0F1628] hover:border-[#C4CBD833] transition-colors"
+                title="Ver imagen completa"
+              >
+                <img
+                  src={blobUrl}
+                  alt="Comprobante de pago"
+                  className="w-full max-h-48 object-contain"
+                />
+                <div className="absolute inset-0 bg-[#0F162860] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <ZoomIn size={22} className="text-white" />
+                </div>
+              </button>
+            )}
+
+            {/* Botón PDF */}
+            {isPdf && blobUrl && (
+              <a
+                href={blobUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#263050] text-[0.8125rem] text-[#8A96B8] hover:text-white hover:border-[#C4CBD833] transition-colors no-underline w-fit"
+              >
+                <FileText size={14} className="text-[#C4CBD8]" />
+                Ver PDF
+              </a>
+            )}
+
+            {/* Indicador mientras se procesa el blob */}
+            {!blobUrl && (
+              <div className="flex items-center gap-2">
+                <Loader size={13} className="animate-spin text-[#4E5A7A]" />
+                <span className="text-[0.8125rem] text-[#4E5A7A]">Cargando vista previa…</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Modal imagen a pantalla completa */}
-      {modalOpen && dataSrc && (
+      {modalOpen && blobUrl && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center p-4"
           style={{ background: '#0F162899', backdropFilter: 'blur(8px)' }}
@@ -400,7 +396,7 @@ function PaymentProofSection({ transactionId, paymentProof }) {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-[#263050]">
-              <p className="text-[0.875rem] font-semibold text-white">{proof?.filename ?? 'Comprobante'}</p>
+              <p className="text-[0.875rem] font-semibold text-white">{paymentProof?.filename ?? 'Comprobante'}</p>
               <button
                 onClick={() => setModalOpen(false)}
                 className="w-7 h-7 rounded-full bg-[#1A2340] border border-[#263050] flex items-center justify-center hover:border-[#C4CBD833] transition-colors"
@@ -409,7 +405,7 @@ function PaymentProofSection({ transactionId, paymentProof }) {
               </button>
             </div>
             <img
-              src={dataSrc}
+              src={blobUrl}
               alt="Comprobante de pago"
               className="w-full max-h-[70vh] object-contain bg-[#0F1628] p-4"
             />
@@ -563,9 +559,8 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
             <div>
 
               {/* ── Comprobante de pago del usuario ─────────────────────── */}
-              {tx.paymentProof && (
+              {tx.paymentProof?.data && (
                 <PaymentProofSection
-                  transactionId={tx.alytoTransactionId}
                   paymentProof={tx.paymentProof}
                 />
               )}
