@@ -14,6 +14,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, X } from 'lucide-react'
 
+import { useAuth }               from '../../context/AuthContext'
 import { useSendMoney }          from '../../hooks/useSendMoney'
 import StepIndicator             from '../../components/SendMoney/StepIndicator'
 import Step1Amount               from '../../components/SendMoney/Step1Amount'
@@ -34,7 +35,12 @@ const STEP_TITLES = {
 
 export default function SendMoneyPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { step, stepData, nextStep, prevStep, resetFlow } = useSendMoney()
+
+  // Bolivia (SRL) usa Step2 para seleccionar método de pago (QR / transferencia).
+  // Chile/LLC van directo a Step3 con Fintoc sin pasar por Step2.
+  const isSRL = user?.legalEntity === 'SRL'
 
   const isSuccess = step === 6
 
@@ -105,16 +111,20 @@ export default function SendMoneyPage() {
           <Step1Amount
             initialData={stepData}
             onNext={(data) => {
-              // V2.0: origen siempre CL → Fintoc es el único método disponible.
-              // Saltar Step 2 directamente. Step 2 queda como fallback para
-              // futuros corredores con múltiples métodos de pago.
-              nextStep({ ...data, payinMethod: 'fintoc', _skipStep2: true }, 3)
+              if (isSRL) {
+                // Bolivia: ir a Step2 para seleccionar método de pago (QR / transferencia)
+                nextStep(data)
+              } else {
+                // CL/LLC: solo Fintoc disponible, saltar Step2 directamente
+                nextStep({ ...data, payinMethod: 'fintoc', _skipStep2: true }, 3)
+              }
             }}
           />
         )}
 
         {step === 2 && (
           <Step2PayinMethod
+            originCountry={isSRL ? 'BO' : 'CL'}
             onNext={(data) => nextStep(data)}
           />
         )}
@@ -122,6 +132,7 @@ export default function SendMoneyPage() {
         {step === 3 && (
           <Step3Beneficiary
             destinationCountry={stepData.destinationCountry}
+            isManualCorridor={stepData.payinMethod === 'manual'}
             onNext={(data) => nextStep(data)}
           />
         )}

@@ -5,8 +5,13 @@
  * Los campos se cargan desde GET /api/v1/payments/withdrawal-rules/:countryCode
  * y varían según el país destino seleccionado en el Step 1.
  *
+ * Para corredores manuales Bolivia (isManualCorridor === true) se muestra
+ * un formulario simplificado con campos mínimos (nombre, CI, teléfono).
+ * No se piden datos bancarios del beneficiario porque AV Finance SRL
+ * realiza el pago manual — no Vita.
+ *
  * Características:
- *   - Skeleton de carga mientras llegan las reglas
+ *   - Skeleton de carga mientras llegan las reglas (solo flujo Vita)
  *   - Manejo de campos condicionales (campo "when")
  *   - Campos fc_* ocultos — se añaden automáticamente al submit
  *   - Validación onBlur por campo (required + min/max de longitud)
@@ -137,28 +142,45 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
   )
 }
 
+// ── Campos fijos para corredor manual Bolivia ─────────────────────────────────
+
+const BOLIVIA_FIELDS = [
+  { key: 'beneficiary_first_name', label: 'Nombre',     type: 'text',  required: true,  placeholder: 'Ej: Carlos',    min: 2, max: 50 },
+  { key: 'beneficiary_last_name',  label: 'Apellido',   type: 'text',  required: true,  placeholder: 'Ej: García',    min: 2, max: 50 },
+  { key: 'beneficiary_document',   label: 'CI Bolivia', type: 'text',  required: true,  placeholder: 'Ej: 12345678',  min: 5, max: 15 },
+  { key: 'beneficiary_phone',      label: 'Teléfono',   type: 'phone', required: false, placeholder: '70000000' },
+]
+
 // ── Componente principal ──────────────────────────────────────────────────────
 
-export default function Step3Beneficiary({ destinationCountry, onNext }) {
-  const { rules, loading, error: loadError, refetch } = useWithdrawalRules(destinationCountry)
+export default function Step3Beneficiary({ destinationCountry, onNext, isManualCorridor = false }) {
+  // Para corredores manuales Bolivia se pasa null al hook para evitar la llamada
+  // a la API de Vita (hook maneja null devolviendo rules:[], loading:false).
+  const { rules, loading, error: loadError, refetch } = useWithdrawalRules(
+    isManualCorridor ? null : destinationCountry,
+  )
   const { user } = useAuth()
+
+  // Campos activos: Bolivia simplificado o Vita dinámico
+  const activeFields = isManualCorridor ? BOLIVIA_FIELDS : rules
 
   const [values,  setValues]  = useState({})
   const [touched, setTouched] = useState({})
 
-  // ── Campos visibles (aplicar lógica "when") ───────────────────────────────
-  const visibleRules = useMemo(() => {
-    // Excluir campos fc_* — son internos y se añaden al submit
-    return rules.filter(field => {
+  // ── Campos visibles (aplicar lógica "when" — solo flujo Vita) ───────────────
+  const visibleFields = useMemo(() => {
+    // Bolivia: mostrar todos los campos estáticos (no tienen lógica "when" ni fc_*)
+    if (isManualCorridor) return activeFields
+    // Vita: excluir fc_* y aplicar condicionales "when"
+    return activeFields.filter(field => {
       if (field.key.startsWith('fc_')) return false
       if (!field.when) return true
-      // Mostrar solo si el campo referenciado tiene el valor indicado
       const refValue = values[field.when.key] ?? ''
       const expected = field.when.value
       if (Array.isArray(expected)) return expected.includes(refValue)
       return refValue === expected
     })
-  }, [rules, values])
+  }, [activeFields, isManualCorridor, values])
 
   function handleChange(key, value) {
     setValues(prev => ({ ...prev, [key]: value }))
@@ -175,28 +197,23 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
 
   // El formulario es válido cuando todos los campos requeridos visibles tienen valor correcto
   const allValid = useMemo(() =>
-    visibleRules.every(f => !validateField(f, values[f.key])),
-  [visibleRules, values])
+    visibleFields.every(f => !validateField(f, values[f.key])),
+  [visibleFields, values])
 
   function handleNext() {
     if (!allValid) {
-      // Marcar todos los campos visibles como touched para revelar errores
-      const allTouched = Object.fromEntries(visibleRules.map(f => [f.key, true]))
+      const allTouched = Object.fromEntries(visibleFields.map(f => [f.key, true]))
       setTouched(prev => ({ ...prev, ...allTouched }))
       return
     }
 
-    // Construir objeto plano con todos los campos visibles (sin vacíos)
     const beneficiaryData = Object.fromEntries(
-      visibleRules
+      visibleFields
         .filter(f => (values[f.key] ?? '').trim() !== '')
         .map(f => [f.key, values[f.key].trim()]),
     )
 
-    // Los campos fc_* se añaden automáticamente desde el perfil del usuario
-    // El backend los incluirá en el withdrawal (fc_customer_type, fc_legal_name, etc.)
-    // No se envían desde el frontend para evitar manipulación
-
+    // Los campos fc_* se añaden automáticamente desde el perfil del usuario (solo flujo Vita)
     console.log('[Step3] beneficiaryData enviado:', JSON.stringify(beneficiaryData))
     onNext({ beneficiaryData })
   }
@@ -230,7 +247,7 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
     )
   }
 
-  // ── Formulario dinámico ───────────────────────────────────────────────────
+  // ── Formulario ───────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col gap-4 px-4 pb-4">
@@ -239,12 +256,14 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
       <div>
         <h2 className="text-[1.125rem] font-bold text-white">¿A quién le envías?</h2>
         <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
-          Ingresa los datos bancarios del beneficiario
+          {isManualCorridor
+            ? 'Ingresa los datos del beneficiario'
+            : 'Ingresa los datos bancarios del beneficiario'}
         </p>
       </div>
 
-      {/* Campos dinámicos */}
-      {visibleRules.map(field => (
+      {/* Campos */}
+      {visibleFields.map(field => (
         <DynamicField
           key={field.key}
           field={field}
