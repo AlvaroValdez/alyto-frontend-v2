@@ -7,8 +7,9 @@
  * Ruta: /transactions/:transactionId
  */
 
-import { useState, useEffect, useCallback } from 'react'
-import { useParams, useNavigate }            from 'react-router-dom'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useParams, useNavigate }                    from 'react-router-dom'
+import html2canvas                                   from 'html2canvas'
 import {
   ArrowLeft,
   CheckCircle,
@@ -24,6 +25,7 @@ import {
   X,
   Download,
   CheckCheck,
+  Share2,
 } from 'lucide-react'
 
 // ── QR helpers ────────────────────────────────────────────────────────────────
@@ -32,6 +34,24 @@ function toQrSrc(raw) {
   if (!raw) return null
   if (raw.startsWith('data:') || raw.startsWith('http')) return raw
   return `data:image/png;base64,${raw}`
+}
+
+// ── Masking helpers ────────────────────────────────────────────────────────────
+
+/** "Juan García López" → "Juan G****" */
+function maskName(name) {
+  if (!name?.trim()) return null
+  const parts = name.trim().split(/\s+/)
+  if (parts.length === 1) return parts[0].slice(0, 2) + '••••'
+  return `${parts[0]} ${parts[1].slice(0, 1)}••••`
+}
+
+/** "****7890" stays; "12345678" → "****5678"; short → "••••" */
+function maskAccount(account) {
+  if (!account) return null
+  const s = String(account)
+  if (s.startsWith('*') || s.startsWith('•')) return s   // ya enmascarado por backend
+  return `••••${s.slice(-4)}`
 }
 
 // ── PaymentInstructionsModal — muestra QR + datos bancarios ──────────────────
@@ -47,7 +67,7 @@ function PaymentInstructionsModal({ tx, onClose }) {
     getPaymentQR(tx.transactionId)
       .then(res => {
         if (cancelled) return
-        const raw = res.qrDataUrl ?? res.qrUrl ?? res.qr
+        const raw = res.qrDataUrl ?? res.qrUrl ?? res.qr ?? res.qrBase64
         if (raw) setQrSrc(toQrSrc(raw))
       })
       .catch(() => {})
@@ -131,7 +151,7 @@ function PaymentInstructionsModal({ tx, onClose }) {
             <div className="px-4 divide-y divide-[#26305050]">
               {[
                 ['Banco',   bank.bankName     ?? 'Banco Bisa'],
-                ['Titular', bank.holder       ?? 'AV Finance SRL'],
+                ['Titular', bank.accountHolder ?? bank.holder ?? 'AV Finance SRL'],
                 ['Cuenta',  bank.accountNumber ?? '—'],
                 ['Tipo',    bank.accountType   ?? 'Cuenta Corriente'],
                 ['Monto',   `Bs ${Number(tx.originAmount ?? 0).toLocaleString('es-CL')} BOB`],
@@ -288,6 +308,9 @@ export default function TransactionDetail() {
   const [copied, setCopied]         = useState(false)
   const [copiedTxid, setCopiedTxid] = useState(false)
   const [showPaymentInstructions, setShowPaymentInstructions] = useState(false)
+  const [sharing, setSharing] = useState(false)
+
+  const comprobanteRef = useRef(null)
 
   const supportWhatsApp = import.meta.env.VITE_SUPPORT_WHATSAPP
   const supportEmail    = 'soporte@alyto.app'
@@ -317,6 +340,40 @@ export default function TransactionDetail() {
 
   function handlePrint() {
     window.print()
+  }
+
+  async function handleShareImage() {
+    if (!comprobanteRef.current || sharing) return
+    setSharing(true)
+    try {
+      const canvas = await html2canvas(comprobanteRef.current, {
+        backgroundColor: '#1A2340',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      })
+      canvas.toBlob(async (blob) => {
+        const filename = `comprobante-alyto-${tx.transactionId}.png`
+        if (navigator.share && navigator.canShare?.({ files: [new File([blob], filename, { type: 'image/png' })] })) {
+          await navigator.share({
+            title: 'Comprobante Alyto',
+            text:  `Transferencia ${tx.transactionId}`,
+            files: [new File([blob], filename, { type: 'image/png' })],
+          })
+        } else {
+          // Fallback: descargar como PNG
+          const url = URL.createObjectURL(blob)
+          const a   = document.createElement('a')
+          a.href     = url
+          a.download = filename
+          a.click()
+          URL.revokeObjectURL(url)
+        }
+        setSharing(false)
+      }, 'image/png')
+    } catch {
+      setSharing(false)
+    }
   }
 
   // ── Estado de carga ────────────────────────────────────────────────────────
@@ -376,6 +433,20 @@ export default function TransactionDetail() {
   const isFailed = tx.status === 'failed' || tx.status === 'refunded'
   const isManualPending = tx.payinMethod === 'manual' &&
     (tx.status === 'initiated' || tx.status === 'payin_pending')
+
+  // Monto destino: si viene 0/null del server, estimar desde tasa
+  const effectiveDestAmount = (tx.destinationAmount && tx.destinationAmount > 0)
+    ? tx.destinationAmount
+    : (tx.exchangeRate > 0 ? Math.round(tx.originAmount * tx.exchangeRate * 100) / 100 : null)
+
+  // Tiempo estimado: mostrar en lenguaje más atractivo
+  const deliveryLabel = (() => {
+    const raw = tx.estimatedDelivery ?? ''
+    if (!raw || raw === '—') return '⚡ Pocas horas'
+    if (raw.includes('hora') || raw.includes('Hora')) return `⚡ ${raw}`
+    if (raw.toLowerCase() === 'pocas horas') return '⚡ Pocas horas'
+    return raw
+  })()
 
   return (
     <>
@@ -516,36 +587,45 @@ export default function TransactionDetail() {
               <div className="h-px bg-[#263050]" />
               <Row
                 label="Beneficiario recibe"
-                value={formatAmount(tx.destinationAmount, tx.destinationCurrency)}
+                value={effectiveDestAmount
+                  ? formatAmount(effectiveDestAmount, tx.destinationCurrency)
+                  : '—'}
                 bold
                 valueColor="#22C55E"
               />
               <Row
                 label="Tiempo estimado"
-                value={tx.estimatedDelivery ?? '1 día hábil'}
+                value={deliveryLabel}
               />
             </div>
           </Section>
 
           {/* ── 3. BENEFICIARIO ──────────────────────────────────────────── */}
-          {(tx.beneficiary?.fullName || tx.beneficiary?.bankName || tx.beneficiary?.accountNumber) && (
+          {tx.beneficiary && (
             <Section title="Beneficiario">
               <div className="flex flex-col gap-3">
                 {tx.beneficiary.fullName && (
-                  <Row label="Nombre" value={tx.beneficiary.fullName} />
+                  <Row label="Nombre" value={maskName(tx.beneficiary.fullName)} />
                 )}
                 {tx.beneficiary.bankName && (
                   <Row label="Banco" value={tx.beneficiary.bankName} />
                 )}
-                {tx.beneficiary.accountNumber && (
-                  <Row label="Cuenta" value={tx.beneficiary.accountNumber} />
+                <Row
+                  label="Cuenta"
+                  value={maskAccount(tx.beneficiary.accountNumber) ?? '••••'}
+                />
+                {tx.beneficiary.beneficiary_first_name && !tx.beneficiary.fullName && (
+                  <Row label="Nombre" value={maskName(
+                    [tx.beneficiary.beneficiary_first_name, tx.beneficiary.beneficiary_last_name]
+                      .filter(Boolean).join(' ')
+                  )} />
                 )}
               </div>
             </Section>
           )}
 
           {/* ── 4. COMPROBANTE ───────────────────────────────────────────── */}
-          <div className="bg-[#1A2340] rounded-2xl p-5">
+          <div ref={comprobanteRef} className="bg-[#1A2340] rounded-2xl p-5">
             <p className="text-[0.6875rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-4">
               Comprobante
             </p>
@@ -576,14 +656,29 @@ export default function TransactionDetail() {
               )}
             </div>
 
-            {/* Botón descargar / imprimir */}
-            <button
-              onClick={handlePrint}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#263050] text-[#8A96B8] text-sm font-medium transition-colors hover:border-[#C4CBD833] hover:text-[#C4CBD8]"
-            >
-              <Printer size={16} />
-              Descargar comprobante
-            </button>
+            {/* Botones compartir */}
+            <div className="flex gap-2">
+              <button
+                onClick={handleShareImage}
+                disabled={sharing}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60"
+                style={{ background: '#C4CBD81A', border: '1px solid #C4CBD833', color: '#C4CBD8' }}
+              >
+                {sharing
+                  ? <RefreshCw size={15} className="animate-spin" />
+                  : <Share2 size={15} />
+                }
+                Compartir
+              </button>
+              <button
+                onClick={handlePrint}
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-colors"
+                style={{ background: '#263050', border: '1px solid #263050', color: '#8A96B8' }}
+                title="Imprimir / PDF"
+              >
+                <Printer size={15} />
+              </button>
+            </div>
           </div>
 
           {/* ── 5. COMPROBANTE BLOCKCHAIN — solo si completada ────────────── */}

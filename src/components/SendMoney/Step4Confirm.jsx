@@ -75,10 +75,13 @@ export default function Step4Confirm({ stepData, onNext }) {
 
     try {
       const res = await initPayment({
-        corridorId:    quote.corridorId,
+        corridorId:        quote.corridorId,
         originAmount,
         payinMethod,
-        beneficiaryData: beneficiary,  // nombre que espera el backend
+        beneficiaryData:   beneficiary,  // nombre que espera el backend
+        // Datos de la cotización: el backend los guarda en el transaction para trazabilidad
+        destinationAmount: quote.destinationAmount ?? null,
+        exchangeRate:      quote.exchangeRate      ?? null,
       })
       console.log('[initPayment] respuesta completa:', JSON.stringify(res))
 
