@@ -184,14 +184,12 @@ export async function processBoliviaPayout(transactionId) {
 /**
  * Inicia un On-Ramp institucional B2B vía OwlPay Harbor (corredor LLC).
  * Exclusivo para clientes corporativos bajo AV Finance LLC.
- * @param {number} amountUSD          Monto en USD
- * @param {string} destinationWallet  Stellar public key (G...)
- * @param {string} userId             ID del cliente corporativo
+ * @param {{ userId: string, amount: number, destinationWallet: string, memo?: string }} payload
  */
-export function initiateCorporateOnRamp(amountUSD, destinationWallet, userId) {
+export function initiateCorporateOnRamp(payload) {
   return request('/institutional/onramp/owlpay', {
     method: 'POST',
-    body:   JSON.stringify({ amountUSD, destinationWallet, userId }),
+    body:   JSON.stringify(payload),
   })
 }
 
