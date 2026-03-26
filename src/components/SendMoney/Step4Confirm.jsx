@@ -94,6 +94,10 @@ export default function Step4Confirm({ stepData, onNext }) {
         // Solo sobreescribir payinMethod si el backend lo retorna explícitamente;
         // de lo contrario preservar el valor ya guardado en stepData (ej. 'fintoc' del skip)
         ...(res.payinMethod ? { payinMethod: res.payinMethod } : {}),
+        // Instrucciones y QR para pagos manuales (Bolivia)
+        payinInstructions: res.paymentInstructions ?? null,
+        paymentQR:         res.paymentQR         ?? null,
+        paymentQRStatic:   res.paymentQRStatic   ?? [],
       })
     } catch (err) {
       setError(err.message || 'Error al procesar el pago. Intenta nuevamente.')

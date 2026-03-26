@@ -78,7 +78,7 @@ function ManualPayinScreen({ stepData }) {
     getPaymentQR(transactionId)
       .then(res => {
         if (cancelled) return
-        const raw = res.qrDataUrl ?? res.qrUrl ?? res.qr
+        const raw = res.qrDataUrl ?? res.qrUrl ?? res.qr ?? res.qrBase64
         if (raw) setQrSrc(toQrSrc(raw))
       })
       .catch(() => {}) // QR es opcional — no bloquea el flujo

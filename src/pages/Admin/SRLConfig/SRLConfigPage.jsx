@@ -192,7 +192,7 @@ function QRCard({ qr, onToggle, onDelete }) {
   async function handleToggle() {
     setToggling(true)
     try {
-      await onToggle(qr._id, !qr.isActive)
+      await onToggle(qr.qrId, !qr.isActive)
     } finally {
       setToggling(false)
     }
@@ -201,7 +201,7 @@ function QRCard({ qr, onToggle, onDelete }) {
   async function handleDelete() {
     setDeleting(true)
     try {
-      await onDelete(qr._id)
+      await onDelete(qr.qrId)
     } finally {
       setDeleting(false)
       setConfirmDelete(false)
@@ -359,14 +359,14 @@ export default function SRLConfigPage() {
   async function handleToggle(qrId, isActive) {
     await toggleSRLQR(qrId, isActive)
     setQrImages(prev =>
-      prev.map(q => q._id === qrId ? { ...q, isActive } : q)
+      prev.map(q => q.qrId === qrId ? { ...q, isActive } : q)
     )
     setToast(isActive ? 'QR activado' : 'QR desactivado')
   }
 
   async function handleDelete(qrId) {
     await deleteSRLQR(qrId)
-    setQrImages(prev => prev.filter(q => q._id !== qrId))
+    setQrImages(prev => prev.filter(q => q.qrId !== qrId))
     setToast('QR eliminado')
   }
 
@@ -441,7 +441,7 @@ export default function SRLConfigPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {qrImages.map(qr => (
             <QRCard
-              key={qr._id}
+              key={qr.qrId}
               qr={qr}
               onToggle={handleToggle}
               onDelete={handleDelete}
