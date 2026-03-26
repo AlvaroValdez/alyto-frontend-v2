@@ -1,185 +1,157 @@
 /**
  * CorporateView.jsx — Plataforma Institucional B2B (AV Finance LLC)
  *
- * Vista exclusiva para clientes corporativos que operan On-Ramp
- * institucional vía OwlPay Harbor sobre la red Stellar.
+ * Vista exclusiva para clientes corporativos LLC que ejecutan on-ramp
+ * institucional fiat→USDC vía OwlPay Harbor sobre la red Stellar.
  *
  * Terminología aplicada (CLAUDE.md):
  *   ✓ cross-border payment, on-ramp, liquidación, pay-in institucional
  *   ✗ remesa, remittance (PROHIBIDO)
  */
 
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft,
   Building2,
-  Plus,
-  X,
+  Wallet,
+  FileText,
+  CheckCircle2,
+  ExternalLink,
+  Clock,
   AlertCircle,
   Loader2,
-  CheckCircle2,
-  Clock,
-  ExternalLink,
-  Wallet,
-  DollarSign,
-  Globe,
-  TrendingUp,
+  ChevronRight,
 } from 'lucide-react'
+import { useAuth }                from '../context/AuthContext'
 import { initiateCorporateOnRamp } from '../services/api'
 
-// ── Mock: historial de liquidaciones institucionales ─────────────────────────
-const MOCK_LIQUIDATIONS = [
-  {
-    id: 'ALY-A-1773800001-KX9M',
-    owlPayId: 'owp_harbor_882a',
-    date: '18 mar 2026, 14:32',
-    amountUSD: 250000,
-    asset: 'USDC',
-    destination: 'GBVH...7KQP',
-    stellarTxId: 'a3f9...c821',
-    status: 'completed',
-    entity: 'LLC',
-  },
-  {
-    id: 'ALY-A-1773750002-RT4N',
-    owlPayId: 'owp_harbor_771b',
-    date: '17 mar 2026, 09:15',
-    amountUSD: 500000,
-    asset: 'USDC',
-    destination: 'GCMR...2VWX',
-    stellarTxId: 'b7e1...d453',
-    status: 'completed',
-    entity: 'LLC',
-  },
-  {
-    id: 'ALY-A-1773600003-PL2W',
-    owlPayId: 'owp_harbor_660c',
-    date: '15 mar 2026, 16:48',
-    amountUSD: 125000,
-    asset: 'USDC',
-    destination: 'GDSP...8NFA',
-    stellarTxId: null,
-    status: 'in_transit',
-    entity: 'LLC',
-  },
-  {
-    id: 'ALY-A-1773500004-BQ5E',
-    owlPayId: 'owp_harbor_559d',
-    date: '14 mar 2026, 11:20',
-    amountUSD: 80000,
-    asset: 'USDC',
-    destination: 'GBKL...3YMZ',
-    stellarTxId: 'c2a8...f917',
-    status: 'completed',
-    entity: 'LLC',
-  },
-  {
-    id: 'ALY-A-1773400005-HJ8R',
-    owlPayId: 'owp_harbor_448e',
-    date: '12 mar 2026, 08:05',
-    amountUSD: 320000,
-    asset: 'USDC',
-    destination: 'GCWT...1QPB',
-    stellarTxId: null,
-    status: 'failed',
-    entity: 'LLC',
-  },
-]
+// ── Badge de entorno ──────────────────────────────────────────────────────────
 
-const STATS = [
-  { label: 'Liquidado (30d)',   value: '$1.275.000',  sub: 'USD · OwlPay Harbor',   icon: DollarSign, color: '#22C55E', bg: '#22C55E1A' },
-  { label: 'En Tránsito',      value: '$125.000',    sub: 'Stellar Network',        icon: Globe,      color: '#C4CBD8', bg: '#C4CBD81A' },
-  { label: 'Operaciones (30d)', value: '5',           sub: '4 completadas · 1 fallo', icon: TrendingUp, color: '#3B82F6', bg: '#3B82F61A' },
-]
+const IS_PROD    = import.meta.env.PROD
+const ENV_LABEL  = IS_PROD ? 'Harbor Live' : 'Harbor Sandbox'
+const ENV_COLOR  = '#22C55E'
+const ENV_BG     = '#22C55E1A'
+const ENV_BORDER = '#22C55E33'
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Validación de wallet Stellar ──────────────────────────────────────────────
 
-function StatusChip({ status }) {
-  const map = {
-    completed:  { label: 'Completado', color: '#22C55E', bg: '#22C55E1A' },
-    in_transit: { label: 'En tránsito', color: '#C4CBD8', bg: '#C4CBD81A' },
-    failed:     { label: 'Fallido',    color: '#EF4444', bg: '#EF44441A' },
-    pending:    { label: 'Pendiente',  color: '#C4CBD8', bg: '#C4CBD81A' },
-  }
-  const s = map[status] ?? map.pending
-  return (
-    <span
-      className="text-[0.6875rem] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
-      style={{ color: s.color, background: s.bg }}
-    >
-      {s.label}
-    </span>
-  )
+function isValidStellarKey(key) {
+  return /^G[A-Z2-7]{55}$/.test(key.trim())
 }
 
-function StatCard({ icon: Icon, label, value, sub, color, bg }) {
+// ── Card resultado exitoso ────────────────────────────────────────────────────
+
+function SuccessCard({ result, onReset }) {
+  const { alytoTransactionId, owlPayOrderId, estimatedUSDC, paymentUrl } = result
+
   return (
-    <div className="flex-1 min-w-0 rounded-2xl p-4" style={{ background: '#1A2340' }}>
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
-          <Icon size={15} style={{ color }} />
+    <div className="rounded-2xl border border-[#22C55E33] bg-[#22C55E0D] overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-4 border-b border-[#22C55E1A]">
+        <div className="w-9 h-9 rounded-xl bg-[#22C55E1A] flex items-center justify-center flex-shrink-0">
+          <CheckCircle2 size={18} className="text-[#22C55E]" />
         </div>
-        <p className="text-[0.6875rem] font-semibold text-[#8A96B8] uppercase tracking-[0.08em] leading-tight">{label}</p>
+        <div>
+          <p className="text-[0.9375rem] font-bold text-white leading-tight">On-ramp iniciado correctamente</p>
+          <p className="text-[0.6875rem] text-[#8A96B8]">AV Finance LLC · OwlPay Harbor</p>
+        </div>
       </div>
-      <p className="text-[1.375rem] font-extrabold text-white leading-none mb-1">{value}</p>
-      <p className="text-[0.6875rem] text-[#4E5A7A]">{sub}</p>
+
+      {/* Datos */}
+      <div className="px-4 py-4 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <span className="text-[0.75rem] text-[#8A96B8]">ID Alyto</span>
+          <span className="text-[0.8125rem] font-mono font-semibold text-[#C4CBD8]">
+            {alytoTransactionId ?? '—'}
+          </span>
+        </div>
+        {owlPayOrderId && (
+          <div className="flex items-center justify-between">
+            <span className="text-[0.75rem] text-[#8A96B8]">ID Harbor</span>
+            <span className="text-[0.8125rem] font-mono font-semibold text-[#C4CBD8]">
+              {owlPayOrderId}
+            </span>
+          </div>
+        )}
+        {estimatedUSDC != null && (
+          <div className="flex items-center justify-between">
+            <span className="text-[0.75rem] text-[#8A96B8]">USDC estimado</span>
+            <span className="text-[0.9375rem] font-bold text-[#22C55E]">
+              {Number(estimatedUSDC).toLocaleString('en-US', { maximumFractionDigits: 2 })} USDC
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* CTA + nota */}
+      <div className="px-4 pb-4 flex flex-col gap-3">
+        {paymentUrl && (
+          <a
+            href={paymentUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] no-underline transition-all"
+            style={{ background: '#22C55E', color: '#0F1628', boxShadow: '0 4px 20px rgba(34,197,94,0.3)' }}
+          >
+            Ver instrucciones de pago
+            <ExternalLink size={15} />
+          </a>
+        )}
+        <p className="text-center text-[0.6875rem] text-[#4E5A7A] leading-relaxed">
+          El USDC llegará a tu wallet Stellar en 1–2 días hábiles tras confirmar el wire transfer.
+        </p>
+        <button
+          onClick={onReset}
+          className="text-center text-[0.75rem] font-medium text-[#8A96B8] hover:text-[#C4CBD8] transition-colors py-1"
+        >
+          Iniciar nueva operación
+        </button>
+      </div>
     </div>
   )
 }
 
-// ── Modal: Nueva Operación B2B ────────────────────────────────────────────────
+// ── Vista principal ───────────────────────────────────────────────────────────
 
-/**
- * ESTRUCTURA DE DATOS ENVIADA A OWLPAY (vía backend):
- *
- * POST /api/v1/institutional/onramp/owlpay
- * {
- *   "amountUSD":         number,   // Monto en USD (mín. $1,000)
- *   "destinationWallet": string,   // Stellar public key (G... 56 chars)
- *   "userId":            string    // ID del cliente corporativo (MongoDB ObjectId)
- * }
- *
- * El backend enriquece con:
- *   legalEntity: "LLC"
- *   operationType: "crossBorderPayment"
- *   provider: "owlpay_harbor"
- *   asset: "USDC"
- *   network: "stellar"
- */
-function NewOperationModal({ onClose, onSuccess }) {
-  const [amountUSD, setAmountUSD]               = useState('')
-  const [destinationWallet, setDestinationWallet] = useState('')
-  const [loading, setLoading]                   = useState(false)
-  const [error, setError]                       = useState(null)
-  const [userId, setUserId]                     = useState(null)
+export default function CorporateView() {
+  const navigate          = useNavigate()
+  const { user }          = useAuth()
 
-  useEffect(() => {
-    fetch('http://localhost:3000/api/v1/dev/test-user')
-      .then(r => r.json())
-      .then(d => setUserId(d.userId))
-      .catch(() => setError('No se pudo conectar con el servidor.'))
-  }, [])
+  // Form state
+  const [amount,      setAmount]      = useState('')
+  const [wallet,      setWallet]      = useState('')
+  const [memo,        setMemo]        = useState('')
+  const [loading,     setLoading]     = useState(false)
+  const [error,       setError]       = useState(null)
+  const [result,      setResult]      = useState(null)   // respuesta exitosa del backend
 
-  const usdValue = parseFloat(amountUSD.replace(/,/g, '')) || 0
-  const isValidWallet = /^G[A-Z2-7]{55}$/.test(destinationWallet.trim())
-  const canSubmit = usdValue >= 1000 && isValidWallet && !loading && userId
+  // Derived
+  const numAmount      = parseFloat(amount.replace(/,/g, '')) || 0
+  const walletTrimmed  = wallet.trim()
+  const walletValid    = isValidStellarKey(walletTrimmed)
+  const canSubmit      = numAmount >= 1000 && numAmount <= 500000 && walletValid && !loading
 
   function handleAmountChange(e) {
-    const raw = e.target.value.replace(/[^0-9.]/g, '')
-    setAmountUSD(raw)
+    setAmount(e.target.value.replace(/[^0-9.]/g, ''))
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
-    if (usdValue < 1000) { setError('El monto mínimo para operaciones institucionales es $1,000 USD.'); return }
-    if (!isValidWallet)  { setError('La billetera Stellar de destino no es válida. Debe comenzar con G y tener 56 caracteres.'); return }
+    if (numAmount < 1000)    { setError('El monto mínimo es $1,000 USD.'); return }
+    if (numAmount > 500000)  { setError('El monto máximo es $500,000 USD.'); return }
+    if (!walletValid)        { setError('Wallet Stellar inválida — debe comenzar con G y tener 56 caracteres.'); return }
 
     setLoading(true)
     try {
-      const result = await initiateCorporateOnRamp(usdValue, destinationWallet.trim(), userId)
-      onSuccess(result)
+      const data = await initiateCorporateOnRamp({
+        userId:            user?._id ?? user?.id,
+        amount:            numAmount,
+        destinationWallet: walletTrimmed,
+        memo:              memo.trim() || undefined,
+      })
+      setResult(data)
     } catch (err) {
       setError(err.message || 'Error al procesar la operación. Intenta nuevamente.')
     } finally {
@@ -187,343 +159,243 @@ function NewOperationModal({ onClose, onSuccess }) {
     }
   }
 
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-      style={{ background: '#0F162899', backdropFilter: 'blur(8px)' }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        className="w-full max-w-[480px] rounded-3xl overflow-hidden"
-        style={{ background: '#1A2340', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}
-      >
-        {/* Header del modal */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#263050]">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#3B82F61A] flex items-center justify-center">
-              <Building2 size={17} className="text-[#3B82F6]" />
-            </div>
-            <div>
-              <p className="text-[0.9375rem] font-bold text-white leading-tight">Nueva Operación B2B</p>
-              <p className="text-[0.6875rem] text-[#4E5A7A]">AV Finance LLC · OwlPay Harbor</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#263050] flex items-center justify-center hover:bg-[#2E3A5E] transition-colors"
-          >
-            <X size={15} className="text-[#8A96B8]" />
-          </button>
-        </div>
-
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="px-6 py-5 flex flex-col gap-5">
-
-          {/* Monto USD */}
-          <div>
-            <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-[0.08em] mb-2">
-              Monto en USD
-            </label>
-            <div
-              className="flex items-center gap-2 rounded-2xl px-4 py-3.5 border transition-all"
-              style={{ background: '#0F1628', borderColor: amountUSD ? '#3B82F6' : '#263050',
-                boxShadow: amountUSD ? '0 0 0 2px #3B82F620' : 'none' }}
-            >
-              <span className="text-[#4E5A7A] font-bold text-lg">$</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={amountUSD}
-                onChange={handleAmountChange}
-                placeholder="0.00"
-                className="flex-1 bg-transparent text-white text-[1.125rem] font-bold outline-none placeholder-[#263050]"
-              />
-              <span className="text-[0.75rem] font-semibold text-[#4E5A7A]">USD</span>
-            </div>
-            {usdValue > 0 && usdValue < 1000 && (
-              <p className="text-[0.75rem] text-[#EF4444] mt-1.5 ml-1">Mínimo $1,000 USD para operaciones institucionales.</p>
-            )}
-            {usdValue >= 1000 && (
-              <p className="text-[0.75rem] text-[#22C55E] mt-1.5 ml-1">
-                ≈ {usdValue.toLocaleString('en-US', { maximumFractionDigits: 2 })} USDC en Stellar
-              </p>
-            )}
-          </div>
-
-          {/* Billetera Stellar de Destino */}
-          <div>
-            <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-[0.08em] mb-2">
-              Billetera Stellar de Destino
-            </label>
-            <div
-              className="flex items-start gap-2 rounded-2xl px-4 py-3.5 border transition-all"
-              style={{
-                background: '#0F1628',
-                borderColor: destinationWallet ? (isValidWallet ? '#22C55E' : '#EF4444') : '#263050',
-                boxShadow: destinationWallet ? (isValidWallet ? '0 0 0 2px #22C55E20' : '0 0 0 2px #EF444420') : 'none',
-              }}
-            >
-              <Wallet size={16} className="text-[#4E5A7A] mt-0.5 flex-shrink-0" />
-              <input
-                type="text"
-                value={destinationWallet}
-                onChange={e => setDestinationWallet(e.target.value)}
-                placeholder="GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-                className="flex-1 bg-transparent text-white text-[0.8125rem] font-mono outline-none placeholder-[#263050] break-all"
-                spellCheck={false}
-              />
-            </div>
-            {destinationWallet && !isValidWallet && (
-              <p className="text-[0.75rem] text-[#EF4444] mt-1.5 ml-1">
-                Dirección inválida — debe comenzar con G y tener 56 caracteres.
-              </p>
-            )}
-          </div>
-
-          {/* Ruta de la operación */}
-          <div className="rounded-2xl px-4 py-3 bg-[#0F1628] border border-[#1A2340]">
-            <p className="text-[0.6875rem] font-semibold text-[#4E5A7A] uppercase tracking-[0.08em] mb-2">
-              Ruta de la operación
-            </p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-1 rounded-full bg-[#3B82F61A] text-[#3B82F6] text-[0.6875rem] font-semibold">AV Finance LLC</span>
-              <span className="text-[#4E5A7A] text-xs">→</span>
-              <span className="px-2.5 py-1 rounded-full bg-[#C4CBD81A] text-[#C4CBD8] text-[0.6875rem] font-semibold">OwlPay Harbor</span>
-              <span className="text-[#4E5A7A] text-xs">→</span>
-              <span className="px-2.5 py-1 rounded-full bg-[#22C55E1A] text-[#22C55E] text-[0.6875rem] font-semibold">Stellar USDC</span>
-              <span className="text-[#4E5A7A] text-xs">→</span>
-              <span className="px-2.5 py-1 rounded-full bg-[#22C55E1A] text-[#22C55E] text-[0.6875rem] font-semibold">Wallet Destino</span>
-            </div>
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="flex items-start gap-2.5 px-4 py-3 rounded-2xl bg-[#EF44441A] border border-[#EF444430]">
-              <AlertCircle size={15} className="text-[#EF4444] flex-shrink-0 mt-0.5" />
-              <p className="text-[0.8125rem] text-[#F87171]">{error}</p>
-            </div>
-          )}
-
-          {/* Botón — Azul Alyto institucional */}
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            className="w-full py-4 rounded-2xl font-bold text-[0.9375rem] flex items-center justify-center gap-2 transition-all"
-            style={{
-              background: canSubmit ? '#1D3461' : '#1D346140',
-              color:      canSubmit ? '#FFFFFF'  : '#FFFFFF60',
-              boxShadow:  canSubmit ? '0 4px 20px rgba(29,52,97,0.5)' : 'none',
-            }}
-          >
-            {loading ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Procesando liquidación…
-              </>
-            ) : (
-              <>
-                <Building2 size={17} />
-                Ejecutar On-Ramp Institucional
-              </>
-            )}
-          </button>
-
-          <p className="text-center text-[0.6875rem] text-[#4E5A7A]">
-            Operación sujeta a verificación KYB. Liquidación T+0 vía Stellar.
-          </p>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-// ── Vista de éxito post-operación ─────────────────────────────────────────────
-
-function SuccessBanner({ result, onDismiss }) {
-  return (
-    <div className="mx-4 mb-4 rounded-2xl p-4 border border-[#22C55E30] bg-[#22C55E0D] flex items-start gap-3">
-      <CheckCircle2 size={18} className="text-[#22C55E] flex-shrink-0 mt-0.5" />
-      <div className="flex-1 min-w-0">
-        <p className="text-[0.875rem] font-semibold text-white mb-0.5">Operación iniciada correctamente</p>
-        <p className="text-[0.75rem] text-[#8A96B8]">
-          ID: <span className="text-[#C4CBD8] font-mono">{result?.alytoTransactionId ?? '—'}</span>
-        </p>
-        {result?.owlPayOrderId && (
-          <p className="text-[0.75rem] text-[#8A96B8]">
-            OwlPay: <span className="text-[#C4CBD8] font-mono">{result.owlPayOrderId}</span>
-          </p>
-        )}
-      </div>
-      <button onClick={onDismiss} className="text-[#4E5A7A] hover:text-[#8A96B8]">
-        <X size={15} />
-      </button>
-    </div>
-  )
-}
-
-// ── Card de liquidación institucional ─────────────────────────────────────────
-
-function LiquidationCard({ tx }) {
-  return (
-    <div className="rounded-2xl bg-[#1A2340] p-4 flex flex-col gap-3">
-      {/* Fila 1: ID + estado */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-bold text-white font-mono truncate">{tx.id}</p>
-          <p className="text-[0.6875rem] text-[#4E5A7A] mt-0.5">{tx.date}</p>
-        </div>
-        <StatusChip status={tx.status} />
-      </div>
-
-      {/* Fila 2: monto + asset */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-[#3B82F61A] flex items-center justify-center flex-shrink-0">
-          <DollarSign size={16} className="text-[#3B82F6]" />
-        </div>
-        <div>
-          <p className="text-[1.0625rem] font-extrabold text-white">
-            ${tx.amountUSD.toLocaleString('en-US')} <span className="text-[0.75rem] font-semibold text-[#8A96B8]">USD</span>
-          </p>
-          <p className="text-[0.6875rem] text-[#8A96B8]">→ {tx.amountUSD.toLocaleString('en-US')} {tx.asset} · Stellar</p>
-        </div>
-      </div>
-
-      {/* Fila 3: destino + txid */}
-      <div className="border-t border-[#263050] pt-3 flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-[0.6875rem] text-[#4E5A7A]">Destino</span>
-          <span className="text-[0.75rem] font-mono text-[#C4CBD8]">{tx.destination}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-[0.6875rem] text-[#4E5A7A]">OwlPay ID</span>
-          <span className="text-[0.75rem] font-mono text-[#8A96B8]">{tx.owlPayId}</span>
-        </div>
-        {tx.stellarTxId && (
-          <div className="flex items-center justify-between">
-            <span className="text-[0.6875rem] text-[#4E5A7A]">Stellar TXID</span>
-            <button className="flex items-center gap-1 text-[0.75rem] font-mono text-[#22C55E] hover:underline">
-              {tx.stellarTxId}
-              <ExternalLink size={10} />
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ── Vista Principal ───────────────────────────────────────────────────────────
-
-export default function CorporateView() {
-  const navigate = useNavigate()
-  const [showModal, setShowModal]     = useState(false)
-  const [successResult, setSuccess]   = useState(null)
-  const [activeFilter, setFilter]     = useState('all')
-
-  const filters = [
-    { key: 'all',        label: 'Todas'       },
-    { key: 'completed',  label: 'Completadas' },
-    { key: 'in_transit', label: 'En tránsito' },
-    { key: 'failed',     label: 'Fallidas'    },
-  ]
-
-  const filtered = activeFilter === 'all'
-    ? MOCK_LIQUIDATIONS
-    : MOCK_LIQUIDATIONS.filter(t => t.status === activeFilter)
-
-  function handleSuccess(result) {
-    setShowModal(false)
-    setSuccess(result)
+  function handleReset() {
+    setResult(null)
+    setAmount('')
+    setWallet('')
+    setMemo('')
+    setError(null)
   }
 
   return (
-    <div className="min-h-screen bg-[#0F1628] font-sans flex flex-col max-w-[430px] mx-auto relative">
-      <div className="flex-1 overflow-y-auto pb-10">
+    <div className="min-h-screen bg-[#0F1628] font-sans flex flex-col max-w-[430px] mx-auto">
+      <div className="flex-1 overflow-y-auto pb-12">
 
-        {/* ── HEADER ──────────────────────────────────────────────── */}
-        <header className="px-4 pt-14 pb-5">
+        {/* ── SECCIÓN 1 — HEADER ───────────────────────────────────── */}
+        <header className="px-4 pt-14 pb-6">
           <div className="flex items-center gap-3 mb-5">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate(-1)}
               className="w-10 h-10 rounded-full bg-[#1A2340] flex items-center justify-center border border-[#263050] flex-shrink-0 hover:border-[#C4CBD833] transition-colors"
             >
               <ArrowLeft size={18} className="text-[#8A96B8]" />
             </button>
+
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <p className="text-[1.0625rem] font-bold text-white">Plataforma Institucional</p>
-                <span className="text-[0.625rem] font-bold px-2 py-0.5 rounded border border-[#3B82F633] text-[#3B82F6] bg-[#3B82F61A] tracking-wide flex-shrink-0">
-                  LLC
+              <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                <h1 className="text-[1.0625rem] font-bold text-white leading-tight">
+                  Plataforma Institucional B2B
+                </h1>
+                {/* Badge entorno */}
+                <span
+                  className="text-[0.625rem] font-bold px-2 py-0.5 rounded border tracking-wide flex-shrink-0"
+                  style={{ color: ENV_COLOR, background: ENV_BG, borderColor: ENV_BORDER }}
+                >
+                  {ENV_LABEL}
                 </span>
               </div>
-              <p className="text-[0.75rem] text-[#4E5A7A]">AV Finance LLC · OwlPay Harbor · Stellar Network</p>
+              <p className="text-[0.75rem] text-[#4E5A7A]">
+                On-ramp fiat → USDC vía OwlPay Harbor · AV Finance LLC
+              </p>
             </div>
-          </div>
-
-          {/* Stats */}
-          <div className="flex gap-3">
-            {STATS.map(s => <StatCard key={s.label} {...s} />)}
           </div>
         </header>
 
-        {/* ── BANNER ÉXITO ────────────────────────────────────────── */}
-        {successResult && (
-          <SuccessBanner result={successResult} onDismiss={() => setSuccess(null)} />
-        )}
+        <div className="px-4 flex flex-col gap-5">
 
-        {/* ── HISTORIAL ───────────────────────────────────────────── */}
-        <div className="px-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-base font-bold text-white">Historial de Liquidaciones</p>
-            {/* Botón nueva operación — Azul Alyto institucional */}
-            <button
-              onClick={() => setShowModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-[0.8125rem] transition-all"
-              style={{ background: '#1D3461', color: '#FFFFFF', boxShadow: '0 2px 12px rgba(29,52,97,0.5)' }}
+          {/* ── SECCIÓN 2 — FORMULARIO / RESULTADO ───────────────────── */}
+          {result ? (
+            <SuccessCard result={result} onReset={handleReset} />
+          ) : (
+            <form
+              onSubmit={handleSubmit}
+              className="rounded-2xl bg-[#1A2340] border border-[#263050] overflow-hidden"
             >
-              <Plus size={15} />
-              Nueva
-            </button>
-          </div>
-
-          {/* Filtros */}
-          <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide pb-1">
-            {filters.map(f => (
-              <button
-                key={f.key}
-                onClick={() => setFilter(f.key)}
-                className="px-3 py-1.5 rounded-full text-[0.75rem] font-medium border whitespace-nowrap transition-all flex-shrink-0"
-                style={activeFilter === f.key
-                  ? { background: '#3B82F61A', borderColor: '#3B82F633', color: '#3B82F6' }
-                  : { background: 'transparent', borderColor: '#263050', color: '#4E5A7A' }}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Cards de liquidaciones */}
-          <div className="flex flex-col gap-3">
-            {filtered.length === 0 ? (
-              <div className="rounded-2xl bg-[#1A2340] p-8 text-center">
-                <Clock size={28} className="text-[#4E5A7A] mx-auto mb-2" />
-                <p className="text-[#8A96B8] text-sm">No hay operaciones en este estado.</p>
+              <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-[#263050]">
+                <div className="w-8 h-8 rounded-xl bg-[#C4CBD81A] flex items-center justify-center">
+                  <Building2 size={15} className="text-[#C4CBD8]" />
+                </div>
+                <p className="text-[0.9375rem] font-bold text-white">Nueva liquidación</p>
               </div>
-            ) : (
-              filtered.map(tx => <LiquidationCard key={tx.id} tx={tx} />)
-            )}
+
+              <div className="px-4 py-4 flex flex-col gap-4">
+
+                {/* Monto USD */}
+                <div>
+                  <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-[0.08em] mb-2">
+                    Monto USD
+                  </label>
+                  <div
+                    className="flex items-center gap-2 rounded-2xl px-4 py-3.5 border transition-all"
+                    style={{
+                      background:   '#0F1628',
+                      borderColor:  amount ? (numAmount >= 1000 && numAmount <= 500000 ? '#22C55E' : '#EF4444') : '#263050',
+                      boxShadow:    amount ? (numAmount >= 1000 && numAmount <= 500000 ? '0 0 0 2px #22C55E15' : '0 0 0 2px #EF444415') : 'none',
+                    }}
+                  >
+                    <span className="text-[#4E5A7A] font-bold text-lg">$</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={amount}
+                      onChange={handleAmountChange}
+                      placeholder="0.00"
+                      className="flex-1 bg-transparent text-white text-[1.125rem] font-bold outline-none placeholder-[#263050]"
+                    />
+                    <span className="text-[0.75rem] font-semibold text-[#4E5A7A]">USD</span>
+                  </div>
+                  {amount && numAmount > 0 && numAmount < 1000 && (
+                    <p className="text-[0.6875rem] text-[#EF4444] mt-1.5 ml-1">Monto mínimo: $1,000 USD</p>
+                  )}
+                  {amount && numAmount > 500000 && (
+                    <p className="text-[0.6875rem] text-[#EF4444] mt-1.5 ml-1">Monto máximo: $500,000 USD</p>
+                  )}
+                  {numAmount >= 1000 && numAmount <= 500000 && (
+                    <p className="text-[0.6875rem] text-[#22C55E] mt-1.5 ml-1">
+                      ≈ {numAmount.toLocaleString('en-US', { maximumFractionDigits: 2 })} USDC en Stellar
+                    </p>
+                  )}
+                </div>
+
+                {/* Stellar Wallet destino */}
+                <div>
+                  <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-[0.08em] mb-2">
+                    Stellar Wallet Destino
+                  </label>
+                  <div
+                    className="flex items-start gap-2 rounded-2xl px-4 py-3.5 border transition-all"
+                    style={{
+                      background:   '#0F1628',
+                      borderColor:  wallet ? (walletValid ? '#22C55E' : '#EF4444') : '#263050',
+                      boxShadow:    wallet ? (walletValid ? '0 0 0 2px #22C55E15' : '0 0 0 2px #EF444415') : 'none',
+                    }}
+                  >
+                    <Wallet size={16} className="text-[#4E5A7A] mt-0.5 flex-shrink-0" />
+                    <input
+                      type="text"
+                      value={wallet}
+                      onChange={e => setWallet(e.target.value)}
+                      placeholder="GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                      className="flex-1 bg-transparent text-white text-[0.8125rem] font-mono outline-none placeholder-[#263050] break-all"
+                      spellCheck={false}
+                      autoComplete="off"
+                    />
+                  </div>
+                  {wallet && !walletValid && (
+                    <p className="text-[0.6875rem] text-[#EF4444] mt-1.5 ml-1">
+                      Dirección inválida — debe comenzar con G y tener 56 caracteres
+                    </p>
+                  )}
+                </div>
+
+                {/* Memo (opcional) */}
+                <div>
+                  <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-[0.08em] mb-2">
+                    Memo <span className="text-[#4E5A7A] normal-case tracking-normal font-normal">(opcional)</span>
+                  </label>
+                  <div
+                    className="flex items-center gap-2 rounded-2xl px-4 py-3.5 border transition-all"
+                    style={{
+                      background:  '#0F1628',
+                      borderColor: memo ? '#C4CBD833' : '#263050',
+                    }}
+                  >
+                    <FileText size={15} className="text-[#4E5A7A] flex-shrink-0" />
+                    <input
+                      type="text"
+                      value={memo}
+                      onChange={e => setMemo(e.target.value)}
+                      placeholder="OP-YYYYMMDD"
+                      maxLength={64}
+                      className="flex-1 bg-transparent text-white text-[0.875rem] outline-none placeholder-[#4E5A7A]"
+                    />
+                  </div>
+                </div>
+
+                {/* Ruta */}
+                <div className="rounded-xl px-4 py-3 bg-[#0F1628] border border-[#1A2340]">
+                  <p className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-[0.08em] mb-2">
+                    Ruta de la operación
+                  </p>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {[
+                      { label: 'AV Finance LLC', style: { color: '#C4CBD8', background: '#C4CBD81A' } },
+                      { label: 'OwlPay Harbor',  style: { color: '#C4CBD8', background: '#C4CBD81A' } },
+                      { label: 'USDC · Stellar', style: { color: '#22C55E', background: '#22C55E1A' } },
+                    ].map((node, i, arr) => (
+                      <span key={node.label} className="flex items-center gap-1.5">
+                        <span
+                          className="px-2 py-0.5 rounded-full text-[0.625rem] font-semibold"
+                          style={node.style}
+                        >
+                          {node.label}
+                        </span>
+                        {i < arr.length - 1 && (
+                          <ChevronRight size={10} className="text-[#4E5A7A] flex-shrink-0" />
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Error */}
+                {error && (
+                  <div className="flex items-start gap-2.5 px-4 py-3 rounded-2xl bg-[#EF44441A] border border-[#EF444430]">
+                    <AlertCircle size={15} className="text-[#EF4444] flex-shrink-0 mt-0.5" />
+                    <p className="text-[0.8125rem] text-[#F87171]">{error}</p>
+                  </div>
+                )}
+
+                {/* Botón */}
+                <button
+                  type="submit"
+                  disabled={!canSubmit}
+                  className="w-full py-4 rounded-2xl font-bold text-[0.9375rem] flex items-center justify-center gap-2 transition-all"
+                  style={{
+                    background: canSubmit ? '#C4CBD8' : '#C4CBD81A',
+                    color:      canSubmit ? '#0F1628' : '#4E5A7A',
+                    boxShadow:  canSubmit ? '0 4px 20px rgba(196,203,216,0.3)' : 'none',
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Procesando…
+                    </>
+                  ) : (
+                    'Iniciar on-ramp →'
+                  )}
+                </button>
+
+                <p className="text-center text-[0.6875rem] text-[#4E5A7A]">
+                  Sujeto a verificación KYB · Liquidación T+0 vía Stellar
+                </p>
+              </div>
+            </form>
+          )}
+
+          {/* ── SECCIÓN 3 — HISTORIAL DE LIQUIDACIONES ───────────────── */}
+          <div className="rounded-2xl bg-[#1A2340] border border-[#263050] overflow-hidden">
+            <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-[#263050]">
+              <Clock size={14} className="text-[#4E5A7A]" />
+              <p className="text-[0.9375rem] font-bold text-white">Historial de liquidaciones</p>
+            </div>
+            {/* Estado vacío — historial se implementa en fase posterior */}
+            <div className="px-4 py-8 flex flex-col items-center gap-3 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-[#263050] flex items-center justify-center">
+                <Clock size={22} className="text-[#4E5A7A]" />
+              </div>
+              <p className="text-[0.875rem] text-[#8A96B8]">
+                Las liquidaciones completadas aparecerán aquí
+              </p>
+              <p className="text-[0.75rem] text-[#4E5A7A]">
+                Las operaciones confirmadas se sincronizan automáticamente
+              </p>
+            </div>
           </div>
+
         </div>
-
       </div>
-
-      {/* ── MODAL NUEVA OPERACIÓN ────────────────────────────────── */}
-      {showModal && (
-        <NewOperationModal
-          onClose={() => setShowModal(false)}
-          onSuccess={handleSuccess}
-        />
-      )}
     </div>
   )
 }
