@@ -58,9 +58,10 @@ function toQrSrc(raw) {
 
 function ManualPayinScreen({ stepData }) {
   const navigate = useNavigate()
-  const { transactionId, originAmount, originCurrency, payinInstructions, paymentQR } = stepData
-  const bank     = payinInstructions ?? {}
-  const currency = originCurrency ?? 'BOB'
+  const { transactionId, originAmount, originCurrency, payinInstructions, paymentQR, paymentQRStatic } = stepData
+  const bank       = payinInstructions ?? {}
+  const currency   = originCurrency ?? 'BOB'
+  const staticQRs  = Array.isArray(paymentQRStatic) ? paymentQRStatic.filter(q => q.imageBase64) : []
 
   const [copiedRef,    setCopiedRef]    = useState(false)
   const [qrSrc,        setQrSrc]        = useState(() => toQrSrc(paymentQR))
@@ -138,7 +139,7 @@ function ManualPayinScreen({ stepData }) {
     }
   }
 
-  const showQRSection = qrLoading || !!qrSrc
+  const showQRSection = qrLoading || !!qrSrc || staticQRs.length > 0
 
   return (
     <div className="flex flex-col gap-5 px-4 pb-4">
@@ -153,35 +154,53 @@ function ManualPayinScreen({ stepData }) {
 
       {/* ── Sección QR ── */}
       {showQRSection && (
-        <div className="bg-[#1A2340] border border-[#263050] rounded-2xl p-5 flex flex-col items-center gap-3">
+        <div className="bg-[#1A2340] border border-[#263050] rounded-2xl p-5 flex flex-col items-center gap-4">
           <div className="flex items-center gap-2">
             <span className="text-xl">📱</span>
             <p className="text-[0.875rem] font-bold text-white">Paga con QR</p>
           </div>
 
-          {qrLoading ? (
-            <div className="w-[200px] h-[200px] rounded-2xl bg-[#263050] animate-pulse" />
-          ) : (
-            <img
-              src={qrSrc}
-              alt="Código QR de pago"
-              className="w-[200px] h-[200px] rounded-2xl bg-white p-2 object-contain"
-            />
+          {/* QR estáticos subidos por admin (Tigo Money, Banco Bisa, etc.) */}
+          {staticQRs.length > 0 && (
+            <div className={`w-full ${staticQRs.length > 1 ? 'grid grid-cols-2 gap-3' : 'flex justify-center'}`}>
+              {staticQRs.map((qr, i) => (
+                <div key={i} className="flex flex-col items-center gap-1.5">
+                  <img
+                    src={qr.imageBase64}
+                    alt={qr.label}
+                    className="w-[160px] h-[160px] rounded-xl bg-white p-1.5 object-contain"
+                  />
+                  <span className="text-[0.75rem] text-[#8A96B8] font-medium">{qr.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* QR dinámico (datos de transferencia bancaria) — solo si no hay estáticos */}
+          {staticQRs.length === 0 && (
+            qrLoading ? (
+              <div className="w-[200px] h-[200px] rounded-2xl bg-[#263050] animate-pulse" />
+            ) : qrSrc ? (
+              <>
+                <img
+                  src={qrSrc}
+                  alt="Código QR de pago"
+                  className="w-[200px] h-[200px] rounded-2xl bg-white p-2 object-contain"
+                />
+                <button
+                  onClick={downloadQR}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#263050] text-[0.8125rem] text-[#8A96B8] hover:text-white hover:border-[#C4CBD833] transition-colors"
+                >
+                  <Download size={13} />
+                  Descargar QR
+                </button>
+              </>
+            ) : null
           )}
 
           <p className="text-[0.75rem] text-[#8A96B8] text-center">
-            Escanea desde tu app bancaria
+            Escanea desde tu app bancaria o billetera digital
           </p>
-
-          {qrSrc && (
-            <button
-              onClick={downloadQR}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#263050] text-[0.8125rem] text-[#8A96B8] hover:text-white hover:border-[#C4CBD833] transition-colors"
-            >
-              <Download size={13} />
-              Descargar QR
-            </button>
-          )}
         </div>
       )}
 
@@ -202,7 +221,7 @@ function ManualPayinScreen({ stepData }) {
         </div>
         <div className="px-5 py-1">
           <InfoRow label="Banco"   value={bank.bankName     ?? 'Banco Bisa'} />
-          <InfoRow label="Titular" value={bank.holder       ?? 'AV Finance SRL'} />
+          <InfoRow label="Titular" value={bank.accountHolder ?? bank.holder ?? 'AV Finance SRL'} />
           <InfoRow label="Cuenta"  value={bank.accountNumber ?? '—'} mono />
           <InfoRow label="Tipo"    value={bank.accountType   ?? 'Cuenta Corriente'} />
           <InfoRow

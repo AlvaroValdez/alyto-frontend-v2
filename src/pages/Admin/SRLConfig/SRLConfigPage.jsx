@@ -13,13 +13,14 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   QrCode, Upload, X, Loader2, CheckCircle2,
-  ToggleLeft, ToggleRight, Trash2, Image as ImageIcon,
+  ToggleLeft, ToggleRight, Trash2, Image as ImageIcon, Building2, Save,
 } from 'lucide-react'
 import {
   getSRLConfig,
   uploadSRLQR,
   toggleSRLQR,
   deleteSRLQR,
+  updateSRLBankData,
 } from '../../../services/adminService'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -182,6 +183,114 @@ function UploadModal({ onClose, onUploaded }) {
   )
 }
 
+// ── Bank Data Card ────────────────────────────────────────────────────────
+
+function BankDataCard({ initial, onSaved }) {
+  const [form,    setForm]    = useState({
+    bankName:      initial?.bankName      ?? '',
+    accountHolder: initial?.accountHolder ?? '',
+    accountNumber: initial?.accountNumber ?? '',
+    accountType:   initial?.accountType   ?? '',
+  })
+  const [saving,  setSaving]  = useState(false)
+  const [error,   setError]   = useState(null)
+
+  const inputCls = 'w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white border border-[#263050] bg-[#0F1628] focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] placeholder-[#4E5A7A]'
+  const labelCls = 'block text-[0.625rem] font-bold text-[#4E5A7A] uppercase tracking-wider mb-1.5'
+
+  function set(field, value) {
+    setForm(prev => ({ ...prev, [field]: value }))
+    setError(null)
+  }
+
+  async function handleSave() {
+    if (!form.bankName.trim() || !form.accountHolder.trim() || !form.accountNumber.trim() || !form.accountType.trim()) {
+      setError('Todos los campos son requeridos.')
+      return
+    }
+    setSaving(true)
+    setError(null)
+    try {
+      await updateSRLBankData(form)
+      onSaved('Datos bancarios actualizados')
+    } catch (err) {
+      setError(err.message || 'Error al guardar')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div
+      className="rounded-2xl p-5 space-y-4"
+      style={{ background: '#1A2340', border: '1px solid #263050' }}
+    >
+      <div className="flex items-center gap-2.5 mb-1">
+        <Building2 size={17} className="text-[#C4CBD8]" />
+        <h2 className="text-[0.9375rem] font-bold text-white">Datos bancarios AV Finance SRL</h2>
+      </div>
+      <p className="text-[0.8125rem] text-[#4E5A7A] -mt-2">
+        Estos datos se muestran al usuario en las instrucciones de pago manual Bolivia.
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className={labelCls}>Banco *</label>
+          <input
+            className={inputCls}
+            placeholder="ej. Banco Bisa"
+            value={form.bankName}
+            onChange={e => set('bankName', e.target.value)}
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Titular *</label>
+          <input
+            className={inputCls}
+            placeholder="ej. AV Finance SRL"
+            value={form.accountHolder}
+            onChange={e => set('accountHolder', e.target.value)}
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Número de cuenta *</label>
+          <input
+            className={inputCls}
+            placeholder="ej. 1234567890"
+            value={form.accountNumber}
+            onChange={e => set('accountNumber', e.target.value)}
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Tipo de cuenta *</label>
+          <input
+            className={inputCls}
+            placeholder="ej. Cuenta Corriente"
+            value={form.accountType}
+            onChange={e => set('accountType', e.target.value)}
+          />
+        </div>
+      </div>
+
+      {error && (
+        <p className="text-[0.8125rem] text-[#EF4444]">{error}</p>
+      )}
+
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[0.875rem] font-bold text-[#0F1628] disabled:opacity-60 transition-opacity"
+        style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.2)' }}
+      >
+        {saving
+          ? <><Loader2 size={14} className="animate-spin" /> Guardando…</>
+          : <><Save size={14} /> Guardar datos bancarios</>
+        }
+      </button>
+    </div>
+  )
+}
+
 // ── QR Card ────────────────────────────────────────────────────────────────
 
 function QRCard({ qr, onToggle, onDelete }) {
@@ -336,6 +445,7 @@ function SkeletonGrid() {
 
 export default function SRLConfigPage() {
   const [qrImages,  setQrImages]  = useState([])
+  const [bankData,  setBankData]  = useState(null)
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState(null)
   const [showModal, setShowModal] = useState(false)
@@ -347,6 +457,7 @@ export default function SRLConfigPage() {
     try {
       const data = await getSRLConfig()
       setQrImages(data.qrImages ?? [])
+      setBankData(data.bankData  ?? {})
     } catch (err) {
       setError(err.message || 'Error al cargar la configuración')
     } finally {
@@ -412,6 +523,21 @@ export default function SRLConfigPage() {
           {error}
         </div>
       )}
+
+      {/* ── Datos bancarios ── */}
+      {!loading && bankData !== null && (
+        <BankDataCard
+          initial={bankData}
+          onSaved={msg => setToast(msg)}
+        />
+      )}
+
+      {/* ── Separador QR ── */}
+      <div className="flex items-center gap-3 pt-1">
+        <QrCode size={16} className="text-[#4E5A7A] flex-shrink-0" />
+        <span className="text-[0.8125rem] font-semibold text-[#4E5A7A]">Códigos QR de pago</span>
+        <div className="h-px flex-1 bg-[#263050]" />
+      </div>
 
       {/* ── Content ── */}
       {loading ? (

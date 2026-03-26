@@ -260,3 +260,15 @@ export function deleteSRLQR(qrId) {
     method: 'DELETE',
   })
 }
+
+/**
+ * Actualiza los datos bancarios de AV Finance SRL.
+ * @param {{ bankName, accountHolder, accountNumber, accountType }} bankData
+ * @returns {Promise<{ bankData, message }>}
+ */
+export function updateSRLBankData(bankData) {
+  return request('/admin/srl-config/bank-data', {
+    method: 'PATCH',
+    body:   JSON.stringify(bankData),
+  })
+}
