@@ -173,6 +173,13 @@ export default function AppRouter() {
       {/* Alias /success para redirect_url de Fintoc */}
       <Route path="/success" element={<PaymentSuccessPage />} />
 
+      {/* ── Plataforma Institucional LLC ─────────────────────────────────── */}
+      <Route path="/institutional" element={
+        <ProtectedRoute>
+          <CorporateView />
+        </ProtectedRoute>
+      } />
+
       {/* ── Rutas legacy — mantener compatibilidad ───────────────────────── */}
       <Route path="/transfer" element={
         <ProtectedRoute><TransferView /></ProtectedRoute>
