@@ -43,7 +43,7 @@ function isValidStellarKey(key) {
 // ── Card resultado exitoso ────────────────────────────────────────────────────
 
 function SuccessCard({ result, onReset }) {
-  const { alytoTransactionId, owlPayOrderId, estimatedUSDC, paymentUrl } = result
+  const { alytoTransactionId, owlPayOrderId, estimatedUSDC, transferInstructions } = result
 
   return (
     <div className="rounded-2xl border border-[#22C55E33] bg-[#22C55E0D] overflow-hidden">
@@ -58,7 +58,7 @@ function SuccessCard({ result, onReset }) {
         </div>
       </div>
 
-      {/* Datos */}
+      {/* IDs */}
       <div className="px-4 py-4 flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <span className="text-[0.75rem] text-[#8A96B8]">ID Alyto</span>
@@ -84,20 +84,60 @@ function SuccessCard({ result, onReset }) {
         )}
       </div>
 
-      {/* CTA + nota */}
+      {/* Wire transfer instructions */}
+      {transferInstructions && (
+        <div className="mx-4 mb-4 rounded-xl border border-[#C4CBD820] bg-[#1A2340] overflow-hidden">
+          <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-[#263050]">
+            <FileText size={13} className="text-[#8A96B8] flex-shrink-0" />
+            <p className="text-[0.75rem] font-bold text-[#C4CBD8] uppercase tracking-wide">
+              Instrucciones wire transfer
+            </p>
+          </div>
+          <div className="px-3.5 py-3 flex flex-col gap-2.5">
+            {transferInstructions.bank_name && (
+              <div className="flex justify-between gap-3">
+                <span className="text-[0.6875rem] text-[#4E5A7A] flex-shrink-0">Banco</span>
+                <span className="text-[0.75rem] font-semibold text-[#C4CBD8] text-right">{transferInstructions.bank_name}</span>
+              </div>
+            )}
+            {transferInstructions.account_holder_name && (
+              <div className="flex justify-between gap-3">
+                <span className="text-[0.6875rem] text-[#4E5A7A] flex-shrink-0">Titular</span>
+                <span className="text-[0.75rem] font-semibold text-[#C4CBD8] text-right">{transferInstructions.account_holder_name}</span>
+              </div>
+            )}
+            {transferInstructions.routing_number && (
+              <div className="flex justify-between gap-3">
+                <span className="text-[0.6875rem] text-[#4E5A7A] flex-shrink-0">Routing</span>
+                <span className="text-[0.75rem] font-mono font-semibold text-[#C4CBD8]">{transferInstructions.routing_number}</span>
+              </div>
+            )}
+            {transferInstructions.account_number && (
+              <div className="flex justify-between gap-3">
+                <span className="text-[0.6875rem] text-[#4E5A7A] flex-shrink-0">Cuenta</span>
+                <span className="text-[0.75rem] font-mono font-semibold text-[#C4CBD8]">{transferInstructions.account_number}</span>
+              </div>
+            )}
+            {/* Referencia (narrative) — dato crítico para que Harbor identifique el pago */}
+            {transferInstructions.narrative && (
+              <div className="mt-1 rounded-lg bg-[#22C55E0D] border border-[#22C55E30] px-3 py-2.5 flex flex-col gap-1">
+                <span className="text-[0.625rem] font-bold text-[#22C55E] uppercase tracking-wide">
+                  Referencia obligatoria
+                </span>
+                <span className="text-[0.8125rem] font-mono font-bold text-[#22C55E] break-all">
+                  {transferInstructions.narrative}
+                </span>
+                <span className="text-[0.625rem] text-[#4E5A7A]">
+                  Incluir exactamente este texto en el concepto del wire transfer
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Nota + reset */}
       <div className="px-4 pb-4 flex flex-col gap-3">
-        {paymentUrl && (
-          <a
-            href={paymentUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] no-underline transition-all"
-            style={{ background: '#22C55E', color: '#0F1628', boxShadow: '0 4px 20px rgba(34,197,94,0.3)' }}
-          >
-            Ver instrucciones de pago
-            <ExternalLink size={15} />
-          </a>
-        )}
         <p className="text-center text-[0.6875rem] text-[#4E5A7A] leading-relaxed">
           El USDC llegará a tu wallet Stellar en 1–2 días hábiles tras confirmar el wire transfer.
         </p>
