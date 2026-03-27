@@ -50,7 +50,9 @@ import AnalyticsPage  from '../pages/Admin/Analytics/AnalyticsPage'
 import FundingPage    from '../pages/Admin/Funding/FundingPage'
 import KybListPage    from '../pages/Admin/Kyb/KybListPage'
 import KybDetailPage  from '../pages/Admin/Kyb/KybDetailPage'
-import SRLConfigPage  from '../pages/Admin/SRLConfig/SRLConfigPage'
+import SRLConfigPage      from '../pages/Admin/SRLConfig/SRLConfigPage'
+import WalletPage         from '../pages/Wallet/WalletPage'
+import WalletAdminPage    from '../pages/Admin/Wallet/WalletAdminPage'
 
 // ── Páginas KYB (usuario) ─────────────────────────────────────────────────────
 import KybPage        from '../pages/Kyb/KybPage'
@@ -160,6 +162,13 @@ export default function AppRouter() {
         </ProtectedRoute>
       } />
 
+      {/* ── Wallet BOB — Exclusivo SRL Bolivia (Fase 25) ────────────────── */}
+      <Route path="/wallet" element={
+        <ProtectedRoute requiredEntity="SRL">
+          <WalletPage />
+        </ProtectedRoute>
+      } />
+
       {/* ── Notificaciones (futuro) ────────────────────────────────────── */}
       <Route path="/notifications" element={
         <ProtectedRoute>
@@ -220,6 +229,7 @@ export default function AppRouter() {
         <Route path="/admin/kyb"             element={<KybListPage />}     />
         <Route path="/admin/kyb/:businessId" element={<KybDetailPage />}   />
         <Route path="/admin/srl-config"      element={<SRLConfigPage />}   />
+        <Route path="/admin/wallet"          element={<WalletAdminPage />} />
       </Route>
 
       {/* ── 404 ─────────────────────────────────────────────────────────── */}
