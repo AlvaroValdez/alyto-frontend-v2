@@ -53,6 +53,8 @@ import KybDetailPage  from '../pages/Admin/Kyb/KybDetailPage'
 import SRLConfigPage      from '../pages/Admin/SRLConfig/SRLConfigPage'
 import WalletPage         from '../pages/Wallet/WalletPage'
 import WalletAdminPage    from '../pages/Admin/Wallet/WalletAdminPage'
+import ReclamosPage       from '../pages/Reclamos/ReclamosPage'
+import ReclamosAdminPage  from '../pages/Admin/Reclamos/ReclamosAdminPage'
 
 // ── Páginas KYB (usuario) ─────────────────────────────────────────────────────
 import KybPage        from '../pages/Kyb/KybPage'
@@ -169,6 +171,13 @@ export default function AppRouter() {
         </ProtectedRoute>
       } />
 
+      {/* ── Reclamos PRILI — Todos los usuarios (Fase 27) ────────────────── */}
+      <Route path="/reclamos" element={
+        <ProtectedRoute>
+          <ReclamosPage />
+        </ProtectedRoute>
+      } />
+
       {/* ── Notificaciones (futuro) ────────────────────────────────────── */}
       <Route path="/notifications" element={
         <ProtectedRoute>
@@ -229,7 +238,8 @@ export default function AppRouter() {
         <Route path="/admin/kyb"             element={<KybListPage />}     />
         <Route path="/admin/kyb/:businessId" element={<KybDetailPage />}   />
         <Route path="/admin/srl-config"      element={<SRLConfigPage />}   />
-        <Route path="/admin/wallet"          element={<WalletAdminPage />} />
+        <Route path="/admin/wallet"          element={<WalletAdminPage />}    />
+        <Route path="/admin/reclamos"        element={<ReclamosAdminPage />}  />
       </Route>
 
       {/* ── 404 ─────────────────────────────────────────────────────────── */}

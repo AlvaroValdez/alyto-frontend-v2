@@ -13,7 +13,7 @@
 
 import { useLocation, Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Bell, Home, BarChart2, FileText, User, Shield, LogOut, ChevronRight, Wallet } from 'lucide-react'
+import { Bell, Home, BarChart2, FileText, User, Shield, LogOut, ChevronRight, Wallet, AlertCircle } from 'lucide-react'
 import { useAuth }            from '../../context/AuthContext'
 import { useDashboard }       from '../../hooks/useDashboard'
 import { listUserCorridors }  from '../../services/paymentsService'
@@ -340,6 +340,31 @@ export default function DashboardPage() {
             </Link>
           </div>
         )}
+
+        {/* ─────────────────────────────────────────────────────────── */}
+        {/* SECCIÓN 3d — Acceso Reclamos PRILI (todos los usuarios)     */}
+        {/* ─────────────────────────────────────────────────────────── */}
+        <div className="mx-4 mb-4">
+          <Link
+            to="/reclamos"
+            className="flex items-center justify-between px-4 py-4 rounded-2xl bg-[#1A2340] border border-[#263050] no-underline hover:border-[#C4CBD833] transition-colors group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#3B82F61A] flex items-center justify-center flex-shrink-0">
+                <AlertCircle size={18} className="text-[#3B82F6]" />
+              </div>
+              <div>
+                <p className="text-[0.9375rem] font-bold text-white leading-tight">
+                  Mis Reclamos
+                </p>
+                <p className="text-[0.75rem] text-[#4E5A7A]">
+                  Punto de Reclamo PRILI · ASFI
+                </p>
+              </div>
+            </div>
+            <ChevronRight size={18} className="text-[#4E5A7A] group-hover:text-[#C4CBD8] transition-colors flex-shrink-0" />
+          </Link>
+        </div>
 
         {/* ─────────────────────────────────────────────────────────── */}
         {/* SECCIÓN 4 — RecentTransactions                              */}
