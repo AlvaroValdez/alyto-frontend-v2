@@ -55,6 +55,7 @@ import WalletPage         from '../pages/Wallet/WalletPage'
 import WalletAdminPage    from '../pages/Admin/Wallet/WalletAdminPage'
 import ReclamosPage       from '../pages/Reclamos/ReclamosPage'
 import ReclamosAdminPage  from '../pages/Admin/Reclamos/ReclamosAdminPage'
+import SanctionsPage      from '../pages/Admin/Sanctions/SanctionsPage'
 
 // ── Páginas KYB (usuario) ─────────────────────────────────────────────────────
 import KybPage        from '../pages/Kyb/KybPage'
@@ -240,6 +241,7 @@ export default function AppRouter() {
         <Route path="/admin/srl-config"      element={<SRLConfigPage />}   />
         <Route path="/admin/wallet"          element={<WalletAdminPage />}    />
         <Route path="/admin/reclamos"        element={<ReclamosAdminPage />}  />
+        <Route path="/admin/sanctions"       element={<SanctionsPage />}       />
       </Route>
 
       {/* ── 404 ─────────────────────────────────────────────────────────── */}
