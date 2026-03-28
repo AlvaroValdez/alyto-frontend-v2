@@ -26,18 +26,33 @@ const ENTITY_ORIGIN = {
 // ── Info de países para enriquecer la respuesta del backend ──────────────────
 
 const COUNTRY_INFO = {
-  CO: { name: 'Colombia',        currency: 'COP', flag: '🇨🇴' },
-  PE: { name: 'Perú',            currency: 'PEN', flag: '🇵🇪' },
-  BO: { name: 'Bolivia',         currency: 'BOB', flag: '🇧🇴' },
-  AR: { name: 'Argentina',       currency: 'ARS', flag: '🇦🇷' },
-  MX: { name: 'México',          currency: 'MXN', flag: '🇲🇽' },
-  BR: { name: 'Brasil',          currency: 'BRL', flag: '🇧🇷' },
-  US: { name: 'Estados Unidos',  currency: 'USD', flag: '🇺🇸' },
-  EC: { name: 'Ecuador',         currency: 'USD', flag: '🇪🇨' },
-  VE: { name: 'Venezuela',       currency: 'USD', flag: '🇻🇪' },
-  PY: { name: 'Paraguay',        currency: 'PYG', flag: '🇵🇾' },
-  UY: { name: 'Uruguay',         currency: 'UYU', flag: '🇺🇾' },
-  CL: { name: 'Chile',           currency: 'CLP', flag: '🇨🇱' },
+  // LatAm — Vita
+  CO: { name: 'Colombia',          currency: 'COP', flag: '🇨🇴' },
+  PE: { name: 'Perú',              currency: 'PEN', flag: '🇵🇪' },
+  BO: { name: 'Bolivia',           currency: 'BOB', flag: '🇧🇴' },
+  AR: { name: 'Argentina',         currency: 'ARS', flag: '🇦🇷' },
+  MX: { name: 'México',            currency: 'MXN', flag: '🇲🇽' },
+  BR: { name: 'Brasil',            currency: 'BRL', flag: '🇧🇷' },
+  CL: { name: 'Chile',             currency: 'CLP', flag: '🇨🇱' },
+  EC: { name: 'Ecuador',           currency: 'USD', flag: '🇪🇨' },
+  VE: { name: 'Venezuela',         currency: 'USD', flag: '🇻🇪' },
+  PY: { name: 'Paraguay',          currency: 'PYG', flag: '🇵🇾' },
+  UY: { name: 'Uruguay',           currency: 'UYU', flag: '🇺🇾' },
+  CR: { name: 'Costa Rica',        currency: 'CRC', flag: '🇨🇷' },
+  PA: { name: 'Panamá',            currency: 'USD', flag: '🇵🇦' },
+  DO: { name: 'Rep. Dominicana',   currency: 'DOP', flag: '🇩🇴' },
+  GT: { name: 'Guatemala',         currency: 'GTQ', flag: '🇬🇹' },
+  // Global — OwlPay
+  US: { name: 'Estados Unidos',    currency: 'USD', flag: '🇺🇸' },
+  EU: { name: 'Europa (EUR)',       currency: 'EUR', flag: '🇪🇺' },
+  CN: { name: 'China',             currency: 'CNY', flag: '🇨🇳' },
+  AE: { name: 'Emiratos Árabes',   currency: 'AED', flag: '🇦🇪' },
+  GB: { name: 'Reino Unido',       currency: 'GBP', flag: '🇬🇧' },
+  CA: { name: 'Canadá',            currency: 'CAD', flag: '🇨🇦' },
+  AU: { name: 'Australia',         currency: 'AUD', flag: '🇦🇺' },
+  JP: { name: 'Japón',             currency: 'JPY', flag: '🇯🇵' },
+  IN: { name: 'India',             currency: 'INR', flag: '🇮🇳' },
+  SG: { name: 'Singapur',          currency: 'SGD', flag: '🇸🇬' },
 }
 
 /** Convierte la lista de corredores en opciones de país destino únicas */
