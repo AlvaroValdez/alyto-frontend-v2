@@ -85,14 +85,21 @@ export function AuthProvider({ children }) {
         setSession(prev => ({ ...prev, user: data.user }))
         Sentry.setUser({ id: data.user.id, email: data.user.email })
       })
-      .catch(() => {
-        // Token inválido o expirado server-side → limpiar sesión
-        localStorage.removeItem(TOKEN_KEY)
-        localStorage.removeItem(USER_KEY)
-        sessionStorage.removeItem(TOKEN_KEY)
-        sessionStorage.removeItem(USER_KEY)
-        setSession({ token: null, user: null, storage: null })
-        Sentry.setUser(null)
+      .catch((err) => {
+        // Solo limpiar si es 401 (token inválido/expirado server-side).
+        // Para errores de red transitorios (sin .status) NO limpiar — el usuario
+        // puede estar en medio del redirect de Stripe Identity y perder la sesión.
+        // Los 401 ya disparan el evento alyto:unauthorized via request(), este
+        // catch actúa como fallback de seguridad.
+        if (err?.status === 401) {
+          localStorage.removeItem(TOKEN_KEY)
+          localStorage.removeItem(USER_KEY)
+          sessionStorage.removeItem(TOKEN_KEY)
+          sessionStorage.removeItem(USER_KEY)
+          setSession({ token: null, user: null, storage: null })
+          Sentry.setUser(null)
+        }
+        // Error de red o 5xx → mantener la sesión cacheada en storage
       })
       .finally(() => setIsLoading(false))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps

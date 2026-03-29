@@ -62,8 +62,15 @@ export default function KycReturnPage() {
           // Breve pausa para que el usuario vea el estado antes de navegar
           setTimeout(() => navigate('/kyc', { replace: true }), 1500)
         }
-      } catch {
-        // Error de red — seguir intentando
+      } catch (err) {
+        // 401: sesión perdida (edge case post-redirect) → redirigir a login
+        if (err?.status === 401) {
+          stopPolling()
+          console.warn('[KYC Return] Sesión no encontrada post-redirect. Redirigiendo a login.')
+          navigate('/login', { replace: true, state: { message: 'Inicia sesión para completar tu verificación.' } })
+          return
+        }
+        // Error de red transitorio — seguir intentando
       }
     }, POLL_INTERVAL_MS)
 

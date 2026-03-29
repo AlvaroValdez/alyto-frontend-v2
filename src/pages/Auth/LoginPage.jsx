@@ -30,6 +30,7 @@ export default function LoginPage() {
 
   const expired       = new URLSearchParams(location.search).get('expired') === '1'
   const loggedOut     = new URLSearchParams(location.search).get('logout') === '1'
+  const stateMessage  = location.state?.message ?? null
 
   const [form, setForm] = useState({ email: '', password: '', rememberMe: true })
   const [showPwd, setShowPwd] = useState(false)
@@ -89,6 +90,14 @@ export default function LoginPage() {
         <div className="flex items-center gap-2.5 bg-[#22C55E1A] border border-[#22C55E33] rounded-2xl px-4 py-3 mb-5">
           <CheckCircle size={15} className="text-[#22C55E] flex-shrink-0" />
           <p className="text-[0.8125rem] text-[#22C55E]">Sesión cerrada correctamente.</p>
+        </div>
+      )}
+
+      {/* Banner mensaje desde redirect (ej. /kyc/return con sesión perdida) */}
+      {stateMessage && !expired && !error && (
+        <div className="flex items-center gap-2.5 bg-[#C4CBD81A] border border-[#C4CBD833] rounded-2xl px-4 py-3 mb-5">
+          <Clock size={15} className="text-[#C4CBD8] flex-shrink-0" />
+          <p className="text-[0.8125rem] text-[#C4CBD8]">{stateMessage}</p>
         </div>
       )}
 
