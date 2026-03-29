@@ -132,7 +132,7 @@ export default function SendMoneyPage() {
         {step === 3 && (
           <Step3Beneficiary
             destinationCountry={stepData.destinationCountry}
-            isManualCorridor={stepData.payinMethod === 'manual'}
+            isManualCorridor={stepData.isManualCorridor === true}
             onNext={(data) => nextStep(data)}
           />
         )}
