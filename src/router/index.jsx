@@ -51,6 +51,7 @@ import FundingPage    from '../pages/Admin/Funding/FundingPage'
 import KybListPage    from '../pages/Admin/Kyb/KybListPage'
 import KybDetailPage  from '../pages/Admin/Kyb/KybDetailPage'
 import SRLConfigPage      from '../pages/Admin/SRLConfig/SRLConfigPage'
+import SpAConfigPage      from '../pages/Admin/SpAConfig/SpAConfigPage'
 import WalletPage         from '../pages/Wallet/WalletPage'
 import WalletAdminPage    from '../pages/Admin/Wallet/WalletAdminPage'
 import ReclamosPage       from '../pages/Reclamos/ReclamosPage'
@@ -239,6 +240,7 @@ export default function AppRouter() {
         <Route path="/admin/kyb"             element={<KybListPage />}     />
         <Route path="/admin/kyb/:businessId" element={<KybDetailPage />}   />
         <Route path="/admin/srl-config"      element={<SRLConfigPage />}   />
+        <Route path="/admin/spa-config"      element={<SpAConfigPage />}   />
         <Route path="/admin/wallet"          element={<WalletAdminPage />}    />
         <Route path="/admin/reclamos"        element={<ReclamosAdminPage />}  />
         <Route path="/admin/sanctions"       element={<SanctionsPage />}       />

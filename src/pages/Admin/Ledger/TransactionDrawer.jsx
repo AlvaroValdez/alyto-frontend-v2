@@ -39,8 +39,8 @@ const STATUS_LABELS = {
   completed: 'Completada', failed: 'Fallida', refunded: 'Reembolsada',
 }
 
-// Statuses que requieren confirmación manual SRL
-const SRL_MANUAL_PENDING = new Set(['initiated', 'payin_pending'])
+// Statuses que requieren confirmación manual (SRL Bolivia o SpA→BO manual)
+const MANUAL_PAYIN_PENDING = new Set(['initiated', 'payin_pending'])
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -222,7 +222,7 @@ function PayinManualBanner({ tx, onConfirmed }) {
       <div className="flex items-center gap-2">
         <span className="text-lg leading-none">⏳</span>
         <p className="text-[0.875rem] font-bold text-[#FBBF24]">
-          Payin manual pendiente — Bolivia
+          Payin manual pendiente — {tx.legalEntity === 'SRL' ? 'Bolivia' : `${tx.originCountry}→${tx.destinationCountry}`}
         </p>
       </div>
 
@@ -230,7 +230,7 @@ function PayinManualBanner({ tx, onConfirmed }) {
       <div className="pl-1 space-y-0.5">
         <p className="text-[0.8125rem] text-[#8A96B8]">El usuario debe transferir:</p>
         <p className="text-[1.125rem] font-extrabold text-white tabular-nums">
-          Bs {tx.originalAmount?.toLocaleString('es-CL')} BOB
+          {tx.originCurrency === 'CLP' ? '$' : 'Bs '}{tx.originalAmount?.toLocaleString('es-CL')} {tx.originCurrency ?? 'BOB'}
         </p>
         <p className="text-[0.75rem] font-mono text-[#4E5A7A]">
           Ref: {tx.alytoTransactionId}
@@ -565,8 +565,10 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
                 />
               )}
 
-              {/* ── Banner payin manual Bolivia ────────────────────────── */}
-              {tx.legalEntity === 'SRL' && SRL_MANUAL_PENDING.has(tx.status) && (
+              {/* ── Banner payin manual (SRL Bolivia o SpA→BO manual) ── */}
+              {MANUAL_PAYIN_PENDING.has(tx.status)
+                && (tx.legalEntity === 'SRL' || (tx.legalEntity === 'SpA' && tx.destinationCountry === 'BO'))
+                && (
                 <PayinManualBanner
                   tx={tx}
                   onConfirmed={() => { load(); onStatusUpdated?.() }}
@@ -613,14 +615,45 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
               {tx.beneficiary && Object.keys(tx.beneficiary).length > 0 && (
                 <>
                   <SectionTitle icon={User}>Beneficiario</SectionTitle>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="Nombre" value={[tx.beneficiary.firstName, tx.beneficiary.lastName].filter(Boolean).join(' ')} />
-                    <Field label="Email" value={tx.beneficiary.email} dim />
-                    <Field label="Banco" value={tx.beneficiary.bankCode} dim />
-                    <Field label="Cuenta" value={tx.beneficiary.accountBank} mono />
-                    <Field label="Tipo cuenta" value={tx.beneficiary.accountType} dim />
-                    <Field label="Documento" value={tx.beneficiary.documentNumber ? `${tx.beneficiary.documentType ?? ''} ${tx.beneficiary.documentNumber}` : null} dim />
-                  </div>
+
+                  {/* Bolivia manual beneficiary (bank_data / qr_image) */}
+                  {tx.beneficiary.type === 'bank_data' || tx.beneficiary.type === 'qr_image' ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <Field label="Nombre" value={[tx.beneficiary.beneficiary_first_name, tx.beneficiary.beneficiary_last_name].filter(Boolean).join(' ')} />
+                        <Field label="CI Bolivia" value={tx.beneficiary.beneficiary_document} mono />
+                        <Field label="Teléfono" value={tx.beneficiary.beneficiary_phone} dim />
+                        <Field label="Tipo pago" value={tx.beneficiary.type === 'bank_data' ? 'Cuenta bancaria' : 'QR de cobro'} dim />
+                      </div>
+                      {tx.beneficiary.type === 'bank_data' && (
+                        <div className="p-3 rounded-xl bg-[#1A2340] border border-[#263050] grid grid-cols-2 gap-3">
+                          <Field label="Banco" value={tx.beneficiary.beneficiary_bank} />
+                          <Field label="Tipo cuenta" value={tx.beneficiary.beneficiary_account_type} dim />
+                          <Field label="N° cuenta" value={tx.beneficiary.beneficiary_account_number} mono />
+                        </div>
+                      )}
+                      {tx.beneficiary.type === 'qr_image' && tx.beneficiary.qr_image && (
+                        <div className="p-3 rounded-xl bg-[#1A2340] border border-[#263050] flex flex-col items-center gap-2">
+                          <p className="text-[0.75rem] text-[#4E5A7A] font-semibold uppercase tracking-wider">QR del beneficiario</p>
+                          <img
+                            src={tx.beneficiary.qr_image}
+                            alt="QR beneficiario"
+                            className="w-[180px] h-[180px] rounded-xl bg-white p-1.5 object-contain"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* Vita-style beneficiary */
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Nombre" value={[tx.beneficiary.firstName, tx.beneficiary.lastName].filter(Boolean).join(' ')} />
+                      <Field label="Email" value={tx.beneficiary.email} dim />
+                      <Field label="Banco" value={tx.beneficiary.bankCode} dim />
+                      <Field label="Cuenta" value={tx.beneficiary.accountBank} mono />
+                      <Field label="Tipo cuenta" value={tx.beneficiary.accountType} dim />
+                      <Field label="Documento" value={tx.beneficiary.documentNumber ? `${tx.beneficiary.documentType ?? ''} ${tx.beneficiary.documentNumber}` : null} dim />
+                    </div>
+                  )}
                   <Divider />
                 </>
               )}

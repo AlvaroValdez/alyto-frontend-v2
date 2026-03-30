@@ -3,10 +3,13 @@
  *
  * Para V2.0 inicial: solo Fintoc activo para CL.
  * Otros países/métodos muestran badge "Próximamente".
+ *
+ * Cuando isManualCorridor === true (CL→BO manual), muestra una pantalla
+ * informativa con los datos bancarios de AV Finance SpA para transferencia.
  */
 
 import { useState } from 'react'
-import { Check, Zap, Clock } from 'lucide-react'
+import { Check, Zap, Clock, Copy, CheckCheck, Building2 } from 'lucide-react'
 
 const PAYIN_METHODS = {
   CL: [
@@ -128,8 +131,135 @@ const COUNTRY_LABELS = {
   BO: 'Bolivia',
 }
 
-export default function Step2PayinMethod({ onNext, originCountry = 'CL' }) {
+// ── BankInfoRow — fila copiable de datos bancarios SpA ──────────────────────
+
+function BankInfoRow({ label, value }) {
+  const [copied, setCopied] = useState(false)
+  if (!value) return null
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5 border-b border-[#26305050] last:border-0">
+      <div className="min-w-0">
+        <span className="text-[0.75rem] text-[#4E5A7A] block">{label}</span>
+        <span className="text-[0.875rem] text-white font-semibold break-all">{value}</span>
+      </div>
+      <button
+        onClick={handleCopy}
+        className="ml-2 flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[#263050] hover:border-[#C4CBD833] transition-colors text-[0.75rem] text-[#8A96B8] hover:text-white flex-shrink-0"
+      >
+        {copied
+          ? <><CheckCheck size={12} className="text-[#22C55E]" /> Copiado</>
+          : <><Copy size={12} /> Copiar</>
+        }
+      </button>
+    </div>
+  )
+}
+
+// ── ManualCLBOScreen — pantalla informativa para CL→BO transferencia manual ──
+
+function ManualCLBOScreen({ stepData, onNext }) {
+  const quote = stepData?.quote ?? {}
+  const bank  = quote.payinInstructions ?? {}
+  const originAmount  = stepData?.originAmount ?? quote.originAmount ?? 0
+  const originCurrency = quote.originCurrency ?? 'CLP'
+
+  const [copiedAll, setCopiedAll] = useState(false)
+
+  const bankFields = [
+    { label: 'Banco',           value: bank.bankName },
+    { label: 'Tipo de cuenta',  value: bank.accountType },
+    { label: 'N° de cuenta',    value: bank.accountNumber },
+    { label: 'RUT',             value: bank.rut },
+    { label: 'Titular',         value: bank.accountHolder },
+    { label: 'Email',           value: bank.bankEmail },
+  ].filter(f => f.value)
+
+  function handleCopyAll() {
+    const text = bankFields.map(f => `${f.label}: ${f.value}`).join('\n')
+    navigator.clipboard.writeText(text)
+    setCopiedAll(true)
+    setTimeout(() => setCopiedAll(false), 2000)
+  }
+
+  return (
+    <div className="flex flex-col gap-5 px-4 pb-4">
+
+      {/* Título */}
+      <div>
+        <h2 className="text-[1.125rem] font-bold text-white">Transferencia bancaria</h2>
+        <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
+          Pagarás mediante transferencia a la cuenta de AV Finance SpA en Chile.
+        </p>
+      </div>
+
+      {/* Monto a transferir */}
+      <div className="bg-[#22C55E0A] border border-[#22C55E33] rounded-2xl px-5 py-4 text-center">
+        <p className="text-[0.75rem] text-[#8A96B8] mb-1">Monto a transferir</p>
+        <p className="text-[1.5rem] font-bold text-[#22C55E]">
+          {Number(originAmount).toLocaleString('es-CL')} {originCurrency}
+        </p>
+      </div>
+
+      {/* Datos bancarios SpA */}
+      <div className="bg-[#1A2340] border border-[#263050] rounded-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#263050]">
+          <div className="flex items-center gap-2.5">
+            <Building2 size={16} className="text-[#C4CBD8]" />
+            <p className="text-[0.875rem] font-bold text-white">Datos de la cuenta</p>
+          </div>
+          <button
+            onClick={handleCopyAll}
+            className="flex items-center gap-1.5 text-[0.75rem] text-[#8A96B8] hover:text-white transition-colors"
+          >
+            {copiedAll
+              ? <><CheckCheck size={12} className="text-[#22C55E]" /> Copiado</>
+              : <><Copy size={12} /> Copiar todo</>
+            }
+          </button>
+        </div>
+        <div className="px-5 py-1">
+          {bankFields.map(f => (
+            <BankInfoRow key={f.label} label={f.label} value={f.value} />
+          ))}
+        </div>
+      </div>
+
+      {/* Nota informativa */}
+      <div className="bg-[#1A2340] rounded-xl px-4 py-3">
+        <p className="text-[0.75rem] text-[#8A96B8] leading-relaxed">
+          Luego de confirmar el envío, recibirás un número de referencia para incluir en tu transferencia.
+          Tu pago será verificado en <span className="text-white font-semibold">2–4 horas hábiles</span>.
+        </p>
+      </div>
+
+      {/* Botón continuar */}
+      <button
+        onClick={() => onNext({ payinMethod: 'manual', payinVariant: 'manual' })}
+        className="w-full py-4 rounded-2xl text-[0.9375rem] font-bold bg-[#C4CBD8] text-[#0F1628] shadow-[0_4px_20px_rgba(196,203,216,0.3)] active:scale-[0.98] transition-all duration-150"
+      >
+        Continuar
+      </button>
+    </div>
+  )
+}
+
+// ── Step2PayinMethod ────────────────────────────────────────────────────────
+
+export default function Step2PayinMethod({ onNext, originCountry = 'CL', stepData }) {
   const [selected, setSelected] = useState(null)
+
+  // CL→BO manual corridor: show bank transfer instructions instead of method picker
+  const isManualCorridor = stepData?.isManualCorridor === true
+  if (isManualCorridor && originCountry === 'CL') {
+    return <ManualCLBOScreen stepData={stepData} onNext={onNext} />
+  }
 
   const methods = PAYIN_METHODS[originCountry] || []
 

@@ -272,3 +272,16 @@ export function updateSRLBankData(bankData) {
     body:   JSON.stringify(bankData),
   })
 }
+
+// ── SpA Config — Transferencias manuales Chile ────────────────────────────
+
+export function getSpaConfig() {
+  return request('/admin/spa-config')
+}
+
+export function updateSpaConfig(data) {
+  return request('/admin/spa-config', {
+    method: 'PATCH',
+    body:   JSON.stringify(data),
+  })
+}

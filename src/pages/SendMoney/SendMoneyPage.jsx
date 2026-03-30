@@ -112,8 +112,11 @@ export default function SendMoneyPage() {
             initialData={stepData}
             onNext={(data) => {
               if (isSRL) {
-                // Bolivia: ir a Step2 para seleccionar método de pago (QR / transferencia)
+                // Bolivia: ir a Step2 para seleccionar metodo de pago (QR / transferencia)
                 nextStep(data)
+              } else if (data.quote?.payinMethod === 'manual' || data.quote?.isManualCorridor) {
+                // CL→BO manual: ir a Step2 con instrucciones de transferencia
+                nextStep({ ...data, payinMethod: 'manual', isManualCorridor: true })
               } else {
                 // CL/LLC: solo Fintoc disponible, saltar Step2 directamente
                 nextStep({ ...data, payinMethod: 'fintoc', _skipStep2: true }, 3)
@@ -125,6 +128,7 @@ export default function SendMoneyPage() {
         {step === 2 && (
           <Step2PayinMethod
             originCountry={isSRL ? 'BO' : 'CL'}
+            stepData={stepData}
             onNext={(data) => nextStep(data)}
           />
         )}

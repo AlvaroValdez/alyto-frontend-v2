@@ -6,9 +6,9 @@
  * y varían según el país destino seleccionado en el Step 1.
  *
  * Para corredores manuales Bolivia (isManualCorridor === true) se muestra
- * un formulario simplificado con campos mínimos (nombre, CI, teléfono).
- * No se piden datos bancarios del beneficiario porque AV Finance SRL
- * realiza el pago manual — no Vita.
+ * un formulario con toggle banco/QR:
+ *   - bank_data: identidad + banco boliviano + N° cuenta + tipo cuenta
+ *   - qr_image:  identidad + subida de imagen QR del beneficiario
  *
  * Características:
  *   - Skeleton de carga mientras llegan las reglas (solo flujo Vita)
@@ -19,9 +19,10 @@
  *     visibles sean válidos
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useWithdrawalRules } from '../../hooks/useWithdrawalRules'
 import { useAuth }             from '../../context/AuthContext'
+import { Upload, Paperclip, X, Building2, QrCode } from 'lucide-react'
 
 // ── Prefijos de teléfono por país ─────────────────────────────────────────────
 
@@ -151,6 +152,123 @@ const BOLIVIA_FIELDS = [
   { key: 'beneficiary_phone',      label: 'Teléfono',   type: 'phone', required: false, placeholder: '70000000' },
 ]
 
+const BOLIVIA_BANK_FIELDS = [
+  {
+    key: 'beneficiary_bank', label: 'Banco', type: 'select', required: true,
+    options: [
+      { value: 'Banco Bisa',              label: 'Banco Bisa' },
+      { value: 'Banco Mercantil Santa Cruz', label: 'Banco Mercantil Santa Cruz' },
+      { value: 'Banco Nacional de Bolivia', label: 'Banco Nacional de Bolivia' },
+      { value: 'Banco Unión',             label: 'Banco Unión' },
+      { value: 'Banco FIE',               label: 'Banco FIE' },
+      { value: 'Banco Ganadero',          label: 'Banco Ganadero' },
+      { value: 'Banco Económico',         label: 'Banco Económico' },
+      { value: 'Banco Sol',               label: 'Banco Sol' },
+      { value: 'Banco de Crédito de Bolivia', label: 'Banco de Crédito de Bolivia' },
+      { value: 'Banco Fortaleza',          label: 'Banco Fortaleza' },
+      { value: 'BancoSol',                label: 'BancoSol' },
+      { value: 'Banco Prodem',            label: 'Banco Prodem' },
+    ],
+  },
+  {
+    key: 'beneficiary_account_type', label: 'Tipo de cuenta', type: 'select', required: true,
+    options: [
+      { value: 'Caja de Ahorro',   label: 'Caja de Ahorro' },
+      { value: 'Cuenta Corriente', label: 'Cuenta Corriente' },
+    ],
+  },
+  { key: 'beneficiary_account_number', label: 'N° de cuenta', type: 'text', required: true, placeholder: 'Ej: 1234567890', min: 5, max: 25 },
+]
+
+// ── Toggle banco / QR ────────────────────────────────────────────────────────
+
+function PayoutTypeToggle({ value, onChange }) {
+  const opts = [
+    { id: 'bank_data',  icon: Building2, label: 'Cuenta bancaria' },
+    { id: 'qr_image',   icon: QrCode,    label: 'QR de cobro' },
+  ]
+  return (
+    <div className="flex gap-2">
+      {opts.map(o => {
+        const active = value === o.id
+        return (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => onChange(o.id)}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-[0.875rem] font-semibold transition-all ${
+              active
+                ? 'bg-[#C4CBD81A] border-[#C4CBD8] text-white'
+                : 'bg-[#1A2340] border-[#263050] text-[#8A96B8] hover:border-[#C4CBD833]'
+            }`}
+          >
+            <o.icon size={16} />
+            {o.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── QR upload ────────────────────────────────────────────────────────────────
+
+function QRUpload({ qrBase64, onQrChange }) {
+  const inputRef = useRef(null)
+
+  function handleFile(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) return
+    const reader = new FileReader()
+    reader.onload = (ev) => onQrChange(ev.target.result)
+    reader.readAsDataURL(file)
+  }
+
+  function handleRemove() {
+    onQrChange(null)
+    if (inputRef.current) inputRef.current.value = ''
+  }
+
+  return (
+    <div className="space-y-3">
+      <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide">
+        QR del beneficiario
+      </label>
+
+      {qrBase64 ? (
+        <div className="relative inline-block">
+          <img
+            src={qrBase64}
+            alt="QR beneficiario"
+            className="w-[180px] h-[180px] rounded-xl bg-white p-1.5 object-contain border border-[#263050]"
+          />
+          <button
+            type="button"
+            onClick={handleRemove}
+            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[#EF4444] flex items-center justify-center text-white"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      ) : (
+        <label className="flex flex-col items-center justify-center gap-2 w-full py-8 rounded-xl border border-dashed border-[#C4CBD833] text-[#8A96B8] hover:text-white hover:border-[#C4CBD850] transition-colors cursor-pointer">
+          <Upload size={20} />
+          <span className="text-[0.875rem]">Subir imagen del QR</span>
+          <span className="text-[0.6875rem] text-[#4E5A7A]">JPG o PNG — máx. 5MB</span>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png"
+            className="hidden"
+            onChange={handleFile}
+          />
+        </label>
+      )}
+    </div>
+  )
+}
+
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function Step3Beneficiary({ destinationCountry, onNext, isManualCorridor = false }) {
@@ -161,8 +279,16 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
   )
   const { user } = useAuth()
 
-  // Campos activos: Bolivia simplificado o Vita dinámico
-  const activeFields = isManualCorridor ? BOLIVIA_FIELDS : rules
+  // Bolivia manual: toggle between bank_data and qr_image payout types
+  const [payoutType, setPayoutType] = useState('bank_data')
+  const [qrBase64, setQrBase64]     = useState(null)
+
+  // Campos activos: Bolivia simplificado + bank fields (if bank_data) o solo identidad (if qr_image)
+  const activeFields = isManualCorridor
+    ? (payoutType === 'bank_data'
+        ? [...BOLIVIA_FIELDS, ...BOLIVIA_BANK_FIELDS]
+        : BOLIVIA_FIELDS)
+    : rules
 
   const [values,  setValues]  = useState({})
   const [touched, setTouched] = useState({})
@@ -196,9 +322,14 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
   }
 
   // El formulario es válido cuando todos los campos requeridos visibles tienen valor correcto
-  const allValid = useMemo(() =>
+  const fieldsValid = useMemo(() =>
     visibleFields.every(f => !validateField(f, values[f.key])),
   [visibleFields, values])
+
+  // For qr_image type, also require the QR to be uploaded
+  const allValid = isManualCorridor && payoutType === 'qr_image'
+    ? fieldsValid && !!qrBase64
+    : fieldsValid
 
   function handleNext() {
     if (!allValid) {
@@ -213,8 +344,18 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
         .map(f => [f.key, values[f.key].trim()]),
     )
 
-    // Los campos fc_* se añaden automáticamente desde el perfil del usuario (solo flujo Vita)
-    console.log('[Step3] beneficiaryData enviado:', JSON.stringify(beneficiaryData))
+    // Bolivia manual: include payout type and QR image if applicable
+    if (isManualCorridor) {
+      beneficiaryData.type = payoutType
+      if (payoutType === 'qr_image' && qrBase64) {
+        beneficiaryData.qr_image = qrBase64
+      }
+    }
+
+    console.log('[Step3] beneficiaryData enviado:', JSON.stringify({
+      ...beneficiaryData,
+      qr_image: beneficiaryData.qr_image ? '[base64]' : undefined,
+    }))
     onNext({ beneficiaryData })
   }
 
@@ -257,10 +398,20 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
         <h2 className="text-[1.125rem] font-bold text-white">¿A quién le envías?</h2>
         <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
           {isManualCorridor
-            ? 'Ingresa los datos del beneficiario'
+            ? 'Ingresa los datos del beneficiario en Bolivia'
             : 'Ingresa los datos bancarios del beneficiario'}
         </p>
       </div>
+
+      {/* Toggle banco / QR (solo Bolivia manual) */}
+      {isManualCorridor && (
+        <div className="space-y-2">
+          <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide">
+            ¿Cómo recibe el pago?
+          </label>
+          <PayoutTypeToggle value={payoutType} onChange={setPayoutType} />
+        </div>
+      )}
 
       {/* Campos */}
       {visibleFields.map(field => (
@@ -274,6 +425,11 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
           countryCode={destinationCountry}
         />
       ))}
+
+      {/* QR upload (solo si payoutType === 'qr_image') */}
+      {isManualCorridor && payoutType === 'qr_image' && (
+        <QRUpload qrBase64={qrBase64} onQrChange={setQrBase64} />
+      )}
 
       {/* Nota de seguridad */}
       <div className="flex items-start gap-2.5 bg-[#1A2340] rounded-xl px-3.5 py-3">
