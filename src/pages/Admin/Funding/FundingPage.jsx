@@ -742,15 +742,29 @@ function FundingModal({ onClose, onSuccess }) {
         note:           form.note           || null,
       })
 
-      // 2. Actualizar tasa si checkbox activo y hay par válido
-      if (updateRateToo && ratePair && form.exchangeRate) {
+      // 2. Actualizar tasa si checkbox activo
+      if (updateRateToo && form.exchangeRate) {
         try {
-          await updateExchangeRate(
-            ratePair,
-            Number(form.exchangeRate),
-            form.type === 'Binance P2P' ? 'binance_p2p' : 'manual',
-            form.note || `Actualizado al registrar fondeo ${form.type}`,
-          )
+          if (form.type === 'Binance P2P' && form.originCurrency === 'CLP') {
+            // Binance P2P CLP→USDT: obtenemos bobPerUsdt actual y actualizamos
+            // de forma atómica CLP-USDT + BOB-USDT + CLP-BOB + SpAConfig.clpPerBob
+            const currentRates = await getCLPBOBRate()
+            const bobPerUsdt   = currentRates.bobPerUsdt ?? 0
+            if (bobPerUsdt > 0) {
+              await updateCLPBOBRate(
+                Number(form.exchangeRate),
+                bobPerUsdt,
+                form.note || `Actualizado al registrar fondeo Binance P2P`,
+              )
+            }
+          } else if (ratePair) {
+            await updateExchangeRate(
+              ratePair,
+              Number(form.exchangeRate),
+              'manual',
+              form.note || `Actualizado al registrar fondeo ${form.type}`,
+            )
+          }
         } catch { /* no bloquear el fondeo si falla actualizar tasa */ }
       }
 
