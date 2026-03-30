@@ -19,6 +19,8 @@ import {
   listFundings,
   getExchangeRates,
   updateExchangeRate,
+  getCLPBOBRate,
+  updateCLPBOBRate,
 } from '../../../services/adminService'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -32,15 +34,27 @@ const ENTITY_META = {
 }
 
 const FUNDING_TYPES = ['Binance P2P', 'Transferencia bancaria', 'Stellar', 'Otro']
+const FUNDING_TYPE_TO_DB = {
+  'Binance P2P':           'binance_p2p',
+  'Transferencia bancaria': 'bank_transfer',
+  'Stellar':                'internal',
+  'Otro':                   'other',
+}
 const ASSETS        = ['USDC', 'USDT', 'USD']
 const CURRENCIES    = ['BOB', 'CLP', 'USD']
-const RATE_SOURCES  = ['Binance P2P', 'Manual']
+const RATE_SOURCES  = [
+  { value: 'binance_p2p', label: 'Binance P2P' },
+  { value: 'manual',      label: 'Manual' },
+]
 
 // Pares de tasas que el sistema gestiona
 const RATE_PAIRS = [
   { pair: 'BOB/USDT', label: 'Bolivia · Binance P2P',  flag: '🇧🇴' },
   { pair: 'CLP/USD',  label: 'Chile · cambio oficial',  flag: '🇨🇱' },
   { pair: 'BOB/USDC', label: 'Bolivia · corredor USDC', flag: '🇧🇴' },
+  { pair: 'CLP/USDT', label: 'CL→BO · CLP por USDT',   flag: '🇨🇱', clpBob: true },
+  { pair: 'USDT/BOB', label: 'CL→BO · BOB por USDT',   flag: '🇧🇴', clpBob: true },
+  { pair: 'CLP/BOB',  label: 'CL→BO · tasa efectiva',   flag: '🔄', clpBob: true, auto: true },
 ]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -106,7 +120,7 @@ function RateUpdateModal({ rateEntry, onClose, onSaved }) {
   const { pair, rate: prevRate } = rateEntry
 
   const [newRate, setNewRate] = useState('')
-  const [source,  setSource]  = useState('Binance P2P')
+  const [source,  setSource]  = useState('binance_p2p')
   const [note,    setNote]    = useState('')
   const [saving,  setSaving]  = useState(false)
   const [error,   setError]   = useState(null)
@@ -194,23 +208,23 @@ function RateUpdateModal({ rateEntry, onClose, onSaved }) {
             <label className={labelCls}>Fuente</label>
             <div className="flex gap-3">
               {RATE_SOURCES.map(s => (
-                <label key={s} className="flex items-center gap-2 cursor-pointer group">
+                <label key={s.value} className="flex items-center gap-2 cursor-pointer group">
                   <div
                     className="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors"
                     style={{
-                      borderColor: source === s ? '#C4CBD8' : '#263050',
-                      background:  source === s ? '#C4CBD8' : 'transparent',
+                      borderColor: source === s.value ? '#C4CBD8' : '#263050',
+                      background:  source === s.value ? '#C4CBD8' : 'transparent',
                     }}
-                    onClick={() => setSource(s)}
+                    onClick={() => setSource(s.value)}
                   >
-                    {source === s && <div className="w-1.5 h-1.5 rounded-full bg-[#0F1628]" />}
+                    {source === s.value && <div className="w-1.5 h-1.5 rounded-full bg-[#0F1628]" />}
                   </div>
                   <span
                     className="text-[0.8125rem] transition-colors"
-                    style={{ color: source === s ? '#FFFFFF' : '#8A96B8' }}
-                    onClick={() => setSource(s)}
+                    style={{ color: source === s.value ? '#FFFFFF' : '#8A96B8' }}
+                    onClick={() => setSource(s.value)}
                   >
-                    {s}
+                    {s.label}
                   </span>
                 </label>
               ))}
@@ -280,9 +294,13 @@ function ExchangeRatesPanel({ onToast }) {
     try {
       const data = await getExchangeRates()
       // Normalizar: combinar pares conocidos con datos del backend
+      // DB usa "-" (BOB-USDT), frontend usa "/" (BOB/USDT) — normalize to "/"
       const byPair = {}
-      ;(data.rates ?? data ?? []).forEach(r => { byPair[r.pair] = r })
-      setRates(RATE_PAIRS.map(p => ({ ...p, ...(byPair[p.pair] ?? {}) })))
+      ;(data.rates ?? data ?? []).forEach(r => {
+        byPair[r.pair] = r
+        byPair[r.pair.replace('-', '/')] = r
+      })
+      setRates(RATE_PAIRS.filter(p => !p.clpBob).map(p => ({ ...p, ...(byPair[p.pair] ?? {}) })))
     } catch {
       setRates(RATE_PAIRS.map(p => ({ ...p })))
     } finally {
@@ -412,6 +430,208 @@ function ExchangeRatesPanel({ onToast }) {
   )
 }
 
+// ── CLPBOBRatePanel — Gestión de tasa CLP→BOB ────────────────────────────────
+
+function CLPBOBRatePanel({ onToast }) {
+  const [clpPerUsdt, setClpPerUsdt] = useState('')
+  const [bobPerUsdt, setBobPerUsdt] = useState('')
+  const [note, setNote]             = useState('')
+  const [loading, setLoading]       = useState(true)
+  const [saving, setSaving]         = useState(false)
+  const [error, setError]           = useState(null)
+  const [lastUpdate, setLastUpdate] = useState(null)
+
+  const clpPerBob = clpPerUsdt && bobPerUsdt && +bobPerUsdt > 0
+    ? (+clpPerUsdt / +bobPerUsdt).toFixed(4)
+    : null
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await getCLPBOBRate()
+      if (data.clpPerUsdt) setClpPerUsdt(String(data.clpPerUsdt))
+      if (data.bobPerUsdt) setBobPerUsdt(String(data.bobPerUsdt))
+      // Find most recent update
+      const dates = Object.values(data.pairs ?? {}).map(p => p?.updatedAt).filter(Boolean)
+      if (dates.length) setLastUpdate(dates.sort().pop())
+    } catch { /* silent */ }
+    finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const handleSave = async () => {
+    const a = parseFloat(clpPerUsdt)
+    const b = parseFloat(bobPerUsdt)
+    if (!a || a <= 0 || !b || b <= 0) {
+      setError('Ambas tasas deben ser mayores a 0.')
+      return
+    }
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await updateCLPBOBRate(a, b, note)
+      onToast(`Tasa CLP→BOB actualizada: ${res.clpPerBob} CLP/BOB ✅`)
+      setNote('')
+      load()
+    } catch (err) {
+      setError(err.message || 'Error al actualizar.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const inputCls = 'w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white border border-[#263050] bg-[#0F1628] focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] placeholder-[#4E5A7A] transition-colors tabular-nums'
+  const labelCls = 'block text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5'
+
+  return (
+    <div
+      className="rounded-2xl overflow-hidden"
+      style={{ background: '#1A2340', border: '1px solid #263050' }}
+    >
+      {/* Header */}
+      <div
+        className="flex items-center justify-between px-5 py-3.5"
+        style={{ borderBottom: '1px solid #263050' }}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-xl bg-[#22C55E1A] border border-[#22C55E33] flex items-center justify-center">
+            <TrendingUp size={13} className="text-[#22C55E]" />
+          </div>
+          <div>
+            <p className="text-[0.9375rem] font-bold text-white">Tasa CLP → BOB</p>
+            <p className="text-[0.6875rem] text-[#4E5A7A]">Corredor manual Chile→Bolivia · sincroniza SpAConfig</p>
+          </div>
+        </div>
+        {lastUpdate && (
+          <span
+            className="text-[0.6875rem] font-medium px-2 py-0.5 rounded-full"
+            style={{
+              background: isStaleRate(lastUpdate) ? '#F59E0B0F' : '#22C55E0A',
+              color:      isStaleRate(lastUpdate) ? '#FBBF24'   : '#22C55E',
+              border:     `1px solid ${isStaleRate(lastUpdate) ? '#FBBF2430' : '#22C55E30'}`,
+            }}
+          >
+            {isStaleRate(lastUpdate) ? '⚠️ ' : ''}{timeAgo(lastUpdate)}
+          </span>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="px-5 py-6 flex gap-4">
+          <div className="h-10 bg-[#263050] rounded-xl w-1/3 animate-pulse" />
+          <div className="h-10 bg-[#263050] rounded-xl w-1/3 animate-pulse" />
+          <div className="h-10 bg-[#263050] rounded-xl w-1/3 animate-pulse" />
+        </div>
+      ) : (
+        <div className="px-5 py-5 flex flex-col gap-4">
+          {/* Rate inputs row */}
+          <div className="grid grid-cols-3 gap-4">
+            {/* CLP/USDT */}
+            <div>
+              <label className={labelCls}>
+                🇨🇱 CLP / USDT
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="927.17"
+                value={clpPerUsdt}
+                onChange={e => setClpPerUsdt(e.target.value)}
+                className={inputCls}
+              />
+              <p className="text-[0.625rem] text-[#4E5A7A] mt-1">CLP por 1 USDT</p>
+            </div>
+
+            {/* BOB/USDT */}
+            <div>
+              <label className={labelCls}>
+                🇧🇴 BOB / USDT
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="9.31"
+                value={bobPerUsdt}
+                onChange={e => setBobPerUsdt(e.target.value)}
+                className={inputCls}
+              />
+              <p className="text-[0.625rem] text-[#4E5A7A] mt-1">BOB por 1 USDT</p>
+            </div>
+
+            {/* CLP/BOB — calculated, read-only */}
+            <div>
+              <label className={labelCls}>
+                🔄 CLP / BOB
+                <span className="ml-1.5 text-[0.5625rem] font-semibold px-1.5 py-0.5 rounded-full bg-[#C4CBD81A] text-[#8A96B8]">
+                  Auto
+                </span>
+              </label>
+              <div
+                className="w-full rounded-xl px-3 py-2.5 text-[0.875rem] border border-[#263050] bg-[#0F162880] tabular-nums"
+                style={{ color: clpPerBob ? '#22C55E' : '#4E5A7A' }}
+              >
+                {clpPerBob ?? '—'}
+              </div>
+              <p className="text-[0.625rem] text-[#4E5A7A] mt-1">CLP por 1 BOB (= CLP÷BOB)</p>
+            </div>
+          </div>
+
+          {/* Live calculation preview */}
+          {clpPerBob && (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#22C55E08] border border-[#22C55E20]">
+              <span className="text-[0.8125rem] text-[#8A96B8]">Ejemplo:</span>
+              <span className="text-[0.875rem] text-white font-semibold tabular-nums">
+                100.000 CLP
+              </span>
+              <ArrowRight size={12} className="text-[#4E5A7A]" />
+              <span className="text-[0.875rem] text-[#22C55E] font-bold tabular-nums">
+                {(100000 / +clpPerBob).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} BOB
+              </span>
+              <span className="text-[0.625rem] text-[#4E5A7A] ml-auto">(sin fees)</span>
+            </div>
+          )}
+
+          {/* Note */}
+          <input
+            type="text"
+            placeholder='Nota opcional — ej. "Binance P2P orden #456"'
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            className={inputCls}
+          />
+
+          {error && (
+            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
+              <AlertTriangle size={12} className="text-[#F87171] flex-shrink-0" />
+              <p className="text-[0.8125rem] text-[#F87171]">{error}</p>
+            </div>
+          )}
+
+          {/* Save button */}
+          <button
+            onClick={handleSave}
+            disabled={saving || !clpPerUsdt || !bobPerUsdt}
+            className="w-full py-3 rounded-xl text-[0.875rem] font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+            style={{
+              background: saving || !clpPerUsdt || !bobPerUsdt ? '#C4CBD840' : '#C4CBD8',
+              color:      '#0F1628',
+              boxShadow:  saving || !clpPerUsdt || !bobPerUsdt ? 'none' : '0 4px 20px rgba(196,203,216,0.3)',
+            }}
+          >
+            {saving
+              ? <><Loader size={13} className="animate-spin" /> Guardando...</>
+              : 'Actualizar tasa CLP→BOB'
+            }
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── BalanceCard ───────────────────────────────────────────────────────────────
 
 function BalanceCard({ entity, balance, loading }) {
@@ -510,11 +730,11 @@ function FundingModal({ onClose, onSuccess }) {
       // 1. Registrar fondeo
       await registerFunding({
         entity:         form.entity,
-        type:           form.type,
+        type:           FUNDING_TYPE_TO_DB[form.type] || form.type,
         asset:          form.asset,
         amount:         Number(form.amount),
-        originCurrency: form.originCurrency,
-        originAmount:   showOriginAmount && form.originAmount ? Number(form.originAmount) : null,
+        sourceCurrency: form.originCurrency,
+        sourceAmount:   showOriginAmount && form.originAmount ? Number(form.originAmount) : null,
         exchangeRate:   Number(form.exchangeRate),
         binanceOrderId: form.binanceOrderId || null,
         stellarTxId:    form.stellarTxId    || null,
@@ -528,7 +748,7 @@ function FundingModal({ onClose, onSuccess }) {
           await updateExchangeRate(
             ratePair,
             Number(form.exchangeRate),
-            form.type === 'Binance P2P' ? 'Binance P2P' : 'Manual',
+            form.type === 'Binance P2P' ? 'binance_p2p' : 'manual',
             form.note || `Actualizado al registrar fondeo ${form.type}`,
           )
         } catch { /* no bloquear el fondeo si falla actualizar tasa */ }
@@ -896,6 +1116,9 @@ export default function FundingPage() {
 
       {/* ── SECCIÓN 0: Tasas de cambio activas ── */}
       <ExchangeRatesPanel onToast={setToast} />
+
+      {/* ── SECCIÓN 0B: Tasa CLP→BOB (corredor manual) ── */}
+      <CLPBOBRatePanel onToast={setToast} />
 
       {/* ── SECCIÓN 1: Balance cards ── */}
       <div>

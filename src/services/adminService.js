@@ -214,6 +214,30 @@ export function updateExchangeRate(pair, rate, source, note) {
   })
 }
 
+// ── Tasas CLP→BOB (corredor manual) ──────────────────────────────────────────
+
+/**
+ * Obtiene las tres tasas del corredor CLP→BOB.
+ * @returns {Promise<{ clpPerUsdt, bobPerUsdt, clpPerBob, pairs }>}
+ */
+export function getCLPBOBRate() {
+  return request('/admin/exchange-rates/clp-bob')
+}
+
+/**
+ * Actualiza CLP/USDT + BOB/USDT, calcula CLP/BOB, sincroniza SpAConfig.
+ * @param {number} clpPerUsdt
+ * @param {number} bobPerUsdt
+ * @param {string} [note]
+ * @returns {Promise<{ success, clpPerUsdt, bobPerUsdt, clpPerBob, spaConfigSynced }>}
+ */
+export function updateCLPBOBRate(clpPerUsdt, bobPerUsdt, note) {
+  return request('/admin/exchange-rates/clp-bob', {
+    method: 'PATCH',
+    body: JSON.stringify({ clpPerUsdt, bobPerUsdt, note: note || null }),
+  })
+}
+
 // ── SRL Config — QR de pago Bolivia ───────────────────────────────────────────
 
 /**

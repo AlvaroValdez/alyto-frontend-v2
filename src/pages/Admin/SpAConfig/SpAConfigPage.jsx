@@ -104,7 +104,8 @@ export default function SpAConfigPage() {
   const [toast, setToast]     = useState(null)
 
   // Form state
-  const [clpPerBob, setClpPerBob]         = useState('')
+  const [clpPerUsdt, setClpPerUsdt]       = useState('')
+  const [usdtPerBob, setUsdtPerBob]       = useState('')
   const [minAmountCLP, setMinAmountCLP]   = useState('')
   const [maxAmountCLP, setMaxAmountCLP]   = useState('')
   const [bankName, setBankName]           = useState('')
@@ -114,13 +115,19 @@ export default function SpAConfigPage() {
   const [accountHolder, setAccountHolder] = useState('AV Finance SpA')
   const [bankEmail, setBankEmail]         = useState('')
 
+  // Auto-calculated clpPerBob
+  const clpPerBob = clpPerUsdt && usdtPerBob && +usdtPerBob > 0
+    ? (+clpPerUsdt / +usdtPerBob).toFixed(2)
+    : ''
+
   async function fetchConfig() {
     setLoading(true)
     setError(null)
     try {
       const data = await getSpaConfig()
       setConfig(data)
-      setClpPerBob(data.clpPerBob ?? 99.59)
+      setClpPerUsdt(data.clpPerUsdt ?? '')
+      setUsdtPerBob(data.usdtPerBob ?? '')
       setMinAmountCLP(data.minAmountCLP ?? 10000)
       setMaxAmountCLP(data.maxAmountCLP ?? 5000000)
       setBankName(data.bankName ?? '')
@@ -144,6 +151,8 @@ export default function SpAConfigPage() {
     try {
       const payload = {
         clpPerBob:     Number(clpPerBob),
+        clpPerUsdt:    Number(clpPerUsdt),
+        usdtPerBob:    Number(usdtPerBob),
         minAmountCLP:  Number(minAmountCLP),
         maxAmountCLP:  Number(maxAmountCLP),
         bankName,
@@ -225,14 +234,42 @@ export default function SpAConfigPage() {
           <h2 className="text-[0.9375rem] font-bold text-white">Tasa CLP / BOB</h2>
         </div>
 
-        <Field
-          label="1 BOB equivale a (CLP)"
-          value={clpPerBob}
-          onChange={setClpPerBob}
-          type="number"
-          placeholder="99.59"
-          help="Calcular: precio compra USDT en CLP / precio venta USDT en BOB. Ejemplo: 927.17 / 9.31 = 99.59"
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field
+            label="Precio compra USDT en CLP"
+            value={clpPerUsdt}
+            onChange={setClpPerUsdt}
+            type="number"
+            placeholder="926.82"
+            help="Precio al que compraste USDT con CLP en Binance P2P"
+          />
+          <Field
+            label="Precio venta USDT en BOB"
+            value={usdtPerBob}
+            onChange={setUsdtPerBob}
+            type="number"
+            placeholder="9.31"
+            help="Precio al que vendiste USDT por BOB en Binance P2P"
+          />
+        </div>
+
+        {/* Resultado auto-calculado */}
+        <div
+          className="rounded-xl px-4 py-3 flex items-center justify-between"
+          style={{ background: '#0F1628', border: '1px solid #263050' }}
+        >
+          <div>
+            <p className="text-[0.75rem] text-[#4E5A7A]">1 BOB equivale a (CLP) — calculado automáticamente</p>
+            <p className="text-[1.125rem] font-bold tabular-nums" style={{ color: clpPerBob ? '#22C55E' : '#4E5A7A' }}>
+              {clpPerBob || '—'}
+              {clpPerBob && (
+                <span className="text-[0.75rem] text-[#4E5A7A] font-normal ml-2">
+                  = {clpPerUsdt} ÷ {usdtPerBob}
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
 
         {config?.updatedAt && (
           <p className="text-[0.75rem] text-[#4E5A7A]">
