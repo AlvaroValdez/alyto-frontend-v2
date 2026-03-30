@@ -418,8 +418,8 @@ export default function Step1Amount({ initialData, onNext }) {
                 </div>
               </div>
 
-              {/* Costo del envío */}
-              {(() => {
+              {/* Costo del envío — oculto en corredor manual (comisión absorbida en tasa) */}
+              {!quote.isManualCorridor && (() => {
                 const f = quote.fees || {}
                 const totalCosto =
                   (f.alytoCSpread || 0) + (f.fixedFee || 0) +
@@ -468,10 +468,10 @@ export default function Step1Amount({ initialData, onNext }) {
                 )
               })()}
 
-              <div className="my-3 border-t border-[#263050]" />
+              {!quote.isManualCorridor && <div className="my-3 border-t border-[#263050]" />}
 
-              {/* Tasa BOB/USDT — solo para corredores Bolivia */}
-              {activeCurrency === 'BOB' && bobRateInfo && (
+              {/* Tasa BOB/USDT — solo para corredores Bolivia vía Vita (no manual) */}
+              {!quote.isManualCorridor && activeCurrency === 'BOB' && bobRateInfo && (
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[0.75rem] text-[#4E5A7A]">Tasa usada:</span>
