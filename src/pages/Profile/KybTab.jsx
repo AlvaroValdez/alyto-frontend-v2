@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Building2, CheckCircle2, Clock, AlertTriangle,
-  XCircle, ShieldCheck, ChevronRight,
+  XCircle, ShieldCheck, ChevronRight, Info,
 } from 'lucide-react'
 import { getKybStatus } from '../../services/kybService'
 
@@ -17,9 +17,46 @@ import { getKybStatus } from '../../services/kybService'
 
 const WHATSAPP_SUPPORT = `https://wa.me/${import.meta.env.VITE_SUPPORT_WHATSAPP ?? ''}?text=${encodeURIComponent('Hola, necesito ayuda con mi solicitud Business en Alyto.')}`
 
+// ── Aviso regulatorio BOB ──────────────────────────────────────────────────
+
+function BobRegulatoryNotice() {
+  return (
+    <div
+      className="flex items-start gap-3 rounded-2xl px-4 py-3.5 mt-3"
+      style={{ background: '#1A2340', border: '1px solid #F59E0B33' }}
+    >
+      <Info size={15} className="text-[#F59E0B] flex-shrink-0 mt-0.5" />
+      <div>
+        <p className="text-[0.8125rem] font-semibold text-[#F59E0B] mb-1">
+          Límites regulatorios vigentes — Bolivia
+        </p>
+        <p className="text-[0.75rem] text-[#8A96B8] leading-relaxed">
+          Conforme a la <span className="text-[#C4CBD8]">RND 102400000021</span> (Bancarización, Bolivia),
+          operamos hasta <span className="text-[#C4CBD8]">Bs 49.999 por transacción</span> y{' '}
+          <span className="text-[#C4CBD8]">Bs 300.000 mensuales</span> mientras AV Finance SRL tramita
+          su licencia ETF/PSAV ante ASFI. Los límites se actualizarán automáticamente al obtener
+          la habilitación regulatoria.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 // ── Estado: not_started ────────────────────────────────────────────────────
 
-function NotStartedCard({ navigate }) {
+function NotStartedCard({ navigate, isSRL }) {
+  const benefits = isSRL
+    ? [
+        'Hasta Bs 49.999 por transacción (límite regulatorio BOB)',
+        'Corredores: CO, PE, AR, CL, MX, BR',
+        'FX transparente · Soporte prioritario',
+      ]
+    : [
+        'Tickets hasta $50.000 USD por transacción',
+        'Corredores globales: USD, EUR, CNY, BRL',
+        'FX transparente · Soporte prioritario',
+      ]
+
   return (
     <div className="space-y-4">
       <div
@@ -40,11 +77,7 @@ function NotStartedCard({ navigate }) {
         </div>
 
         <ul className="space-y-2 mb-5">
-          {[
-            'Tickets hasta $50.000 USD por transacción',
-            'Corredores globales: USD, EUR, CNY, BRL',
-            'FX transparente · Soporte prioritario',
-          ].map(b => (
+          {benefits.map(b => (
             <li key={b} className="flex items-start gap-2 text-[0.8125rem] text-[#8A96B8]">
               <CheckCircle2 size={14} className="text-[#22C55E] mt-0.5 flex-shrink-0" />
               {b}
@@ -60,6 +93,8 @@ function NotStartedCard({ navigate }) {
           Solicitar cuenta Business <ChevronRight size={16} />
         </button>
       </div>
+
+      {isSRL && <BobRegulatoryNotice />}
     </div>
   )
 }
@@ -118,38 +153,57 @@ function MoreInfoCard({ navigate }) {
 
 // ── Estado: approved ───────────────────────────────────────────────────────
 
-function ApprovedCard({ kybData, navigate }) {
+function ApprovedCard({ kybData, navigate, isSRL }) {
+  const currency = kybData?.limitsCurrency ?? (isSRL ? 'BOB' : 'USD')
+  const symbol   = currency === 'BOB' ? 'Bs' : '$'
+  const locale   = currency === 'BOB' ? 'es-BO' : 'en-US'
+
+  const singleDefault = isSRL ? 49_999 : 50_000
+  const monthlyDefault = isSRL ? 300_000 : 80_000
+
+  const limits = [
+    {
+      label: 'Límite por transacción',
+      value: `${symbol} ${(kybData?.maxTransactionUsd ?? singleDefault).toLocaleString(locale)} ${currency}`,
+    },
+    {
+      label: 'Volumen mensual',
+      value: `${symbol} ${(kybData?.maxMonthlyUsd ?? monthlyDefault).toLocaleString(locale)} ${currency}`,
+    },
+  ]
+
   return (
-    <div
-      className="rounded-2xl p-5"
-      style={{ background: '#1A2340', border: '1px solid #22C55E33' }}
-    >
-      <div className="flex items-center gap-2 mb-4">
-        <CheckCircle2 size={20} className="text-[#22C55E]" />
-        <p className="text-[0.9375rem] font-bold text-white">Cuenta Business activa</p>
-      </div>
-      <div className="space-y-2 mb-4">
-        {[
-          { label: 'Límite por transacción', value: `$${(kybData?.maxTransactionUsd ?? 50000).toLocaleString('en-US')} USD` },
-          { label: 'Volumen mensual',        value: `$${(kybData?.maxMonthlyUsd ?? 80000).toLocaleString('en-US')} USD` },
-        ].map(l => (
-          <div
-            key={l.label}
-            className="flex items-center justify-between px-3 py-2.5 rounded-xl"
-            style={{ background: '#0F1628', border: '1px solid #263050' }}
-          >
-            <span className="text-[0.8125rem] text-[#8A96B8]">{l.label}</span>
-            <span className="text-[0.8125rem] font-bold text-white">{l.value}</span>
-          </div>
-        ))}
-      </div>
-      <button
-        onClick={() => navigate('/send')}
-        className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-[#0F1628] flex items-center justify-center gap-2"
-        style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.3)' }}
+    <div className="space-y-3">
+      <div
+        className="rounded-2xl p-5"
+        style={{ background: '#1A2340', border: '1px solid #22C55E33' }}
       >
-        Empezar a operar →
-      </button>
+        <div className="flex items-center gap-2 mb-4">
+          <CheckCircle2 size={20} className="text-[#22C55E]" />
+          <p className="text-[0.9375rem] font-bold text-white">Cuenta Business activa</p>
+        </div>
+        <div className="space-y-2 mb-4">
+          {limits.map(l => (
+            <div
+              key={l.label}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl"
+              style={{ background: '#0F1628', border: '1px solid #263050' }}
+            >
+              <span className="text-[0.8125rem] text-[#8A96B8]">{l.label}</span>
+              <span className="text-[0.8125rem] font-bold text-white">{l.value}</span>
+            </div>
+          ))}
+        </div>
+        <button
+          onClick={() => navigate('/send')}
+          className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-[#0F1628] flex items-center justify-center gap-2"
+          style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.3)' }}
+        >
+          Empezar a operar →
+        </button>
+      </div>
+
+      {isSRL && <BobRegulatoryNotice />}
     </div>
   )
 }
@@ -184,13 +238,14 @@ function RejectedCard({ kybData }) {
 
 // ── Main ───────────────────────────────────────────────────────────────────
 
-export default function KybTab({ kycStatus }) {
+export default function KybTab({ kycStatus, legalEntity }) {
   const navigate              = useNavigate()
   const [kybStatus, setKybStatus] = useState(null)
   const [kybData,   setKybData]   = useState(null)
   const [loading,   setLoading]   = useState(false)
 
   const kycApproved = kycStatus === 'approved'
+  const isSRL       = legalEntity === 'SRL'
 
   useEffect(() => {
     if (!kycApproved) return
@@ -248,10 +303,10 @@ export default function KybTab({ kycStatus }) {
 
   return (
     <div className="px-4 py-2">
-      {kybStatus === 'not_started' && <NotStartedCard navigate={navigate} />}
+      {kybStatus === 'not_started' && <NotStartedCard navigate={navigate} isSRL={isSRL} />}
       {isPending                   && <PendingCard   kybData={kybData} navigate={navigate} />}
       {kybStatus === 'more_info'   && <MoreInfoCard  navigate={navigate} />}
-      {kybStatus === 'approved'    && <ApprovedCard  kybData={kybData} navigate={navigate} />}
+      {kybStatus === 'approved'    && <ApprovedCard  kybData={kybData} navigate={navigate} isSRL={isSRL} />}
       {kybStatus === 'rejected'    && <RejectedCard  kybData={kybData} />}
     </div>
   )

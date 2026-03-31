@@ -18,7 +18,7 @@ export default function WelcomeBanner({ firstName, kycStatus, activeTransactions
 
       {/* ── Saludo ──────────────────────────────────────────────────── */}
       <p className="text-[1.125rem] font-bold text-white mb-4">
-        Hola de nuevo, {firstName} 👋
+        Hola, {firstName} 👋
       </p>
 
       {/* ── Banner KYC pendiente ─────────────────────────────────────── */}

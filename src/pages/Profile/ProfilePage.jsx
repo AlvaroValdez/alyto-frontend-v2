@@ -184,7 +184,7 @@ export default function ProfilePage() {
           />
         )}
         {activeTab === 'business' && (
-          <KybTab kycStatus={kycStatus} />
+          <KybTab kycStatus={kycStatus} legalEntity={legalEntity} />
         )}
 
     </div>
