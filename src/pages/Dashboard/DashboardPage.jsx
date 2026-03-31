@@ -11,9 +11,9 @@
  *  7. Bottom Nav (fijo)
  */
 
-import { useLocation, Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Bell, Home, BarChart2, FileText, User, Shield, LogOut, ChevronRight, Wallet, AlertCircle } from 'lucide-react'
+import { ChevronRight, Wallet, AlertCircle, Shield } from 'lucide-react'
 import { useAuth }            from '../../context/AuthContext'
 import { useDashboard }       from '../../hooks/useDashboard'
 import { listUserCorridors }  from '../../services/paymentsService'
@@ -111,9 +111,8 @@ function DestinationCountryCard({ country }) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const location = useLocation()
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
 
   const { data, loading, error } = useDashboard()
 
@@ -142,11 +141,6 @@ export default function DashboardPage() {
       .catch(() => {}) // silencioso — no es crítico para el dashboard
   }, [])
 
-  function handleLogout() {
-    logout()
-    navigate('/login?logout=1', { replace: true })
-  }
-
   // Datos del dashboard: usar data de la API o fallback a AuthContext
   const firstName        = data?.user?.firstName ?? user?.firstName ?? ''
   const legalEntity      = data?.user?.entity    ?? user?.legalEntity ?? 'LLC'
@@ -169,73 +163,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F1628] font-sans flex flex-col max-w-[430px] mx-auto relative">
-
-      {/* ── SCROLL AREA ──────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide pb-24">
-
-        {/* ── STATUS BAR ────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-1">
-          <span className="text-[0.8125rem] font-semibold text-white">
-            {new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-          <div className="flex items-center gap-1.5 text-white">
-            {/* Signal bars */}
-            <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" opacity="0.9">
-              <rect x="0" y="3" width="3" height="9" rx="1"/>
-              <rect x="4.5" y="2" width="3" height="10" rx="1"/>
-              <rect x="9" y="0.5" width="3" height="11.5" rx="1"/>
-              <rect x="13.5" y="0" width="3" height="12" rx="1" opacity="0.3"/>
-            </svg>
-            {/* WiFi */}
-            <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" opacity="0.9">
-              <path d="M8 2.4C10.4 2.4 12.6 3.4 14.1 5L15.5 3.5C13.6 1.3 10.9 0 8 0C5.1 0 2.4 1.3 0.5 3.5L1.9 5C3.4 3.4 5.6 2.4 8 2.4Z"/>
-              <path d="M8 5.6C9.7 5.6 11.2 6.3 12.3 7.4L13.7 5.9C12.2 4.4 10.2 3.5 8 3.5C5.8 3.5 3.8 4.4 2.3 5.9L3.7 7.4C4.8 6.3 6.3 5.6 8 5.6Z"/>
-              <circle cx="8" cy="10.5" r="1.5"/>
-            </svg>
-            {/* Battery */}
-            <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
-              <rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor" strokeOpacity="0.35"/>
-              <rect x="2" y="2" width="17" height="8" rx="2" fill="currentColor"/>
-              <path d="M23 4.5V7.5C23.8 7.2 24.5 6.4 24.5 6C24.5 5.6 23.8 4.8 23 4.5Z" fill="currentColor" fillOpacity="0.4"/>
-            </svg>
-          </div>
-        </div>
-
-        {/* ── HEADER ────────────────────────────────────────────────── */}
-        <header className="px-5 pt-3 pb-5">
-          <div className="flex items-center justify-between">
-            <img
-              src="/assets/logo-alyto.png"
-              alt="Alyto"
-              className="h-9 w-auto object-contain"
-            />
-            <div className="flex items-center gap-2.5">
-              {user?.role === 'admin' && (
-                <Link
-                  to="/admin"
-                  className="flex items-center gap-1.5 px-3 h-9 rounded-full border border-[#C4CBD833] bg-[#C4CBD80D] text-[#C4CBD8] text-[0.75rem] font-semibold no-underline transition-all hover:bg-[#C4CBD81A] hover:border-[#C4CBD866]"
-                >
-                  <Shield size={13} />
-                  Backoffice
-                </Link>
-              )}
-              <button className="w-10 h-10 rounded-full bg-[#1A2340] flex items-center justify-center">
-                <Bell size={17} className="text-[#8A96B8]" />
-              </button>
-              {/* Usuario: nombre */}
-              {firstName && (
-                <span className="text-[0.8125rem] font-semibold text-white leading-none">
-                  {firstName}
-                </span>
-              )}
-              {/* Avatar con iniciales */}
-              <div className="w-10 h-10 rounded-full border-2 border-[#C4CBD8] bg-[#1D3461] flex items-center justify-center text-[#C4CBD8] text-xs font-bold tracking-wide">
-                {firstName ? firstName.charAt(0).toUpperCase() : 'A'}
-              </div>
-            </div>
-          </div>
-        </header>
+    <div className="pt-4">
 
         {/* ─────────────────────────────────────────────────────────── */}
         {/* Mi Wallet BOB — justo debajo del header (solo SRL)          */}
@@ -413,42 +341,6 @@ export default function DashboardPage() {
             <p className="text-[0.875rem] text-[#EF4444]">{error}</p>
           </div>
         )}
-
-      </div>
-
-      {/* ── BOTTOM NAV (fijo) ──────────────────────────────────────── */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-[#0F1628] border-t border-[#1A2340] flex justify-around px-2 pt-2.5 pb-6 z-50">
-        {[
-          { icon: Home,      label: 'Inicio',          to: '/'             },
-          { icon: BarChart2, label: 'Activos',          to: '/assets'       },
-          { icon: FileText,  label: 'Transferencias',   to: '/transactions' },
-          { icon: User,      label: 'Perfil',           to: '/profile'      },
-        ].map(({ icon: Icon, label, to }) => {
-          const active = to === '/'
-            ? location.pathname === '/'
-            : location.pathname.startsWith(to)
-          return (
-            <Link
-              key={label}
-              to={to}
-              className="flex flex-col items-center gap-1 min-w-[56px] no-underline"
-            >
-              <Icon size={20} className={active ? 'text-[#C4CBD8]' : 'text-[#4E5A7A]'} />
-              <span className={`text-[0.625rem] font-medium ${active ? 'text-[#C4CBD8]' : 'text-[#4E5A7A]'}`}>
-                {label}
-              </span>
-              {active && <span className="w-1 h-1 rounded-full bg-[#C4CBD8]" />}
-            </Link>
-          )
-        })}
-        <button
-          onClick={handleLogout}
-          className="flex flex-col items-center gap-1 min-w-[56px] text-[#4E5A7A] transition-colors active:text-[#F87171]"
-        >
-          <LogOut size={20} />
-          <span className="text-[0.625rem] font-medium">Salir</span>
-        </button>
-      </nav>
 
     </div>
   )

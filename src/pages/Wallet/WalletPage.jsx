@@ -534,7 +534,7 @@ export default function WalletPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0F1628] flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <Loader2 size={32} className="animate-spin text-[#C4CBD8]" />
       </div>
     )
@@ -543,30 +543,15 @@ export default function WalletPage() {
   const balanceAvailable = wallet ? Math.max(0, (wallet.balance ?? 0) - (wallet.balanceReserved ?? 0)) : 0
 
   return (
-    <div className="min-h-screen bg-[#0F1628] font-sans flex flex-col max-w-[430px] mx-auto">
-      <div className="flex-1 overflow-y-auto scrollbar-hide pb-10">
+    <div className="pt-4">
 
-        {/* ── Status bar ─────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-1">
-          <span className="text-[0.8125rem] font-semibold text-white">
-            {new Date().toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        </div>
-
-        {/* ── Header ─────────────────────────────────────────────────── */}
-        <div className="flex items-center gap-3 px-5 pt-2 pb-4">
-          <button onClick={() => navigate(-1)}
-            className="w-9 h-9 rounded-full flex items-center justify-center"
-            style={{ background: '#1A2340', border: '1px solid #263050' }}>
-            <ArrowLeft size={18} className="text-[#C4CBD8]" />
-          </button>
+        {/* Page title */}
+        <div className="flex items-center gap-2 px-5 pb-4">
           <h1 className="text-[1.0625rem] font-bold text-white">Mi Wallet BOB</h1>
-          <div className="ml-auto flex items-center gap-1.5">
-            <span className="text-[0.625rem] font-bold px-2 py-0.5 rounded-full"
-              style={{ background: '#22C55E1A', color: '#22C55E', border: '1px solid #22C55E33' }}>
-              SRL Bolivia
-            </span>
-          </div>
+          <span className="text-[0.625rem] font-bold px-2 py-0.5 rounded-full"
+            style={{ background: '#22C55E1A', color: '#22C55E', border: '1px solid #22C55E33' }}>
+            SRL Bolivia
+          </span>
         </div>
 
         {/* ── Saldo card ──────────────────────────────────────────────── */}

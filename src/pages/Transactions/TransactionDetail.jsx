@@ -379,16 +379,13 @@ export default function TransactionDetail() {
   // ── Estado de carga ────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0F1628] flex flex-col max-w-[430px] mx-auto">
-        <header className="flex items-center gap-3 px-4 pt-12 pb-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-9 h-9 rounded-full bg-[#1A2340] flex items-center justify-center"
-          >
+      <div className="pt-4">
+        <div className="flex items-center gap-3 px-4 pb-4">
+          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#1A2340] flex items-center justify-center">
             <ArrowLeft size={18} className="text-[#8A96B8]" />
           </button>
           <div className="h-5 w-36 bg-[#1A2340] rounded animate-pulse" />
-        </header>
+        </div>
         <div className="px-4 flex flex-col gap-3">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="h-24 bg-[#1A2340] rounded-2xl animate-pulse" />
@@ -401,27 +398,20 @@ export default function TransactionDetail() {
   // ── Estado de error ────────────────────────────────────────────────────────
   if (error || !tx) {
     return (
-      <div className="min-h-screen bg-[#0F1628] flex flex-col max-w-[430px] mx-auto">
-        <header className="flex items-center gap-3 px-4 pt-12 pb-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-9 h-9 rounded-full bg-[#1A2340] flex items-center justify-center"
-          >
+      <div className="pt-4">
+        <div className="flex items-center gap-3 px-4 pb-4">
+          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#1A2340] flex items-center justify-center">
             <ArrowLeft size={18} className="text-[#8A96B8]" />
           </button>
           <h1 className="text-lg font-bold text-white">Detalle</h1>
-        </header>
-        <div className="flex flex-col items-center justify-center flex-1 px-4 py-16 text-center">
+        </div>
+        <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
           <div className="w-12 h-12 rounded-2xl bg-[#EF44441A] flex items-center justify-center mb-4">
             <XCircle size={24} className="text-[#EF4444]" />
           </div>
           <p className="text-white font-semibold mb-1">No se pudo cargar</p>
           <p className="text-[#8A96B8] text-sm mb-4">{error}</p>
-          <button
-            onClick={loadDetail}
-            className="px-4 py-2 rounded-xl font-semibold text-sm text-[#0F1628]"
-            style={{ background: '#C4CBD8' }}
-          >
+          <button onClick={loadDetail} className="px-4 py-2 rounded-xl font-semibold text-sm text-[#0F1628]" style={{ background: '#C4CBD8' }}>
             Reintentar
           </button>
         </div>
@@ -462,18 +452,15 @@ export default function TransactionDetail() {
         }
       `}</style>
 
-      <div className="min-h-screen bg-[#0F1628] flex flex-col max-w-[430px] mx-auto pb-10">
+      <div className="pt-4">
 
-        {/* Header */}
-        <header className="flex items-center gap-3 px-4 pt-12 pb-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-9 h-9 rounded-full bg-[#1A2340] flex items-center justify-center flex-shrink-0"
-          >
+        {/* Back + title */}
+        <div className="flex items-center gap-3 px-4 pb-4">
+          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#1A2340] flex items-center justify-center flex-shrink-0">
             <ArrowLeft size={18} className="text-[#8A96B8]" />
           </button>
           <h1 className="text-lg font-bold text-white flex-1">Detalle</h1>
-        </header>
+        </div>
 
         <div className="flex flex-col gap-3 px-4">
 

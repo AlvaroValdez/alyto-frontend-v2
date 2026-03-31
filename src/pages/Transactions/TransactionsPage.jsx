@@ -8,9 +8,8 @@
  */
 
 import { useState, useRef } from 'react'
-import { useNavigate }      from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft,
   Clock,
   RefreshCw,
   CheckCircle,
@@ -216,18 +215,12 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F1628] flex flex-col max-w-[430px] mx-auto">
+    <div className="pt-2">
 
-      {/* Header */}
-      <header className="flex items-center gap-3 px-4 pt-12 pb-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="w-9 h-9 rounded-full bg-[#1A2340] flex items-center justify-center flex-shrink-0"
-        >
-          <ArrowLeft size={18} className="text-[#8A96B8]" />
-        </button>
-        <h1 className="text-lg font-bold text-white flex-1">Mis transferencias</h1>
-      </header>
+      {/* Page title */}
+      <div className="px-4 pt-3 pb-2">
+        <h1 className="text-lg font-bold text-white">Mis transferencias</h1>
+      </div>
 
       {/* Filter tabs */}
       <div className="flex gap-2 px-4 mb-4 overflow-x-auto">

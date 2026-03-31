@@ -1,245 +1,128 @@
 /**
- * AppLayout.jsx — Layout de la aplicación para rutas privadas
+ * AppLayout.jsx — Shell persistente de la app: header + bottom nav
  *
- * Proporciona:
- *  - Header: logo, notificaciones, avatar con dropdown
- *  - Área de contenido (Outlet)
- *  - Bottom navigation bar (mobile-first)
+ * Todas las rutas privadas del usuario (no admin, no auth flows) se renderizan
+ * como <Outlet> dentro de este layout. El header y la barra de navegación
+ * inferior son siempre visibles independientemente de la sección activa.
  *
- * Nota: páginas como DashboardPage ya incluyen su propia navegación.
- * Usar este layout solo en páginas nuevas que lo requieran.
+ * Estructura:
+ *  ┌──────────────────────────────────────┐
+ *  │  Header: logo · bell · nombre · 👤  │  ← sticky
+ *  ├──────────────────────────────────────┤
+ *  │  <Outlet /> — contenido de la ruta  │  ← scroll
+ *  ├──────────────────────────────────────┤
+ *  │  Bottom Nav: Inicio · Activos · …   │  ← fixed
+ *  └──────────────────────────────────────┘
  */
 
-import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom'
-import { useState, useRef, useEffect } from 'react'
-import {
-  Bell,
-  Home,
-  Send,
-  FileText,
-  User,
-  ChevronDown,
-  LogOut,
-  Settings,
-  ShieldCheck,
-} from 'lucide-react'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
+import { Bell, Home, BarChart2, FileText, User, Shield, LogOut } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
-function entityBadge(legalEntity) {
-  const map = { SpA: 'SpA', SRL: 'SRL', LLC: 'LLC' }
-  return map[legalEntity] ?? 'LLC'
-}
-
-// ── Bottom Nav Item ───────────────────────────────────────────────────────────
-
-function NavItem({ to, icon: Icon, label, disabled }) {
-  if (disabled) {
-    return (
-      <div className="flex flex-col items-center gap-1 min-w-[56px] opacity-40 cursor-not-allowed">
-        <Icon size={22} />
-        <span className="text-[0.6875rem] font-medium">{label}</span>
-      </div>
-    )
-  }
-
-  return (
-    <NavLink
-      to={to}
-      className={({ isActive }) =>
-        `flex flex-col items-center gap-1 min-w-[56px] transition-colors ${
-          isActive ? 'text-[#C4CBD8]' : 'text-[#4E5A7A]'
-        }`
-      }
-    >
-      {({ isActive }) => (
-        <>
-          <Icon size={22} />
-          <span className="text-[0.6875rem] font-medium">{label}</span>
-          {isActive && (
-            <span className="w-1 h-1 rounded-full bg-[#C4CBD8]" />
-          )}
-        </>
-      )}
-    </NavLink>
-  )
-}
-
-// ── Bottom Nav Button (action, no route) ─────────────────────────────────────
-
-function NavButton({ icon: Icon, label, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex flex-col items-center gap-1 min-w-[56px] text-[#4E5A7A] transition-colors hover:text-[#F87171] active:text-[#F87171]"
-    >
-      <Icon size={22} />
-      <span className="text-[0.6875rem] font-medium">{label}</span>
-    </button>
-  )
-}
-
-// ── Dropdown avatar ───────────────────────────────────────────────────────────
-
-function AvatarDropdown({ user, onLogout }) {
-  const [open, setOpen] = useState(false)
-  const ref             = useRef(null)
-
-  // Cerrar al hacer click fuera
-  useEffect(() => {
-    function handleClick(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
-
-  const initials = [user?.firstName?.[0], user?.lastName?.[0]]
-    .filter(Boolean)
-    .join('')
-    .toUpperCase() || 'U'
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-2 focus:outline-none"
-        aria-label="Menú de usuario"
-      >
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-[0.8125rem] font-bold text-[#0F1628]"
-          style={{ background: '#C4CBD8' }}
-        >
-          {initials}
-        </div>
-        <ChevronDown
-          size={14}
-          className={`text-[#8A96B8] transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
-        />
-      </button>
-
-      {open && (
-        <div
-          className="absolute right-0 top-full mt-2 w-52 rounded-2xl overflow-hidden z-50"
-          style={{
-            background: '#1A2340',
-            border:     '1px solid #263050',
-            boxShadow:  '0 8px 32px rgba(0,0,0,0.4)',
-          }}
-        >
-          {/* Info usuario */}
-          <div className="px-4 py-3 border-b border-[#263050]">
-            <p className="text-[0.875rem] font-semibold text-white">
-              {user?.firstName} {user?.lastName}
-            </p>
-            <p className="text-[0.75rem] text-[#8A96B8] truncate">{user?.email}</p>
-          </div>
-
-          {/* Links */}
-          <Link
-            to="/profile"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-3 px-4 py-3 text-[0.875rem] text-[#8A96B8] hover:text-white hover:bg-[#1F2B4D] transition-colors"
-          >
-            <User size={16} />
-            Mi perfil
-          </Link>
-
-          {user?.role === 'admin' && (
-            <Link
-              to="/admin/ledger"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 text-[0.875rem] text-[#8A96B8] hover:text-white hover:bg-[#1F2B4D] transition-colors"
-            >
-              <ShieldCheck size={16} />
-              Backoffice
-            </Link>
-          )}
-
-          <button
-            onClick={() => { setOpen(false); onLogout() }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-[0.875rem] text-[#F87171] hover:bg-[#EF44441A] transition-colors"
-          >
-            <LogOut size={16} />
-            Cerrar sesión
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── AppLayout ─────────────────────────────────────────────────────────────────
+const NAV_ITEMS = [
+  { icon: Home,      label: 'Inicio',        to: '/dashboard'    },
+  { icon: BarChart2, label: 'Activos',        to: '/assets'       },
+  { icon: FileText,  label: 'Transferencias', to: '/transactions' },
+  { icon: User,      label: 'Perfil',         to: '/profile'      },
+]
 
 export default function AppLayout() {
   const { user, logout } = useAuth()
+  const location         = useLocation()
   const navigate         = useNavigate()
-  const kycApproved      = user?.kycStatus === 'approved'
+
+  const firstName = user?.firstName ?? ''
+  const role      = user?.role      ?? ''
 
   function handleLogout() {
     logout()
     navigate('/login?logout=1', { replace: true })
   }
 
-  return (
-    <div className="min-h-screen bg-[#0F1628] font-sans flex flex-col">
+  function isActive(to) {
+    if (to === '/dashboard') return location.pathname === '/dashboard' || location.pathname === '/'
+    return location.pathname.startsWith(to)
+  }
 
-      {/* ── Header ── */}
-      <header
-        className="flex items-center justify-between px-4 pt-12 pb-4 sticky top-0 z-40"
-        style={{ background: '#0F1628', borderBottom: '1px solid #1A2340' }}
-      >
-        <Link to="/dashboard">
-          <img src="/assets/logo-alyto.png" alt="Alyto" className="h-7 w-auto" />
+  return (
+    <div className="min-h-screen bg-[#0F1628] font-sans flex flex-col max-w-[430px] mx-auto relative">
+
+      {/* ── HEADER (sticky) ──────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 bg-[#0F1628] border-b border-[#1A2340] px-5 py-3 flex items-center justify-between flex-shrink-0">
+        <Link to="/dashboard" className="no-underline flex-shrink-0">
+          <img
+            src="/assets/logo-alyto.png"
+            alt="Alyto"
+            className="h-8 w-auto object-contain"
+          />
         </Link>
 
-        {/* Usuario activo */}
-        {user?.firstName && (
-          <div className="flex items-center gap-1.5">
-            <span className="text-[0.8125rem] font-semibold text-white leading-none">
-              {user.firstName}
-            </span>
-            <span className="text-[0.625rem] font-bold px-1.5 py-0.5 rounded-md bg-[#1A2340] border border-[#263050] text-[#8A96B8] leading-none">
-              {entityBadge(user.legalEntity)}
-            </span>
-          </div>
-        )}
+        <div className="flex items-center gap-2.5">
+          {role === 'admin' && (
+            <Link
+              to="/admin"
+              className="flex items-center gap-1.5 px-3 h-8 rounded-full border border-[#C4CBD833] bg-[#C4CBD80D] text-[#C4CBD8] text-[0.75rem] font-semibold no-underline transition-all hover:bg-[#C4CBD81A]"
+            >
+              <Shield size={12} />
+              Backoffice
+            </Link>
+          )}
 
-        <div className="flex items-center gap-3">
-          {/* Notificaciones */}
-          <Link
-            to="/notifications"
-            className="w-9 h-9 rounded-full bg-[#1A2340] flex items-center justify-center"
-            style={{ border: '1px solid #263050' }}
+          <button
+            className="w-9 h-9 rounded-full bg-[#1A2340] border border-[#263050] flex items-center justify-center"
+            aria-label="Notificaciones"
           >
-            <Bell size={17} className="text-[#8A96B8]" />
-          </Link>
+            <Bell size={16} className="text-[#8A96B8]" />
+          </button>
 
-          {/* Avatar + dropdown */}
-          <AvatarDropdown user={user} onLogout={handleLogout} />
+          {firstName && (
+            <span className="text-[0.8125rem] font-semibold text-white leading-none">
+              {firstName}
+            </span>
+          )}
+
+          <Link
+            to="/profile"
+            className="w-9 h-9 rounded-full border-2 border-[#C4CBD8] bg-[#1D3461] flex items-center justify-center text-[#C4CBD8] text-xs font-bold tracking-wide no-underline flex-shrink-0"
+          >
+            {firstName ? firstName.charAt(0).toUpperCase() : 'A'}
+          </Link>
         </div>
       </header>
 
-      {/* ── Contenido principal ── */}
-      <main className="flex-1 overflow-y-auto pb-24">
+      {/* ── CONTENT (outlet) ─────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto scrollbar-hide pb-24">
         <Outlet />
-      </main>
+      </div>
 
-      {/* ── Bottom Navigation ── */}
-      <nav
-        className="fixed bottom-0 left-0 right-0 z-40 flex justify-around items-center px-4"
-        style={{
-          background:   '#0F1628',
-          borderTop:    '1px solid #1A2340',
-          paddingTop:   '10px',
-          paddingBottom: 'calc(env(safe-area-inset-bottom) + 10px)',
-        }}
-      >
-        <NavItem to="/dashboard"     icon={Home}     label="Inicio"    />
-        <NavItem to="/send"          icon={Send}      label="Enviar"    disabled={!kycApproved} />
-        <NavItem to="/transactions"  icon={FileText}  label="Historial" />
-        <NavItem to="/profile"       icon={User}      label="Perfil"    />
-        <NavButton icon={LogOut} label="Salir" onClick={handleLogout} />
+      {/* ── BOTTOM NAV (fixed) ───────────────────────────────────── */}
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-[#0F1628] border-t border-[#1A2340] flex justify-around px-2 pt-2.5 pb-6 z-50">
+        {NAV_ITEMS.map(({ icon: Icon, label, to }) => {
+          const active = isActive(to)
+          return (
+            <Link
+              key={label}
+              to={to}
+              className="flex flex-col items-center gap-1 min-w-[56px] no-underline"
+            >
+              <Icon size={20} className={active ? 'text-[#C4CBD8]' : 'text-[#4E5A7A]'} />
+              <span className={`text-[0.625rem] font-medium ${active ? 'text-[#C4CBD8]' : 'text-[#4E5A7A]'}`}>
+                {label}
+              </span>
+              {active && <span className="w-1 h-1 rounded-full bg-[#C4CBD8]" />}
+            </Link>
+          )
+        })}
+
+        <button
+          onClick={handleLogout}
+          className="flex flex-col items-center gap-1 min-w-[56px] text-[#4E5A7A] transition-colors active:text-[#F87171]"
+        >
+          <LogOut size={20} />
+          <span className="text-[0.625rem] font-medium">Salir</span>
+        </button>
       </nav>
+
     </div>
   )
 }

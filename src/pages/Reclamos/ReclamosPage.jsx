@@ -11,9 +11,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { Link }             from 'react-router-dom'
 import {
-  AlertCircle, ChevronLeft, Plus, Clock, CheckCircle2,
+  AlertCircle, Plus, Clock, CheckCircle2,
   XCircle, ArrowUpRight, RotateCcw, ChevronDown, ChevronUp,
   Paperclip, FileText,
 } from 'lucide-react'
@@ -381,15 +380,10 @@ export default function ReclamosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F1628] pb-24">
+    <div className="pt-2">
 
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-12 pb-4">
-        <Link to="/dashboard"
-          className="w-9 h-9 rounded-full bg-[#1A2340] flex items-center justify-center border border-[#263050]"
-        >
-          <ChevronLeft size={18} className="text-[#8A96B8]" />
-        </Link>
+      {/* Page header */}
+      <div className="flex items-center gap-3 px-4 pt-3 pb-4">
         <div className="flex-1">
           <h1 className="text-lg font-bold text-white">Mis Reclamos</h1>
           <p className="text-[0.6875rem] text-[#4E5A7A]">Punto de Reclamo Primera Instancia · PRILI</p>

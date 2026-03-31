@@ -9,8 +9,6 @@
  */
 
 import { useState, useEffect } from 'react'
-import { useLocation, Link } from 'react-router-dom'
-import { Home, BarChart2, FileText, User } from 'lucide-react'
 import { useAuth }             from '../../context/AuthContext'
 import { useProfile }          from '../../hooks/useProfile'
 import KycStatusCard           from './KycStatusCard'
@@ -103,34 +101,7 @@ export default function ProfilePage() {
   const legalEntity = profile?.legalEntity ?? user?.legalEntity ?? 'LLC'
 
   return (
-    <div className="min-h-screen bg-[#0F1628] font-sans flex flex-col max-w-[430px] mx-auto relative">
-
-      <div className="flex-1 overflow-y-auto scrollbar-hide pb-24">
-
-        {/* ── STATUS BAR ──────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-1">
-          <span className="text-[0.8125rem] font-semibold text-white">
-            {new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-          <div className="flex items-center gap-1.5 text-white">
-            <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" opacity="0.9">
-              <rect x="0" y="3" width="3" height="9" rx="1"/>
-              <rect x="4.5" y="2" width="3" height="10" rx="1"/>
-              <rect x="9" y="0.5" width="3" height="11.5" rx="1"/>
-              <rect x="13.5" y="0" width="3" height="12" rx="1" opacity="0.3"/>
-            </svg>
-            <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" opacity="0.9">
-              <path d="M8 2.4C10.4 2.4 12.6 3.4 14.1 5L15.5 3.5C13.6 1.3 10.9 0 8 0C5.1 0 2.4 1.3 0.5 3.5L1.9 5C3.4 3.4 5.6 2.4 8 2.4Z"/>
-              <path d="M8 5.6C9.7 5.6 11.2 6.3 12.3 7.4L13.7 5.9C12.2 4.4 10.2 3.5 8 3.5C5.8 3.5 3.8 4.4 2.3 5.9L3.7 7.4C4.8 6.3 6.3 5.6 8 5.6Z"/>
-              <circle cx="8" cy="10.5" r="1.5"/>
-            </svg>
-            <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
-              <rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor" strokeOpacity="0.35"/>
-              <rect x="2" y="2" width="17" height="8" rx="2" fill="currentColor"/>
-              <path d="M23 4.5V7.5C23.8 7.2 24.5 6.4 24.5 6C24.5 5.6 23.8 4.8 23 4.5Z" fill="currentColor" fillOpacity="0.4"/>
-            </svg>
-          </div>
-        </div>
+    <div className="pt-2">
 
         {/* ── HEADER SECTION ──────────────────────────────────────── */}
         <div className="px-5 pt-4 pb-6">
@@ -216,35 +187,6 @@ export default function ProfilePage() {
         {activeTab === 'business' && (
           <KybTab kycStatus={kycStatus} />
         )}
-
-      </div>
-
-      {/* ── BOTTOM NAV (fijo) ──────────────────────────────────────── */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-[#0F1628] border-t border-[#1A2340] flex justify-around px-2 pt-2.5 pb-6 z-50">
-        {[
-          { icon: Home,      label: 'Inicio',          to: '/'             },
-          { icon: BarChart2, label: 'Activos',          to: '/assets'       },
-          { icon: FileText,  label: 'Transferencias',   to: '/transactions' },
-          { icon: User,      label: 'Perfil',           to: '/profile'      },
-        ].map(({ icon: Icon, label, to }) => {
-          const active = to === '/'
-            ? location.pathname === '/'
-            : location.pathname.startsWith(to)
-          return (
-            <Link
-              key={label}
-              to={to}
-              className="flex flex-col items-center gap-1 min-w-[56px] no-underline"
-            >
-              <Icon size={20} className={active ? 'text-[#C4CBD8]' : 'text-[#4E5A7A]'} />
-              <span className={`text-[0.625rem] font-medium ${active ? 'text-[#C4CBD8]' : 'text-[#4E5A7A]'}`}>
-                {label}
-              </span>
-              {active && <span className="w-1 h-1 rounded-full bg-[#C4CBD8]" />}
-            </Link>
-          )
-        })}
-      </nav>
 
     </div>
   )

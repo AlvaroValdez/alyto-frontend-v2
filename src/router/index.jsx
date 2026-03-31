@@ -26,6 +26,7 @@ import PublicOnlyRoute from './guards/PublicOnlyRoute'
 
 // ── Layouts ──────────────────────────────────────────────────────────────────
 import AuthLayout  from '../components/Layout/AuthLayout'
+import AppLayout   from '../components/Layout/AppLayout'
 import AdminLayout from '../components/Layout/AdminLayout'
 
 // ── Páginas auth (públicas) ───────────────────────────────────────────────────
@@ -100,105 +101,50 @@ export default function AppRouter() {
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       </Route>
 
-      {/* ── Dashboard ───────────────────────────────────────────────────── */}
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <DashboardPage />
-        </ProtectedRoute>
-      } />
+      {/* ── Rutas privadas con AppLayout (header + bottom nav persistentes) ── */}
+      <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
 
-      {/* ── KYC — verificación de identidad ─────────────────────────────── */}
-      <Route path="/kyc" element={
-        <ProtectedRoute>
-          <KycPage />
-        </ProtectedRoute>
-      } />
+        {/* Dashboard */}
+        <Route path="/dashboard" element={<DashboardPage />} />
 
-      {/* ── KYC return — Stripe redirige aquí tras verificación móvil ───── */}
-      <Route path="/kyc/return" element={
-        <ProtectedRoute>
-          <KycReturnPage />
-        </ProtectedRoute>
-      } />
+        {/* KYC — verificación de identidad */}
+        <Route path="/kyc"        element={<KycPage />} />
+        <Route path="/kyc/return" element={<KycReturnPage />} />
 
-      {/* ── Enviar dinero (requiere KYC aprobado) ────────────────────────── */}
-      <Route path="/send" element={
-        <ProtectedRoute>
-          <KycRoute>
-            <SendMoneyPage />
-          </KycRoute>
-        </ProtectedRoute>
-      } />
+        {/* Enviar dinero (requiere KYC aprobado) */}
+        <Route path="/send" element={<KycRoute><SendMoneyPage /></KycRoute>} />
 
-      {/* ── Historial ────────────────────────────────────────────────────── */}
-      <Route path="/transactions" element={
-        <ProtectedRoute>
-          <TransactionsPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/transactions/:transactionId" element={
-        <ProtectedRoute>
-          <TransactionDetail />
-        </ProtectedRoute>
-      } />
+        {/* Historial */}
+        <Route path="/transactions"                element={<TransactionsPage />} />
+        <Route path="/transactions/:transactionId" element={<TransactionDetail />} />
 
-      {/* ── Perfil ───────────────────────────────────────────────────────── */}
-      <Route path="/profile" element={
-        <ProtectedRoute>
-          <ProfilePage />
-        </ProtectedRoute>
-      } />
+        {/* Perfil */}
+        <Route path="/profile" element={<ProfilePage />} />
 
-      {/* ── KYB — Cuenta Business ────────────────────────────────────────── */}
-      <Route path="/kyb" element={
-        <ProtectedRoute>
-          <KybPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/kyb/apply" element={
-        <ProtectedRoute>
-          <KybForm />
-        </ProtectedRoute>
-      } />
-      <Route path="/kyb/status" element={
-        <ProtectedRoute>
-          <KybStatusPage />
-        </ProtectedRoute>
-      } />
+        {/* KYB — Cuenta Business */}
+        <Route path="/kyb"        element={<KybPage />} />
+        <Route path="/kyb/apply"  element={<KybForm />} />
+        <Route path="/kyb/status" element={<KybStatusPage />} />
 
-      {/* ── Wallet BOB — Exclusivo SRL Bolivia (Fase 25) ────────────────── */}
-      <Route path="/wallet" element={
-        <ProtectedRoute requiredEntity="SRL">
-          <WalletPage />
-        </ProtectedRoute>
-      } />
+        {/* Wallet BOB — Exclusivo SRL Bolivia */}
+        <Route path="/wallet" element={
+          <ProtectedRoute requiredEntity="SRL"><WalletPage /></ProtectedRoute>
+        } />
 
-      {/* ── Reclamos PRILI — Todos los usuarios (Fase 27) ────────────────── */}
-      <Route path="/reclamos" element={
-        <ProtectedRoute>
-          <ReclamosPage />
-        </ProtectedRoute>
-      } />
+        {/* Reclamos PRILI */}
+        <Route path="/reclamos" element={<ReclamosPage />} />
 
-      {/* ── Notificaciones (futuro) ────────────────────────────────────── */}
-      <Route path="/notifications" element={
-        <ProtectedRoute>
-          <Navigate to="/dashboard" replace />
-        </ProtectedRoute>
-      } />
+        {/* Notificaciones */}
+        <Route path="/notifications" element={<Navigate to="/dashboard" replace />} />
 
-      {/* ── Payment Success — Fintoc redirige aquí tras completar el pago ─── */}
-      {/* Ruta pública: el usuario llega aquí desde Fintoc, sin sesión activa */}
+        {/* Plataforma Institucional LLC */}
+        <Route path="/institutional" element={<CorporateView />} />
+
+      </Route>
+
+      {/* ── Payment Success — ruta pública (Fintoc redirect) ─────────────── */}
       <Route path="/payment-success" element={<PaymentSuccessPage />} />
-      {/* Alias /success para redirect_url de Fintoc */}
-      <Route path="/success" element={<PaymentSuccessPage />} />
-
-      {/* ── Plataforma Institucional LLC ─────────────────────────────────── */}
-      <Route path="/institutional" element={
-        <ProtectedRoute>
-          <CorporateView />
-        </ProtectedRoute>
-      } />
+      <Route path="/success"         element={<PaymentSuccessPage />} />
 
       {/* ── Rutas legacy — mantener compatibilidad ───────────────────────── */}
       <Route path="/transfer" element={
