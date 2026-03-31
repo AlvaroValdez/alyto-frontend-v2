@@ -42,6 +42,7 @@ const COUNTRY_INFO = {
   PA: { name: 'Panamá',            currency: 'USD', flag: '🇵🇦' },
   DO: { name: 'Rep. Dominicana',   currency: 'DOP', flag: '🇩🇴' },
   GT: { name: 'Guatemala',         currency: 'GTQ', flag: '🇬🇹' },
+  HT: { name: 'Haití',             currency: 'HTG', flag: '🇭🇹' },
   // Global — OwlPay
   US: { name: 'Estados Unidos',    currency: 'USD', flag: '🇺🇸' },
   EU: { name: 'Europa (EUR)',       currency: 'EUR', flag: '🇪🇺' },
