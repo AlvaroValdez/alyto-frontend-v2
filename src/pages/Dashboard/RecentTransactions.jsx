@@ -66,9 +66,37 @@ function SkeletonCard() {
   )
 }
 
+const COUNTRY_FLAGS = {
+  CL: '🇨🇱', BO: '🇧🇴', US: '🇺🇸', AR: '🇦🇷',
+  CO: '🇨🇴', PE: '🇵🇪', MX: '🇲🇽', BR: '🇧🇷',
+  UY: '🇺🇾', EC: '🇪🇨', PY: '🇵🇾',
+}
+
+const CURRENCY_TO_COUNTRY = {
+  CLP: 'CL', BOB: 'BO', USD: 'US', ARS: 'AR',
+  COP: 'CO', PEN: 'PE', MXN: 'MX', BRL: 'BR',
+  UYU: 'UY',
+}
+
 function TransactionCard({ tx }) {
   const st       = statusConfig(tx.status)
   const isActive = tx.status !== 'completed' && tx.status !== 'failed' && tx.status !== 'refunded'
+
+  const beneficiaryName = tx.beneficiary?.fullName && tx.beneficiary.fullName !== '—'
+    ? tx.beneficiary.fullName
+    : null
+
+  const destCountryCode = CURRENCY_TO_COUNTRY[tx.destinationCurrency]
+  const destFlag = destCountryCode ? COUNTRY_FLAGS[destCountryCode] : null
+
+  // Title: beneficiary name if available, else "Envío a {currency} {flag}"
+  const title = beneficiaryName
+    ?? `Envío a ${tx.destinationCurrency ?? tx.originCurrency ?? ''}${destFlag ? ` ${destFlag}` : ''}`
+
+  // Corridor label: "CLP → BOB"
+  const corridorLabel = tx.originCurrency && tx.destinationCurrency && tx.originCurrency !== tx.destinationCurrency
+    ? `${tx.originCurrency} → ${tx.destinationCurrency}`
+    : null
 
   return (
     <Link
@@ -86,12 +114,15 @@ function TransactionCard({ tx }) {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-[0.9375rem] font-semibold text-white truncate">
-          {tx.beneficiary?.fullName ?? '—'}
+          {title}
         </p>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className="text-[0.6875rem] text-[#4E5A7A]">
             {formatDate(tx.createdAt)}
           </span>
+          {corridorLabel && (
+            <span className="text-[0.6875rem] text-[#4E5A7A]">{corridorLabel}</span>
+          )}
           <span
             className="text-[0.6875rem] font-medium px-1.5 py-0.5 rounded-full"
             style={{ color: st.color, background: st.bg }}
@@ -99,7 +130,7 @@ function TransactionCard({ tx }) {
             {st.label}
           </span>
           {isActive && (
-            <span className="w-1.5 h-1.5 rounded-full bg-[#C4CBD8] animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#C4CBD8] animate-pulse flex-shrink-0" />
           )}
         </div>
       </div>
@@ -109,9 +140,9 @@ function TransactionCard({ tx }) {
         <p className="text-[0.9375rem] font-bold text-white">
           {formatAmount(tx.originAmount, tx.originCurrency)}
         </p>
-        {tx.destinationAmount != null && (
+        {tx.destinationAmount != null && tx.destinationCurrency !== tx.originCurrency && (
           <p className="text-[0.6875rem] text-[#4E5A7A] mt-0.5">
-            → {formatAmount(tx.destinationAmount, tx.destinationCurrency)}
+            {formatAmount(tx.destinationAmount, tx.destinationCurrency)}
           </p>
         )}
       </div>

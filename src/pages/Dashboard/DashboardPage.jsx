@@ -149,13 +149,24 @@ export default function DashboardPage() {
 
   // Datos del dashboard: usar data de la API o fallback a AuthContext
   const firstName        = data?.user?.firstName ?? user?.firstName ?? ''
-  const legalEntity      = data?.user?.legalEntity ?? user?.legalEntity ?? 'LLC'
-  const kycStatus        = data?.user?.kycStatus  ?? user?.kycStatus  ?? 'pending'
+  const legalEntity      = data?.user?.entity    ?? user?.legalEntity ?? 'LLC'
+  const kycStatus        = data?.user?.kycStatus ?? user?.kycStatus  ?? 'pending'
   const activeTransactions = data?.stats?.activeTransactions ?? 0
   const stats            = data?.stats
   const recentTxs        = data?.recentTransactions ?? []
 
   const hasTransactions = stats != null && stats.totalTransactions > 0
+
+  // Moneda de origen según entidad del usuario
+  const originCurrency = legalEntity === 'SRL' ? 'BOB' : legalEntity === 'LLC' ? 'USD' : 'CLP'
+
+  function formatOriginAmount(amount) {
+    const decimals = originCurrency === 'CLP' ? 0 : 2
+    return new Intl.NumberFormat('es-CL', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(amount ?? 0)
+  }
 
   return (
     <div className="min-h-screen bg-[#0F1628] font-sans flex flex-col max-w-[430px] mx-auto relative">
@@ -212,16 +223,11 @@ export default function DashboardPage() {
               <button className="w-10 h-10 rounded-full bg-[#1A2340] flex items-center justify-center">
                 <Bell size={17} className="text-[#8A96B8]" />
               </button>
-              {/* Usuario: nombre + badge entidad */}
+              {/* Usuario: nombre */}
               {firstName && (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[0.8125rem] font-semibold text-white leading-none">
-                    {firstName}
-                  </span>
-                  <span className="text-[0.625rem] font-bold px-1.5 py-0.5 rounded-md bg-[#1A2340] border border-[#263050] text-[#8A96B8] leading-none">
-                    {legalEntity}
-                  </span>
-                </div>
+                <span className="text-[0.8125rem] font-semibold text-white leading-none">
+                  {firstName}
+                </span>
               )}
               {/* Avatar con iniciales */}
               <div className="w-10 h-10 rounded-full border-2 border-[#C4CBD8] bg-[#1D3461] flex items-center justify-center text-[#C4CBD8] text-xs font-bold tracking-wide">
@@ -230,6 +236,33 @@ export default function DashboardPage() {
             </div>
           </div>
         </header>
+
+        {/* ─────────────────────────────────────────────────────────── */}
+        {/* Mi Wallet BOB — justo debajo del header (solo SRL)          */}
+        {/* ─────────────────────────────────────────────────────────── */}
+        {legalEntity === 'SRL' && (
+          <div className="mx-4 mb-3">
+            <Link
+              to="/wallet"
+              className="flex items-center justify-between px-4 py-4 rounded-2xl bg-[#1A2340] border border-[#263050] no-underline hover:border-[#C4CBD833] transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#22C55E1A] flex items-center justify-center flex-shrink-0">
+                  <Wallet size={18} className="text-[#22C55E]" />
+                </div>
+                <div>
+                  <p className="text-[0.9375rem] font-bold text-white leading-tight">
+                    Mi Wallet BOB
+                  </p>
+                  <p className="text-[0.75rem] text-[#4E5A7A]">
+                    Saldo en bolivianos · AV Finance SRL
+                  </p>
+                </div>
+              </div>
+              <ChevronRight size={18} className="text-[#4E5A7A] group-hover:text-[#C4CBD8] transition-colors flex-shrink-0" />
+            </Link>
+          </div>
+        )}
 
         {/* ─────────────────────────────────────────────────────────── */}
         {/* SECCIÓN 1 — WelcomeBanner                                   */}
@@ -261,7 +294,7 @@ export default function DashboardPage() {
           <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 mb-4 pb-1">
             <StatCard
               label="Total enviado"
-              value={`$${formatCLP(stats.totalSent)} CLP`}
+              value={`${formatOriginAmount(stats.totalSent)} ${originCurrency}`}
               accent="#FFFFFF"
             />
             <StatCard
@@ -315,34 +348,7 @@ export default function DashboardPage() {
         )}
 
         {/* ─────────────────────────────────────────────────────────── */}
-        {/* SECCIÓN 3c — Acceso Wallet BOB (solo SRL Bolivia)           */}
-        {/* ─────────────────────────────────────────────────────────── */}
-        {legalEntity === 'SRL' && (
-          <div className="mx-4 mb-4">
-            <Link
-              to="/wallet"
-              className="flex items-center justify-between px-4 py-4 rounded-2xl bg-[#1A2340] border border-[#263050] no-underline hover:border-[#C4CBD833] transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#22C55E1A] flex items-center justify-center flex-shrink-0">
-                  <Wallet size={18} className="text-[#22C55E]" />
-                </div>
-                <div>
-                  <p className="text-[0.9375rem] font-bold text-white leading-tight">
-                    Mi Wallet BOB
-                  </p>
-                  <p className="text-[0.75rem] text-[#4E5A7A]">
-                    Saldo en bolivianos · AV Finance SRL
-                  </p>
-                </div>
-              </div>
-              <ChevronRight size={18} className="text-[#4E5A7A] group-hover:text-[#C4CBD8] transition-colors flex-shrink-0" />
-            </Link>
-          </div>
-        )}
-
-        {/* ─────────────────────────────────────────────────────────── */}
-        {/* SECCIÓN 3d — Acceso Reclamos PRILI (todos los usuarios)     */}
+        {/* SECCIÓN 3c — Acceso Reclamos PRILI (todos los usuarios)     */}
         {/* ─────────────────────────────────────────────────────────── */}
         <div className="mx-4 mb-4">
           <Link

@@ -10,13 +10,6 @@
 import { Link } from 'react-router-dom'
 import { ShieldAlert, Clock } from 'lucide-react'
 
-function getGreeting(firstName) {
-  const hour = new Date().getHours()
-  if (hour >= 6 && hour < 12) return `Buenos días, ${firstName} 👋`
-  if (hour >= 12 && hour < 19) return `Buenas tardes, ${firstName} 👋`
-  return `Buenas noches, ${firstName} 👋`
-}
-
 export default function WelcomeBanner({ firstName, kycStatus, activeTransactions }) {
   const kycApproved = kycStatus === 'approved'
 
@@ -24,9 +17,8 @@ export default function WelcomeBanner({ firstName, kycStatus, activeTransactions
     <div className="px-4 mb-1">
 
       {/* ── Saludo ──────────────────────────────────────────────────── */}
-      <p className="text-[0.8125rem] text-[#8A96B8] mb-0.5">Hola de nuevo,</p>
       <p className="text-[1.125rem] font-bold text-white mb-4">
-        {getGreeting(firstName)}
+        Hola de nuevo, {firstName} 👋
       </p>
 
       {/* ── Banner KYC pendiente ─────────────────────────────────────── */}
