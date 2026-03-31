@@ -81,7 +81,6 @@ function ProfileSkeleton() {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
-  const location   = useLocation()
   const { user }   = useAuth()
   const { profile, loading, saving, fetchProfile, updateProfile, changePassword, removeDevice } = useProfile()
 
