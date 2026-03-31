@@ -31,6 +31,49 @@ const PHONE_PREFIXES = {
   MX: '+52', BR: '+55', CL: '+56', EC: '+593',
 }
 
+// ── Utilidades RUT chileno ────────────────────────────────────────────────────
+
+/**
+ * Formatea dígitos brutos a formato RUT: "12.345.678-9"
+ * Acepta cualquier input mientras el usuario escribe.
+ */
+function formatRUT(input) {
+  const raw = input.replace(/[^0-9kK]/g, '').toUpperCase()
+  if (raw.length === 0) return ''
+  if (raw.length === 1) return raw
+
+  const verifier = raw.slice(-1)
+  const body     = raw.slice(0, -1)
+
+  let formatted = ''
+  for (let i = 0; i < body.length; i++) {
+    if (i > 0 && (body.length - i) % 3 === 0) formatted += '.'
+    formatted += body[i]
+  }
+  return `${formatted}-${verifier}`
+}
+
+/**
+ * Valida un RUT chileno con el algoritmo Módulo 11.
+ * Acepta "12.345.678-9" o "12345678-9".
+ */
+function validateRUT(formatted) {
+  const raw      = formatted.replace(/\./g, '').replace(/-/g, '').toUpperCase()
+  if (raw.length < 2) return false
+  const body     = raw.slice(0, -1)
+  const verifier = raw.slice(-1)
+  if (!/^\d+$/.test(body)) return false
+
+  let sum = 0, mult = 2
+  for (let i = body.length - 1; i >= 0; i--) {
+    sum  += parseInt(body[i]) * mult
+    mult  = mult === 7 ? 2 : mult + 1
+  }
+  const rem      = sum % 11
+  const expected = rem === 0 ? '0' : rem === 1 ? 'K' : String(11 - rem)
+  return verifier === expected
+}
+
 // ── Esqueleto de carga ────────────────────────────────────────────────────────
 
 function FieldSkeleton() {
@@ -100,6 +143,37 @@ function SingleOptionField({ fieldKey, label, value: fixedValue, currentValue, b
   )
 }
 
+// ── Campo RUT chileno ─────────────────────────────────────────────────────────
+
+function RutField({ fieldKey, value, error, required, onChange, onBlur, baseInput, borderOk, borderErr }) {
+  function handleChange(e) {
+    onChange(fieldKey, formatRUT(e.target.value))
+  }
+  return (
+    <div>
+      <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide mb-2">
+        RUT
+        {!required && (
+          <span className="ml-1 text-[0.625rem] normal-case font-normal text-[#4E5A7A]">(opcional)</span>
+        )}
+      </label>
+      <input
+        type="text"
+        inputMode="text"
+        value={value}
+        onChange={handleChange}
+        onBlur={() => onBlur(fieldKey)}
+        placeholder="12.345.678-9"
+        maxLength={12}
+        className={`${baseInput} ${error ? borderErr : borderOk}`}
+      />
+      {error && (
+        <p className="mt-1 text-[0.6875rem] text-[#EF4444]">{error}</p>
+      )}
+    </div>
+  )
+}
+
 // ── Campo individual ──────────────────────────────────────────────────────────
 
 function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
@@ -109,6 +183,41 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
     placeholder:text-[#4E5A7A] focus:outline-none transition-all`
   const borderOk  = 'border-[#263050] focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820]'
   const borderErr = 'border-[#EF4444] shadow-[0_0_0_2px_#EF44441A]'
+
+  // Chile — tipo documento: campo único "rut" → ocultar visualmente pero mantener el auto-set
+  if (key === 'beneficiary_document_type' && type === 'select' && options?.length === 1 && countryCode === 'CL') {
+    return (
+      <div className="hidden">
+        <SingleOptionField
+          fieldKey={key}
+          label={options[0].label}
+          value={options[0].value}
+          currentValue={value}
+          baseInput={baseInput}
+          borderOk={borderOk}
+          onChange={onChange}
+          onBlur={onBlur}
+        />
+      </div>
+    )
+  }
+
+  // Chile — número de documento: campo RUT con formato XX.XXX.XXX-X
+  if (key === 'beneficiary_document_number' && countryCode === 'CL') {
+    return (
+      <RutField
+        fieldKey={key}
+        value={value}
+        error={error}
+        required={required}
+        onChange={onChange}
+        onBlur={onBlur}
+        baseInput={baseInput}
+        borderOk={borderOk}
+        borderErr={borderErr}
+      />
+    )
+  }
 
   return (
     <div>
@@ -355,13 +464,28 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
 
   function getError(field) {
     if (!touched[field.key]) return null
+    // Chile: validación RUT con Módulo 11
+    if (destinationCountry === 'CL' && field.key === 'beneficiary_document_number') {
+      const v = (values[field.key] ?? '').trim()
+      if (field.required && v === '') return 'Campo requerido'
+      if (v !== '' && !validateRUT(v)) return 'RUT inválido'
+      return null
+    }
     return validateField(field, values[field.key])
   }
 
   // El formulario es válido cuando todos los campos requeridos visibles tienen valor correcto
   const fieldsValid = useMemo(() =>
-    visibleFields.every(f => !validateField(f, values[f.key])),
-  [visibleFields, values])
+    visibleFields.every(f => {
+      if (destinationCountry === 'CL' && f.key === 'beneficiary_document_number') {
+        const v = (values[f.key] ?? '').trim()
+        if (f.required && v === '') return false
+        if (v !== '' && !validateRUT(v)) return false
+        return true
+      }
+      return !validateField(f, values[f.key])
+    }),
+  [visibleFields, values, destinationCountry])
 
   // For qr_image type, also require the QR to be uploaded
   const allValid = isManualCorridor && payoutType === 'qr_image'
@@ -378,8 +502,23 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
     const beneficiaryData = Object.fromEntries(
       visibleFields
         .filter(f => (values[f.key] ?? '').trim() !== '')
-        .map(f => [f.key, values[f.key].trim()]),
+        .map(f => {
+          let val = values[f.key].trim()
+          // Chile: enviar RUT sin puntos → "12345678-9" (Vita no requiere el formato con puntos)
+          if (destinationCountry === 'CL' && f.key === 'beneficiary_document_number') {
+            val = val.replace(/\./g, '')
+          }
+          return [f.key, val]
+        }),
     )
+
+    // Guardar el label legible del banco para mostrarlo en Step4 (no se envía a Vita)
+    visibleFields.forEach(f => {
+      if (f.type === 'select' && f.options && values[f.key]) {
+        const opt = f.options.find(o => o.value === values[f.key])
+        if (opt) beneficiaryData[`${f.key}_label`] = opt.label
+      }
+    })
 
     // Bolivia manual: include payout type and QR image if applicable
     if (isManualCorridor) {

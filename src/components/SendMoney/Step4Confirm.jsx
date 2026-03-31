@@ -17,7 +17,13 @@ const COUNTRY_NAMES = {
   CO: 'Colombia',       PE: 'Perú',     BO: 'Bolivia',
   AR: 'Argentina',      MX: 'México',   BR: 'Brasil',
   US: 'Estados Unidos', EC: 'Ecuador',  VE: 'Venezuela',
-  PY: 'Paraguay',       UY: 'Uruguay',
+  PY: 'Paraguay',       UY: 'Uruguay',  CL: 'Chile',
+}
+
+const COUNTRY_FLAGS = {
+  CO: '🇨🇴', PE: '🇵🇪', BO: '🇧🇴', AR: '🇦🇷', MX: '🇲🇽',
+  BR: '🇧🇷', US: '🇺🇸', EC: '🇪🇨', VE: '🇻🇪', PY: '🇵🇾',
+  UY: '🇺🇾', CL: '🇨🇱', GT: '🇬🇹', SV: '🇸🇻', PA: '🇵🇦',
 }
 
 function maskAccount(accountNumber) {
@@ -64,8 +70,9 @@ export default function Step4Confirm({ stepData, onNext }) {
   const feeProcesamiento = (fees.payinFee     || 0) + (fees.payoutFee || 0)
 
   const payinMethodLabel = {
-    fintoc: 'Fintoc — Transferencia bancaria',
-    vita:   'Vita Wallet',
+    fintoc:  'Fintoc — Transferencia bancaria',
+    vita:    'Vita Wallet',
+    manual:  'QR o transferencia',
   }[payinMethod] || payinMethod
 
   async function handleConfirm() {
@@ -203,13 +210,24 @@ export default function Step4Confirm({ stepData, onNext }) {
               : '—')
           }
         />
-        <Row label="País" value={COUNTRY_NAMES[destinationCountry] || destinationCountry} />
+        <Row
+          label="País"
+          value={
+            <span className="flex items-center gap-1.5">
+              {COUNTRY_FLAGS[destinationCountry] && (
+                <span className="text-base leading-none">{COUNTRY_FLAGS[destinationCountry]}</span>
+              )}
+              {COUNTRY_NAMES[destinationCountry] || destinationCountry}
+            </span>
+          }
+        />
         <Row
           label="Banco"
           value={
-            beneficiary?.bankName ||
-            beneficiary?.bank_name ||
-            beneficiary?.bank_code ||
+            beneficiary?.bank_code_label ||
+            beneficiary?.bankName        ||
+            beneficiary?.bank_name       ||
+            beneficiary?.bank_code       ||
             '—'
           }
         />

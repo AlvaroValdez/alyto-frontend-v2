@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronDown, ChevronUp, Clock, AlertCircle, RefreshCw, WifiOff, Loader2, Search, X, ChevronRight } from 'lucide-react'
 import { useQuoteSocket } from '../../hooks/useQuoteSocket'
 import { useAuth }        from '../../context/AuthContext'
@@ -156,7 +157,7 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
       )
     : countries
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex flex-col justify-end"
       style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
@@ -259,7 +260,8 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
