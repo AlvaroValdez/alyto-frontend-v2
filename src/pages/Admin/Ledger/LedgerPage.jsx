@@ -416,94 +416,60 @@ export default function LedgerPage() {
               ) : !transactions.length ? (
                 <EmptyState />
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[900px]">
-                    <thead>
-                      <tr className="border-b border-[#26305060]">
-                        {['ID Transacción', 'Usuario', 'Corredor', 'Enviado', 'A recibir', 'Status', 'Entidad', 'Fecha', ''].map(h => (
-                          <th key={h} className="text-left text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider px-4 py-3">
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#1A234060]">
-                      {transactions.map((tx) => (
-                        <tr key={tx._id} className="hover:bg-[#1F2B4D30] transition-colors">
+                <div className="divide-y divide-[#1A234060]">
+                  {transactions.map((tx) => (
+                    <div
+                      key={tx._id}
+                      className="px-4 py-3 hover:bg-[#1F2B4D30] transition-colors"
+                    >
+                      {/* Fila 1: ID · badges · fecha · botón */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <TxIdCell id={tx.alytoTransactionId ?? tx._id} />
+                        <StatusBadge status={tx.status} />
+                        <EntityBadge entity={tx.legalEntity} />
+                        <span className="text-[0.6875rem] text-[#4E5A7A] ml-auto whitespace-nowrap">
+                          {tx.createdAt
+                            ? new Date(tx.createdAt).toLocaleString('es-CL', {
+                                day: '2-digit', month: 'short',
+                                hour: '2-digit', minute: '2-digit',
+                              })
+                            : '—'
+                          }
+                        </span>
+                        <button
+                          onClick={() => setSelectedTxId(tx.alytoTransactionId ?? tx._id)}
+                          className="px-3 py-1 rounded-lg text-[0.6875rem] font-semibold border border-[#263050] text-[#C4CBD8] hover:border-[#C4CBD833] hover:bg-[#C4CBD808] transition-colors whitespace-nowrap"
+                        >
+                          Ver detalle
+                        </button>
+                      </div>
 
-                          {/* ID */}
-                          <td className="px-4 py-3.5">
-                            <TxIdCell id={tx.alytoTransactionId ?? tx._id} />
-                          </td>
-
-                          {/* Usuario */}
-                          <td className="px-4 py-3.5">
-                            <p className="text-[0.8125rem] text-white truncate max-w-[140px]">
-                              {tx.userId?.email ?? '—'}
-                            </p>
-                          </td>
-
-                          {/* Corredor */}
-                          <td className="px-4 py-3.5 whitespace-nowrap">
-                            <div className="flex items-center gap-1">
-                              <span className="text-[0.75rem] font-semibold text-white">{tx.originCountry}</span>
-                              <span className="text-[#4E5A7A] text-[0.75rem]">→</span>
-                              <span className="text-[0.75rem] font-semibold text-white">{tx.destinationCountry}</span>
-                            </div>
-                          </td>
-
-                          {/* Enviado */}
-                          <td className="px-4 py-3.5 whitespace-nowrap">
-                            <p className="text-[0.9375rem] font-bold text-white tabular-nums">
-                              {tx.originalAmount?.toLocaleString('es-CL') ?? '—'}
-                            </p>
-                            <p className="text-[0.6875rem] text-[#4E5A7A]">{tx.originCurrency}</p>
-                          </td>
-
-                          {/* A recibir */}
-                          <td className="px-4 py-3.5 whitespace-nowrap">
-                            <p className="text-[0.9375rem] font-bold text-[#22C55E] tabular-nums">
-                              {tx.destinationAmount?.toLocaleString('es-CL') ?? '—'}
-                            </p>
-                            <p className="text-[0.6875rem] text-[#4E5A7A]">{tx.destinationCurrency}</p>
-                          </td>
-
-                          {/* Status */}
-                          <td className="px-4 py-3.5">
-                            <StatusBadge status={tx.status} />
-                          </td>
-
-                          {/* Entidad */}
-                          <td className="px-4 py-3.5">
-                            <EntityBadge entity={tx.legalEntity} />
-                          </td>
-
-                          {/* Fecha */}
-                          <td className="px-4 py-3.5 whitespace-nowrap">
-                            <p className="text-[0.75rem] text-[#8A96B8]">
-                              {tx.createdAt
-                                ? new Date(tx.createdAt).toLocaleString('es-CL', {
-                                    day: '2-digit', month: 'short',
-                                    hour: '2-digit', minute: '2-digit',
-                                  })
-                                : '—'
-                              }
-                            </p>
-                          </td>
-
-                          {/* Acción */}
-                          <td className="px-4 py-3.5">
-                            <button
-                              onClick={() => setSelectedTxId(tx.alytoTransactionId ?? tx._id)}
-                              className="px-3 py-1.5 rounded-xl text-[0.75rem] font-semibold border border-[#263050] text-[#C4CBD8] hover:border-[#C4CBD833] hover:bg-[#C4CBD808] transition-colors whitespace-nowrap"
-                            >
-                              Ver detalle
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      {/* Fila 2: corredor + montos + usuario */}
+                      <div className="mt-1.5 flex items-center gap-3 flex-wrap">
+                        {/* Corredor + montos */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-[0.8125rem] font-bold text-white tabular-nums">
+                            {tx.originalAmount?.toLocaleString('es-CL') ?? '—'}
+                          </span>
+                          <span className="text-[0.6875rem] text-[#4E5A7A]">{tx.originCurrency}</span>
+                          <span className="text-[#4E5A7A] text-[0.75rem]">→</span>
+                          <span className="text-[0.8125rem] font-bold text-[#22C55E] tabular-nums">
+                            {tx.destinationAmount?.toLocaleString('es-CL') ?? '—'}
+                          </span>
+                          <span className="text-[0.6875rem] text-[#4E5A7A]">{tx.destinationCurrency}</span>
+                          <span className="text-[0.6875rem] font-semibold text-[#4E5A7A] bg-[#0F1628] px-1.5 py-0.5 rounded-md">
+                            {tx.originCountry}→{tx.destinationCountry}
+                          </span>
+                        </div>
+                        {/* Separador */}
+                        <span className="text-[#263050]">·</span>
+                        {/* Usuario */}
+                        <p className="text-[0.75rem] text-[#8A96B8] truncate max-w-[200px]">
+                          {tx.userId?.email ?? '—'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 

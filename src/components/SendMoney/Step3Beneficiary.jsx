@@ -19,7 +19,7 @@
  *     visibles sean válidos
  */
 
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useWithdrawalRules } from '../../hooks/useWithdrawalRules'
 import { useAuth }             from '../../context/AuthContext'
 import { Upload, Paperclip, X, Building2, QrCode } from 'lucide-react'
@@ -77,6 +77,29 @@ function validateField(field, value) {
   return null
 }
 
+// ── Campo de opción única (select con 1 sola opción → textbox) ────────────────
+// Emite el valor correcto al montar sin necesitar interacción del usuario.
+
+function SingleOptionField({ fieldKey, label, value: fixedValue, currentValue, baseInput, borderOk, onChange, onBlur }) {
+  useEffect(() => {
+    if (currentValue !== fixedValue) {
+      onChange(fieldKey, fixedValue)
+      onBlur(fieldKey)
+    }
+  // Solo al montar
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return (
+    <input
+      type="text"
+      readOnly
+      value={label}
+      className={`${baseInput} cursor-default ${borderOk} opacity-80`}
+    />
+  )
+}
+
 // ── Campo individual ──────────────────────────────────────────────────────────
 
 function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
@@ -96,7 +119,21 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
         )}
       </label>
 
-      {type === 'select' ? (
+      {type === 'select' && options?.length === 1 ? (
+        // Un solo valor posible — mostrar como campo de texto no editable.
+        // El valor real (options[0].value) se emite en onChange al renderizar.
+        <SingleOptionField
+          fieldKey={key}
+          label={options[0].label}
+          value={options[0].value}
+          currentValue={value}
+          baseInput={baseInput}
+          borderOk={borderOk}
+          onChange={onChange}
+          onBlur={onBlur}
+        />
+
+      ) : type === 'select' ? (
         <select
           value={value}
           onChange={e => onChange(key, e.target.value)}

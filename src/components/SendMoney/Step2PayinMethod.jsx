@@ -297,15 +297,14 @@ export default function Step2PayinMethod({ onNext, originCountry = 'CL', stepDat
         ))}
       </div>
 
-      {/* Nota informativa */}
-      <div className="bg-[#1A2340] rounded-xl px-4 py-3">
-        <p className="text-[0.75rem] text-[#8A96B8] leading-relaxed">
-          {originCountry === 'BO'
-            ? 'Tu pago será procesado manualmente por AV Finance SRL. Recibirás una confirmación una vez verificado el depósito.'
-            : 'El débito se realizará desde tu cuenta bancaria chilena en tiempo real. El monto será reservado durante el proceso del pago.'
-          }
-        </p>
-      </div>
+      {/* Nota informativa — solo para CL (Fintoc) */}
+      {originCountry !== 'BO' && (
+        <div className="bg-[#1A2340] rounded-xl px-4 py-3">
+          <p className="text-[0.75rem] text-[#8A96B8] leading-relaxed">
+            El débito se realizará desde tu cuenta bancaria chilena en tiempo real. El monto será reservado durante el proceso del pago.
+          </p>
+        </div>
+      )}
 
       {/* ── Botón continuar ── */}
       <button

@@ -80,8 +80,9 @@ export default function Step4Confirm({ stepData, onNext }) {
         payinMethod,
         beneficiaryData:   beneficiary,  // nombre que espera el backend
         // Datos de la cotización: el backend los guarda en el transaction para trazabilidad
-        destinationAmount: quote.destinationAmount ?? null,
-        exchangeRate:      quote.exchangeRate      ?? null,
+        destinationAmount:   quote.destinationAmount     ?? null,
+        exchangeRate:        quote.exchangeRate           ?? null,
+        usdcTransitAmount:   quote.usdcTransitAmount      ?? null,
       })
       console.log('[initPayment] respuesta completa:', JSON.stringify(res))
 

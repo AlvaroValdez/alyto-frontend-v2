@@ -168,7 +168,7 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
           background: '#0F1628',
           border: '1px solid #263050',
           borderBottom: 'none',
-          maxHeight: '82vh',
+          maxHeight: '60vh',
         }}
         onClick={e => e.stopPropagation()}
       >
@@ -406,7 +406,7 @@ export default function Step1Amount({ initialData, onNext }) {
             value={displayAmount}
             onChange={handleAmountChange}
             placeholder="0"
-            className="w-full bg-[#1A2340] border border-[#263050] rounded-xl pl-8 pr-16 py-4 text-white text-[1.5rem] font-bold focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] transition-all placeholder:text-[#4E5A7A]"
+            className={`w-full bg-[#1A2340] border border-[#263050] rounded-xl pr-16 py-4 text-white text-[1.5rem] font-bold focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] transition-all placeholder:text-[#4E5A7A] ${origin.symbol.length > 1 ? 'pl-14' : 'pl-8'}`}
           />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[0.75rem] font-semibold text-[#4E5A7A]">
             {activeCurrency}
