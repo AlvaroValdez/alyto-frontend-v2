@@ -679,7 +679,6 @@ export default function WalletPage() {
             </div>
           )}
         </div>
-      </div>
 
       {/* ── Modals ──────────────────────────────────────────────────────── */}
       <DepositModal
