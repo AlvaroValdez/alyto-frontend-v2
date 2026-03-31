@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useNavigate }                    from 'react-router-dom'
 import html2canvas                                   from 'html2canvas'
 import {
@@ -91,8 +92,8 @@ function PaymentInstructionsModal({ tx, onClose }) {
 
   const bank = tx.payinInstructions ?? {}
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-end justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div
         className="relative w-full max-w-[430px] rounded-t-3xl overflow-hidden flex flex-col"
@@ -195,7 +196,8 @@ function PaymentInstructionsModal({ tx, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 import { fetchTransactionDetail } from '../../services/transactionsService.js'

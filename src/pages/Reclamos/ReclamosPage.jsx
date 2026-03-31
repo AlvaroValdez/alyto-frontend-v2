@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import {
   AlertCircle, Plus, Clock, CheckCircle2,
   XCircle, ArrowUpRight, RotateCcw, ChevronDown, ChevronUp,
@@ -109,8 +110,8 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-4"
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center px-4 pb-4"
       style={{ background: '#0F162899' }}
     >
       <div className="w-full max-w-lg bg-[#1A2340] rounded-3xl border border-[#263050] overflow-hidden">
@@ -241,15 +242,16 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
           </button>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
 // ─── Resultado exitoso ────────────────────────────────────────────────────────
 
 function ReclamoExitoso({ data, onClose }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4"
       style={{ background: '#0F162899' }}>
       <div className="w-full max-w-sm bg-[#1A2340] rounded-3xl border border-[#263050] p-8 text-center">
         <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
@@ -276,7 +278,8 @@ function ReclamoExitoso({ data, onClose }) {
           Entendido
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

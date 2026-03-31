@@ -14,6 +14,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Wallet, ArrowDownToLine, ArrowUpRight,
@@ -103,8 +104,8 @@ function TxStatusBadge({ status }) {
 
 function Modal({ open, onClose, title, children }) {
   if (!open) return null
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center"
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-end justify-center"
       style={{ background: '#0F162899' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="w-full max-w-[430px] bg-[#1A2340] rounded-t-3xl px-6 pt-5 pb-8"
@@ -117,7 +118,8 @@ function Modal({ open, onClose, title, children }) {
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
