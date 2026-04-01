@@ -20,9 +20,12 @@
  */
 
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useWithdrawalRules } from '../../hooks/useWithdrawalRules'
 import { useAuth }             from '../../context/AuthContext'
-import { Upload, Paperclip, X, Building2, QrCode } from 'lucide-react'
+import { useContacts }         from '../../hooks/useContacts'
+import { Upload, X, Building2, QrCode, UserCheck, Star, ChevronRight, Check } from 'lucide-react'
+import { createContact } from '../../services/api'
 
 // ── Prefijos de teléfono por país ─────────────────────────────────────────────
 
@@ -415,6 +418,84 @@ function QRUpload({ qrBase64, onQrChange }) {
   )
 }
 
+// ── ContactPickerModal ────────────────────────────────────────────────────────
+
+function ContactPickerModal({ contacts, onSelect, onClose }) {
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center px-4"
+      style={{ background: 'rgba(0,0,0,0.65)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl flex flex-col"
+        style={{ background: '#0F1628', border: '1px solid #263050', maxHeight: '70vh' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[#263050] flex-shrink-0">
+          <p className="text-[1rem] font-bold text-white">Mis contactos</p>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-[#1A2340] border border-[#263050] flex items-center justify-center"
+          >
+            <X size={14} className="text-[#8A96B8]" />
+          </button>
+        </div>
+
+        {/* Lista */}
+        <div className="flex-1 overflow-y-auto pb-4">
+          {contacts.map((c, idx) => {
+            const name = c.nickname
+              ? c.nickname
+              : `${c.firstName} ${c.lastName}`.trim() || 'Sin nombre'
+            const bank = c.beneficiaryData?.beneficiary_bank
+                      ?? c.beneficiaryData?.beneficiary_bank_label
+                      ?? ''
+            const account = c.beneficiaryData?.beneficiary_account_number ?? ''
+
+            return (
+              <button
+                key={c._id}
+                onClick={() => onSelect(c)}
+                className={`w-full flex items-center gap-3 px-5 py-4 hover:bg-[#1A2340] active:bg-[#1A2340] transition-colors ${
+                  idx < contacts.length - 1 ? 'border-b border-[#1A234060]' : ''
+                }`}
+              >
+                <div className="w-10 h-10 rounded-full bg-[#1A2340] border border-[#263050] flex items-center justify-center flex-shrink-0">
+                  <span className="text-[0.875rem] font-bold text-[#C4CBD8]">
+                    {name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 text-left min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[0.9375rem] font-semibold text-white truncate leading-tight">
+                      {name}
+                    </p>
+                    {c.isFavorite && (
+                      <Star size={12} className="text-[#F59E0B] flex-shrink-0" fill="#F59E0B" />
+                    )}
+                  </div>
+                  <p className="text-[0.75rem] text-[#4E5A7A] truncate">
+                    {bank}{bank && account ? ' · ' : ''}{account}
+                  </p>
+                  {c.lastSentAt && (
+                    <p className="text-[0.6875rem] text-[#4E5A7A]">
+                      Último: {c.lastAmount?.toLocaleString('es-CL')} {c.lastCurrency}
+                    </p>
+                  )}
+                </div>
+                <ChevronRight size={14} className="text-[#4E5A7A] flex-shrink-0" />
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>,
+    document.body
+  )
+}
+
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function Step3Beneficiary({ destinationCountry, onNext, isManualCorridor = false }) {
@@ -428,6 +509,14 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
   // Bolivia manual: toggle between bank_data and qr_image payout types
   const [payoutType, setPayoutType] = useState('bank_data')
   const [qrBase64, setQrBase64]     = useState(null)
+
+  // Contactos guardados
+  const [showContactPicker, setShowContactPicker] = useState(false)
+  const [saveAsContact,     setSaveAsContact]     = useState(false)
+  const [contactNickname,   setContactNickname]   = useState('')
+
+  const { contacts } = useContacts(destinationCountry)
+  const hasContacts  = contacts.length > 0
 
   // Campos activos: Bolivia simplificado + bank fields (if bank_data) o solo identidad (if qr_image)
   const activeFields = isManualCorridor
@@ -492,6 +581,21 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
     ? fieldsValid && !!qrBase64
     : fieldsValid
 
+  function applyContact(contact) {
+    setValues(contact.beneficiaryData ?? {})
+    if (contact.formType === 'qr_image' && contact.qrImageBase64) {
+      setQrBase64(contact.qrImageBase64)
+      setPayoutType('qr_image')
+    } else if (contact.formType === 'bank_data') {
+      setPayoutType('bank_data')
+    }
+    const allTouched = Object.fromEntries(
+      Object.keys(contact.beneficiaryData ?? {}).map(k => [k, true])
+    )
+    setTouched(allTouched)
+    setShowContactPicker(false)
+  }
+
   function handleNext() {
     if (!allValid) {
       const allTouched = Object.fromEntries(visibleFields.map(f => [f.key, true]))
@@ -532,6 +636,27 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
       ...beneficiaryData,
       qr_image: beneficiaryData.qr_image ? '[base64]' : undefined,
     }))
+
+    // Guardar contacto en background si el checkbox está activo
+    if (saveAsContact) {
+      let formType = 'vita'
+      if (isManualCorridor && payoutType === 'qr_image') formType = 'qr_image'
+      else if (isManualCorridor) formType = 'bank_data'
+
+      createContact({
+        nickname:            contactNickname.trim(),
+        firstName:           beneficiaryData.beneficiary_first_name ?? '',
+        lastName:            beneficiaryData.beneficiary_last_name  ?? '',
+        destinationCountry,
+        formType,
+        beneficiaryData,
+        qrImageBase64:   formType === 'qr_image' ? qrBase64 : null,
+        qrImageMimetype: formType === 'qr_image' ? 'image/png' : null,
+      }).catch(err => {
+        console.warn('[Step3] No se pudo guardar contacto:', err.message)
+      })
+    }
+
     onNext({ beneficiaryData })
   }
 
@@ -579,6 +704,28 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
         </p>
       </div>
 
+      {/* Botón "Mis contactos" — solo si hay contactos guardados para este país */}
+      {hasContacts && (
+        <button
+          type="button"
+          onClick={() => setShowContactPicker(true)}
+          className="w-full flex items-center justify-between px-4 py-3 bg-[#1A2340] border border-[#263050] rounded-xl hover:border-[#C4CBD833] transition-colors"
+        >
+          <div className="flex items-center gap-2.5">
+            <UserCheck size={16} className="text-[#1D9E75]" />
+            <span className="text-[0.875rem] font-semibold text-white">
+              Usar contacto guardado
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[0.75rem] text-[#4E5A7A]">
+              {contacts.length} contacto{contacts.length !== 1 ? 's' : ''}
+            </span>
+            <ChevronRight size={14} className="text-[#4E5A7A]" />
+          </div>
+        </button>
+      )}
+
       {/* Toggle banco / QR (solo Bolivia manual) */}
       {isManualCorridor && (
         <div className="space-y-2">
@@ -607,6 +754,36 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
         <QRUpload qrBase64={qrBase64} onQrChange={setQrBase64} />
       )}
 
+      {/* Guardar como contacto */}
+      <div className="space-y-2">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <button
+            type="button"
+            onClick={() => setSaveAsContact(v => !v)}
+            className={`w-5 h-5 rounded flex items-center justify-center border transition-colors flex-shrink-0 ${
+              saveAsContact
+                ? 'bg-[#1D9E75] border-[#1D9E75]'
+                : 'bg-[#1A2340] border-[#263050]'
+            }`}
+          >
+            {saveAsContact && <Check size={12} className="text-white" />}
+          </button>
+          <span className="text-[0.875rem] text-[#C4CBD8]">
+            Guardar como contacto
+          </span>
+        </label>
+
+        {saveAsContact && (
+          <input
+            type="text"
+            value={contactNickname}
+            onChange={e => setContactNickname(e.target.value)}
+            placeholder='Apodo (opcional) — ej: "Mamá", "Pedro trabajo"'
+            className="w-full bg-[#1A2340] border border-[#263050] rounded-xl px-4 py-3 text-[0.875rem] text-white placeholder:text-[#4E5A7A] focus:outline-none focus:border-[#C4CBD8] transition-colors"
+          />
+        )}
+      </div>
+
       {/* Nota de seguridad */}
       <div className="flex items-start gap-2.5 bg-[#1A2340] rounded-xl px-3.5 py-3">
         <span className="text-base flex-shrink-0">🔒</span>
@@ -627,6 +804,15 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
       >
         Continuar
       </button>
+
+      {/* Modal selector de contactos */}
+      {showContactPicker && (
+        <ContactPickerModal
+          contacts={contacts}
+          onSelect={applyContact}
+          onClose={() => setShowContactPicker(false)}
+        />
+      )}
     </div>
   )
 }

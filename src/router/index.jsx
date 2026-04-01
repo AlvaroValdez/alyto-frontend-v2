@@ -56,6 +56,7 @@ import SpAConfigPage      from '../pages/Admin/SpAConfig/SpAConfigPage'
 import WalletPage         from '../pages/Wallet/WalletPage'
 import WalletAdminPage    from '../pages/Admin/Wallet/WalletAdminPage'
 import ReclamosPage       from '../pages/Reclamos/ReclamosPage'
+import ContactsPage       from '../pages/Contacts/ContactsPage'
 import ReclamosAdminPage  from '../pages/Admin/Reclamos/ReclamosAdminPage'
 import SanctionsPage      from '../pages/Admin/Sanctions/SanctionsPage'
 
@@ -133,6 +134,9 @@ export default function AppRouter() {
 
         {/* Reclamos PRILI */}
         <Route path="/reclamos" element={<ReclamosPage />} />
+
+        {/* Agenda de Contactos */}
+        <Route path="/contacts" element={<ContactsPage />} />
 
         {/* Notificaciones */}
         <Route path="/notifications" element={<Navigate to="/dashboard" replace />} />

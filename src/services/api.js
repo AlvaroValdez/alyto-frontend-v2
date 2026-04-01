@@ -386,3 +386,20 @@ export async function submitKyc(formData) {
 
   return data
 }
+
+// ── Contactos ──────────────────────────────────────────────────────────────
+
+export const listContacts = (country) =>
+  request(`/contacts${country ? `?country=${country}` : ''}`)
+
+export const createContact = (data) =>
+  request('/contacts', { method: 'POST', body: JSON.stringify(data) })
+
+export const updateContact = (id, data) =>
+  request(`/contacts/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+
+export const deleteContact = (id) =>
+  request(`/contacts/${id}`, { method: 'DELETE' })
+
+export const toggleContactFavorite = (id) =>
+  request(`/contacts/${id}/favorite`, { method: 'PATCH' })

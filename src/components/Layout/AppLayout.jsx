@@ -16,13 +16,14 @@
  */
 
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { Bell, Home, BarChart2, FileText, User, Shield, LogOut } from 'lucide-react'
+import { Bell, Home, BarChart2, FileText, User, Shield, LogOut, Users } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
 const NAV_ITEMS = [
   { icon: Home,      label: 'Inicio',        to: '/dashboard'    },
   { icon: BarChart2, label: 'Activos',        to: '/assets'       },
   { icon: FileText,  label: 'Transferencias', to: '/transactions' },
+  { icon: Users,     label: 'Contactos',      to: '/contacts'     },
   { icon: User,      label: 'Perfil',         to: '/profile'      },
 ]
 
