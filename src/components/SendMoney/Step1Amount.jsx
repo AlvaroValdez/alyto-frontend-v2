@@ -11,7 +11,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { ChevronDown, ChevronUp, Clock, AlertCircle, RefreshCw, WifiOff, Loader2, Search, X, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronUp, Clock, AlertCircle, RefreshCw, WifiOff, Loader2, Search, X, ChevronRight, Check } from 'lucide-react'
 import { useQuoteSocket } from '../../hooks/useQuoteSocket'
 import { useAuth }        from '../../context/AuthContext'
 import { listUserCorridors, getCurrentExchangeRates } from '../../services/paymentsService'
@@ -60,9 +60,15 @@ const COUNTRY_INFO = {
   SG: { name: 'Singapur',          currency: 'SGD', flag: '🇸🇬' },
 }
 
-/** Convierte la lista de corredores en opciones de país destino únicas */
-function corridorsToCountries(corridors) {
-  const seen = new Set()
+const COUNTRY_PRIORITY = {
+  SpA: ['CO', 'PE', 'AR', 'MX', 'BR', 'US', 'EC', 'VE', 'PY', 'UY', 'BO', 'EU', 'CN', 'AE', 'GB'],
+  SRL: ['CO', 'PE', 'CL', 'AR', 'MX', 'BR', 'EC', 'VE', 'PY', 'UY', 'US', 'EU', 'CN', 'AE', 'GB'],
+  LLC: ['CO', 'PE', 'AR', 'MX', 'BR', 'CL', 'EU', 'CN', 'AE', 'US', 'GB'],
+}
+
+/** Convierte la lista de corredores en opciones de país destino únicas, ordenadas por relevancia */
+function corridorsToCountries(corridors, legalEntity = 'SpA') {
+  const seen   = new Set()
   const result = []
   for (const c of corridors) {
     const code = c.destinationCountry
@@ -76,6 +82,15 @@ function corridorsToCountries(corridors) {
       flag:     info.flag     ?? '🌍',
     })
   }
+  const priority = COUNTRY_PRIORITY[legalEntity] ?? []
+  result.sort((a, b) => {
+    const ia = priority.indexOf(a.code)
+    const ib = priority.indexOf(b.code)
+    if (ia === -1 && ib === -1) return a.name.localeCompare(b.name)
+    if (ia === -1) return 1
+    if (ib === -1) return -1
+    return ia - ib
+  })
   return result
 }
 
@@ -139,12 +154,10 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
   const inputRef = useRef(null)
 
   useEffect(() => {
-    // Focus search input when modal opens
     const t = setTimeout(() => inputRef.current?.focus(), 80)
     return () => clearTimeout(t)
   }, [])
 
-  // Close on backdrop click
   function handleBackdrop(e) {
     if (e.target === e.currentTarget) onClose()
   }
@@ -159,34 +172,32 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex flex-col justify-end"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
       style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
       onClick={handleBackdrop}
     >
       <div
-        className="w-full rounded-t-3xl flex flex-col"
+        className="w-full max-w-sm rounded-2xl flex flex-col"
         style={{
           background: '#0F1628',
           border: '1px solid #263050',
-          borderBottom: 'none',
-          maxHeight: '60vh',
+          maxHeight: '70vh',
         }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Handle + header */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-3">
-          <div className="absolute left-1/2 -translate-x-1/2 top-3 w-10 h-1 rounded-full bg-[#263050]" />
-          <p className="text-[1rem] font-bold text-white mt-2">¿A dónde envías?</p>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[#263050] flex-shrink-0">
+          <p className="text-[1rem] font-bold text-white">¿A dónde envías?</p>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#1A2340] border border-[#263050] flex items-center justify-center mt-2"
+            className="w-8 h-8 rounded-full bg-[#1A2340] border border-[#263050] flex items-center justify-center"
           >
             <X size={14} className="text-[#8A96B8]" />
           </button>
         </div>
 
         {/* Search */}
-        <div className="px-4 pb-3">
+        <div className="px-4 py-3 flex-shrink-0">
           <div className="relative">
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#4E5A7A]" />
             <input
@@ -197,65 +208,47 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
               placeholder="Buscar país o moneda…"
               className="w-full bg-[#1A2340] border border-[#263050] rounded-xl pl-9 pr-4 py-2.5 text-[0.875rem] text-white placeholder:text-[#4E5A7A] focus:outline-none focus:border-[#C4CBD8] transition-colors"
             />
-            {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2"
-              >
-                <X size={12} className="text-[#4E5A7A]" />
-              </button>
-            )}
           </div>
         </div>
 
         {/* Country list */}
-        <div className="overflow-y-auto flex-1 pb-safe px-4 pb-6">
-          {filtered.length === 0 ? (
-            <div className="py-10 text-center">
-              <p className="text-[0.875rem] text-[#4E5A7A]">Sin resultados para "{search}"</p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {filtered.map(c => {
-                const isSelected = selected?.code === c.code
-                return (
-                  <button
-                    key={c.code}
-                    onClick={() => { onSelect(c); onClose() }}
-                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-2xl transition-all text-left ${
-                      isSelected
-                        ? 'bg-[#C4CBD81A] border border-[#C4CBD833]'
-                        : 'hover:bg-[#1A2340] border border-transparent'
-                    }`}
-                  >
-                    {/* Flag */}
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-2xl"
-                      style={{ background: '#1A2340', border: '1px solid #263050' }}
-                    >
-                      {c.flag}
-                    </div>
+        <div className="flex-1 overflow-y-auto pb-4">
+          {filtered.map((c, idx) => (
+            <button
+              key={c.code}
+              onClick={() => { onSelect(c); onClose() }}
+              className={`w-full flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[#1A2340] active:bg-[#1A2340] ${
+                idx < filtered.length - 1 ? 'border-b border-[#1A234060]' : ''
+              } ${selected?.code === c.code ? 'bg-[#1A234080]' : ''}`}
+            >
+              {/* Flag */}
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-xl"
+                style={{ background: '#0F1628', border: '1px solid #263050' }}
+              >
+                {c.flag}
+              </div>
 
-                    {/* Name + currency */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[0.9375rem] font-semibold text-white leading-tight truncate">
-                        {c.name}
-                      </p>
-                      <p className="text-[0.75rem] text-[#8A96B8] mt-0.5">
-                        {c.currency}
-                      </p>
-                    </div>
+              {/* Nombre + moneda */}
+              <div className="flex-1 text-left min-w-0">
+                <p className="text-[0.9375rem] font-semibold text-white leading-tight truncate">
+                  {c.name}
+                </p>
+                <p className="text-[0.75rem] text-[#8A96B8]">{c.currency}</p>
+              </div>
 
-                    {isSelected && (
-                      <div className="w-5 h-5 rounded-full bg-[#22C55E] flex items-center justify-center flex-shrink-0">
-                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                          <path d="M1 4L3.5 6.5L9 1" stroke="#0F1628" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                )
-              })}
+              {/* Checkmark si está seleccionado */}
+              {selected?.code === c.code && (
+                <div className="w-5 h-5 rounded-full bg-[#1D9E75] flex items-center justify-center flex-shrink-0">
+                  <Check size={11} className="text-white" />
+                </div>
+              )}
+            </button>
+          ))}
+
+          {filtered.length === 0 && (
+            <div className="px-5 py-10 text-center">
+              <p className="text-[0.875rem] text-[#4E5A7A]">No se encontraron países</p>
             </div>
           )}
         </div>
@@ -333,7 +326,7 @@ export default function Step1Amount({ initialData, onNext }) {
     listUserCorridors()
       .then(res => {
         if (cancelled) return
-        const list = corridorsToCountries(res.corridors ?? res)
+        const list = corridorsToCountries(res.corridors ?? res, user?.legalEntity)
         setCountries(list)
         // Restaurar selección si venimos de initialData
         if (initialData?.destinationCountry) {
