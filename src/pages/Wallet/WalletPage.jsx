@@ -19,7 +19,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Wallet, ArrowDownToLine, ArrowUpRight,
   ArrowRightLeft, AlertCircle, CheckCircle2, Clock,
-  ChevronLeft, ChevronRight, X, Loader2, Copy, CheckCheck,
+  ChevronLeft, ChevronRight, X, Loader2, Copy, CheckCheck, QrCode,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { request } from '../../services/api'
@@ -601,9 +601,10 @@ export default function WalletPage() {
         {wallet?.status === 'active' ? (
           <div className="flex gap-3 px-4 mb-6">
             {[
-              { label: 'Cargar', icon: ArrowDownToLine, action: () => setShowDeposit(true), primary: true },
-              { label: 'Enviar', icon: ArrowUpRight,    action: () => setShowSend(true),    primary: false },
-              { label: 'Retirar', icon: Wallet,         action: () => setShowWithdraw(true), primary: false },
+              { label: 'Cargar', icon: ArrowDownToLine, action: () => setShowDeposit(true),        primary: true  },
+              { label: 'Enviar', icon: ArrowUpRight,    action: () => setShowSend(true),          primary: false },
+              { label: 'QR',     icon: QrCode,          action: () => navigate('/wallet/qr'),     primary: false },
+              { label: 'Retirar', icon: Wallet,         action: () => setShowWithdraw(true),      primary: false },
             ].map(({ label, icon: Icon, action, primary }) => (
               <button key={label} onClick={action}
                 className="flex-1 flex flex-col items-center gap-2 py-4 rounded-2xl transition-all"

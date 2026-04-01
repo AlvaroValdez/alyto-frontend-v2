@@ -54,6 +54,7 @@ import KybDetailPage  from '../pages/Admin/Kyb/KybDetailPage'
 import SRLConfigPage      from '../pages/Admin/SRLConfig/SRLConfigPage'
 import SpAConfigPage      from '../pages/Admin/SpAConfig/SpAConfigPage'
 import WalletPage         from '../pages/Wallet/WalletPage'
+import WalletQRScreen     from '../pages/Wallet/WalletQRScreen'
 import WalletAdminPage    from '../pages/Admin/Wallet/WalletAdminPage'
 import ReclamosPage       from '../pages/Reclamos/ReclamosPage'
 import ContactsPage       from '../pages/Contacts/ContactsPage'
@@ -130,6 +131,9 @@ export default function AppRouter() {
         {/* Wallet BOB — Exclusivo SRL Bolivia */}
         <Route path="/wallet" element={
           <ProtectedRoute requiredEntity="SRL"><WalletPage /></ProtectedRoute>
+        } />
+        <Route path="/wallet/qr" element={
+          <ProtectedRoute requiredEntity="SRL"><WalletQRScreen /></ProtectedRoute>
         } />
 
         {/* Reclamos PRILI */}
