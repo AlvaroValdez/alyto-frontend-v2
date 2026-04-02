@@ -5,8 +5,10 @@
  */
 
 import { Outlet, NavLink, Link } from 'react-router-dom'
-import { BarChart2, Layers, ArrowLeft, ShieldCheck, TrendingUp, Wallet, Building2, QrCode, Banknote, AlertCircle, ShieldAlert, Settings2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { BarChart2, Layers, ArrowLeft, ShieldCheck, TrendingUp, Wallet, Building2, QrCode, Banknote, AlertCircle, ShieldAlert, Settings2, AlertTriangle, X } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { request } from '../../services/api'
 
 function SidebarLink({ to, icon: Icon, label, end }) {
   return (
@@ -29,8 +31,24 @@ function SidebarLink({ to, icon: Icon, label, end }) {
 
 export default function AdminLayout() {
   const { user } = useAuth()
-
   const adminName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Admin'
+
+  const [alertBanner, setAlertBanner]       = useState(null)   // { level, currencies }
+  const [bannerDismissed, setBannerDismissed] = useState(false)
+
+  useEffect(() => {
+    request('/admin/vita/balance')
+      .then(data => {
+        if (data?.hasAlerts) {
+          const currencies = data.alerts.map(a => a.currency).join(', ')
+          const level = data.alerts.some(a => a.level === 'critical') ? 'critical' : 'warning'
+          setAlertBanner({ level, currencies })
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const showBanner = alertBanner && !bannerDismissed
 
   return (
     <div className="min-h-screen bg-[#0F1628] font-sans flex">
@@ -98,6 +116,34 @@ export default function AdminLayout() {
           <span className="text-[0.875rem] font-semibold text-white">Panel de Administración</span>
           <span className="ml-auto text-[0.75rem] text-[#4E5A7A]">{adminName}</span>
         </header>
+
+        {/* Banner de alerta de liquidez */}
+        {showBanner && (() => {
+          const isCrit  = alertBanner.level === 'critical'
+          const bg      = isCrit ? '#7F1D1D' : '#78350F'
+          const border  = isCrit ? '#EF444455' : '#F59E0B55'
+          const color   = isCrit ? '#FCA5A5' : '#FCD34D'
+          const Icon    = isCrit ? AlertCircle : AlertTriangle
+          return (
+            <div
+              className="flex items-center justify-between gap-3 px-6 py-3"
+              style={{ background: bg, borderBottom: `1px solid ${border}` }}
+            >
+              <div className="flex items-center gap-2">
+                <Icon size={15} style={{ color, flexShrink: 0 }} />
+                <p className="text-[0.8125rem] font-semibold" style={{ color }}>
+                  Saldo Vita bajo en {alertBanner.currencies} — revisa el fondeo
+                </p>
+              </div>
+              <button
+                onClick={() => setBannerDismissed(true)}
+                className="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+              >
+                <X size={14} style={{ color }} />
+              </button>
+            </div>
+          )
+        })()}
 
         <main className="flex-1 overflow-y-auto p-8">
           <Outlet />

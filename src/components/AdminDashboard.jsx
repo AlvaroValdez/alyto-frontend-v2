@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { fetchAdminUsers, fetchAdminLedger } from '../services/api'
+import VitaBalanceWidget from './Admin/VitaBalanceWidget'
 
 // ── Constantes de diseño ────────────────────────────────────────────────────
 
@@ -336,6 +337,11 @@ export default function AdminDashboard() {
                 className={`text-[#8A96B8] ${(loadingUsers || loadingLedger) ? 'animate-spin' : ''}`}
               />
             </button>
+          </div>
+
+          {/* ── Saldo Vita + alertas de liquidez ─────────────────────── */}
+          <div className="mb-4">
+            <VitaBalanceWidget />
           </div>
 
           {/* ── Acceso rápido al Ledger ───────────────────────────────── */}
