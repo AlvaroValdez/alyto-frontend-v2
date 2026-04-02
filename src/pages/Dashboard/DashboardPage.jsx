@@ -44,13 +44,13 @@ function countryFlag(code) {
 
 function StatCard({ label, value, accent }) {
   return (
-    <div className="flex-shrink-0 w-36 bg-[#1A2340] rounded-2xl p-4 border border-[#263050]">
-      <p className="text-[0.6875rem] font-medium text-[#8A96B8] uppercase tracking-[0.08em] mb-2 truncate">
+    <div className="flex-shrink-0 w-36 bg-white rounded-2xl p-4 border border-[#E2E8F0]">
+      <p className="text-[0.6875rem] font-medium text-[#64748B] uppercase tracking-[0.08em] mb-2 truncate">
         {label}
       </p>
       <p
         className="text-[1.125rem] font-bold leading-none"
-        style={{ color: accent ?? '#FFFFFF' }}
+        style={{ color: accent ?? '#0F172A' }}
       >
         {value}
       </p>
@@ -64,9 +64,9 @@ function StatsSkeletons() {
   return (
     <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 mb-2 pb-1">
       {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="flex-shrink-0 w-36 bg-[#1A2340] rounded-2xl p-4 border border-[#263050] animate-pulse">
-          <div className="h-2.5 bg-[#263050] rounded-full w-4/5 mb-3" />
-          <div className="h-5 bg-[#1F2B4D] rounded-full w-3/5" />
+        <div key={i} className="flex-shrink-0 w-36 bg-white rounded-2xl p-4 border border-[#E2E8F0] animate-pulse">
+          <div className="h-2.5 bg-[#E2E8F0] rounded-full w-4/5 mb-3" />
+          <div className="h-5 bg-[#F1F5F9] rounded-full w-3/5" />
         </div>
       ))}
     </div>
@@ -93,11 +93,11 @@ const COUNTRY_META = {
 function DestinationCountryCard({ country }) {
   const isManual = country.payinMethod === 'manual'
   return (
-    <div className="flex-shrink-0 bg-[#1A2340] rounded-2xl p-3.5 border border-[#263050] min-w-[108px] flex flex-col items-center gap-2">
+    <div className="flex-shrink-0 bg-white rounded-2xl p-3.5 border border-[#E2E8F0] min-w-[108px] flex flex-col items-center gap-2">
       <span className="text-[2rem] leading-none">{country.flag}</span>
       <div className="text-center">
-        <p className="text-[0.75rem] font-semibold text-white leading-tight">{country.name}</p>
-        <p className="text-[0.625rem] text-[#4E5A7A] mt-0.5">{country.currency}</p>
+        <p className="text-[0.75rem] font-semibold text-[#0F172A] leading-tight">{country.name}</p>
+        <p className="text-[0.625rem] text-[#94A3B8] mt-0.5">{country.currency}</p>
         {isManual && (
           <span className="inline-block mt-1 text-[0.5625rem] font-semibold text-[#FBBF24] bg-[#F59E0B1A] border border-[#F59E0B33] px-1.5 py-0.5 rounded-full leading-none">
             Verificación manual
@@ -172,22 +172,22 @@ export default function DashboardPage() {
           <div className="mx-4 mb-3">
             <Link
               to="/wallet"
-              className="flex items-center justify-between px-4 py-4 rounded-2xl bg-[#1A2340] border border-[#263050] no-underline hover:border-[#C4CBD833] transition-colors group"
+              className="flex items-center justify-between px-4 py-4 rounded-2xl bg-white border border-[#E2E8F0] no-underline hover:border-[#1D9E7533] transition-colors group"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#22C55E1A] flex items-center justify-center flex-shrink-0">
                   <Wallet size={18} className="text-[#22C55E]" />
                 </div>
                 <div>
-                  <p className="text-[0.9375rem] font-bold text-white leading-tight">
+                  <p className="text-[0.9375rem] font-bold text-[#0F172A] leading-tight">
                     Mi Wallet BOB
                   </p>
-                  <p className="text-[0.75rem] text-[#4E5A7A]">
+                  <p className="text-[0.75rem] text-[#94A3B8]">
                     Saldo en bolivianos · AV Finance SRL
                   </p>
                 </div>
               </div>
-              <ChevronRight size={18} className="text-[#4E5A7A] group-hover:text-[#C4CBD8] transition-colors flex-shrink-0" />
+              <ChevronRight size={18} className="text-[#94A3B8] group-hover:text-[#1D9E75] transition-colors flex-shrink-0" />
             </Link>
           </div>
         )}
@@ -208,12 +208,12 @@ export default function DashboardPage() {
           <StatsSkeletons />
         ) : !hasTransactions ? (
           /* Estado vacío — primera visita */
-          <div className="mx-4 mb-4 rounded-2xl border border-[#263050] bg-[#1A2340] px-5 py-6 text-center">
+          <div className="mx-4 mb-4 rounded-2xl border border-[#E2E8F0] bg-white px-5 py-6 text-center">
             <p className="text-[2rem] mb-2">🚀</p>
-            <p className="text-[0.9375rem] font-semibold text-white mb-1">
+            <p className="text-[0.9375rem] font-semibold text-[#0F172A] mb-1">
               Bienvenido a Alyto
             </p>
-            <p className="text-[0.8125rem] text-[#8A96B8]">
+            <p className="text-[0.8125rem] text-[#64748B]">
               Realiza tu primera transferencia hoy
             </p>
           </div>
@@ -223,12 +223,12 @@ export default function DashboardPage() {
             <StatCard
               label="Total enviado"
               value={`${formatOriginAmount(stats.totalSent)} ${originCurrency}`}
-              accent="#FFFFFF"
+              accent="#0F172A"
             />
             <StatCard
               label="Transferencias"
               value={stats.totalTransactions}
-              accent="#C4CBD8"
+              accent="#1D9E75"
             />
             <StatCard
               label="Completadas"
@@ -238,7 +238,7 @@ export default function DashboardPage() {
             <StatCard
               label="En proceso"
               value={stats.activeTransactions}
-              accent={stats.activeTransactions > 0 ? '#C4CBD8' : '#4E5A7A'}
+              accent={stats.activeTransactions > 0 ? '#1D9E75' : '#94A3B8'}
             />
           </div>
         )}
@@ -255,22 +255,22 @@ export default function DashboardPage() {
           <div className="mx-4 mb-4">
             <Link
               to="/institutional"
-              className="flex items-center justify-between px-4 py-4 rounded-2xl bg-[#1A2340] border border-[#263050] no-underline hover:border-[#C4CBD833] transition-colors group"
+              className="flex items-center justify-between px-4 py-4 rounded-2xl bg-white border border-[#E2E8F0] no-underline hover:border-[#1D9E7533] transition-colors group"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#C4CBD81A] flex items-center justify-center flex-shrink-0">
-                  <Shield size={18} className="text-[#C4CBD8]" />
+                <div className="w-10 h-10 rounded-xl bg-[#1D9E751A] flex items-center justify-center flex-shrink-0">
+                  <Shield size={18} className="text-[#1D9E75]" />
                 </div>
                 <div>
-                  <p className="text-[0.9375rem] font-bold text-white leading-tight">
+                  <p className="text-[0.9375rem] font-bold text-[#0F172A] leading-tight">
                     Plataforma Institucional
                   </p>
-                  <p className="text-[0.75rem] text-[#4E5A7A]">
+                  <p className="text-[0.75rem] text-[#94A3B8]">
                     On-ramp B2B · OwlPay Harbor · AV Finance LLC
                   </p>
                 </div>
               </div>
-              <ChevronRight size={18} className="text-[#4E5A7A] group-hover:text-[#C4CBD8] transition-colors flex-shrink-0" />
+              <ChevronRight size={18} className="text-[#94A3B8] group-hover:text-[#1D9E75] transition-colors flex-shrink-0" />
             </Link>
           </div>
         )}
@@ -281,22 +281,22 @@ export default function DashboardPage() {
         <div className="mx-4 mb-4">
           <Link
             to="/reclamos"
-            className="flex items-center justify-between px-4 py-4 rounded-2xl bg-[#1A2340] border border-[#263050] no-underline hover:border-[#C4CBD833] transition-colors group"
+            className="flex items-center justify-between px-4 py-4 rounded-2xl bg-white border border-[#E2E8F0] no-underline hover:border-[#1D9E7533] transition-colors group"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#3B82F61A] flex items-center justify-center flex-shrink-0">
                 <AlertCircle size={18} className="text-[#3B82F6]" />
               </div>
               <div>
-                <p className="text-[0.9375rem] font-bold text-white leading-tight">
+                <p className="text-[0.9375rem] font-bold text-[#0F172A] leading-tight">
                   Mis Reclamos
                 </p>
-                <p className="text-[0.75rem] text-[#4E5A7A]">
+                <p className="text-[0.75rem] text-[#94A3B8]">
                   Punto de Reclamo PRILI · ASFI
                 </p>
               </div>
             </div>
-            <ChevronRight size={18} className="text-[#4E5A7A] group-hover:text-[#C4CBD8] transition-colors flex-shrink-0" />
+            <ChevronRight size={18} className="text-[#94A3B8] group-hover:text-[#1D9E75] transition-colors flex-shrink-0" />
           </Link>
         </div>
 
@@ -313,16 +313,16 @@ export default function DashboardPage() {
         {/* ─────────────────────────────────────────────────────────── */}
         <div className="mb-4">
           <div className="flex items-center justify-between px-4 mb-3">
-            <p className="text-base font-bold text-white">¿A dónde puedes enviar?</p>
+            <p className="text-base font-bold text-[#0F172A]">¿A dónde puedes enviar?</p>
             {destCountries.length > 0 && (
-              <span className="text-[0.6875rem] font-medium text-[#4E5A7A]">
+              <span className="text-[0.6875rem] font-medium text-[#94A3B8]">
                 {destCountries.length} país{destCountries.length !== 1 ? 'es' : ''}
               </span>
             )}
           </div>
           {destCountries.length === 0 ? (
-            <div className="mx-4 px-4 py-4 rounded-2xl bg-[#1A2340] border border-[#263050] text-center">
-              <p className="text-[0.8125rem] text-[#4E5A7A]">
+            <div className="mx-4 px-4 py-4 rounded-2xl bg-white border border-[#E2E8F0] text-center">
+              <p className="text-[0.8125rem] text-[#94A3B8]">
                 Sin destinos disponibles aún.
               </p>
             </div>

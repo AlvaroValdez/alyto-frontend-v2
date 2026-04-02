@@ -82,8 +82,8 @@ function validateRUT(formatted) {
 function FieldSkeleton() {
   return (
     <div className="flex flex-col gap-2">
-      <div className="h-3 w-24 rounded bg-[#1A2340] animate-pulse" />
-      <div className="h-12 w-full rounded-xl bg-[#1A2340] animate-pulse" />
+      <div className="h-3 w-24 rounded bg-[#E2E8F0] animate-pulse" />
+      <div className="h-12 w-full rounded-xl bg-[#E2E8F0] animate-pulse" />
     </div>
   )
 }
@@ -92,11 +92,11 @@ function LoadingSkeleton() {
   return (
     <div className="flex flex-col gap-4 px-4 pb-4">
       <div>
-        <div className="h-5 w-40 rounded bg-[#1A2340] animate-pulse mb-2" />
-        <div className="h-3 w-56 rounded bg-[#1A2340] animate-pulse" />
+        <div className="h-5 w-40 rounded bg-[#E2E8F0] animate-pulse mb-2" />
+        <div className="h-3 w-56 rounded bg-[#E2E8F0] animate-pulse" />
       </div>
       {Array.from({ length: 5 }).map((_, i) => <FieldSkeleton key={i} />)}
-      <div className="h-14 w-full rounded-2xl bg-[#1A2340] animate-pulse mt-2" />
+      <div className="h-14 w-full rounded-2xl bg-[#E2E8F0] animate-pulse mt-2" />
     </div>
   )
 }
@@ -154,10 +154,10 @@ function RutField({ fieldKey, value, error, required, onChange, onBlur, baseInpu
   }
   return (
     <div>
-      <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide mb-2">
+      <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
         RUT
         {!required && (
-          <span className="ml-1 text-[0.625rem] normal-case font-normal text-[#4E5A7A]">(opcional)</span>
+          <span className="ml-1 text-[0.625rem] normal-case font-normal text-[#94A3B8]">(opcional)</span>
         )}
       </label>
       <input
@@ -182,9 +182,9 @@ function RutField({ fieldKey, value, error, required, onChange, onBlur, baseInpu
 function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
   const { key, label, type, required, options, placeholder } = field
 
-  const baseInput = `w-full bg-[#1A2340] border rounded-xl px-4 py-3.5 text-[0.9375rem] text-white
-    placeholder:text-[#4E5A7A] focus:outline-none transition-all`
-  const borderOk  = 'border-[#263050] focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820]'
+  const baseInput = `w-full bg-white border rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0F172A]
+    placeholder:text-[#CBD5E1] focus:outline-none transition-all`
+  const borderOk  = 'border-[#E2E8F0] focus:border-[#1D9E75] focus:shadow-[0_0_0_3px_#1D9E7520]'
   const borderErr = 'border-[#EF4444] shadow-[0_0_0_2px_#EF44441A]'
 
   // Chile — tipo documento: campo único "rut" → ocultar visualmente pero mantener el auto-set
@@ -224,10 +224,10 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
 
   return (
     <div>
-      <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide mb-2">
+      <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
         {label}
         {!required && (
-          <span className="ml-1 text-[0.625rem] normal-case font-normal text-[#4E5A7A]">(opcional)</span>
+          <span className="ml-1 text-[0.625rem] normal-case font-normal text-[#94A3B8]">(opcional)</span>
         )}
       </label>
 
@@ -260,8 +260,8 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
 
       ) : type === 'phone' ? (
         <div className="flex gap-2">
-          <span className="flex items-center px-3 bg-[#1A2340] border border-[#263050] rounded-xl
-            text-[0.875rem] text-[#8A96B8] flex-shrink-0 min-w-[64px] justify-center">
+          <span className="flex items-center px-3 bg-[#F1F5F9] border border-[#E2E8F0] rounded-xl
+            text-[0.875rem] text-[#64748B] flex-shrink-0 min-w-[64px] justify-center">
             {PHONE_PREFIXES[countryCode] ?? ''}
           </span>
           <input
@@ -347,8 +347,8 @@ function PayoutTypeToggle({ value, onChange }) {
             onClick={() => onChange(o.id)}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-[0.875rem] font-semibold transition-all ${
               active
-                ? 'bg-[#C4CBD81A] border-[#C4CBD8] text-white'
-                : 'bg-[#1A2340] border-[#263050] text-[#8A96B8] hover:border-[#C4CBD833]'
+                ? 'bg-[#1D9E751A] border-[#1D9E75] text-[#1D9E75]'
+                : 'bg-white border-[#E2E8F0] text-[#64748B] hover:border-[#1D9E7533]'
             }`}
           >
             <o.icon size={16} />
@@ -381,7 +381,7 @@ function QRUpload({ qrBase64, onQrChange }) {
 
   return (
     <div className="space-y-3">
-      <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide">
+      <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide">
         QR del beneficiario
       </label>
 
@@ -390,7 +390,7 @@ function QRUpload({ qrBase64, onQrChange }) {
           <img
             src={qrBase64}
             alt="QR beneficiario"
-            className="w-[180px] h-[180px] rounded-xl bg-white p-1.5 object-contain border border-[#263050]"
+            className="w-[180px] h-[180px] rounded-xl bg-white p-1.5 object-contain border border-[#E2E8F0]"
           />
           <button
             type="button"
@@ -401,10 +401,10 @@ function QRUpload({ qrBase64, onQrChange }) {
           </button>
         </div>
       ) : (
-        <label className="flex flex-col items-center justify-center gap-2 w-full py-8 rounded-xl border border-dashed border-[#C4CBD833] text-[#8A96B8] hover:text-white hover:border-[#C4CBD850] transition-colors cursor-pointer">
+        <label className="flex flex-col items-center justify-center gap-2 w-full py-8 rounded-xl border border-dashed border-[#94A3B8] text-[#64748B] hover:text-[#1D9E75] hover:border-[#1D9E7533] transition-colors cursor-pointer">
           <Upload size={20} />
           <span className="text-[0.875rem]">Subir imagen del QR</span>
-          <span className="text-[0.6875rem] text-[#4E5A7A]">JPG o PNG — máx. 5MB</span>
+          <span className="text-[0.6875rem] text-[#94A3B8]">JPG o PNG — máx. 5MB</span>
           <input
             ref={inputRef}
             type="file"
@@ -429,17 +429,17 @@ function ContactPickerModal({ contacts, onSelect, onClose }) {
     >
       <div
         className="w-full max-w-sm rounded-2xl flex flex-col"
-        style={{ background: '#0F1628', border: '1px solid #263050', maxHeight: '70vh' }}
+        style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', maxHeight: '70vh', boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[#263050] flex-shrink-0">
-          <p className="text-[1rem] font-bold text-white">Mis contactos</p>
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[#E2E8F0] flex-shrink-0">
+          <p className="text-[1rem] font-bold text-[#0F172A]">Mis contactos</p>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#1A2340] border border-[#263050] flex items-center justify-center"
+            className="w-8 h-8 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center"
           >
-            <X size={14} className="text-[#8A96B8]" />
+            <X size={14} className="text-[#64748B]" />
           </button>
         </div>
 
@@ -458,34 +458,34 @@ function ContactPickerModal({ contacts, onSelect, onClose }) {
               <button
                 key={c._id}
                 onClick={() => onSelect(c)}
-                className={`w-full flex items-center gap-3 px-5 py-4 hover:bg-[#1A2340] active:bg-[#1A2340] transition-colors ${
-                  idx < contacts.length - 1 ? 'border-b border-[#1A234060]' : ''
+                className={`w-full flex items-center gap-3 px-5 py-4 hover:bg-[#F8FAFC] active:bg-[#F1F5F9] transition-colors ${
+                  idx < contacts.length - 1 ? 'border-b border-[#E2E8F060]' : ''
                 }`}
               >
-                <div className="w-10 h-10 rounded-full bg-[#1A2340] border border-[#263050] flex items-center justify-center flex-shrink-0">
-                  <span className="text-[0.875rem] font-bold text-[#C4CBD8]">
+                <div className="w-10 h-10 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center flex-shrink-0">
+                  <span className="text-[0.875rem] font-bold text-[#1D9E75]">
                     {name.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div className="flex-1 text-left min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <p className="text-[0.9375rem] font-semibold text-white truncate leading-tight">
+                    <p className="text-[0.9375rem] font-semibold text-[#0F172A] truncate leading-tight">
                       {name}
                     </p>
                     {c.isFavorite && (
                       <Star size={12} className="text-[#F59E0B] flex-shrink-0" fill="#F59E0B" />
                     )}
                   </div>
-                  <p className="text-[0.75rem] text-[#4E5A7A] truncate">
+                  <p className="text-[0.75rem] text-[#94A3B8] truncate">
                     {bank}{bank && account ? ' · ' : ''}{account}
                   </p>
                   {c.lastSentAt && (
-                    <p className="text-[0.6875rem] text-[#4E5A7A]">
+                    <p className="text-[0.6875rem] text-[#94A3B8]">
                       Último: {c.lastAmount?.toLocaleString('es-CL')} {c.lastCurrency}
                     </p>
                   )}
                 </div>
-                <ChevronRight size={14} className="text-[#4E5A7A] flex-shrink-0" />
+                <ChevronRight size={14} className="text-[#94A3B8] flex-shrink-0" />
               </button>
             )
           })}
@@ -668,19 +668,19 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
     return (
       <div className="flex flex-col gap-4 px-4 pb-4">
         <div>
-          <h2 className="text-[1.125rem] font-bold text-white">¿A quién le envías?</h2>
-          <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">Ingresa los datos bancarios del beneficiario</p>
+          <h2 className="text-[1.125rem] font-bold text-[#0F172A]">¿A quién le envías?</h2>
+          <p className="text-[0.8125rem] text-[#64748B] mt-0.5">Ingresa los datos bancarios del beneficiario</p>
         </div>
 
-        <div className="bg-[#EF44441A] border border-[#EF44441A] rounded-2xl p-4 flex flex-col gap-3">
-          <p className="text-[0.875rem] text-[#F87171]">
+        <div className="bg-[#EF44441A] border border-[#EF444433] rounded-2xl p-4 flex flex-col gap-3">
+          <p className="text-[0.875rem] text-[#EF4444]">
             No se pudieron cargar los campos del formulario.
           </p>
-          <p className="text-[0.75rem] text-[#8A96B8]">{loadError}</p>
+          <p className="text-[0.75rem] text-[#64748B]">{loadError}</p>
           <button
             onClick={refetch}
-            className="self-start px-4 py-2 rounded-xl border border-[#C4CBD833] text-[0.875rem]
-              font-semibold text-[#C4CBD8] hover:bg-[#C4CBD81A] transition-colors"
+            className="self-start px-4 py-2 rounded-xl border border-[#1D9E7533] text-[0.875rem]
+              font-semibold text-[#1D9E75] hover:bg-[#1D9E751A] transition-colors"
           >
             Reintentar
           </button>
@@ -696,8 +696,8 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
 
       {/* Título */}
       <div>
-        <h2 className="text-[1.125rem] font-bold text-white">¿A quién le envías?</h2>
-        <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
+        <h2 className="text-[1.125rem] font-bold text-[#0F172A]">¿A quién le envías?</h2>
+        <p className="text-[0.8125rem] text-[#64748B] mt-0.5">
           {isManualCorridor
             ? 'Ingresa los datos del beneficiario en Bolivia'
             : 'Ingresa los datos bancarios del beneficiario'}
@@ -709,19 +709,19 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
         <button
           type="button"
           onClick={() => setShowContactPicker(true)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-[#1A2340] border border-[#263050] rounded-xl hover:border-[#C4CBD833] transition-colors"
+          className="w-full flex items-center justify-between px-4 py-3 bg-white border border-[#E2E8F0] rounded-xl hover:border-[#1D9E7533] transition-colors"
         >
           <div className="flex items-center gap-2.5">
             <UserCheck size={16} className="text-[#1D9E75]" />
-            <span className="text-[0.875rem] font-semibold text-white">
+            <span className="text-[0.875rem] font-semibold text-[#0F172A]">
               Usar contacto guardado
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[0.75rem] text-[#4E5A7A]">
+            <span className="text-[0.75rem] text-[#94A3B8]">
               {contacts.length} contacto{contacts.length !== 1 ? 's' : ''}
             </span>
-            <ChevronRight size={14} className="text-[#4E5A7A]" />
+            <ChevronRight size={14} className="text-[#94A3B8]" />
           </div>
         </button>
       )}
@@ -729,7 +729,7 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
       {/* Toggle banco / QR (solo Bolivia manual) */}
       {isManualCorridor && (
         <div className="space-y-2">
-          <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide">
+          <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide">
             ¿Cómo recibe el pago?
           </label>
           <PayoutTypeToggle value={payoutType} onChange={setPayoutType} />
@@ -763,12 +763,12 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
             className={`w-5 h-5 rounded flex items-center justify-center border transition-colors flex-shrink-0 ${
               saveAsContact
                 ? 'bg-[#1D9E75] border-[#1D9E75]'
-                : 'bg-[#1A2340] border-[#263050]'
+                : 'bg-white border-[#E2E8F0]'
             }`}
           >
             {saveAsContact && <Check size={12} className="text-white" />}
           </button>
-          <span className="text-[0.875rem] text-[#C4CBD8]">
+          <span className="text-[0.875rem] text-[#0F172A]">
             Guardar como contacto
           </span>
         </label>
@@ -779,15 +779,15 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
             value={contactNickname}
             onChange={e => setContactNickname(e.target.value)}
             placeholder='Apodo (opcional) — ej: "Mamá", "Pedro trabajo"'
-            className="w-full bg-[#1A2340] border border-[#263050] rounded-xl px-4 py-3 text-[0.875rem] text-white placeholder:text-[#4E5A7A] focus:outline-none focus:border-[#C4CBD8] transition-colors"
+            className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#1D9E75] transition-colors"
           />
         )}
       </div>
 
       {/* Nota de seguridad */}
-      <div className="flex items-start gap-2.5 bg-[#1A2340] rounded-xl px-3.5 py-3">
+      <div className="flex items-start gap-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3.5 py-3">
         <span className="text-base flex-shrink-0">🔒</span>
-        <p className="text-[0.6875rem] text-[#8A96B8] leading-relaxed">
+        <p className="text-[0.6875rem] text-[#64748B] leading-relaxed">
           Tus datos están cifrados y protegidos. Solo los usamos para procesar este pago.
         </p>
       </div>
@@ -798,8 +798,8 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
         disabled={!allValid}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
           allValid
-            ? 'bg-[#C4CBD8] text-[#0F1628] shadow-[0_4px_20px_rgba(196,203,216,0.3)] active:scale-[0.98]'
-            : 'bg-[#C4CBD840] text-[#4E5A7A] cursor-not-allowed'
+            ? 'bg-[#1D9E75] text-white shadow-[0_4px_20px_rgba(29,158,117,0.25)] active:scale-[0.98]'
+            : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
         }`}
       >
         Continuar

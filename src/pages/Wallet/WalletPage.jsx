@@ -49,7 +49,7 @@ function StatusBadge({ status }) {
   const map = {
     active:    { bg: '#22C55E1A', text: '#22C55E', label: 'Activa' },
     frozen:    { bg: '#EF44441A', text: '#F87171', label: 'Congelada' },
-    suspended: { bg: '#C4CBD81A', text: '#8A96B8', label: 'Suspendida' },
+    suspended: { bg: '#F1F5F9',   text: '#64748B', label: 'Suspendida' },
   }
   const s = map[status] ?? map.active
   return (
@@ -86,10 +86,10 @@ function TxIcon({ type }) {
 
 function TxStatusBadge({ status }) {
   const map = {
-    pending:   { bg: '#C4CBD81A', text: '#C4CBD8', label: 'Pendiente' },
+    pending:   { bg: '#64748B1A', text: '#64748B', label: 'Pendiente' },
     completed: { bg: '#22C55E1A', text: '#22C55E', label: 'Completado' },
     failed:    { bg: '#EF44441A', text: '#F87171', label: 'Fallido' },
-    reversed:  { bg: '#C4CBD81A', text: '#8A96B8', label: 'Revertido' },
+    reversed:  { bg: '#64748B1A', text: '#64748B', label: 'Revertido' },
   }
   const s = map[status] ?? map.pending
   return (
@@ -108,12 +108,12 @@ function Modal({ open, onClose, title, children }) {
     <div className="fixed inset-0 z-[100] flex items-end justify-center"
       style={{ background: '#0F162899' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="w-full max-w-[430px] bg-[#1A2340] rounded-t-3xl px-6 pt-5 pb-8"
-        style={{ border: '1px solid #263050', borderBottom: 'none' }}>
+      <div className="w-full max-w-[430px] bg-white rounded-t-3xl px-6 pt-5 pb-8"
+        style={{ border: '1px solid #E2E8F0', borderBottom: 'none' }}>
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-[1rem] font-bold text-white">{title}</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#0F1628] flex items-center justify-center">
-            <X size={16} className="text-[#8A96B8]" />
+          <h3 className="text-[1rem] font-bold text-[#0F172A]">{title}</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#F1F5F9] flex items-center justify-center">
+            <X size={16} className="text-[#64748B]" />
           </button>
         </div>
         {children}
@@ -168,9 +168,9 @@ function DepositModal({ open, onClose, onSuccess }) {
       {!result ? (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">Monto a depositar (BOB)</label>
+            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Monto a depositar (BOB)</label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8A96B8] font-semibold text-sm">Bs.</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-semibold text-sm">Bs.</span>
               <input
                 type="number"
                 min={50}
@@ -178,10 +178,10 @@ function DepositModal({ open, onClose, onSuccess }) {
                 value={amount}
                 onChange={e => setAmount(e.target.value)}
                 placeholder="100"
-                className="w-full bg-[#0F1628] border border-[#263050] rounded-xl pl-10 pr-4 py-3.5 text-white text-[0.9375rem] focus:border-[#C4CBD8] focus:outline-none"
+                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#1D9E75] focus:outline-none"
               />
             </div>
-            <p className="text-[0.6875rem] text-[#4E5A7A] mt-1">Mínimo Bs. 50 — Máximo Bs. 10.000</p>
+            <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Mínimo Bs. 50 — Máximo Bs. 10.000</p>
           </div>
           {error && (
             <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>
@@ -189,54 +189,54 @@ function DepositModal({ open, onClose, onSuccess }) {
           <button
             type="submit"
             disabled={loading || !amount}
-            className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-[#0F1628] disabled:opacity-40"
-            style={{ background: '#C4CBD8' }}
+            className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white disabled:opacity-40"
+            style={{ background: '#1D9E75' }}
           >
             {loading ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Generar instrucciones'}
           </button>
         </form>
       ) : (
         <div className="space-y-4">
-          <div className="bg-[#0F1628] rounded-2xl p-4 border border-[#263050] space-y-3">
+          <div className="bg-[#F8FAFC] rounded-2xl p-4 border border-[#E2E8F0] space-y-3">
             <div className="flex justify-between">
-              <span className="text-[0.75rem] text-[#8A96B8]">Monto a transferir</span>
-              <span className="text-[0.875rem] font-bold text-white">{formatBOB(result.amount)}</span>
+              <span className="text-[0.75rem] text-[#64748B]">Monto a transferir</span>
+              <span className="text-[0.875rem] font-bold text-[#0F172A]">{formatBOB(result.amount)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[0.75rem] text-[#8A96B8]">Banco</span>
-              <span className="text-[0.875rem] font-semibold text-white">{result.bankName}</span>
+              <span className="text-[0.75rem] text-[#64748B]">Banco</span>
+              <span className="text-[0.875rem] font-semibold text-[#0F172A]">{result.bankName}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[0.75rem] text-[#8A96B8]">Titular</span>
-              <span className="text-[0.875rem] font-semibold text-white">{result.accountHolder}</span>
+              <span className="text-[0.75rem] text-[#64748B]">Titular</span>
+              <span className="text-[0.875rem] font-semibold text-[#0F172A]">{result.accountHolder}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[0.75rem] text-[#8A96B8]">N° de cuenta</span>
-              <span className="text-[0.875rem] font-mono font-semibold text-white">{result.accountNumber}</span>
+              <span className="text-[0.75rem] text-[#64748B]">N° de cuenta</span>
+              <span className="text-[0.875rem] font-mono font-semibold text-[#0F172A]">{result.accountNumber}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[0.75rem] text-[#8A96B8]">Tipo</span>
-              <span className="text-[0.875rem] font-semibold text-white">{result.accountType}</span>
+              <span className="text-[0.75rem] text-[#64748B]">Tipo</span>
+              <span className="text-[0.875rem] font-semibold text-[#0F172A]">{result.accountType}</span>
             </div>
-            <div className="pt-2 border-t border-[#263050]">
-              <p className="text-[0.6875rem] font-medium text-[#8A96B8] mb-1">Referencia (incluir en el concepto)</p>
+            <div className="pt-2 border-t border-[#E2E8F0]">
+              <p className="text-[0.6875rem] font-medium text-[#64748B] mb-1">Referencia (incluir en el concepto)</p>
               <div className="flex items-center gap-2">
-                <span className="flex-1 text-[0.8125rem] font-mono font-bold text-[#C4CBD8] truncate">{result.reference}</span>
+                <span className="flex-1 text-[0.8125rem] font-mono font-bold text-[#1D9E75] truncate">{result.reference}</span>
                 <button onClick={copyReference}
                   className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: '#C4CBD81A', border: '1px solid #C4CBD833' }}>
-                  {copied ? <CheckCheck size={14} className="text-[#22C55E]" /> : <Copy size={14} className="text-[#C4CBD8]" />}
+                  style={{ background: '#1D9E751A', border: '1px solid #1D9E7533' }}>
+                  {copied ? <CheckCheck size={14} className="text-[#22C55E]" /> : <Copy size={14} className="text-[#1D9E75]" />}
                 </button>
               </div>
             </div>
           </div>
-          <p className="text-[0.75rem] text-[#8A96B8] text-center px-2">
-            Tu saldo será acreditado en <span className="text-white font-semibold">2-4 horas hábiles</span> tras verificación del equipo Alyto.
+          <p className="text-[0.75rem] text-[#64748B] text-center px-2">
+            Tu saldo será acreditado en <span className="text-[#0F172A] font-semibold">2-4 horas hábiles</span> tras verificación del equipo Alyto.
           </p>
           <button
             onClick={() => { handleClose(); onSuccess?.() }}
-            className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-[#0F1628]"
-            style={{ background: '#C4CBD8' }}
+            className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white"
+            style={{ background: '#1D9E75' }}
           >
             Ya realicé la transferencia
           </button>
@@ -296,81 +296,81 @@ function SendModal({ open, onClose, onSuccess, balanceAvailable }) {
             <CheckCircle2 size={32} className="text-[#22C55E]" />
           </div>
           <div>
-            <p className="text-white font-bold text-[1rem]">Envío completado</p>
-            <p className="text-[#8A96B8] text-[0.875rem] mt-1">{formatBOB(Number(amount))} enviados a <span className="text-white">{email}</span></p>
+            <p className="text-[#0F172A] font-bold text-[1rem]">Envío completado</p>
+            <p className="text-[#64748B] text-[0.875rem] mt-1">{formatBOB(Number(amount))} enviados a <span className="text-[#0F172A]">{email}</span></p>
           </div>
-          <button onClick={handleClose} className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-[#0F1628]" style={{ background: '#C4CBD8' }}>
+          <button onClick={handleClose} className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white" style={{ background: '#1D9E75' }}>
             Cerrar
           </button>
         </div>
       ) : step === 1 ? (
         <form onSubmit={handleContinue} className="space-y-4">
           <div>
-            <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">Email del destinatario</label>
+            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Email del destinatario</label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="usuario@email.com"
-              className="w-full bg-[#0F1628] border border-[#263050] rounded-xl px-4 py-3.5 text-white text-[0.9375rem] focus:border-[#C4CBD8] focus:outline-none"
+              className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#1D9E75] focus:outline-none"
             />
-            <p className="text-[0.6875rem] text-[#4E5A7A] mt-1">Solo usuarios Bolivia (SRL) registrados en Alyto.</p>
+            <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Solo usuarios Bolivia (SRL) registrados en Alyto.</p>
           </div>
           <div>
-            <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">Monto (BOB)</label>
+            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Monto (BOB)</label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8A96B8] font-semibold text-sm">Bs.</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-semibold text-sm">Bs.</span>
               <input
                 type="number"
                 min={1}
                 value={amount}
                 onChange={e => setAmount(e.target.value)}
                 placeholder="0"
-                className="w-full bg-[#0F1628] border border-[#263050] rounded-xl pl-10 pr-4 py-3.5 text-white text-[0.9375rem] focus:border-[#C4CBD8] focus:outline-none"
+                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#1D9E75] focus:outline-none"
               />
             </div>
-            <p className="text-[0.6875rem] text-[#4E5A7A] mt-1">Disponible: {formatBOB(balanceAvailable)}</p>
+            <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Disponible: {formatBOB(balanceAvailable)}</p>
           </div>
           <div>
-            <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">Descripción (opcional)</label>
+            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Descripción (opcional)</label>
             <input
               type="text"
               value={description}
               onChange={e => setDescription(e.target.value)}
               maxLength={100}
               placeholder="Ej. Pago alquiler"
-              className="w-full bg-[#0F1628] border border-[#263050] rounded-xl px-4 py-3.5 text-white text-[0.9375rem] focus:border-[#C4CBD8] focus:outline-none"
+              className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#1D9E75] focus:outline-none"
             />
           </div>
           {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>}
-          <button type="submit" className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-[#0F1628]" style={{ background: '#C4CBD8' }}>
+          <button type="submit" className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white" style={{ background: '#1D9E75' }}>
             Continuar
           </button>
         </form>
       ) : (
         <div className="space-y-4">
-          <div className="bg-[#0F1628] rounded-2xl p-4 border border-[#263050] space-y-3">
+          <div className="bg-[#F8FAFC] rounded-2xl p-4 border border-[#E2E8F0] space-y-3">
             <div className="flex justify-between">
-              <span className="text-[0.75rem] text-[#8A96B8]">Para</span>
-              <span className="text-[0.875rem] font-semibold text-white">{email}</span>
+              <span className="text-[0.75rem] text-[#64748B]">Para</span>
+              <span className="text-[0.875rem] font-semibold text-[#0F172A]">{email}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[0.75rem] text-[#8A96B8]">Monto</span>
-              <span className="text-[0.875rem] font-bold text-[#C4CBD8]">{formatBOB(Number(amount))}</span>
+              <span className="text-[0.75rem] text-[#64748B]">Monto</span>
+              <span className="text-[0.875rem] font-bold text-[#1D9E75]">{formatBOB(Number(amount))}</span>
             </div>
             {description && (
               <div className="flex justify-between">
-                <span className="text-[0.75rem] text-[#8A96B8]">Descripción</span>
-                <span className="text-[0.875rem] text-white">{description}</span>
+                <span className="text-[0.75rem] text-[#64748B]">Descripción</span>
+                <span className="text-[0.875rem] text-[#0F172A]">{description}</span>
               </div>
             )}
           </div>
           {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>}
           <div className="flex gap-3">
-            <button onClick={() => setStep(1)} className="flex-1 py-3.5 rounded-2xl font-semibold text-[0.9375rem] text-white" style={{ border: '1.5px solid #263050' }}>
+            <button onClick={() => setStep(1)} className="flex-1 py-3.5 rounded-2xl font-semibold text-[0.9375rem] text-[#64748B]" style={{ border: '1.5px solid #E2E8F0' }}>
               Volver
             </button>
-            <button onClick={handleConfirm} disabled={loading} className="flex-1 py-3.5 rounded-2xl font-bold text-[0.9375rem] text-[#0F1628] disabled:opacity-40" style={{ background: '#C4CBD8' }}>
+            <button onClick={handleConfirm} disabled={loading} className="flex-1 py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white disabled:opacity-40" style={{ background: '#1D9E75' }}>
               {loading ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Confirmar envío'}
             </button>
           </div>
@@ -425,42 +425,42 @@ function WithdrawModal({ open, onClose, onSuccess, balanceAvailable }) {
             <CheckCircle2 size={32} className="text-[#22C55E]" />
           </div>
           <div>
-            <p className="text-white font-bold text-[1rem]">Solicitud enviada</p>
-            <p className="text-[#8A96B8] text-[0.875rem] mt-1">AV Finance SRL procesará tu retiro en <span className="text-white">1-2 días hábiles</span>.</p>
+            <p className="text-[#0F172A] font-bold text-[1rem]">Solicitud enviada</p>
+            <p className="text-[#64748B] text-[0.875rem] mt-1">AV Finance SRL procesará tu retiro en <span className="text-[#0F172A]">1-2 días hábiles</span>.</p>
           </div>
-          <button onClick={handleClose} className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-[#0F1628]" style={{ background: '#C4CBD8' }}>
+          <button onClick={handleClose} className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white" style={{ background: '#1D9E75' }}>
             Cerrar
           </button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">Monto a retirar (BOB)</label>
+            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Monto a retirar (BOB)</label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8A96B8] font-semibold text-sm">Bs.</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-semibold text-sm">Bs.</span>
               <input type="number" min={100} value={form.amount} onChange={e => set('amount', e.target.value)} placeholder="100"
-                className="w-full bg-[#0F1628] border border-[#263050] rounded-xl pl-10 pr-4 py-3.5 text-white text-[0.9375rem] focus:border-[#C4CBD8] focus:outline-none" />
+                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#1D9E75] focus:outline-none" />
             </div>
-            <p className="text-[0.6875rem] text-[#4E5A7A] mt-1">Mínimo Bs. 100. Disponible: {formatBOB(balanceAvailable)}</p>
+            <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Mínimo Bs. 100. Disponible: {formatBOB(balanceAvailable)}</p>
           </div>
 
-          <div className="space-y-3 bg-[#0F1628] rounded-2xl p-4 border border-[#263050]">
-            <p className="text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wider">Datos bancarios de destino</p>
+          <div className="space-y-3 bg-[#F8FAFC] rounded-2xl p-4 border border-[#E2E8F0]">
+            <p className="text-[0.75rem] font-semibold text-[#64748B] uppercase tracking-wider">Datos bancarios de destino</p>
             {[
               { key: 'bankName', label: 'Banco', placeholder: 'Ej. Banco Bisa' },
               { key: 'accountHolder', label: 'Titular de la cuenta', placeholder: 'Nombre completo' },
               { key: 'accountNumber', label: 'Número de cuenta', placeholder: '0000000000' },
             ].map(f => (
               <div key={f.key}>
-                <label className="block text-[0.6875rem] font-medium text-[#8A96B8] mb-1">{f.label}</label>
+                <label className="block text-[0.6875rem] font-medium text-[#64748B] mb-1">{f.label}</label>
                 <input type="text" value={form[f.key]} onChange={e => set(f.key, e.target.value)} placeholder={f.placeholder}
-                  className="w-full bg-[#1A2340] border border-[#263050] rounded-xl px-4 py-3 text-white text-[0.875rem] focus:border-[#C4CBD8] focus:outline-none" />
+                  className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.875rem] focus:border-[#1D9E75] focus:outline-none" />
               </div>
             ))}
             <div>
-              <label className="block text-[0.6875rem] font-medium text-[#8A96B8] mb-1">Tipo de cuenta</label>
+              <label className="block text-[0.6875rem] font-medium text-[#64748B] mb-1">Tipo de cuenta</label>
               <select value={form.accountType} onChange={e => set('accountType', e.target.value)}
-                className="w-full bg-[#1A2340] border border-[#263050] rounded-xl px-4 py-3 text-white text-[0.875rem] focus:border-[#C4CBD8] focus:outline-none">
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.875rem] focus:border-[#1D9E75] focus:outline-none">
                 <option>Caja de ahorros</option>
                 <option>Cuenta corriente</option>
               </select>
@@ -468,7 +468,7 @@ function WithdrawModal({ open, onClose, onSuccess, balanceAvailable }) {
           </div>
 
           {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>}
-          <button type="submit" disabled={loading} className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-[#0F1628] disabled:opacity-40" style={{ background: '#C4CBD8' }}>
+          <button type="submit" disabled={loading} className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white disabled:opacity-40" style={{ background: '#1D9E75' }}>
             {loading ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Solicitar retiro'}
           </button>
         </form>
@@ -537,7 +537,7 @@ export default function WalletPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 size={32} className="animate-spin text-[#C4CBD8]" />
+        <Loader2 size={32} className="animate-spin text-[#1D9E75]" />
       </div>
     )
   }
@@ -549,7 +549,7 @@ export default function WalletPage() {
 
         {/* Page title */}
         <div className="flex items-center gap-2 px-5 pb-4">
-          <h1 className="text-[1.0625rem] font-bold text-white">Mi Wallet BOB</h1>
+          <h1 className="text-[1.0625rem] font-bold text-[#0F172A]">Mi Wallet BOB</h1>
           <span className="text-[0.625rem] font-bold px-2 py-0.5 rounded-full"
             style={{ background: '#22C55E1A', color: '#22C55E', border: '1px solid #22C55E33' }}>
             SRL Bolivia
@@ -559,19 +559,19 @@ export default function WalletPage() {
         {/* ── Saldo card ──────────────────────────────────────────────── */}
         <div className="mx-4 mb-5 rounded-3xl p-6 relative overflow-hidden"
           style={{
-            background: 'linear-gradient(135deg, #1D3461 0%, #0F1628 60%, #1A2030 100%)',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.5), 0 0 60px rgba(196,203,216,0.08)',
+            background: 'linear-gradient(135deg, #1D9E75 0%, #18876A 60%, #157A5F 100%)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.15), 0 0 60px rgba(29,158,117,0.18)',
           }}>
           {/* Glow */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 pointer-events-none"
-            style={{ background: 'radial-gradient(ellipse, #C4CBD818 0%, transparent 70%)' }} />
+            style={{ background: 'radial-gradient(ellipse, #1D9E7518 0%, transparent 70%)' }} />
           {/* Decorative circle */}
           <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none"
-            style={{ border: '1px solid #C4CBD815' }} />
+            style={{ border: '1px solid rgba(255,255,255,0.15)' }} />
 
           <div className="flex items-start justify-between mb-3">
             <div>
-              <p className="text-[0.6875rem] font-medium uppercase tracking-widest text-[#8A96B8] mb-1">Saldo disponible</p>
+              <p className="text-[0.6875rem] font-medium uppercase tracking-widest text-white/70 mb-1">Saldo disponible</p>
               <p className="text-[2.5rem] font-extrabold text-white leading-none tracking-tight">
                 {formatBOB(balanceAvailable)}
               </p>
@@ -580,16 +580,16 @@ export default function WalletPage() {
           </div>
 
           {(wallet?.balanceReserved > 0 || wallet?.balanceFrozen > 0) && (
-            <div className="mt-4 pt-4 border-t border-[#263050] flex gap-4">
+            <div className="mt-4 pt-4 border-t border-white/20 flex gap-4">
               {wallet?.balanceReserved > 0 && (
                 <div>
-                  <p className="text-[0.625rem] text-[#4E5A7A] uppercase tracking-wider">Reservado</p>
-                  <p className="text-[0.875rem] font-semibold text-[#8A96B8]">{formatBOB(wallet.balanceReserved)}</p>
+                  <p className="text-[0.625rem] text-white/60 uppercase tracking-wider">Reservado</p>
+                  <p className="text-[0.875rem] font-semibold text-white/80">{formatBOB(wallet.balanceReserved)}</p>
                 </div>
               )}
               {wallet?.balanceFrozen > 0 && (
                 <div>
-                  <p className="text-[0.625rem] text-[#4E5A7A] uppercase tracking-wider">Congelado</p>
+                  <p className="text-[0.625rem] text-white/60 uppercase tracking-wider">Congelado</p>
                   <p className="text-[0.875rem] font-semibold text-[#F87171]">{formatBOB(wallet.balanceFrozen)}</p>
                 </div>
               )}
@@ -609,11 +609,11 @@ export default function WalletPage() {
               <button key={label} onClick={action}
                 className="flex-1 flex flex-col items-center gap-2 py-4 rounded-2xl transition-all"
                 style={{
-                  background: primary ? '#C4CBD8' : '#1A2340',
-                  border: primary ? 'none' : '1px solid #263050',
+                  background: primary ? 'white' : 'rgba(255,255,255,0.2)',
+                  border: primary ? 'none' : '1px solid rgba(255,255,255,0.3)',
                 }}>
-                <Icon size={20} style={{ color: primary ? '#0F1628' : '#C4CBD8' }} />
-                <span className="text-[0.75rem] font-semibold" style={{ color: primary ? '#0F1628' : '#C4CBD8' }}>
+                <Icon size={20} style={{ color: primary ? '#1D9E75' : 'white' }} />
+                <span className="text-[0.75rem] font-semibold" style={{ color: primary ? '#1D9E75' : 'white' }}>
                   {label}
                 </span>
               </button>
@@ -632,28 +632,28 @@ export default function WalletPage() {
         {/* ── Historial ───────────────────────────────────────────────── */}
         <div className="px-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[1rem] font-bold text-white">Movimientos</h2>
-            {txLoading && <Loader2 size={14} className="animate-spin text-[#8A96B8]" />}
+            <h2 className="text-[1rem] font-bold text-[#0F172A]">Movimientos</h2>
+            {txLoading && <Loader2 size={14} className="animate-spin text-[#64748B]" />}
           </div>
 
           {txs.length === 0 && !txLoading ? (
-            <div className="bg-[#1A2340] rounded-2xl p-8 text-center border border-[#263050]">
-              <Clock size={32} className="mx-auto text-[#4E5A7A] mb-3" />
-              <p className="text-[0.875rem] font-semibold text-[#8A96B8]">Sin movimientos aún</p>
-              <p className="text-[0.75rem] text-[#4E5A7A] mt-1">Carga saldo para comenzar a operar.</p>
+            <div className="bg-white rounded-2xl p-8 text-center border border-[#E2E8F0]">
+              <Clock size={32} className="mx-auto text-[#94A3B8] mb-3" />
+              <p className="text-[0.875rem] font-semibold text-[#64748B]">Sin movimientos aún</p>
+              <p className="text-[0.75rem] text-[#94A3B8] mt-1">Carga saldo para comenzar a operar.</p>
             </div>
           ) : (
             <div className="space-y-2">
               {txs.map(tx => (
                 <div key={tx._id ?? tx.wtxId}
                   className="flex items-center gap-3 px-4 py-3.5 rounded-2xl"
-                  style={{ background: '#1A2340', border: '1px solid #263050' }}>
+                  style={{ background: 'white', border: '1px solid #E2E8F0' }}>
                   <TxIcon type={tx.type} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[0.875rem] font-semibold text-white truncate">
+                    <p className="text-[0.875rem] font-semibold text-[#0F172A] truncate">
                       {tx.description ?? tx.type}
                     </p>
-                    <p className="text-[0.6875rem] text-[#4E5A7A] mt-0.5">{formatDate(tx.createdAt)}</p>
+                    <p className="text-[0.6875rem] text-[#94A3B8] mt-0.5">{formatDate(tx.createdAt)}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-[0.9375rem] font-bold"
@@ -671,12 +671,12 @@ export default function WalletPage() {
           {txPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <button onClick={() => setTxPage(p => Math.max(1, p - 1))} disabled={txPage === 1}
-                className="flex items-center gap-1.5 text-[0.8125rem] font-medium text-[#8A96B8] disabled:opacity-40">
+                className="flex items-center gap-1.5 text-[0.8125rem] font-medium text-[#64748B] disabled:opacity-40">
                 <ChevronLeft size={16} /> Anterior
               </button>
-              <span className="text-[0.75rem] text-[#4E5A7A]">{txPage} / {txPages}</span>
+              <span className="text-[0.75rem] text-[#94A3B8]">{txPage} / {txPages}</span>
               <button onClick={() => setTxPage(p => Math.min(txPages, p + 1))} disabled={txPage === txPages}
-                className="flex items-center gap-1.5 text-[0.8125rem] font-medium text-[#8A96B8] disabled:opacity-40">
+                className="flex items-center gap-1.5 text-[0.8125rem] font-medium text-[#64748B] disabled:opacity-40">
                 Siguiente <ChevronRight size={16} />
               </button>
             </div>

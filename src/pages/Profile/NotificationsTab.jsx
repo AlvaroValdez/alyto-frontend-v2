@@ -18,12 +18,12 @@ function Toggle({ enabled, onChange, disabled }) {
       disabled={disabled}
       className={`relative w-11 h-6 rounded-full transition-all duration-200 flex-shrink-0 ${
         disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-      } ${enabled ? 'bg-[#C4CBD8]' : 'bg-[#263050]'}`}
+      } ${enabled ? 'bg-[#1D9E75]' : 'bg-[#E2E8F0]'}`}
       aria-checked={enabled}
       role="switch"
     >
       <span
-        className={`absolute top-0.5 w-5 h-5 rounded-full bg-[#0F1628] shadow transition-transform duration-200 ${
+        className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${
           enabled ? 'translate-x-5' : 'translate-x-0.5'
         }`}
       />
@@ -36,15 +36,15 @@ function Toggle({ enabled, onChange, disabled }) {
 function NotifRow({ icon: Icon, title, description, enabled, saving, onChange, disabled }) {
   return (
     <div className="flex items-start gap-3 px-4 py-4">
-      <div className="w-9 h-9 rounded-xl bg-[#1F2B4D] flex items-center justify-center flex-shrink-0 mt-0.5">
-        <Icon size={15} className="text-[#C4CBD8]" />
+      <div className="w-9 h-9 rounded-xl bg-[#F8FAFC] flex items-center justify-center flex-shrink-0 mt-0.5">
+        <Icon size={15} className="text-[#64748B]" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[0.9375rem] font-semibold text-white leading-tight">{title}</p>
-        <p className="text-[0.75rem] text-[#8A96B8] mt-0.5 leading-snug">{description}</p>
+        <p className="text-[0.9375rem] font-semibold text-[#0F172A] leading-tight">{title}</p>
+        <p className="text-[0.75rem] text-[#64748B] mt-0.5 leading-snug">{description}</p>
       </div>
       <div className="flex items-center gap-2 mt-0.5">
-        {saving && <Loader2 size={12} className="text-[#C4CBD8] animate-spin" />}
+        {saving && <Loader2 size={12} className="text-[#1D9E75] animate-spin" />}
         <Toggle enabled={enabled} onChange={onChange} disabled={disabled || saving} />
       </div>
     </div>
@@ -99,11 +99,11 @@ export default function NotificationsTab({ profile, saving, onUpdate }) {
 
   return (
     <div className="py-4">
-      <p className="text-[0.75rem] font-semibold text-[#4E5A7A] uppercase tracking-wider px-4 mb-3">
+      <p className="text-[0.75rem] font-semibold text-[#64748B] uppercase tracking-wider px-4 mb-3">
         Preferencias
       </p>
 
-      <div className="mx-4 bg-[#1A2340] rounded-2xl border border-[#263050] overflow-hidden divide-y divide-[#1F2B4D]">
+      <div className="mx-4 bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden divide-y divide-[#E2E8F0]">
         <NotifRow
           icon={Mail}
           title="Notificaciones por email"
@@ -126,10 +126,10 @@ export default function NotificationsTab({ profile, saving, onUpdate }) {
 
       {/* Aviso bloqueadas en navegador */}
       {pushBlocked && (
-        <div className="mx-4 mt-3 bg-[#C4CBD80D] border border-[#C4CBD81A] rounded-2xl px-4 py-3.5 flex items-start gap-3">
-          <BellOff size={16} className="text-[#C4CBD8] flex-shrink-0 mt-0.5" />
-          <p className="text-[0.8125rem] text-[#8A96B8] leading-snug">
-            Las notificaciones están <strong className="text-[#C4CBD8]">bloqueadas</strong> en tu navegador.
+        <div className="mx-4 mt-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl px-4 py-3.5 flex items-start gap-3">
+          <BellOff size={16} className="text-[#64748B] flex-shrink-0 mt-0.5" />
+          <p className="text-[0.8125rem] text-[#64748B] leading-snug">
+            Las notificaciones están <strong className="text-[#0F172A]">bloqueadas</strong> en tu navegador.
             Actívalas en la configuración de tu navegador para recibir alertas.
           </p>
         </div>

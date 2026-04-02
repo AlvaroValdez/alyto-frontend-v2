@@ -72,37 +72,37 @@ function ActionCard({ action, kycApproved, onNavigate, onSupport }) {
       title={isDisabled ? 'Disponible tras verificar tu identidad' : undefined}
       className={`flex flex-col items-start gap-3 p-4 rounded-2xl border transition-all text-left w-full ${
         isDisabled
-          ? 'bg-[#1A2340] border-[#263050] opacity-40 cursor-not-allowed'
+          ? 'bg-white border-[#E2E8F0] opacity-40 cursor-not-allowed'
           : action.primary
-            ? 'bg-[#C4CBD8] border-[#C4CBD8] cursor-pointer hover:bg-[#A8B0C0]'
-            : 'bg-[#1A2340] border-[#263050] cursor-pointer hover:bg-[#1F2B4D] hover:border-[#C4CBD833]'
+            ? 'bg-[#1D9E75] border-[#1D9E75] cursor-pointer hover:bg-[#18876A]'
+            : 'bg-white border-[#E2E8F0] cursor-pointer hover:bg-[#F8FAFC] hover:border-[#1D9E7533]'
       }`}
     >
       <div
         className={`w-9 h-9 rounded-xl flex items-center justify-center ${
           action.primary
-            ? 'bg-[#1D346120]'
-            : 'bg-[#263050]'
+            ? 'bg-white/20'
+            : 'bg-[#F1F5F9]'
         }`}
       >
         <Icon
           size={17}
           className={
             isDisabled
-              ? 'text-[#4E5A7A]'
+              ? 'text-[#94A3B8]'
               : action.primary
-                ? 'text-[#1D3461]'
-                : 'text-[#8A96B8]'
+                ? 'text-white'
+                : 'text-[#64748B]'
           }
         />
       </div>
       <span
         className={`text-[0.8125rem] font-semibold ${
           isDisabled
-            ? 'text-[#4E5A7A]'
+            ? 'text-[#94A3B8]'
             : action.primary
-              ? 'text-[#0F1628]'
-              : 'text-white'
+              ? 'text-white'
+              : 'text-[#0F172A]'
         }`}
       >
         {action.label}
@@ -125,7 +125,7 @@ export default function QuickActions({ kycStatus }) {
     <div className="px-4 mb-2">
       {/* Section header */}
       <div className="flex items-center justify-between mb-3">
-        <p className="text-base font-bold text-white">Acciones rápidas</p>
+        <p className="text-base font-bold text-[#0F172A]">Acciones rápidas</p>
       </div>
 
       {/* Grid 2×2 */}

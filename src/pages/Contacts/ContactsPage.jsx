@@ -56,23 +56,23 @@ function ContactDetailModal({ contact, onClose, onDelete, onToggleFavorite }) {
     >
       <div
         className="w-full max-w-[430px] rounded-t-3xl flex flex-col pb-8"
-        style={{ background: '#0F1628', border: '1px solid #263050', borderBottom: 'none' }}
+        style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderBottom: 'none' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-2">
-          <div className="w-10 h-1 rounded-full bg-[#263050]" />
+          <div className="w-10 h-1 rounded-full bg-[#E2E8F0]" />
         </div>
 
         <div className="px-5 pb-2 flex items-center justify-between">
-          <h3 className="text-[1rem] font-bold text-white">{name}</h3>
+          <h3 className="text-[1rem] font-bold text-[#0F172A]">{name}</h3>
           <button
             onClick={onToggleFavorite}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-[#1A2340] border border-[#263050]"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-[#E2E8F0]"
           >
             <Star
               size={14}
-              className={contact.isFavorite ? 'text-[#F59E0B]' : 'text-[#4E5A7A]'}
+              className={contact.isFavorite ? 'text-[#F59E0B]' : 'text-[#94A3B8]'}
               fill={contact.isFavorite ? '#F59E0B' : 'none'}
             />
           </button>
@@ -80,7 +80,7 @@ function ContactDetailModal({ contact, onClose, onDelete, onToggleFavorite }) {
 
         {/* País */}
         <div className="px-5 py-1">
-          <span className="text-[0.75rem] text-[#4E5A7A]">
+          <span className="text-[0.75rem] text-[#94A3B8]">
             {COUNTRY_FLAGS[contact.destinationCountry] ?? ''}{' '}
             {COUNTRY_NAMES[contact.destinationCountry] ?? contact.destinationCountry}
             {contact.destinationCurrency ? ` · ${contact.destinationCurrency}` : ''}
@@ -88,39 +88,39 @@ function ContactDetailModal({ contact, onClose, onDelete, onToggleFavorite }) {
         </div>
 
         {/* Datos bancarios */}
-        <div className="mx-5 mt-3 bg-[#1A2340] border border-[#263050] rounded-2xl px-4 py-3 space-y-2.5">
+        <div className="mx-5 mt-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl px-4 py-3 space-y-2.5">
           {bank && (
             <div className="flex justify-between">
-              <span className="text-[0.75rem] text-[#8A96B8]">Banco</span>
-              <span className="text-[0.875rem] font-semibold text-white">{bank}</span>
+              <span className="text-[0.75rem] text-[#64748B]">Banco</span>
+              <span className="text-[0.875rem] font-semibold text-[#0F172A]">{bank}</span>
             </div>
           )}
           {account && (
             <div className="flex justify-between">
-              <span className="text-[0.75rem] text-[#8A96B8]">Cuenta</span>
-              <span className="text-[0.875rem] font-mono font-semibold text-white">****{account.slice(-4)}</span>
+              <span className="text-[0.75rem] text-[#64748B]">Cuenta</span>
+              <span className="text-[0.875rem] font-mono font-semibold text-[#0F172A]">****{account.slice(-4)}</span>
             </div>
           )}
           {docNum && (
             <div className="flex justify-between">
-              <span className="text-[0.75rem] text-[#8A96B8]">Documento</span>
-              <span className="text-[0.875rem] font-semibold text-white">{docNum}</span>
+              <span className="text-[0.75rem] text-[#64748B]">Documento</span>
+              <span className="text-[0.875rem] font-semibold text-[#0F172A]">{docNum}</span>
             </div>
           )}
         </div>
 
         {/* Historial */}
         {contact.sendCount > 0 && (
-          <div className="mx-5 mt-3 bg-[#1A2340] border border-[#263050] rounded-2xl px-4 py-3 space-y-2">
-            <p className="text-[0.6875rem] font-semibold text-[#8A96B8] uppercase tracking-wider">Historial</p>
+          <div className="mx-5 mt-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl px-4 py-3 space-y-2">
+            <p className="text-[0.6875rem] font-semibold text-[#64748B] uppercase tracking-wider">Historial</p>
             <div className="flex justify-between">
-              <span className="text-[0.75rem] text-[#8A96B8]">Envíos realizados</span>
-              <span className="text-[0.875rem] font-semibold text-white">{contact.sendCount}</span>
+              <span className="text-[0.75rem] text-[#64748B]">Envíos realizados</span>
+              <span className="text-[0.875rem] font-semibold text-[#0F172A]">{contact.sendCount}</span>
             </div>
             {contact.lastSentAt && (
               <div className="flex justify-between">
-                <span className="text-[0.75rem] text-[#8A96B8]">Último envío</span>
-                <span className="text-[0.875rem] text-[#C4CBD8]">
+                <span className="text-[0.75rem] text-[#64748B]">Último envío</span>
+                <span className="text-[0.875rem] text-[#1D9E75]">
                   {contact.lastAmount?.toLocaleString('es-CL')} {contact.lastCurrency} · {timeAgo(contact.lastSentAt)}
                 </span>
               </div>
@@ -132,7 +132,7 @@ function ContactDetailModal({ contact, onClose, onDelete, onToggleFavorite }) {
         <div className="px-5 mt-4 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-3 rounded-2xl border border-[#263050] text-[0.875rem] font-semibold text-[#8A96B8]"
+            className="flex-1 py-3 rounded-2xl border border-[#E2E8F0] text-[0.875rem] font-semibold text-[#64748B]"
           >
             Cerrar
           </button>
@@ -180,19 +180,19 @@ export default function ContactsPage() {
       <div className="flex items-center gap-3 px-4 pt-5 pb-4">
         <button
           onClick={() => navigate(-1)}
-          className="w-9 h-9 rounded-full bg-[#1A2340] border border-[#263050] flex items-center justify-center flex-shrink-0"
+          className="w-9 h-9 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center flex-shrink-0"
         >
-          <ArrowLeft size={16} className="text-[#8A96B8]" />
+          <ArrowLeft size={16} className="text-[#64748B]" />
         </button>
         <div>
-          <h1 className="text-[1.0625rem] font-bold text-white">Mis contactos</h1>
-          <p className="text-[0.75rem] text-[#4E5A7A]">Beneficiarios guardados</p>
+          <h1 className="text-[1.0625rem] font-bold text-[#0F172A]">Mis contactos</h1>
+          <p className="text-[0.75rem] text-[#94A3B8]">Beneficiarios guardados</p>
         </div>
       </div>
 
       {loading && (
         <div className="flex justify-center py-16">
-          <Loader2 size={28} className="animate-spin text-[#4E5A7A]" />
+          <Loader2 size={28} className="animate-spin text-[#94A3B8]" />
         </div>
       )}
 
@@ -205,17 +205,17 @@ export default function ContactsPage() {
 
       {/* Empty state */}
       {!loading && !error && contacts.length === 0 && (
-        <div className="mx-4 mt-4 flex flex-col items-center text-center py-16 bg-[#1A2340] rounded-3xl border border-[#263050]">
+        <div className="mx-4 mt-4 flex flex-col items-center text-center py-16 bg-white rounded-3xl border border-[#E2E8F0]">
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-            style={{ background: '#C4CBD81A', border: '1px solid #C4CBD833' }}
+            style={{ background: '#1D9E751A', border: '1px solid #1D9E7533' }}
           >
-            <Users size={28} className="text-[#4E5A7A]" />
+            <Users size={28} className="text-[#94A3B8]" />
           </div>
-          <p className="text-[0.9375rem] font-semibold text-white mb-2">
+          <p className="text-[0.9375rem] font-semibold text-[#0F172A] mb-2">
             Aún no tienes contactos
           </p>
-          <p className="text-[0.8125rem] text-[#8A96B8] max-w-[260px] leading-relaxed">
+          <p className="text-[0.8125rem] text-[#64748B] max-w-[260px] leading-relaxed">
             Al enviar dinero, marca la opción "Guardar como contacto" para agilizar los próximos envíos.
           </p>
         </div>
@@ -223,7 +223,7 @@ export default function ContactsPage() {
 
       {/* Lista */}
       {!loading && contacts.length > 0 && (
-        <div className="mx-4 bg-[#1A2340] border border-[#263050] rounded-3xl overflow-hidden">
+        <div className="mx-4 bg-white border border-[#E2E8F0] rounded-3xl overflow-hidden">
           {contacts.map((c, idx) => {
             const name = c.nickname
               ? c.nickname
@@ -236,13 +236,13 @@ export default function ContactsPage() {
                 key={c._id}
                 onClick={() => setSelected(c)}
                 disabled={deletingId === c._id}
-                className={`w-full flex items-center gap-3 px-4 py-4 hover:bg-[#263050] transition-colors ${
-                  idx < contacts.length - 1 ? 'border-b border-[#26305060]' : ''
+                className={`w-full flex items-center gap-3 px-4 py-4 hover:bg-[#F8FAFC] transition-colors ${
+                  idx < contacts.length - 1 ? 'border-b border-[#E2E8F060]' : ''
                 }`}
               >
                 {/* Avatar */}
-                <div className="w-11 h-11 rounded-full bg-[#0F1628] border border-[#263050] flex items-center justify-center flex-shrink-0">
-                  <span className="text-[1rem] font-bold text-[#C4CBD8]">
+                <div className="w-11 h-11 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center flex-shrink-0">
+                  <span className="text-[1rem] font-bold text-[#1D9E75]">
                     {name.charAt(0).toUpperCase()}
                   </span>
                 </div>
@@ -250,29 +250,29 @@ export default function ContactsPage() {
                 {/* Info */}
                 <div className="flex-1 text-left min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <p className="text-[0.9375rem] font-semibold text-white truncate leading-tight">
+                    <p className="text-[0.9375rem] font-semibold text-[#0F172A] truncate leading-tight">
                       {name}
                     </p>
                     {c.isFavorite && (
                       <Star size={11} className="text-[#F59E0B] flex-shrink-0" fill="#F59E0B" />
                     )}
                   </div>
-                  <p className="text-[0.75rem] text-[#4E5A7A] truncate">
+                  <p className="text-[0.75rem] text-[#94A3B8] truncate">
                     {COUNTRY_FLAGS[c.destinationCountry] ?? ''}{' '}
                     {COUNTRY_NAMES[c.destinationCountry] ?? c.destinationCountry}
                     {bank ? ` · ${bank}` : ''}
                     {account ? ` ****${account.slice(-4)}` : ''}
                   </p>
                   {c.lastSentAt && (
-                    <p className="text-[0.6875rem] text-[#4E5A7A]">
+                    <p className="text-[0.6875rem] text-[#94A3B8]">
                       Último: {c.lastAmount?.toLocaleString('es-CL')} {c.lastCurrency} · {timeAgo(c.lastSentAt)}
                     </p>
                   )}
                 </div>
 
                 {deletingId === c._id
-                  ? <Loader2 size={16} className="animate-spin text-[#4E5A7A] flex-shrink-0" />
-                  : <ChevronRight size={16} className="text-[#4E5A7A] flex-shrink-0" />
+                  ? <Loader2 size={16} className="animate-spin text-[#94A3B8] flex-shrink-0" />
+                  : <ChevronRight size={16} className="text-[#94A3B8] flex-shrink-0" />
                 }
               </button>
             )

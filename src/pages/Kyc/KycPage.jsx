@@ -40,15 +40,15 @@ function IntroState({ entName, entJuris, entity, terms, onStart, loading, error,
         <div
           className="w-20 h-20 rounded-[22px] flex items-center justify-center mb-5"
           style={{
-            background: 'linear-gradient(135deg, #1D3461 0%, #0F1628 100%)',
-            border:     '1.5px solid #C4CBD833',
-            boxShadow:  '0 8px 32px rgba(196,203,216,0.12), inset 0 1px 0 rgba(196,203,216,0.1)',
+            background: 'linear-gradient(135deg, #F0FDF9 0%, #FFFFFF 100%)',
+            border:     '1.5px solid #1D9E7533',
+            boxShadow:  '0 8px 32px rgba(29,158,117,0.12), inset 0 1px 0 rgba(29,158,117,0.1)',
           }}
         >
-          <ScanFace size={36} className="text-[#C4CBD8]" />
+          <ScanFace size={36} className="text-[#1D9E75]" />
         </div>
-        <h2 className="text-[1.375rem] font-bold text-white text-center mb-2">Verifica tu identidad</h2>
-        <p className="text-[0.875rem] text-[#8A96B8] text-center leading-relaxed px-2">
+        <h2 className="text-[1.375rem] font-bold text-[#0F172A] text-center mb-2">Verifica tu identidad</h2>
+        <p className="text-[0.875rem] text-[#64748B] text-center leading-relaxed px-2">
           Necesitamos verificar tu identidad para cumplir con las regulaciones financieras.
           El proceso toma menos de 2 minutos.
         </p>
@@ -57,9 +57,9 @@ function IntroState({ entName, entJuris, entity, terms, onStart, loading, error,
       {/* Qué necesitas */}
       <div
         className="rounded-2xl p-4"
-        style={{ background: '#1A2340', border: '1px solid #263050' }}
+        style={{ background: 'white', border: '1px solid #E2E8F0' }}
       >
-        <p className="text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wider mb-3">
+        <p className="text-[0.75rem] font-semibold text-[#64748B] uppercase tracking-wider mb-3">
           Lo que necesitas
         </p>
         {[
@@ -68,8 +68,8 @@ function IntroState({ entName, entJuris, entity, terms, onStart, loading, error,
           'Buena iluminación',
         ].map((item, i) => (
           <div key={i} className="flex items-start gap-2.5 mb-2 last:mb-0">
-            <CheckCircle2 size={14} className="text-[#22C55E] flex-shrink-0 mt-0.5" />
-            <p className="text-[0.8125rem] text-[#8A96B8]">{item}</p>
+            <CheckCircle2 size={14} className="text-[#1D9E75] flex-shrink-0 mt-0.5" />
+            <p className="text-[0.8125rem] text-[#64748B]">{item}</p>
           </div>
         ))}
       </div>
@@ -83,10 +83,10 @@ function IntroState({ entName, entJuris, entity, terms, onStart, loading, error,
           <div
             key={label}
             className="flex-1 flex items-center gap-2 rounded-2xl px-3 py-3"
-            style={{ background: '#1A2340', border: '1px solid #263050' }}
+            style={{ background: 'white', border: '1px solid #E2E8F0' }}
           >
-            <Icon size={14} className="text-[#C4CBD8] flex-shrink-0" />
-            <p className="text-[0.6875rem] font-medium text-[#8A96B8]">{label}</p>
+            <Icon size={14} className="text-[#1D9E75] flex-shrink-0" />
+            <p className="text-[0.6875rem] font-medium text-[#64748B]">{label}</p>
           </div>
         ))}
       </div>
@@ -94,26 +94,26 @@ function IntroState({ entName, entJuris, entity, terms, onStart, loading, error,
       {/* ToS */}
       <label
         className={`flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-all duration-150
-          ${tosAccepted ? 'border-[#22C55E33] bg-[#22C55E08]' : 'border-[#263050] bg-[#1A2340] hover:border-[#C4CBD833]'}`}
+          ${tosAccepted ? 'border-[#1D9E7533] bg-[#1D9E7508]' : 'border-[#E2E8F0] bg-white hover:border-[#1D9E7533]'}`}
       >
         <div
           className={`w-5 h-5 rounded-md flex items-center justify-center border-2 flex-shrink-0 mt-0.5 transition-all duration-150
-            ${tosAccepted ? 'bg-[#22C55E] border-[#22C55E]' : 'bg-transparent border-[#4E5A7A]'}`}
+            ${tosAccepted ? 'bg-[#1D9E75] border-[#1D9E75]' : 'bg-transparent border-[#CBD5E1]'}`}
           onClick={() => setTosAccepted(v => !v)}
         >
           {tosAccepted && (
             <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-              <path d="M1 4L3.5 6.5L9 1" stroke="#0F1628" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           )}
         </div>
         <input type="checkbox" className="hidden" checked={tosAccepted} onChange={e => setTosAccepted(e.target.checked)} />
         <div>
-          <p className="text-[0.8125rem] font-semibold text-white leading-snug">
+          <p className="text-[0.8125rem] font-semibold text-[#0F172A] leading-snug">
             He leído y acepto los Términos de Servicio de{' '}
-            <span className="text-[#C4CBD8]">{entName}</span>
+            <span className="text-[#1D9E75]">{entName}</span>
           </p>
-          <p className="text-[0.6875rem] text-[#4E5A7A] mt-1">
+          <p className="text-[0.6875rem] text-[#94A3B8] mt-1">
             {entity} · {entJuris}
           </p>
         </div>
@@ -122,7 +122,7 @@ function IntroState({ entName, entJuris, entity, terms, onStart, loading, error,
       {error && (
         <div className="flex items-start gap-3 p-4 rounded-2xl bg-[#EF44441A] border border-[#EF444433]">
           <AlertCircle size={16} className="text-[#EF4444] flex-shrink-0 mt-0.5" />
-          <p className="text-[0.8125rem] text-[#F87171]">{error}</p>
+          <p className="text-[0.8125rem] text-[#EF4444]">{error}</p>
         </div>
       )}
 
@@ -132,10 +132,10 @@ function IntroState({ entName, entJuris, entity, terms, onStart, loading, error,
         disabled={!tosAccepted || loading}
         className="w-full py-4 rounded-2xl font-bold text-[0.9375rem] flex items-center justify-center gap-2.5 transition-all duration-150"
         style={{
-          background: tosAccepted && !loading ? '#C4CBD8' : 'transparent',
-          color:      tosAccepted && !loading ? '#0F1628' : '#8A96B8',
-          boxShadow:  tosAccepted && !loading ? '0 4px 20px rgba(196,203,216,0.3)' : 'none',
-          border:     tosAccepted && !loading ? 'none' : '2px dashed #4E5A7A',
+          background: tosAccepted && !loading ? '#1D9E75' : 'transparent',
+          color:      tosAccepted && !loading ? 'white' : '#94A3B8',
+          boxShadow:  tosAccepted && !loading ? '0 4px 20px rgba(29,158,117,0.3)' : 'none',
+          border:     tosAccepted && !loading ? 'none' : '2px dashed #CBD5E1',
           cursor:     tosAccepted && !loading ? 'pointer' : 'not-allowed',
         }}
       >
@@ -146,9 +146,9 @@ function IntroState({ entName, entJuris, entity, terms, onStart, loading, error,
         )}
       </button>
 
-      <p className="text-[0.625rem] text-[#4E5A7A] text-center leading-relaxed">
+      <p className="text-[0.625rem] text-[#94A3B8] text-center leading-relaxed">
         Verificación procesada por{' '}
-        <span className="text-[#8A96B8]">Stripe Identity</span>. Tus datos biométricos no se almacenan en Alyto.
+        <span className="text-[#64748B]">Stripe Identity</span>. Tus datos biométricos no se almacenan en Alyto.
       </p>
     </div>
   )
@@ -161,30 +161,30 @@ function PendingState({ onDashboard, timedOut, onManualCheck }) {
     <div className="flex flex-col items-center py-10 gap-6">
       <div
         className="w-20 h-20 rounded-full flex items-center justify-center"
-        style={{ background: '#C4CBD81A', border: '2px solid #C4CBD833' }}
+        style={{ background: '#F8FAFC', border: '2px solid #E2E8F0' }}
       >
         {timedOut
-          ? <AlertCircle size={36} className="text-[#C4CBD8]" />
-          : <Loader2 size={36} className="text-[#C4CBD8] animate-spin" />
+          ? <AlertCircle size={36} className="text-[#64748B]" />
+          : <Loader2 size={36} className="text-[#1D9E75] animate-spin" />
         }
       </div>
       <div className="text-center">
         {timedOut ? (
           <>
-            <h2 className="text-[1.375rem] font-bold text-white mb-2">
+            <h2 className="text-[1.375rem] font-bold text-[#0F172A] mb-2">
               La verificación está tomando más tiempo de lo esperado
             </h2>
-            <p className="text-[0.875rem] text-[#8A96B8] leading-relaxed">
+            <p className="text-[0.875rem] text-[#64748B] leading-relaxed">
               Te notificaremos por email cuando esté lista. Puedes cerrar esta pantalla con seguridad.
             </p>
           </>
         ) : (
           <>
-            <h2 className="text-[1.375rem] font-bold text-white mb-2">Verificando tu identidad…</h2>
-            <p className="text-[0.875rem] text-[#8A96B8] leading-relaxed">
+            <h2 className="text-[1.375rem] font-bold text-[#0F172A] mb-2">Verificando tu identidad…</h2>
+            <p className="text-[0.875rem] text-[#64748B] leading-relaxed">
               Estamos revisando tu documentación. Esto puede tomar unos minutos.
             </p>
-            <p className="text-[0.875rem] text-[#8A96B8] mt-2">
+            <p className="text-[0.875rem] text-[#64748B] mt-2">
               Te notificaremos por email cuando esté lista tu verificación.
             </p>
           </>
@@ -194,14 +194,14 @@ function PendingState({ onDashboard, timedOut, onManualCheck }) {
         <button
           onClick={onManualCheck}
           className="w-full py-3.5 rounded-2xl font-semibold text-[0.875rem] transition-colors"
-          style={{ background: '#C4CBD8', color: '#0F1628', boxShadow: '0 4px 20px rgba(196,203,216,0.25)' }}
+          style={{ background: '#1D9E75', color: 'white', boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
         >
           ¿Ya completaste la verificación? Verificar estado
         </button>
         <button
           onClick={onDashboard}
-          className="w-full py-3.5 rounded-2xl font-semibold text-[0.9375rem] text-white transition-colors"
-          style={{ background: '#1A2340', border: '1px solid #263050' }}
+          className="w-full py-3.5 rounded-2xl font-semibold text-[0.9375rem] text-[#0F172A] transition-colors"
+          style={{ background: 'white', border: '1px solid #E2E8F0' }}
         >
           Ir al dashboard
         </button>
@@ -218,25 +218,25 @@ function ApprovedState({ onSend }) {
       <div
         className="w-20 h-20 rounded-full flex items-center justify-center"
         style={{
-          background: 'radial-gradient(circle, #22C55E1A 0%, #22C55E06 100%)',
-          border:     '2px solid #22C55E33',
-          boxShadow:  '0 0 40px rgba(34,197,94,0.15)',
+          background: 'radial-gradient(circle, #1D9E751A 0%, #1D9E7506 100%)',
+          border:     '2px solid #1D9E7533',
+          boxShadow:  '0 0 40px rgba(29,158,117,0.15)',
         }}
       >
-        <ShieldCheck size={36} className="text-[#22C55E]" />
+        <ShieldCheck size={36} className="text-[#1D9E75]" />
       </div>
       <div className="text-center">
-        <h2 className="text-[1.5rem] font-bold text-white mb-2">¡Identidad verificada!</h2>
-        <p className="text-[0.875rem] text-[#8A96B8]">
+        <h2 className="text-[1.5rem] font-bold text-[#0F172A] mb-2">¡Identidad verificada!</h2>
+        <p className="text-[0.875rem] text-[#64748B]">
           Ya puedes enviar dinero con Alyto.
         </p>
       </div>
       <button
         onClick={onSend}
-        className="w-full py-4 rounded-2xl font-bold text-[0.9375rem] text-[#0F1628]"
+        className="w-full py-4 rounded-2xl font-bold text-[0.9375rem] text-white"
         style={{
-          background: '#C4CBD8',
-          boxShadow:  '0 4px 20px rgba(196,203,216,0.3)',
+          background: '#1D9E75',
+          boxShadow:  '0 4px 20px rgba(29,158,117,0.3)',
         }}
       >
         Empezar a enviar
@@ -257,16 +257,16 @@ function RejectedState({ onRetry }) {
         <XCircle size={36} className="text-[#EF4444]" />
       </div>
       <div className="text-center">
-        <h2 className="text-[1.375rem] font-bold text-white mb-3">No pudimos verificar tu identidad</h2>
-        <p className="text-[0.875rem] text-[#8A96B8] mb-3">Esto puede ocurrir por:</p>
-        <ul className="text-[0.875rem] text-[#8A96B8] space-y-1 text-left">
+        <h2 className="text-[1.375rem] font-bold text-[#0F172A] mb-3">No pudimos verificar tu identidad</h2>
+        <p className="text-[0.875rem] text-[#64748B] mb-3">Esto puede ocurrir por:</p>
+        <ul className="text-[0.875rem] text-[#64748B] space-y-1 text-left">
           {[
             'Documento borroso o con reflejos',
             'Documento vencido',
             'Iluminación insuficiente',
           ].map(item => (
             <li key={item} className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#4E5A7A] flex-shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#CBD5E1] flex-shrink-0" />
               {item}
             </li>
           ))}
@@ -275,8 +275,8 @@ function RejectedState({ onRetry }) {
       <div className="w-full flex flex-col gap-3">
         <button
           onClick={onRetry}
-          className="w-full py-4 rounded-2xl font-bold text-[0.9375rem] text-[#0F1628]"
-          style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.3)' }}
+          className="w-full py-4 rounded-2xl font-bold text-[0.9375rem] text-white"
+          style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.3)' }}
         >
           Intentar de nuevo
         </button>
@@ -284,8 +284,8 @@ function RejectedState({ onRetry }) {
           href={WHATSAPP_SUPPORT}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full py-4 rounded-2xl font-semibold text-[0.9375rem] text-white flex items-center justify-center gap-2 transition-colors"
-          style={{ background: '#1A2340', border: '1px solid #263050' }}
+          className="w-full py-4 rounded-2xl font-semibold text-[0.9375rem] text-[#0F172A] flex items-center justify-center gap-2 transition-colors"
+          style={{ background: 'white', border: '1px solid #E2E8F0' }}
         >
           <MessageCircle size={18} />
           Contactar soporte
@@ -456,35 +456,35 @@ export default function KycPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="h-dvh bg-[#0F1628] font-sans flex flex-col max-w-[430px] mx-auto">
+    <div className="h-dvh bg-[#F8FAFC] font-sans flex flex-col max-w-[430px] mx-auto">
 
       {/* Header */}
       <header className="flex items-center gap-3 px-5 pt-8 pb-2">
         <button
           onClick={() => navigate('/dashboard')}
-          className="w-10 h-10 rounded-xl bg-[#1A2340] border border-[#263050] flex items-center justify-center flex-shrink-0"
+          className="w-10 h-10 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center flex-shrink-0"
         >
-          <ArrowLeft size={18} className="text-[#8A96B8]" />
+          <ArrowLeft size={18} className="text-[#64748B]" />
         </button>
         <div className="flex-1">
-          <p className="text-[0.75rem] text-[#8A96B8]">Onboarding</p>
-          <h1 className="text-[1.0625rem] font-bold text-white leading-tight">Activar cuenta</h1>
+          <p className="text-[0.75rem] text-[#64748B]">Onboarding</p>
+          <h1 className="text-[1.0625rem] font-bold text-[#0F172A] leading-tight">Activar cuenta</h1>
         </div>
       </header>
 
       {/* Banner de bienvenida (viene desde /register) */}
       {welcomeMsg && (
-        <div className="mx-5 mt-4 flex items-start gap-3 p-4 rounded-2xl bg-[#22C55E08] border border-[#22C55E33]">
-          <CheckCircle2 size={16} className="text-[#22C55E] flex-shrink-0 mt-0.5" />
-          <p className="text-[0.8125rem] text-[#22C55E]">{welcomeMsg}</p>
+        <div className="mx-5 mt-4 flex items-start gap-3 p-4 rounded-2xl bg-[#1D9E7508] border border-[#1D9E7533]">
+          <CheckCircle2 size={16} className="text-[#1D9E75] flex-shrink-0 mt-0.5" />
+          <p className="text-[0.8125rem] text-[#1D9E75]">{welcomeMsg}</p>
         </div>
       )}
 
       {/* KYC banner si vino de una ruta protegida */}
       {location.state?.kycBanner && kycStatus !== 'approved' && (
-        <div className="mx-5 mt-4 flex items-start gap-3 p-4 rounded-2xl bg-[#C4CBD81A] border border-[#C4CBD833]">
-          <AlertCircle size={16} className="text-[#C4CBD8] flex-shrink-0 mt-0.5" />
-          <p className="text-[0.8125rem] text-[#C4CBD8]">{location.state.kycBanner}</p>
+        <div className="mx-5 mt-4 flex items-start gap-3 p-4 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0]">
+          <AlertCircle size={16} className="text-[#64748B] flex-shrink-0 mt-0.5" />
+          <p className="text-[0.8125rem] text-[#64748B]">{location.state.kycBanner}</p>
         </div>
       )}
 

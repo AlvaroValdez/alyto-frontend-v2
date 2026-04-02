@@ -19,15 +19,15 @@ export default function KycStatusCard({ kycStatus }) {
   // ── approved ──────────────────────────────────────────────────────────────
   if (kycStatus === 'approved') {
     return (
-      <div className="mx-4 mb-4 rounded-2xl border border-[#22C55E33] bg-[#22C55E0D] px-4 py-3.5 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-[#22C55E1A] flex items-center justify-center flex-shrink-0">
-          <CheckCircle size={18} className="text-[#22C55E]" />
+      <div className="mx-4 mb-4 rounded-2xl border border-[#1D9E7533] bg-[#1D9E750D] px-4 py-3.5 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-[#1D9E751A] flex items-center justify-center flex-shrink-0">
+          <CheckCircle size={18} className="text-[#1D9E75]" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[0.875rem] font-semibold text-[#22C55E] leading-tight">
+          <p className="text-[0.875rem] font-semibold text-[#1D9E75] leading-tight">
             Identidad verificada
           </p>
-          <p className="text-[0.75rem] text-[#8A96B8] mt-0.5">
+          <p className="text-[0.75rem] text-[#64748B] mt-0.5">
             Tu cuenta está habilitada para enviar dinero
           </p>
         </div>
@@ -38,15 +38,15 @@ export default function KycStatusCard({ kycStatus }) {
   // ── pending / under_review ─────────────────────────────────────────────────
   if (kycStatus === 'pending' || kycStatus === 'under_review') {
     return (
-      <div className="mx-4 mb-4 rounded-2xl border border-[#C4CBD833] bg-[#C4CBD80D] px-4 py-3.5 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-[#C4CBD81A] flex items-center justify-center flex-shrink-0">
-          <Clock size={18} className="text-[#C4CBD8]" />
+      <div className="mx-4 mb-4 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3.5 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-[#E2E8F0] flex items-center justify-center flex-shrink-0">
+          <Clock size={18} className="text-[#64748B]" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[0.875rem] font-semibold text-[#C4CBD8] leading-tight">
+          <p className="text-[0.875rem] font-semibold text-[#0F172A] leading-tight">
             Verificación en proceso
           </p>
-          <p className="text-[0.75rem] text-[#8A96B8] mt-0.5">
+          <p className="text-[0.75rem] text-[#64748B] mt-0.5">
             Estamos revisando tu documentación
           </p>
         </div>
@@ -66,7 +66,7 @@ export default function KycStatusCard({ kycStatus }) {
             <p className="text-[0.875rem] font-semibold text-[#EF4444] leading-tight">
               Verificación rechazada
             </p>
-            <p className="text-[0.75rem] text-[#8A96B8] mt-0.5">
+            <p className="text-[0.75rem] text-[#64748B] mt-0.5">
               Contáctanos para más información
             </p>
           </div>
@@ -93,7 +93,7 @@ export default function KycStatusCard({ kycStatus }) {
           <p className="text-[0.875rem] font-semibold text-[#F97316] leading-tight">
             Verificación pendiente
           </p>
-          <p className="text-[0.75rem] text-[#8A96B8] mt-0.5">
+          <p className="text-[0.75rem] text-[#64748B] mt-0.5">
             Completa tu verificación para enviar dinero
           </p>
         </div>

@@ -139,8 +139,8 @@ function QuoteSkeleton() {
     <div className="space-y-2 animate-pulse">
       {[1, 2, 3].map(i => (
         <div key={i} className="flex justify-between">
-          <div className="h-3.5 bg-[#1F2B4D] rounded w-28" />
-          <div className="h-3.5 bg-[#1F2B4D] rounded w-20" />
+          <div className="h-3.5 bg-[#E2E8F0] rounded w-28" />
+          <div className="h-3.5 bg-[#E2E8F0] rounded w-20" />
         </div>
       ))}
     </div>
@@ -179,34 +179,35 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
       <div
         className="w-full max-w-sm rounded-2xl flex flex-col"
         style={{
-          background: '#0F1628',
-          border: '1px solid #263050',
+          background: '#FFFFFF',
+          border: '1px solid #E2E8F0',
           maxHeight: '70vh',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
         }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[#263050] flex-shrink-0">
-          <p className="text-[1rem] font-bold text-white">¿A dónde envías?</p>
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[#E2E8F0] flex-shrink-0">
+          <p className="text-[1rem] font-bold text-[#0F172A]">¿A dónde envías?</p>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#1A2340] border border-[#263050] flex items-center justify-center"
+            className="w-8 h-8 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center"
           >
-            <X size={14} className="text-[#8A96B8]" />
+            <X size={14} className="text-[#64748B]" />
           </button>
         </div>
 
         {/* Search */}
         <div className="px-4 py-3 flex-shrink-0">
           <div className="relative">
-            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#4E5A7A]" />
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
             <input
               ref={inputRef}
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Buscar país o moneda…"
-              className="w-full bg-[#1A2340] border border-[#263050] rounded-xl pl-9 pr-4 py-2.5 text-[0.875rem] text-white placeholder:text-[#4E5A7A] focus:outline-none focus:border-[#C4CBD8] transition-colors"
+              className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-9 pr-4 py-2.5 text-[0.875rem] text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#1D9E75] transition-colors"
             />
           </div>
         </div>
@@ -217,24 +218,24 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
             <button
               key={c.code}
               onClick={() => { onSelect(c); onClose() }}
-              className={`w-full flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[#1A2340] active:bg-[#1A2340] ${
-                idx < filtered.length - 1 ? 'border-b border-[#1A234060]' : ''
-              } ${selected?.code === c.code ? 'bg-[#1A234080]' : ''}`}
+              className={`w-full flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[#F8FAFC] active:bg-[#F1F5F9] ${
+                idx < filtered.length - 1 ? 'border-b border-[#E2E8F060]' : ''
+              } ${selected?.code === c.code ? 'bg-[#1D9E751A]' : ''}`}
             >
               {/* Flag */}
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-xl"
-                style={{ background: '#0F1628', border: '1px solid #263050' }}
+                style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}
               >
                 {c.flag}
               </div>
 
               {/* Nombre + moneda */}
               <div className="flex-1 text-left min-w-0">
-                <p className="text-[0.9375rem] font-semibold text-white leading-tight truncate">
+                <p className="text-[0.9375rem] font-semibold text-[#0F172A] leading-tight truncate">
                   {c.name}
                 </p>
-                <p className="text-[0.75rem] text-[#8A96B8]">{c.currency}</p>
+                <p className="text-[0.75rem] text-[#64748B]">{c.currency}</p>
               </div>
 
               {/* Checkmark si está seleccionado */}
@@ -248,7 +249,7 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
 
           {filtered.length === 0 && (
             <div className="px-5 py-10 text-center">
-              <p className="text-[0.875rem] text-[#4E5A7A]">No se encontraron países</p>
+              <p className="text-[0.875rem] text-[#94A3B8]">No se encontraron países</p>
             </div>
           )}
         </div>
@@ -274,7 +275,7 @@ function StatusBadge({ status }) {
   }
   if (status === 'updating') {
     return (
-      <span className="flex items-center gap-1 text-[0.625rem] font-semibold text-[#C4CBD8]">
+      <span className="flex items-center gap-1 text-[0.625rem] font-semibold text-[#64748B]">
         <Loader2 size={10} className="animate-spin" />
         Actualizando
       </span>
@@ -380,19 +381,19 @@ export default function Step1Amount({ initialData, onNext }) {
 
       {/* ── Título ── */}
       <div>
-        <h2 className="text-[1.125rem] font-bold text-white">¿Cuánto envías?</h2>
-        <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
+        <h2 className="text-[1.125rem] font-bold text-[#0F172A]">¿Cuánto envías?</h2>
+        <p className="text-[0.8125rem] text-[#64748B] mt-0.5">
           {origin.flag} Tu cuenta está en {origin.country} · {origin.currency}
         </p>
       </div>
 
       {/* ── Input de monto ── */}
       <div>
-        <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide mb-2">
+        <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
           Monto a enviar
         </label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8A96B8] font-bold text-[1.125rem]">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-bold text-[1.125rem]">
             {origin.symbol}
           </span>
           <input
@@ -401,9 +402,9 @@ export default function Step1Amount({ initialData, onNext }) {
             value={displayAmount}
             onChange={handleAmountChange}
             placeholder="0"
-            className={`w-full bg-[#1A2340] border border-[#263050] rounded-xl pr-16 py-4 text-white text-[1.5rem] font-bold focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] transition-all placeholder:text-[#4E5A7A] ${origin.symbol.length > 1 ? 'pl-14' : 'pl-8'}`}
+            className={`w-full bg-white border border-[#E2E8F0] rounded-xl pr-16 py-4 text-[#0F172A] text-[1.5rem] font-bold focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_3px_#1D9E7520] transition-all placeholder:text-[#CBD5E1] ${origin.symbol.length > 1 ? 'pl-14' : 'pl-8'}`}
           />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[0.75rem] font-semibold text-[#4E5A7A]">
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[0.75rem] font-semibold text-[#94A3B8]">
             {activeCurrency}
           </span>
         </div>
@@ -411,24 +412,24 @@ export default function Step1Amount({ initialData, onNext }) {
 
       {/* ── Selector de país destino ── */}
       <div>
-        <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide mb-2">
+        <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
           País de destino
         </label>
 
         {corridorsLoading ? (
           /* Skeleton del selector */
-          <div className="h-14 rounded-xl bg-[#1A2340] border border-[#263050] animate-pulse" />
+          <div className="h-14 rounded-xl bg-[#F1F5F9] border border-[#E2E8F0] animate-pulse" />
         ) : corridorsError ? (
           <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
             <AlertCircle size={14} className="text-[#EF4444] flex-shrink-0" />
             <p className="text-[0.8125rem] text-[#EF4444]">{corridorsError}</p>
           </div>
         ) : countries.length === 0 ? (
-          <div className="px-4 py-4 rounded-xl bg-[#1A2340] border border-[#263050] text-center">
-            <p className="text-[0.8125rem] text-[#8A96B8]">
+          <div className="px-4 py-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-center">
+            <p className="text-[0.8125rem] text-[#64748B]">
               No hay destinos disponibles para tu cuenta.
             </p>
-            <p className="text-[0.75rem] text-[#4E5A7A] mt-1">
+            <p className="text-[0.75rem] text-[#94A3B8] mt-1">
               Contáctanos para más información.
             </p>
           </div>
@@ -436,12 +437,12 @@ export default function Step1Amount({ initialData, onNext }) {
           <button
             type="button"
             onClick={() => setShowCountryModal(true)}
-            className="w-full flex items-center gap-3 bg-[#1A2340] border border-[#263050] rounded-xl px-4 py-3.5 transition-all hover:border-[#C4CBD840] active:scale-[0.99] focus:outline-none focus:border-[#C4CBD8]"
+            className="w-full flex items-center gap-3 bg-white border border-[#E2E8F0] rounded-xl px-4 py-3.5 transition-all hover:border-[#1D9E7533] active:scale-[0.99] focus:outline-none focus:border-[#1D9E75]"
           >
             {/* Flag circle */}
             <div
               className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-xl"
-              style={{ background: '#0F1628', border: '1px solid #263050' }}
+              style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}
             >
               {selectedCountry?.flag || '🌎'}
             </div>
@@ -450,24 +451,24 @@ export default function Step1Amount({ initialData, onNext }) {
             <div className="flex-1 text-left min-w-0">
               {selectedCountry ? (
                 <>
-                  <p className="text-[0.9375rem] font-semibold text-white leading-tight">
+                  <p className="text-[0.9375rem] font-semibold text-[#0F172A] leading-tight">
                     {selectedCountry.name}
                   </p>
-                  <p className="text-[0.75rem] text-[#8A96B8]">{selectedCountry.currency}</p>
+                  <p className="text-[0.75rem] text-[#64748B]">{selectedCountry.currency}</p>
                 </>
               ) : (
-                <p className="text-[0.9375rem] text-[#4E5A7A]">Selecciona un país</p>
+                <p className="text-[0.9375rem] text-[#94A3B8]">Selecciona un país</p>
               )}
             </div>
 
-            <ChevronRight size={16} className="text-[#4E5A7A] flex-shrink-0" />
+            <ChevronRight size={16} className="text-[#94A3B8] flex-shrink-0" />
           </button>
         )}
       </div>
 
       {/* ── Bloque de cotización ── */}
       {showQuoteBlock && (
-        <div className="bg-[#1A2340] border border-[#263050] rounded-2xl p-4">
+        <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4">
 
           {status === 'connecting' && <QuoteSkeleton />}
 
@@ -479,7 +480,7 @@ export default function Step1Amount({ initialData, onNext }) {
               </p>
               <button
                 onClick={reconnect}
-                className="flex items-center gap-1 text-[0.75rem] text-[#C4CBD8] hover:text-white transition-colors"
+                className="flex items-center gap-1 text-[0.75rem] text-[#64748B] hover:text-[#0F172A] transition-colors"
               >
                 <RefreshCw size={13} /> Reintentar
               </button>
@@ -530,10 +531,10 @@ export default function Step1Amount({ initialData, onNext }) {
             <>
               {/* Recibe */}
               <div className="flex justify-between items-center mb-3">
-                <span className="text-[0.8125rem] text-[#8A96B8]">{destCountry?.name} recibe</span>
+                <span className="text-[0.8125rem] text-[#64748B]">{destCountry?.name} recibe</span>
                 <div className="flex items-center gap-2">
-                  {status === 'updating' && <Loader2 size={13} className="animate-spin text-[#C4CBD8]" />}
-                  <span className="text-[1.125rem] font-bold text-[#22C55E]">
+                  {status === 'updating' && <Loader2 size={13} className="animate-spin text-[#94A3B8]" />}
+                  <span className="text-[1.125rem] font-bold text-[#1D9E75]">
                     {formatDestAmount(quote.destinationAmount, quote.destinationCurrency)}
                   </span>
                 </div>
@@ -542,7 +543,7 @@ export default function Step1Amount({ initialData, onNext }) {
               {/* Tasa */}
               <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-[0.75rem] text-[#8A96B8]">Tasa aplicada</span>
+                  <span className="text-[0.75rem] text-[#64748B]">Tasa aplicada</span>
                   {isStale && (
                     <span
                       className="text-[0.5625rem] font-semibold text-[#F59E0B] bg-[#F59E0B1A] px-1.5 py-0.5 rounded"
@@ -554,7 +555,7 @@ export default function Step1Amount({ initialData, onNext }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusBadge status={status} />
-                  <span className="text-[0.8125rem] font-semibold text-[#C4CBD8]">
+                  <span className="text-[0.8125rem] font-semibold text-[#0F172A]">
                     1 {activeCurrency} = {Number(quote.exchangeRate).toFixed(4)} {quote.destinationCurrency}
                   </span>
                 </div>
@@ -587,19 +588,19 @@ export default function Step1Amount({ initialData, onNext }) {
                     </button>
 
                     {feesExpanded && (
-                      <div className="mt-2 pt-3 border-t border-[#263050] space-y-2">
+                      <div className="mt-2 pt-3 border-t border-[#E2E8F0] space-y-2">
                         {comisionServicio > 0 && (
                           <div className="flex justify-between">
-                            <span className="text-[0.6875rem] text-[#4E5A7A]">· Comisión de servicio</span>
-                            <span className="text-[0.6875rem] text-[#8A96B8]">
+                            <span className="text-[0.6875rem] text-[#94A3B8]">· Comisión de servicio</span>
+                            <span className="text-[0.6875rem] text-[#64748B]">
                               {origin.symbol}{comisionServicio.toLocaleString('es-CL')} {activeCurrency}
                             </span>
                           </div>
                         )}
                         {feeProcesamiento > 0 && (
                           <div className="flex justify-between">
-                            <span className="text-[0.6875rem] text-[#4E5A7A]">· Fee de procesamiento</span>
-                            <span className="text-[0.6875rem] text-[#8A96B8]">
+                            <span className="text-[0.6875rem] text-[#94A3B8]">· Fee de procesamiento</span>
+                            <span className="text-[0.6875rem] text-[#64748B]">
                               {origin.symbol}{feeProcesamiento.toLocaleString('es-CL')} {activeCurrency}
                             </span>
                           </div>
@@ -610,14 +611,14 @@ export default function Step1Amount({ initialData, onNext }) {
                 )
               })()}
 
-              {!quote.isManualCorridor && <div className="my-3 border-t border-[#263050]" />}
+              {!quote.isManualCorridor && <div className="my-3 border-t border-[#E2E8F0]" />}
 
               {/* Tasa BOB/USDT — solo para corredores Bolivia vía Vita (no manual) */}
               {!quote.isManualCorridor && activeCurrency === 'BOB' && bobRateInfo && (
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[0.75rem] text-[#4E5A7A]">Tasa usada:</span>
-                    <span className="text-[0.8125rem] font-semibold text-[#C4CBD8]">
+                    <span className="text-[0.75rem] text-[#94A3B8]">Tasa usada:</span>
+                    <span className="text-[0.8125rem] font-semibold text-[#0F172A]">
                       1 {bobRateInfo.pair?.split('/')[1] ?? 'USDT'} = {Number(bobRateInfo.rate).toFixed(2)} BOB
                     </span>
                   </div>
@@ -627,7 +628,7 @@ export default function Step1Amount({ initialData, onNext }) {
                         ⚠️ Tasa desactualizada
                       </span>
                     ) : (
-                      <span className="text-[0.6875rem] text-[#4E5A7A]">
+                      <span className="text-[0.6875rem] text-[#94A3B8]">
                         {bobRateInfo.source ?? 'Binance P2P'} · {timeAgoShort(bobRateInfo.updatedAt)}
                       </span>
                     )}
@@ -644,21 +645,21 @@ export default function Step1Amount({ initialData, onNext }) {
                   </div>
                   <button
                     onClick={reconnect}
-                    className="flex items-center gap-1 text-[0.75rem] text-[#C4CBD8] hover:text-white transition-colors"
+                    className="flex items-center gap-1 text-[0.75rem] text-[#64748B] hover:text-[#0F172A] transition-colors"
                   >
                     <RefreshCw size={13} /> Actualizar
                   </button>
                 </div>
               ) : (
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-1.5 text-[#8A96B8]">
+                  <div className="flex items-center gap-1.5 text-[#64748B]">
                     <Clock size={13} />
                     <span className="text-[0.75rem]">{quote.estimatedDelivery || '1 día hábil'}</span>
                   </div>
                   {countdown !== null && (
-                    <div className="flex items-center gap-1 text-[0.6875rem] text-[#4E5A7A]">
+                    <div className="flex items-center gap-1 text-[0.6875rem] text-[#94A3B8]">
                       <span>Cotización válida</span>
-                      <span className={`font-mono font-semibold ${countdown <= 30 ? 'text-[#F59E0B]' : 'text-[#C4CBD8]'}`}>
+                      <span className={`font-mono font-semibold ${countdown <= 30 ? 'text-[#F59E0B]' : 'text-[#64748B]'}`}>
                         {formatCountdown(countdown)}
                       </span>
                     </div>
@@ -676,8 +677,8 @@ export default function Step1Amount({ initialData, onNext }) {
         disabled={!canContinue}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
           canContinue
-            ? 'bg-[#C4CBD8] text-[#0F1628] shadow-[0_4px_20px_rgba(196,203,216,0.3)] active:scale-[0.98]'
-            : 'bg-[#C4CBD840] text-[#4E5A7A] cursor-not-allowed'
+            ? 'bg-[#1D9E75] text-white shadow-[0_4px_20px_rgba(29,158,117,0.25)] active:scale-[0.98]'
+            : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
         }`}
       >
         Continuar

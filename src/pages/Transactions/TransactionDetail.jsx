@@ -94,15 +94,15 @@ function PaymentInstructionsModal({ tx, onClose }) {
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-end justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div
         className="relative w-full max-w-[430px] rounded-t-3xl overflow-hidden flex flex-col"
-        style={{ background: '#0F1628', maxHeight: '90vh' }}
+        style={{ background: 'white', maxHeight: '90vh' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#263050] flex-shrink-0">
-          <h3 className="text-[1rem] font-bold text-white">Instrucciones de pago</h3>
-          <button onClick={onClose} className="text-[#4E5A7A] hover:text-white transition-colors">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0] flex-shrink-0">
+          <h3 className="text-[1rem] font-bold text-[#0F172A]">Instrucciones de pago</h3>
+          <button onClick={onClose} className="text-[#94A3B8] hover:text-[#0F172A] transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -112,21 +112,21 @@ function PaymentInstructionsModal({ tx, onClose }) {
 
           {/* QR */}
           {(qrLoading || qrSrc) && (
-            <div className="bg-[#1A2340] border border-[#263050] rounded-2xl p-5 flex flex-col items-center gap-3">
+            <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl p-5 flex flex-col items-center gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-xl">📱</span>
-                <p className="text-[0.875rem] font-bold text-white">Paga con QR</p>
+                <p className="text-[0.875rem] font-bold text-[#0F172A]">Paga con QR</p>
               </div>
               {qrLoading ? (
-                <div className="w-[180px] h-[180px] rounded-2xl bg-[#263050] animate-pulse" />
+                <div className="w-[180px] h-[180px] rounded-2xl bg-[#E2E8F0] animate-pulse" />
               ) : (
-                <img src={qrSrc} alt="QR de pago" className="w-[180px] h-[180px] rounded-2xl bg-white p-2 object-contain" />
+                <img src={qrSrc} alt="QR de pago" className="w-[180px] h-[180px] rounded-2xl bg-white p-2 object-contain border border-[#E2E8F0]" />
               )}
-              <p className="text-[0.75rem] text-[#8A96B8] text-center">Escanea desde tu app bancaria</p>
+              <p className="text-[0.75rem] text-[#64748B] text-center">Escanea desde tu app bancaria</p>
               {qrSrc && (
                 <button
                   onClick={downloadQR}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#263050] text-[0.8125rem] text-[#8A96B8] hover:text-white hover:border-[#C4CBD833] transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#E2E8F0] text-[0.8125rem] text-[#64748B] hover:text-[#0F172A] hover:border-[#1D9E7533] transition-colors"
                 >
                   <Download size={13} /> Descargar QR
                 </button>
@@ -137,19 +137,19 @@ function PaymentInstructionsModal({ tx, onClose }) {
           {/* Separador */}
           {qrSrc && (
             <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-[#263050]" />
-              <span className="text-[0.75rem] text-[#4E5A7A] flex-shrink-0">O transfiere manualmente</span>
-              <div className="h-px flex-1 bg-[#263050]" />
+              <div className="h-px flex-1 bg-[#E2E8F0]" />
+              <span className="text-[0.75rem] text-[#94A3B8] flex-shrink-0">O transfiere manualmente</span>
+              <div className="h-px flex-1 bg-[#E2E8F0]" />
             </div>
           )}
 
           {/* Datos bancarios */}
-          <div className="bg-[#1A2340] border border-[#263050] rounded-2xl overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3.5 border-b border-[#263050]">
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3.5 border-b border-[#E2E8F0]">
               <span className="text-xl">🏦</span>
-              <p className="text-[0.875rem] font-bold text-white">Transferencia bancaria</p>
+              <p className="text-[0.875rem] font-bold text-[#0F172A]">Transferencia bancaria</p>
             </div>
-            <div className="px-4 divide-y divide-[#26305050]">
+            <div className="px-4 divide-y divide-[#E2E8F0]">
               {[
                 ['Banco',   bank.bankName     ?? 'Banco Bisa'],
                 ['Titular', bank.accountHolder ?? bank.holder ?? 'AV Finance SRL'],
@@ -158,22 +158,22 @@ function PaymentInstructionsModal({ tx, onClose }) {
                 ['Monto',   `Bs ${Number(tx.originAmount ?? 0).toLocaleString('es-CL')} BOB`],
               ].map(([label, value]) => (
                 <div key={label} className="flex items-center justify-between py-2.5">
-                  <span className="text-[0.75rem] text-[#4E5A7A]">{label}</span>
-                  <span className={`text-[0.875rem] font-semibold ${label === 'Monto' ? 'text-[#22C55E]' : 'text-white'}`}>{value}</span>
+                  <span className="text-[0.75rem] text-[#94A3B8]">{label}</span>
+                  <span className={`text-[0.875rem] font-semibold ${label === 'Monto' ? 'text-[#1D9E75]' : 'text-[#0F172A]'}`}>{value}</span>
                 </div>
               ))}
             </div>
-            <div className="flex items-center justify-between px-4 py-3 border-t border-[#263050]">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-[#E2E8F0]">
               <div className="min-w-0">
-                <p className="text-[0.625rem] text-[#4E5A7A] uppercase tracking-wider mb-0.5">Referencia (copiar en el concepto)</p>
-                <p className="text-[0.75rem] font-mono font-semibold text-[#C4CBD8] truncate">{tx.transactionId}</p>
+                <p className="text-[0.625rem] text-[#94A3B8] uppercase tracking-wider mb-0.5">Referencia (copiar en el concepto)</p>
+                <p className="text-[0.75rem] font-mono font-semibold text-[#0F172A] truncate">{tx.transactionId}</p>
               </div>
               <button
                 onClick={copyRef}
-                className="ml-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#263050] text-[0.75rem] text-[#8A96B8] hover:text-white transition-colors flex-shrink-0"
+                className="ml-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] text-[0.75rem] text-[#64748B] hover:text-[#0F172A] transition-colors flex-shrink-0"
               >
                 {copiedRef
-                  ? <><CheckCheck size={12} className="text-[#22C55E]" /> Copiado</>
+                  ? <><CheckCheck size={12} className="text-[#1D9E75]" /> Copiado</>
                   : <><Copy size={12} /> Copiar</>
                 }
               </button>
@@ -181,7 +181,7 @@ function PaymentInstructionsModal({ tx, onClose }) {
           </div>
 
           {/* Warning */}
-          <div className="flex items-start gap-2.5 px-4 py-3.5 rounded-2xl bg-[#F59E0B0F] border border-[#F59E0B33]">
+          <div className="flex items-start gap-2.5 px-4 py-3.5 rounded-2xl bg-[#FFFBEB] border border-[#F59E0B33]">
             <span className="text-base flex-shrink-0">⚠️</span>
             <p className="text-[0.8125rem] text-[#FBBF24] font-medium">
               Incluye el número de referencia en el concepto de tu transferencia.
@@ -190,7 +190,7 @@ function PaymentInstructionsModal({ tx, onClose }) {
 
           <button
             onClick={onClose}
-            className="w-full py-3 rounded-2xl border border-[#263050] text-[#8A96B8] text-[0.875rem] font-semibold hover:text-white transition-colors"
+            className="w-full py-3 rounded-2xl border border-[#E2E8F0] text-[#64748B] text-[0.875rem] font-semibold hover:text-[#0F172A] transition-colors"
           >
             Cerrar
           </button>
@@ -206,15 +206,15 @@ import { getPaymentQR }           from '../../services/paymentsService.js'
 // ── Configuración de estados ──────────────────────────────────────────────────
 
 const STATUS_CONFIG = {
-  initiated:        { label: 'Iniciada',          color: '#8A96B8', bg: '#8A96B81A' },
-  payin_pending:    { label: 'Pago pendiente',     color: '#8A96B8', bg: '#8A96B81A' },
-  payin_confirmed:  { label: 'Pago confirmado',    color: '#C4CBD8', bg: '#C4CBD81A' },
-  payin_completed:  { label: 'Pago completado',    color: '#C4CBD8', bg: '#C4CBD81A' },
+  initiated:        { label: 'Iniciada',          color: '#64748B', bg: '#64748B1A' },
+  payin_pending:    { label: 'Pago pendiente',     color: '#64748B', bg: '#64748B1A' },
+  payin_confirmed:  { label: 'Pago confirmado',    color: '#1D9E75', bg: '#1D9E751A' },
+  payin_completed:  { label: 'Pago completado',    color: '#1D9E75', bg: '#1D9E751A' },
   processing:       { label: 'Procesando',         color: '#3B82F6', bg: '#3B82F61A' },
   in_transit:       { label: 'En tránsito',        color: '#3B82F6', bg: '#3B82F61A' },
-  payout_pending:   { label: 'Enviando...',        color: '#C4CBD8', bg: '#C4CBD81A' },
+  payout_pending:   { label: 'Enviando...',        color: '#1D9E75', bg: '#1D9E751A' },
   payout_sent:      { label: 'Enviado al banco',   color: '#3B82F6', bg: '#3B82F61A' },
-  completed:        { label: 'Completada',         color: '#22C55E', bg: '#22C55E1A' },
+  completed:        { label: 'Completada',         color: '#1D9E75', bg: '#1D9E751A' },
   failed:           { label: 'Fallida',            color: '#EF4444', bg: '#EF44441A' },
   refunded:         { label: 'Reembolsada',        color: '#F59E0B', bg: '#F59E0B1A' },
 }
@@ -276,10 +276,10 @@ function formatExactDate(dateStr) {
 function Row({ label, value, bold, valueColor }) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <span className="text-[0.8125rem] text-[#8A96B8] flex-shrink-0">{label}</span>
+      <span className="text-[0.8125rem] text-[#64748B] flex-shrink-0">{label}</span>
       <span
         className={`text-[0.8125rem] text-right ${bold ? 'font-bold' : 'font-medium'}`}
-        style={{ color: valueColor ?? '#FFFFFF' }}
+        style={{ color: valueColor ?? '#0F172A' }}
       >
         {value}
       </span>
@@ -289,8 +289,8 @@ function Row({ label, value, bold, valueColor }) {
 
 function Section({ title, children }) {
   return (
-    <div className="bg-[#1A2340] rounded-2xl p-5">
-      <p className="text-[0.6875rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-4">
+    <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
+      <p className="text-[0.6875rem] font-semibold text-[#94A3B8] uppercase tracking-wider mb-4">
         {title}
       </p>
       {children}
@@ -349,7 +349,7 @@ export default function TransactionDetail() {
     setSharing(true)
     try {
       const canvas = await html2canvas(comprobanteRef.current, {
-        backgroundColor: '#1A2340',
+        backgroundColor: '#FFFFFF',
         scale: 2,
         useCORS: true,
         logging: false,
@@ -383,14 +383,14 @@ export default function TransactionDetail() {
     return (
       <div className="pt-4">
         <div className="flex items-center gap-3 px-4 pb-4">
-          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#1A2340] flex items-center justify-center">
-            <ArrowLeft size={18} className="text-[#8A96B8]" />
+          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center">
+            <ArrowLeft size={18} className="text-[#64748B]" />
           </button>
-          <div className="h-5 w-36 bg-[#1A2340] rounded animate-pulse" />
+          <div className="h-5 w-36 bg-[#F8FAFC] rounded animate-pulse" />
         </div>
         <div className="px-4 flex flex-col gap-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-24 bg-[#1A2340] rounded-2xl animate-pulse" />
+            <div key={i} className="h-24 bg-[#F8FAFC] rounded-2xl animate-pulse border border-[#E2E8F0]" />
           ))}
         </div>
       </div>
@@ -402,18 +402,18 @@ export default function TransactionDetail() {
     return (
       <div className="pt-4">
         <div className="flex items-center gap-3 px-4 pb-4">
-          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#1A2340] flex items-center justify-center">
-            <ArrowLeft size={18} className="text-[#8A96B8]" />
+          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center">
+            <ArrowLeft size={18} className="text-[#64748B]" />
           </button>
-          <h1 className="text-lg font-bold text-white">Detalle</h1>
+          <h1 className="text-lg font-bold text-[#0F172A]">Detalle</h1>
         </div>
         <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
           <div className="w-12 h-12 rounded-2xl bg-[#EF44441A] flex items-center justify-center mb-4">
             <XCircle size={24} className="text-[#EF4444]" />
           </div>
-          <p className="text-white font-semibold mb-1">No se pudo cargar</p>
-          <p className="text-[#8A96B8] text-sm mb-4">{error}</p>
-          <button onClick={loadDetail} className="px-4 py-2 rounded-xl font-semibold text-sm text-[#0F1628]" style={{ background: '#C4CBD8' }}>
+          <p className="text-[#0F172A] font-semibold mb-1">No se pudo cargar</p>
+          <p className="text-[#64748B] text-sm mb-4">{error}</p>
+          <button onClick={loadDetail} className="px-4 py-2 rounded-xl font-semibold text-sm text-white" style={{ background: '#1D9E75' }}>
             Reintentar
           </button>
         </div>
@@ -421,7 +421,7 @@ export default function TransactionDetail() {
     )
   }
 
-  const cfg      = STATUS_CONFIG[tx.status] ?? { label: tx.status, color: '#8A96B8', bg: '#8A96B81A' }
+  const cfg      = STATUS_CONFIG[tx.status] ?? { label: tx.status, color: '#64748B', bg: '#64748B1A' }
   const isFailed = tx.status === 'failed' || tx.status === 'refunded'
   const isManualPending = tx.payinMethod === 'manual' &&
     (tx.status === 'initiated' || tx.status === 'payin_pending')
@@ -458,16 +458,16 @@ export default function TransactionDetail() {
 
         {/* Back + title */}
         <div className="flex items-center gap-3 px-4 pb-4">
-          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#1A2340] flex items-center justify-center flex-shrink-0">
-            <ArrowLeft size={18} className="text-[#8A96B8]" />
+          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center flex-shrink-0">
+            <ArrowLeft size={18} className="text-[#64748B]" />
           </button>
-          <h1 className="text-lg font-bold text-white flex-1">Detalle</h1>
+          <h1 className="text-lg font-bold text-[#0F172A] flex-1">Detalle</h1>
         </div>
 
         <div className="flex flex-col gap-3 px-4">
 
           {/* ── 1. ESTADO ACTUAL ─────────────────────────────────────────── */}
-          <div className="bg-[#1A2340] rounded-2xl p-5">
+          <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
 
             {/* Badge de status */}
             <div className="flex justify-center mb-5">
@@ -487,8 +487,8 @@ export default function TransactionDetail() {
                   const active = step.activeWhen(tx.status)
                   const isLast = i === TIMELINE_STEPS.length - 1
 
-                  const nodeColor  = done ? '#22C55E' : active ? cfg.color : '#263050'
-                  const nodeBorder = done ? '#22C55E' : active ? cfg.color : '#263050'
+                  const nodeColor  = done ? '#1D9E75' : active ? cfg.color : '#E2E8F0'
+                  const nodeBorder = done ? '#1D9E75' : active ? cfg.color : '#E2E8F0'
 
                   return (
                     <div key={step.label} className="flex items-center flex-1">
@@ -497,20 +497,20 @@ export default function TransactionDetail() {
                         <div
                           className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
                           style={{
-                            background: done ? '#22C55E1A' : active ? cfg.bg : '#1F2B4D',
+                            background: done ? '#1D9E751A' : active ? cfg.bg : '#F8FAFC',
                             border:     `2px solid ${nodeBorder}`,
                           }}
                         >
                           {done
-                            ? <CheckCircle size={12} color="#22C55E" />
+                            ? <CheckCircle size={12} color="#1D9E75" />
                             : active
                               ? <RefreshCw size={10} color={cfg.color} className="animate-spin" style={{ animationDuration: '2s' }} />
-                              : <div className="w-2 h-2 rounded-full bg-[#4E5A7A]" />
+                              : <div className="w-2 h-2 rounded-full bg-[#CBD5E1]" />
                           }
                         </div>
                         <span
                           className="text-[0.5625rem] font-medium text-center mt-1.5 max-w-[52px] leading-tight"
-                          style={{ color: done ? '#22C55E' : active ? cfg.color : '#4E5A7A' }}
+                          style={{ color: done ? '#1D9E75' : active ? cfg.color : '#94A3B8' }}
                         >
                           {step.label}
                         </span>
@@ -520,7 +520,7 @@ export default function TransactionDetail() {
                       {!isLast && (
                         <div
                           className="h-0.5 flex-1 mx-1 mb-5"
-                          style={{ background: done ? '#22C55E40' : '#263050' }}
+                          style={{ background: done ? '#1D9E7540' : '#E2E8F0' }}
                         />
                       )}
                     </div>
@@ -532,12 +532,12 @@ export default function TransactionDetail() {
 
           {/* ── 1b. INSTRUCCIONES PAYIN MANUAL (Bolivia) ─────────────────── */}
           {isManualPending && (
-            <div className="bg-[#1A2340] rounded-2xl p-5 border border-[#FBBF2430]">
+            <div className="bg-white rounded-2xl p-5 border border-[#FBBF2430]">
               <div className="flex items-start gap-3 mb-4">
                 <span className="text-xl flex-shrink-0">⏳</span>
                 <div>
                   <p className="text-[0.875rem] font-bold text-[#FBBF24]">Verificando tu pago</p>
-                  <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
+                  <p className="text-[0.8125rem] text-[#64748B] mt-0.5">
                     Estamos verificando tu transferencia. Te notificaremos cuando sea confirmada.
                   </p>
                 </div>
@@ -573,14 +573,14 @@ export default function TransactionDetail() {
                   valueColor="#EF4444"
                 />
               )}
-              <div className="h-px bg-[#263050]" />
+              <div className="h-px bg-[#E2E8F0]" />
               <Row
                 label="Beneficiario recibe"
                 value={effectiveDestAmount
                   ? formatAmount(effectiveDestAmount, tx.destinationCurrency)
                   : '—'}
                 bold
-                valueColor="#22C55E"
+                valueColor="#1D9E75"
               />
               <Row
                 label="Tiempo estimado"
@@ -614,27 +614,27 @@ export default function TransactionDetail() {
           )}
 
           {/* ── 4. COMPROBANTE ───────────────────────────────────────────── */}
-          <div ref={comprobanteRef} className="bg-[#1A2340] rounded-2xl p-5">
-            <p className="text-[0.6875rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-4">
+          <div ref={comprobanteRef} className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
+            <p className="text-[0.6875rem] font-semibold text-[#94A3B8] uppercase tracking-wider mb-4">
               Comprobante
             </p>
 
             <div className="flex flex-col gap-3 mb-5">
               {/* ID copiable */}
               <div>
-                <p className="text-[0.6875rem] text-[#4E5A7A] mb-1">ID de transacción</p>
+                <p className="text-[0.6875rem] text-[#94A3B8] mb-1">ID de transacción</p>
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-2 text-[0.8125rem] font-mono text-[#C4CBD8] hover:text-white transition-colors w-full text-left"
+                  className="flex items-center gap-2 text-[0.8125rem] font-mono text-[#0F172A] hover:text-[#1D9E75] transition-colors w-full text-left"
                 >
                   <span className="truncate">{tx.transactionId}</span>
                   {copied
-                    ? <CheckCircle size={14} className="text-[#22C55E] flex-shrink-0" />
-                    : <Copy size={14} className="text-[#4E5A7A] flex-shrink-0" />
+                    ? <CheckCircle size={14} className="text-[#1D9E75] flex-shrink-0" />
+                    : <Copy size={14} className="text-[#94A3B8] flex-shrink-0" />
                   }
                 </button>
                 {copied && (
-                  <p className="text-[0.6875rem] text-[#22C55E] mt-1">¡Copiado!</p>
+                  <p className="text-[0.6875rem] text-[#1D9E75] mt-1">¡Copiado!</p>
                 )}
               </div>
 
@@ -651,7 +651,7 @@ export default function TransactionDetail() {
                 onClick={handleShareImage}
                 disabled={sharing}
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60"
-                style={{ background: '#C4CBD81A', border: '1px solid #C4CBD833', color: '#C4CBD8' }}
+                style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', color: '#64748B' }}
               >
                 {sharing
                   ? <RefreshCw size={15} className="animate-spin" />
@@ -662,7 +662,7 @@ export default function TransactionDetail() {
               <button
                 onClick={handlePrint}
                 className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-colors"
-                style={{ background: '#263050', border: '1px solid #263050', color: '#8A96B8' }}
+                style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', color: '#64748B' }}
                 title="Imprimir / PDF"
               >
                 <Printer size={15} />
@@ -672,12 +672,12 @@ export default function TransactionDetail() {
 
           {/* ── 5. COMPROBANTE BLOCKCHAIN — solo si completada ────────────── */}
           {tx.status === 'completed' && (
-            <div className="bg-[#1A2340] rounded-2xl p-5">
+            <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-lg bg-[#C4CBD81A] flex items-center justify-center flex-shrink-0">
-                  <Link2 size={14} className="text-[#C4CBD8]" />
+                <div className="w-7 h-7 rounded-lg bg-[#1D9E751A] flex items-center justify-center flex-shrink-0">
+                  <Link2 size={14} className="text-[#1D9E75]" />
                 </div>
-                <p className="text-[0.6875rem] font-semibold text-[#4E5A7A] uppercase tracking-wider">
+                <p className="text-[0.6875rem] font-semibold text-[#94A3B8] uppercase tracking-wider">
                   Verificado en blockchain
                 </p>
               </div>
@@ -685,8 +685,8 @@ export default function TransactionDetail() {
               {tx.stellarTxId ? (
                 <div className="flex flex-col gap-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-[0.8125rem] text-[#8A96B8]">Red</span>
-                    <span className="text-[0.8125rem] font-medium text-white">
+                    <span className="text-[0.8125rem] text-[#64748B]">Red</span>
+                    <span className="text-[0.8125rem] font-medium text-[#0F172A]">
                       {import.meta.env.VITE_STELLAR_NETWORK === 'mainnet'
                         ? 'Stellar Mainnet'
                         : 'Stellar Testnet'}
@@ -694,9 +694,9 @@ export default function TransactionDetail() {
                   </div>
 
                   <div className="flex justify-between items-center gap-3">
-                    <span className="text-[0.8125rem] text-[#8A96B8] flex-shrink-0">TXID</span>
+                    <span className="text-[0.8125rem] text-[#64748B] flex-shrink-0">TXID</span>
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-[0.8125rem] font-mono text-[#C4CBD8] truncate">
+                      <span className="text-[0.8125rem] font-mono text-[#0F172A] truncate">
                         {truncateTxId(tx.stellarTxId)}
                       </span>
                       <button
@@ -706,11 +706,11 @@ export default function TransactionDetail() {
                             setTimeout(() => setCopiedTxid(false), 2000)
                           })
                         }}
-                        className="flex-shrink-0 text-[#4E5A7A] hover:text-[#C4CBD8] transition-colors"
+                        className="flex-shrink-0 text-[#94A3B8] hover:text-[#1D9E75] transition-colors"
                         title="Copiar TXID completo"
                       >
                         {copiedTxid
-                          ? <CheckCircle size={14} className="text-[#22C55E]" />
+                          ? <CheckCircle size={14} className="text-[#1D9E75]" />
                           : <Copy size={14} />
                         }
                       </button>
@@ -718,7 +718,7 @@ export default function TransactionDetail() {
                   </div>
 
                   {copiedTxid && (
-                    <p className="text-[0.6875rem] text-[#22C55E] text-right -mt-1">¡TXID copiado!</p>
+                    <p className="text-[0.6875rem] text-[#1D9E75] text-right -mt-1">¡TXID copiado!</p>
                   )}
 
                   <a
@@ -727,7 +727,7 @@ export default function TransactionDetail() {
                     }/tx/${tx.stellarTxId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#C4CBD833] text-[#C4CBD8] text-sm font-medium transition-colors hover:bg-[#C4CBD81A]"
+                    className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#1D9E7533] text-[#1D9E75] text-sm font-medium transition-colors hover:bg-[#1D9E751A]"
                   >
                     Ver en Stellar Explorer
                     <ExternalLink size={14} />
@@ -735,8 +735,8 @@ export default function TransactionDetail() {
                 </div>
               ) : (
                 <div className="flex items-center gap-2 py-1">
-                  <RefreshCw size={13} className="text-[#4E5A7A] animate-spin" style={{ animationDuration: '3s' }} />
-                  <span className="text-[0.8125rem] text-[#4E5A7A]">
+                  <RefreshCw size={13} className="text-[#CBD5E1] animate-spin" style={{ animationDuration: '3s' }} />
+                  <span className="text-[0.8125rem] text-[#94A3B8]">
                     Registro blockchain en proceso…
                   </span>
                 </div>
@@ -747,8 +747,8 @@ export default function TransactionDetail() {
           {/* ── 6. SOPORTE — solo si falló ────────────────────────────────── */}
           {isFailed && (
             <div className="rounded-2xl p-5 border border-[#EF444433]" style={{ background: '#EF44441A' }}>
-              <p className="text-white font-semibold mb-1">¿Necesitas ayuda?</p>
-              <p className="text-[#8A96B8] text-sm mb-4">
+              <p className="text-[#0F172A] font-semibold mb-1">¿Necesitas ayuda?</p>
+              <p className="text-[#64748B] text-sm mb-4">
                 Contáctanos y resolveremos tu caso a la brevedad.
               </p>
               <div className="flex gap-3">
@@ -759,9 +759,9 @@ export default function TransactionDetail() {
                     rel="noopener noreferrer"
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border transition-colors"
                     style={{
-                      background:   '#22C55E1A',
-                      borderColor:  '#22C55E33',
-                      color:        '#22C55E',
+                      background:   '#1D9E751A',
+                      borderColor:  '#1D9E7533',
+                      color:        '#1D9E75',
                     }}
                   >
                     <MessageCircle size={16} />
@@ -772,9 +772,9 @@ export default function TransactionDetail() {
                   href={`mailto:${supportEmail}`}
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border transition-colors"
                   style={{
-                    background:  '#C4CBD81A',
-                    borderColor: '#C4CBD833',
-                    color:       '#C4CBD8',
+                    background:  '#F8FAFC',
+                    borderColor: '#E2E8F0',
+                    color:       '#64748B',
                   }}
                 >
                   <Mail size={16} />

@@ -79,7 +79,7 @@ export default function KycReturnPage() {
 
   return (
     <div
-      className="h-dvh flex flex-col items-center justify-center bg-[#0F1628] px-6"
+      className="h-dvh flex flex-col items-center justify-center bg-[#F8FAFC] px-6"
       style={{ fontFamily: 'Inter, ui-sans-serif, system-ui' }}
     >
       {/* Icono de estado */}
@@ -87,16 +87,16 @@ export default function KycReturnPage() {
         className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
         style={
           status === 'approved'
-            ? { background: '#22C55E1A', border: '2px solid #22C55E33' }
+            ? { background: '#1D9E751A', border: '2px solid #1D9E7533' }
             : status === 'rejected'
             ? { background: '#EF44441A', border: '2px solid #EF444433' }
-            : { background: '#C4CBD81A', border: '2px solid #C4CBD833' }
+            : { background: '#F8FAFC', border: '2px solid #E2E8F0' }
         }
       >
-        {status === 'approved' && <ShieldCheck size={36} className="text-[#22C55E]" />}
+        {status === 'approved' && <ShieldCheck size={36} className="text-[#1D9E75]" />}
         {status === 'rejected' && <AlertCircle size={36} className="text-[#EF4444]" />}
         {(status === 'checking' || status === 'timeout') && (
-          <Loader2 size={36} className={`text-[#C4CBD8] ${status === 'checking' ? 'animate-spin' : ''}`} />
+          <Loader2 size={36} className={`text-[#1D9E75] ${status === 'checking' ? 'animate-spin' : ''}`} />
         )}
       </div>
 
@@ -104,8 +104,8 @@ export default function KycReturnPage() {
       <div className="text-center mb-8">
         {status === 'checking' && (
           <>
-            <h1 className="text-[1.25rem] font-bold text-white mb-2">Procesando verificación…</h1>
-            <p className="text-[0.875rem] text-[#8A96B8] leading-relaxed">
+            <h1 className="text-[1.25rem] font-bold text-[#0F172A] mb-2">Procesando verificación…</h1>
+            <p className="text-[0.875rem] text-[#64748B] leading-relaxed">
               Estamos confirmando tu identidad con Stripe.<br />
               Esto puede tomar hasta 30 segundos.
             </p>
@@ -113,20 +113,20 @@ export default function KycReturnPage() {
         )}
         {status === 'approved' && (
           <>
-            <h1 className="text-[1.25rem] font-bold text-white mb-2">¡Identidad verificada!</h1>
-            <p className="text-[0.875rem] text-[#8A96B8]">Redirigiendo…</p>
+            <h1 className="text-[1.25rem] font-bold text-[#0F172A] mb-2">¡Identidad verificada!</h1>
+            <p className="text-[0.875rem] text-[#64748B]">Redirigiendo…</p>
           </>
         )}
         {status === 'rejected' && (
           <>
-            <h1 className="text-[1.25rem] font-bold text-white mb-2">Verificación no aprobada</h1>
-            <p className="text-[0.875rem] text-[#8A96B8]">Redirigiendo para ver los detalles…</p>
+            <h1 className="text-[1.25rem] font-bold text-[#0F172A] mb-2">Verificación no aprobada</h1>
+            <p className="text-[0.875rem] text-[#64748B]">Redirigiendo para ver los detalles…</p>
           </>
         )}
         {status === 'timeout' && (
           <>
-            <h1 className="text-[1.25rem] font-bold text-white mb-2">Tomando más tiempo de lo esperado</h1>
-            <p className="text-[0.875rem] text-[#8A96B8] leading-relaxed">
+            <h1 className="text-[1.25rem] font-bold text-[#0F172A] mb-2">Tomando más tiempo de lo esperado</h1>
+            <p className="text-[0.875rem] text-[#64748B] leading-relaxed">
               Te notificaremos por email cuando esté lista.<br />
               Puedes volver a la app con seguridad.
             </p>
@@ -138,8 +138,8 @@ export default function KycReturnPage() {
       {status === 'timeout' && (
         <button
           onClick={() => navigate('/kyc', { replace: true })}
-          className="w-full max-w-[320px] py-4 rounded-2xl font-bold text-[0.9375rem] text-[#0F1628]"
-          style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.25)' }}
+          className="w-full max-w-[320px] py-4 rounded-2xl font-bold text-[0.9375rem] text-white"
+          style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
         >
           Ir a mi verificación
         </button>
@@ -151,7 +151,7 @@ export default function KycReturnPage() {
           {[0, 1, 2].map(i => (
             <div
               key={i}
-              className="w-1.5 h-1.5 rounded-full bg-[#4E5A7A]"
+              className="w-1.5 h-1.5 rounded-full bg-[#CBD5E1]"
               style={{ animation: `pulse 1.4s ease-in-out ${i * 0.2}s infinite` }}
             />
           ))}

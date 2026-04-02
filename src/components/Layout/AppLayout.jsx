@@ -1,18 +1,8 @@
 /**
  * AppLayout.jsx — Shell persistente de la app: header + bottom nav
  *
- * Todas las rutas privadas del usuario (no admin, no auth flows) se renderizan
- * como <Outlet> dentro de este layout. El header y la barra de navegación
- * inferior son siempre visibles independientemente de la sección activa.
- *
- * Estructura:
- *  ┌──────────────────────────────────────┐
- *  │  Header: logo · bell · nombre · 👤  │  ← sticky
- *  ├──────────────────────────────────────┤
- *  │  <Outlet /> — contenido de la ruta  │  ← scroll
- *  ├──────────────────────────────────────┤
- *  │  Bottom Nav: Inicio · Activos · …   │  ← fixed
- *  └──────────────────────────────────────┘
+ * Tema: Alyto Arctic (Light Mode)
+ * Header y bottom nav con glassmorphism sobre fondo #F8FAFC.
  */
 
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
@@ -46,10 +36,18 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F1628] font-sans flex flex-col max-w-[430px] mx-auto relative">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans flex flex-col max-w-[430px] mx-auto relative">
 
-      {/* ── HEADER (sticky) ──────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 bg-[#0F1628] border-b border-[#1A2340] px-5 py-3 flex items-center justify-between flex-shrink-0">
+      {/* ── HEADER (sticky + glassmorphism) ──────────────────────── */}
+      <header
+        className="sticky top-0 z-40 px-5 py-3 flex items-center justify-between flex-shrink-0"
+        style={{
+          background:    'rgba(255,255,255,0.80)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          borderBottom:  '1px solid rgba(226,232,240,0.8)',
+        }}
+      >
         <Link to="/dashboard" className="no-underline flex-shrink-0">
           <img
             src="/assets/logo-alyto.png"
@@ -62,7 +60,7 @@ export default function AppLayout() {
           {role === 'admin' && (
             <Link
               to="/admin"
-              className="flex items-center gap-1.5 px-3 h-8 rounded-full border border-[#C4CBD833] bg-[#C4CBD80D] text-[#C4CBD8] text-[0.75rem] font-semibold no-underline transition-all hover:bg-[#C4CBD81A]"
+              className="flex items-center gap-1.5 px-3 h-8 rounded-full border border-[#1D9E7533] bg-[#1D9E751A] text-[#1D9E75] text-[0.75rem] font-semibold no-underline transition-all hover:bg-[#1D9E7530]"
             >
               <Shield size={12} />
               Backoffice
@@ -70,21 +68,22 @@ export default function AppLayout() {
           )}
 
           <button
-            className="w-9 h-9 rounded-full bg-[#1A2340] border border-[#263050] flex items-center justify-center"
+            className="w-9 h-9 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center shadow-sm"
             aria-label="Notificaciones"
           >
-            <Bell size={16} className="text-[#8A96B8]" />
+            <Bell size={16} className="text-[#64748B]" />
           </button>
 
           {firstName && (
-            <span className="text-[0.8125rem] font-semibold text-white leading-none">
+            <span className="text-[0.8125rem] font-semibold text-[#0F172A] leading-none">
               {firstName}
             </span>
           )}
 
           <Link
             to="/profile"
-            className="w-9 h-9 rounded-full border-2 border-[#C4CBD8] bg-[#1D3461] flex items-center justify-center text-[#C4CBD8] text-xs font-bold tracking-wide no-underline flex-shrink-0"
+            className="w-9 h-9 rounded-full border-2 border-[#1D9E75] flex items-center justify-center text-white text-xs font-bold tracking-wide no-underline flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #1D9E75, #18876A)' }}
           >
             {firstName ? firstName.charAt(0).toUpperCase() : 'A'}
           </Link>
@@ -96,31 +95,49 @@ export default function AppLayout() {
         <Outlet />
       </div>
 
-      {/* ── BOTTOM NAV (fixed) ───────────────────────────────────── */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-[#0F1628] border-t border-[#1A2340] flex justify-around px-2 pt-2.5 pb-6 z-50">
+      {/* ── BOTTOM NAV (fixed + glassmorphism) ───────────────────── */}
+      <nav
+        className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] flex justify-around px-2 pt-3 pb-6 z-50"
+        style={{
+          background:    'rgba(255,255,255,0.85)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderTop:     '1px solid rgba(226,232,240,0.9)',
+          borderTopLeftRadius:  '24px',
+          borderTopRightRadius: '24px',
+        }}
+      >
         {NAV_ITEMS.map(({ icon: Icon, label, to }) => {
           const active = isActive(to)
           return (
             <Link
               key={label}
               to={to}
-              className="flex flex-col items-center gap-1 min-w-[56px] no-underline"
+              className="flex flex-col items-center gap-1 min-w-[52px] no-underline"
             >
-              <Icon size={20} className={active ? 'text-[#C4CBD8]' : 'text-[#4E5A7A]'} />
-              <span className={`text-[0.625rem] font-medium ${active ? 'text-[#C4CBD8]' : 'text-[#4E5A7A]'}`}>
+              {/* Active: teal pill background */}
+              <div className={`flex items-center justify-center w-10 h-6 rounded-full transition-all ${
+                active ? 'bg-[#1D9E751A]' : ''
+              }`}>
+                <Icon size={19} className={active ? 'text-[#1D9E75]' : 'text-[#94A3B8]'} />
+              </div>
+              <span className={`text-[0.5625rem] font-semibold transition-colors ${
+                active ? 'text-[#1D9E75]' : 'text-[#94A3B8]'
+              }`}>
                 {label}
               </span>
-              {active && <span className="w-1 h-1 rounded-full bg-[#C4CBD8]" />}
             </Link>
           )
         })}
 
         <button
           onClick={handleLogout}
-          className="flex flex-col items-center gap-1 min-w-[56px] text-[#4E5A7A] transition-colors active:text-[#F87171]"
+          className="flex flex-col items-center gap-1 min-w-[52px] text-[#94A3B8] transition-colors active:text-[#EF4444]"
         >
-          <LogOut size={20} />
-          <span className="text-[0.625rem] font-medium">Salir</span>
+          <div className="flex items-center justify-center w-10 h-6">
+            <LogOut size={19} />
+          </div>
+          <span className="text-[0.5625rem] font-semibold">Salir</span>
         </button>
       </nav>
 

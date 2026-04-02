@@ -19,7 +19,7 @@ function statusConfig(status) {
   if (status === 'failed' || status === 'refunded') {
     return { label: status === 'refunded' ? 'Reembolsada' : 'Fallida', color: '#EF4444', bg: '#EF44441A' }
   }
-  return { label: 'En proceso', color: '#C4CBD8', bg: '#C4CBD81A' }
+  return { label: 'En proceso', color: '#64748B', bg: '#64748B1A' }
 }
 
 function formatDate(dateStr) {
@@ -52,15 +52,15 @@ function formatAmount(amount, currency) {
 
 function SkeletonCard() {
   return (
-    <div className="flex items-center gap-3 p-4 bg-[#1A2340] rounded-2xl animate-pulse">
-      <div className="w-11 h-11 rounded-xl bg-[#263050] flex-shrink-0" />
+    <div className="flex items-center gap-3 p-4 bg-white border border-[#E2E8F0] rounded-2xl animate-pulse">
+      <div className="w-11 h-11 rounded-xl bg-[#E2E8F0] flex-shrink-0" />
       <div className="flex-1 space-y-2">
-        <div className="h-3.5 bg-[#263050] rounded-full w-3/5" />
-        <div className="h-3 bg-[#1F2B4D] rounded-full w-2/5" />
+        <div className="h-3.5 bg-[#E2E8F0] rounded-full w-3/5" />
+        <div className="h-3 bg-[#F1F5F9] rounded-full w-2/5" />
       </div>
       <div className="space-y-2 text-right">
-        <div className="h-3.5 bg-[#263050] rounded-full w-16" />
-        <div className="h-3 bg-[#1F2B4D] rounded-full w-10 ml-auto" />
+        <div className="h-3.5 bg-[#E2E8F0] rounded-full w-16" />
+        <div className="h-3 bg-[#F1F5F9] rounded-full w-10 ml-auto" />
       </div>
     </div>
   )
@@ -101,7 +101,7 @@ function TransactionCard({ tx }) {
   return (
     <Link
       to={`/transactions/${tx.transactionId}`}
-      className="flex items-center gap-3 p-4 bg-[#1A2340] rounded-2xl no-underline hover:bg-[#1F2B4D] transition-colors block"
+      className="flex items-center gap-3 p-4 bg-white border border-[#E2E8F0] rounded-2xl no-underline hover:bg-[#F8FAFC] transition-colors block"
     >
       {/* Icon */}
       <div
@@ -113,15 +113,15 @@ function TransactionCard({ tx }) {
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-[0.9375rem] font-semibold text-white truncate">
+        <p className="text-[0.9375rem] font-semibold text-[#0F172A] truncate">
           {title}
         </p>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          <span className="text-[0.6875rem] text-[#4E5A7A]">
+          <span className="text-[0.6875rem] text-[#94A3B8]">
             {formatDate(tx.createdAt)}
           </span>
           {corridorLabel && (
-            <span className="text-[0.6875rem] text-[#4E5A7A]">{corridorLabel}</span>
+            <span className="text-[0.6875rem] text-[#94A3B8]">{corridorLabel}</span>
           )}
           <span
             className="text-[0.6875rem] font-medium px-1.5 py-0.5 rounded-full"
@@ -130,18 +130,18 @@ function TransactionCard({ tx }) {
             {st.label}
           </span>
           {isActive && (
-            <span className="w-1.5 h-1.5 rounded-full bg-[#C4CBD8] animate-pulse flex-shrink-0" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#64748B] animate-pulse flex-shrink-0" />
           )}
         </div>
       </div>
 
       {/* Amount */}
       <div className="text-right flex-shrink-0">
-        <p className="text-[0.9375rem] font-bold text-white">
+        <p className="text-[0.9375rem] font-bold text-[#0F172A]">
           {formatAmount(tx.originAmount, tx.originCurrency)}
         </p>
         {tx.destinationAmount != null && tx.destinationCurrency !== tx.originCurrency && (
-          <p className="text-[0.6875rem] text-[#4E5A7A] mt-0.5">
+          <p className="text-[0.6875rem] text-[#94A3B8] mt-0.5">
             {formatAmount(tx.destinationAmount, tx.destinationCurrency)}
           </p>
         )}
@@ -157,10 +157,10 @@ export default function RecentTransactions({ transactions, loading }) {
     <div className="px-4 mb-2">
       {/* Section header */}
       <div className="flex items-center justify-between mb-3">
-        <p className="text-base font-bold text-white">Transferencias recientes</p>
+        <p className="text-base font-bold text-[#0F172A]">Transferencias recientes</p>
         <Link
           to="/transactions"
-          className="text-[0.8125rem] font-medium text-[#C4CBD8] no-underline"
+          className="text-[0.8125rem] font-medium text-[#1D9E75] no-underline"
         >
           Ver todas
         </Link>
@@ -177,10 +177,10 @@ export default function RecentTransactions({ transactions, loading }) {
         ) : transactions.length === 0 ? (
           <div className="py-8 text-center">
             <p className="text-[2rem] mb-2">💸</p>
-            <p className="text-[0.875rem] font-medium text-[#8A96B8]">
+            <p className="text-[0.875rem] font-medium text-[#64748B]">
               Aún no tienes transferencias
             </p>
-            <p className="text-[0.75rem] text-[#4E5A7A] mt-1">
+            <p className="text-[0.75rem] text-[#94A3B8] mt-1">
               Tu historial aparecerá aquí
             </p>
           </div>

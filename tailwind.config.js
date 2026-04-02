@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+        sans: ['Manrope', 'Inter', 'ui-sans-serif', 'system-ui'],
       },
       colors: {
         // ── Paleta corporativa Alyto ──────────────────────────────
