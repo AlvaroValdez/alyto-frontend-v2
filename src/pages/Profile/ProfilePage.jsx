@@ -8,7 +8,8 @@
  *   Bottom Nav (reutiliza el mismo patrón del Dashboard)
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { Camera }              from 'lucide-react'
 import { useAuth }             from '../../context/AuthContext'
 import { useProfile }          from '../../hooks/useProfile'
 import KycStatusCard           from './KycStatusCard'
@@ -39,20 +40,92 @@ function EntityBadge({ entity }) {
 
 // ── Avatar ────────────────────────────────────────────────────────────────────
 
-function Avatar({ firstName, lastName, size = 72 }) {
+/**
+ * Avatar interactivo con foto de perfil + overlay de cámara para cambiarla.
+ * Redimensiona la imagen en canvas antes de enviar (max 400×400, JPEG 85%).
+ */
+function Avatar({ firstName, lastName, avatarUrl, size = 72, onUpload, uploading }) {
+  const inputRef = useRef(null)
+
   const initials = [firstName?.[0], lastName?.[0]]
     .filter(Boolean)
     .join('')
     .toUpperCase() || 'A'
 
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+
+    // Redimensionar en canvas antes de enviar (max 400×400, JPEG 85%)
+    const resized = await resizeImage(file, 400, 0.85)
+    onUpload(resized)
+  }
+
   return (
-    <div
-      className="rounded-full border-4 border-[#1D9E75] bg-gradient-to-br from-[#1D9E75] to-[#18876A] flex items-center justify-center font-bold text-white tracking-wide shadow-[0_0_0_3px_#F8FAFC]"
-      style={{ width: size, height: size, fontSize: size * 0.3 }}
-    >
-      {initials}
+    <div className="relative inline-block" style={{ width: size, height: size }}>
+      {/* Foto o iniciales */}
+      {avatarUrl ? (
+        <img
+          src={avatarUrl}
+          alt="Foto de perfil"
+          className="rounded-full border-4 border-[#1D9E75] object-cover shadow-[0_0_0_3px_#F8FAFC]"
+          style={{ width: size, height: size }}
+        />
+      ) : (
+        <div
+          className="rounded-full border-4 border-[#1D9E75] bg-gradient-to-br from-[#1D9E75] to-[#18876A] flex items-center justify-center font-bold text-white tracking-wide shadow-[0_0_0_3px_#F8FAFC]"
+          style={{ width: size, height: size, fontSize: size * 0.3 }}
+        >
+          {initials}
+        </div>
+      )}
+
+      {/* Overlay cámara */}
+      <button
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        aria-label="Cambiar foto de perfil"
+        className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#1D9E75] border-2 border-white flex items-center justify-center shadow-md transition-opacity hover:opacity-90 disabled:opacity-50"
+      >
+        {uploading
+          ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          : <Camera size={13} className="text-white" />
+        }
+      </button>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={handleFileChange}
+      />
     </div>
   )
+}
+
+/** Redimensiona imagen a maxPx×maxPx y devuelve un File JPEG. */
+function resizeImage(file, maxPx, quality) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const scale  = Math.min(1, maxPx / Math.max(img.width, img.height))
+      const w      = Math.round(img.width  * scale)
+      const h      = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width  = w
+      canvas.height = h
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+      canvas.toBlob(
+        blob => resolve(new File([blob], 'avatar.jpg', { type: 'image/jpeg' })),
+        'image/jpeg',
+        quality,
+      )
+    }
+    img.onerror = () => resolve(file)   // fallback: enviar original
+    img.src = URL.createObjectURL(file)
+  })
 }
 
 // ── Tab navigation ────────────────────────────────────────────────────────────
@@ -82,9 +155,10 @@ function ProfileSkeleton() {
 
 export default function ProfilePage() {
   const { user }   = useAuth()
-  const { profile, loading, saving, fetchProfile, updateProfile, changePassword, removeDevice } = useProfile()
+  const { profile, loading, saving, fetchProfile, updateProfile, changePassword, removeDevice, uploadAvatar } = useProfile()
 
-  const [activeTab, setActiveTab] = useState('info')
+  const [activeTab,     setActiveTab]     = useState('info')
+  const [avatarError,   setAvatarError]   = useState('')
 
   useEffect(() => {
     fetchProfile()
@@ -98,6 +172,16 @@ export default function ProfilePage() {
   const email       = profile?.email       ?? user?.email       ?? ''
   const kycStatus   = profile?.kycStatus   ?? user?.kycStatus   ?? null
   const legalEntity = profile?.legalEntity ?? user?.legalEntity ?? 'LLC'
+  const avatarUrl   = profile?.avatarUrl   ?? user?.avatarUrl   ?? null
+
+  async function handleAvatarUpload(file) {
+    setAvatarError('')
+    try {
+      await uploadAvatar(file)
+    } catch (err) {
+      setAvatarError(err.message || 'No se pudo subir la foto.')
+    }
+  }
 
   return (
     <div className="pt-2">
@@ -117,8 +201,14 @@ export default function ProfilePage() {
               <Avatar
                 firstName={profile?.firstName ?? user?.firstName}
                 lastName={profile?.lastName  ?? user?.lastName}
+                avatarUrl={avatarUrl}
                 size={72}
+                onUpload={handleAvatarUpload}
+                uploading={saving}
               />
+              {avatarError && (
+                <p className="text-[0.75rem] text-[#EF4444]">{avatarError}</p>
+              )}
 
               {/* Nombre completo */}
               <div className="mt-1">

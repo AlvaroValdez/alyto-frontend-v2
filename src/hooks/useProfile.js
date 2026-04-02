@@ -79,6 +79,41 @@ export function useProfile() {
     }
   }, [])
 
+  // ── uploadAvatar ───────────────────────────────────────────────────────────
+  /**
+   * PATCH /user/avatar  (multipart/form-data, field: 'avatar')
+   * Acepta File objects (JPEG/PNG/WEBP). El cliente debe redimensionar
+   * antes de llamar para no exceder los 2 MB del backend.
+   */
+  const uploadAvatar = useCallback(async (file) => {
+    setSaving(true)
+    setError(null)
+    try {
+      const formData = new FormData()
+      formData.append('avatar', file)
+
+      // No usar request() genérico porque este endpoint es multipart
+      const token = localStorage.getItem('alyto_token') || sessionStorage.getItem('alyto_token')
+      const BASE   = import.meta.env.VITE_API_URL ?? 'https://alyto-backend-v2.onrender.com/api/v1'
+      const res    = await fetch(`${BASE}/user/avatar`, {
+        method:  'PATCH',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body:    formData,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error al subir la foto.')
+
+      setProfile(prev => prev ? { ...prev, avatarUrl: data.avatarUrl } : prev)
+      updateUser({ avatarUrl: data.avatarUrl })
+      return data.avatarUrl
+    } catch (err) {
+      setError(err.message ?? 'Error al subir la foto de perfil')
+      throw err
+    } finally {
+      setSaving(false)
+    }
+  }, [updateUser])
+
   // ── removeDevice ───────────────────────────────────────────────────────────
   const removeDevice = useCallback(async (token) => {
     setSaving(true)
@@ -107,5 +142,6 @@ export function useProfile() {
     updateProfile,
     changePassword,
     removeDevice,
+    uploadAvatar,
   }
 }
