@@ -58,9 +58,9 @@ function CountdownBadge({ expiresAt }) {
 
   return (
     <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.75rem] font-semibold ${
-      expired ? 'bg-[#EF44441A] text-[#F87171]' :
-      urgent  ? 'bg-[#F59E0B1A] text-[#FBBF24]' :
-                'bg-[#1A2340] text-[#8A96B8]'
+      expired ? 'bg-[#EF44441A] text-[#EF4444]' :
+      urgent  ? 'bg-[#F59E0B1A] text-[#F59E0B]' :
+                'bg-[#F1F5F9] text-[#94A3B8]'
     }`}>
       <Clock size={12} />
       {expired ? 'Expirado' : `${mm}:${ss}`}
@@ -128,41 +128,39 @@ function TabCobrar({ user }) {
     return (
       <div className="flex flex-col items-center gap-5 px-4 py-2">
         {/* QR image */}
-        <div className="bg-white rounded-2xl p-4 shadow-[0_0_40px_rgba(196,203,216,0.12)]">
+        <div className="bg-white rounded-2xl p-4 shadow-[0_4px_24px_rgba(15,23,42,0.08)] border border-[#E2E8F0]">
           <img src={qrData.qrBase64} alt="QR Alyto" className="w-64 h-64 rounded-xl" />
         </div>
 
         {/* Monto + nombre */}
         <div className="text-center">
           {qrData.amount != null && (
-            <p className="text-[1.75rem] font-bold text-[#22C55E]">Bs. {formatBOB(qrData.amount)}</p>
+            <p className="text-[1.75rem] font-bold text-[#1D9E75]">Bs. {formatBOB(qrData.amount)}</p>
           )}
-          <p className="text-[0.875rem] text-[#8A96B8] mt-0.5">
+          <p className="text-[0.875rem] text-[#64748B] mt-0.5">
             {user.firstName} {user.lastName}
           </p>
-          {qrData.expiresAt && <CountdownBadge expiresAt={qrData.expiresAt} />}
+          {qrData.expiresAt && <div className="mt-2 flex justify-center"><CountdownBadge expiresAt={qrData.expiresAt} /></div>}
         </div>
 
         {/* Acciones */}
         <div className="flex gap-3 w-full">
           <button
             onClick={handleShare}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-[0.875rem] font-semibold"
-            style={{ background: '#C4CBD8', color: '#0F1628' }}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-[0.875rem] font-semibold text-white"
+            style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
           >
             <Share2 size={16} /> Compartir
           </button>
           <button
             onClick={handleDownload}
-            className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[0.875rem] font-semibold"
-            style={{ background: '#1A2340', border: '1px solid #263050', color: '#C4CBD8' }}
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[0.875rem] font-semibold bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#1D9E7533] hover:text-[#1D9E75] transition-colors"
           >
             <Download size={16} />
           </button>
           <button
             onClick={handleReset}
-            className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[0.875rem] font-semibold"
-            style={{ background: '#1A2340', border: '1px solid #263050', color: '#C4CBD8' }}
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[0.875rem] font-semibold bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#1D9E7533] hover:text-[#1D9E75] transition-colors"
           >
             <RefreshCw size={16} />
           </button>
@@ -175,7 +173,7 @@ function TabCobrar({ user }) {
     <div className="flex flex-col gap-5 px-4 py-2">
 
       {/* Toggle monto fijo vs libre */}
-      <div className="flex gap-2 p-1 rounded-xl" style={{ background: '#1A2340', border: '1px solid #263050' }}>
+      <div className="flex gap-2 p-1 rounded-xl bg-[#F1F5F9] border border-[#E2E8F0]">
         {[
           { label: 'Monto fijo', val: true  },
           { label: 'Pagador elige', val: false },
@@ -184,7 +182,9 @@ function TabCobrar({ user }) {
             key={String(val)}
             onClick={() => setFixedAmount(val)}
             className={`flex-1 py-2 rounded-lg text-[0.8125rem] font-semibold transition-all ${
-              fixedAmount === val ? 'bg-[#C4CBD8] text-[#0F1628]' : 'text-[#8A96B8]'
+              fixedAmount === val
+                ? 'bg-[#1D9E75] text-white shadow-sm'
+                : 'text-[#64748B] hover:text-[#0F172A]'
             }`}
           >
             {label}
@@ -195,11 +195,11 @@ function TabCobrar({ user }) {
       {/* Input monto */}
       {fixedAmount && (
         <div>
-          <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide mb-2">
+          <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
             Monto a cobrar
           </label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8A96B8] font-bold text-[1.125rem]">Bs</span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-bold text-[1.125rem]">Bs</span>
             <input
               type="number"
               inputMode="decimal"
@@ -207,7 +207,7 @@ function TabCobrar({ user }) {
               value={amount}
               onChange={e => setAmount(e.target.value)}
               placeholder="0.00"
-              className="w-full bg-[#1A2340] border border-[#263050] rounded-xl pl-12 pr-4 py-4 text-white text-[1.5rem] font-bold focus:outline-none focus:border-[#C4CBD8] transition-all placeholder:text-[#4E5A7A]"
+              className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-12 pr-4 py-4 text-[#0F172A] text-[1.5rem] font-bold focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_3px_#1D9E7520] transition-all placeholder:text-[#CBD5E1]"
             />
           </div>
         </div>
@@ -215,7 +215,7 @@ function TabCobrar({ user }) {
 
       {/* Descripción */}
       <div>
-        <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide mb-2">
+        <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
           Descripción (opcional)
         </label>
         <input
@@ -224,22 +224,22 @@ function TabCobrar({ user }) {
           onChange={e => setDescription(e.target.value)}
           maxLength={80}
           placeholder="Ej: café, servicio, producto..."
-          className="w-full bg-[#1A2340] border border-[#263050] rounded-xl px-4 py-3 text-white text-[0.9375rem] focus:outline-none focus:border-[#C4CBD8] transition-all placeholder:text-[#4E5A7A]"
+          className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.9375rem] focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_3px_#1D9E7520] transition-all placeholder:text-[#CBD5E1]"
         />
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl" style={{ background: '#EF44441A', border: '1px solid #EF444433' }}>
-          <AlertCircle size={14} className="text-[#F87171] flex-shrink-0" />
-          <p className="text-[0.8125rem] text-[#F87171]">{error}</p>
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
+          <AlertCircle size={14} className="text-[#EF4444] flex-shrink-0" />
+          <p className="text-[0.8125rem] text-[#EF4444]">{error}</p>
         </div>
       )}
 
       <button
         onClick={handleGenerate}
         disabled={loading}
-        className="w-full py-4 rounded-2xl text-[0.9375rem] font-bold flex items-center justify-center gap-2 transition-all"
-        style={{ background: '#C4CBD8', color: '#0F1628', opacity: loading ? 0.7 : 1 }}
+        className="w-full py-4 rounded-2xl text-[0.9375rem] font-bold flex items-center justify-center gap-2 text-white transition-all disabled:opacity-50"
+        style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
       >
         {loading ? <Loader2 size={18} className="animate-spin" /> : <QrCode size={18} />}
         {loading ? 'Generando...' : 'Generar QR'}
@@ -360,20 +360,19 @@ function TabPagar() {
   if (result) {
     return (
       <div className="flex flex-col items-center gap-5 px-4 py-6 text-center">
-        <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: '#22C55E1A' }}>
-          <CheckCircle2 size={32} className="text-[#22C55E]" />
+        <div className="w-16 h-16 rounded-full flex items-center justify-center bg-[#1D9E751A] border border-[#1D9E7533]">
+          <CheckCircle2 size={32} className="text-[#1D9E75]" />
         </div>
         <div>
-          <p className="text-[1.5rem] font-bold text-[#22C55E]">Bs. {formatBOB(result.amount)}</p>
-          <p className="text-[0.875rem] text-[#8A96B8] mt-1">Enviado a {result.recipient}</p>
-          <p className="text-[0.75rem] text-[#4E5A7A] mt-0.5">
+          <p className="text-[1.5rem] font-bold text-[#1D9E75]">Bs. {formatBOB(result.amount)}</p>
+          <p className="text-[0.875rem] text-[#64748B] mt-1">Enviado a {result.recipient}</p>
+          <p className="text-[0.75rem] text-[#94A3B8] mt-0.5">
             Saldo actual: Bs. {formatBOB(result.balanceAfter)}
           </p>
         </div>
         <button
           onClick={handleReset}
-          className="w-full py-3 rounded-2xl text-[0.875rem] font-semibold"
-          style={{ background: '#1A2340', border: '1px solid #263050', color: '#C4CBD8' }}
+          className="w-full py-3 rounded-2xl text-[0.875rem] font-semibold bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#1D9E7533] hover:text-[#1D9E75] transition-colors"
         >
           Nuevo pago
         </button>
@@ -385,22 +384,22 @@ function TabPagar() {
   if (preview) {
     return (
       <div className="flex flex-col gap-4 px-4 py-2">
-        <div className="rounded-2xl p-5" style={{ background: '#1A2340', border: '1px solid #263050' }}>
-          <p className="text-[0.75rem] text-[#4E5A7A] mb-1">Destinatario</p>
-          <p className="text-[1rem] font-bold text-white">{preview.creatorName}</p>
+        <div className="rounded-2xl p-5 bg-white border border-[#E2E8F0]">
+          <p className="text-[0.75rem] text-[#94A3B8] mb-1">Destinatario</p>
+          <p className="text-[1rem] font-bold text-[#0F172A]">{preview.creatorName}</p>
 
           {preview.type !== 'deposit' && preview.amount != null && (
             <>
-              <p className="text-[0.75rem] text-[#4E5A7A] mt-3 mb-1">Monto</p>
-              <p className="text-[1.75rem] font-bold text-[#22C55E]">Bs. {formatBOB(preview.amount)}</p>
+              <p className="text-[0.75rem] text-[#94A3B8] mt-3 mb-1">Monto</p>
+              <p className="text-[1.75rem] font-bold text-[#1D9E75]">Bs. {formatBOB(preview.amount)}</p>
             </>
           )}
 
           {preview.type === 'deposit' && (
             <div className="mt-3">
-              <label className="block text-[0.75rem] text-[#4E5A7A] mb-1">Monto a enviar</label>
+              <label className="block text-[0.75rem] text-[#94A3B8] mb-1">Monto a enviar</label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8A96B8] font-bold">Bs</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-bold">Bs</span>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -408,7 +407,7 @@ function TabPagar() {
                   value={depositAmt}
                   onChange={e => setDepositAmt(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-[#0F1628] border border-[#263050] rounded-xl pl-10 pr-4 py-3 text-white text-[1.25rem] font-bold focus:outline-none focus:border-[#C4CBD8] placeholder:text-[#4E5A7A]"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3 text-[#0F172A] text-[1.25rem] font-bold focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_3px_#1D9E7520] placeholder:text-[#CBD5E1]"
                 />
               </div>
             </div>
@@ -416,8 +415,8 @@ function TabPagar() {
 
           {preview.description && (
             <>
-              <p className="text-[0.75rem] text-[#4E5A7A] mt-3 mb-1">Descripción</p>
-              <p className="text-[0.875rem] text-[#C4CBD8]">{preview.description}</p>
+              <p className="text-[0.75rem] text-[#94A3B8] mt-3 mb-1">Descripción</p>
+              <p className="text-[0.875rem] text-[#64748B]">{preview.description}</p>
             </>
           )}
 
@@ -429,25 +428,24 @@ function TabPagar() {
         </div>
 
         {payError && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-xl" style={{ background: '#EF44441A', border: '1px solid #EF444433' }}>
-            <AlertCircle size={14} className="text-[#F87171] flex-shrink-0" />
-            <p className="text-[0.8125rem] text-[#F87171]">{payError}</p>
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
+            <AlertCircle size={14} className="text-[#EF4444] flex-shrink-0" />
+            <p className="text-[0.8125rem] text-[#EF4444]">{payError}</p>
           </div>
         )}
 
         <div className="flex gap-3">
           <button
             onClick={handleReset}
-            className="flex-1 py-3 rounded-2xl text-[0.875rem] font-semibold"
-            style={{ background: '#1A2340', border: '1px solid #263050', color: '#8A96B8' }}
+            className="flex-1 py-3 rounded-2xl text-[0.875rem] font-semibold bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#CBD5E1] transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={handlePay}
             disabled={paying || (preview.type === 'deposit' && !depositAmt)}
-            className="flex-1 py-3 rounded-2xl text-[0.875rem] font-semibold flex items-center justify-center gap-2 transition-all"
-            style={{ background: '#C4CBD8', color: '#0F1628', opacity: paying ? 0.7 : 1 }}
+            className="flex-1 py-3 rounded-2xl text-[0.875rem] font-semibold flex items-center justify-center gap-2 text-white transition-all disabled:opacity-50"
+            style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
           >
             {paying ? <Loader2 size={16} className="animate-spin" /> : null}
             {paying ? 'Procesando...' : 'Confirmar pago'}
@@ -461,21 +459,21 @@ function TabPagar() {
     <div className="flex flex-col gap-4 px-4 py-2">
       {/* Visor cámara */}
       <div
-        className="relative rounded-2xl overflow-hidden flex items-center justify-center"
-        style={{ background: '#0F1628', border: '1px solid #263050', aspectRatio: '1/1' }}
+        className="relative rounded-2xl overflow-hidden flex items-center justify-center bg-[#F1F5F9] border border-[#E2E8F0]"
+        style={{ aspectRatio: '1/1' }}
       >
         {scanning ? (
           <>
             <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" playsInline muted />
             {/* Marco de escaneo */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-48 h-48 border-2 border-white rounded-2xl opacity-60" />
+              <div className="w-48 h-48 border-2 border-[#1D9E75] rounded-2xl opacity-80" />
             </div>
             <button
               onClick={stopCamera}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center"
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 flex items-center justify-center shadow-sm"
             >
-              <X size={14} className="text-white" />
+              <X size={14} className="text-[#64748B]" />
             </button>
           </>
         ) : (
@@ -483,11 +481,11 @@ function TabPagar() {
             onClick={startCamera}
             className="flex flex-col items-center gap-3 py-12"
           >
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: '#1A2340' }}>
-              <Camera size={28} className="text-[#C4CBD8]" />
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white border border-[#E2E8F0] shadow-sm">
+              <Camera size={28} className="text-[#1D9E75]" />
             </div>
-            <p className="text-[0.875rem] font-semibold text-[#C4CBD8]">Activar cámara</p>
-            <p className="text-[0.75rem] text-[#4E5A7A]">Apunta al QR Alyto</p>
+            <p className="text-[0.875rem] font-semibold text-[#0F172A]">Activar cámara</p>
+            <p className="text-[0.75rem] text-[#94A3B8]">Apunta al QR Alyto</p>
           </button>
         )}
         {/* Canvas oculto para jsQR */}
@@ -495,24 +493,23 @@ function TabPagar() {
       </div>
 
       {camError && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl" style={{ background: '#EF44441A', border: '1px solid #EF444433' }}>
-          <CameraOff size={14} className="text-[#F87171] flex-shrink-0" />
-          <p className="text-[0.8125rem] text-[#F87171]">{camError}</p>
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
+          <CameraOff size={14} className="text-[#EF4444] flex-shrink-0" />
+          <p className="text-[0.8125rem] text-[#EF4444]">{camError}</p>
         </div>
       )}
 
       {payError && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl" style={{ background: '#EF44441A', border: '1px solid #EF444433' }}>
-          <AlertCircle size={14} className="text-[#F87171] flex-shrink-0" />
-          <p className="text-[0.8125rem] text-[#F87171]">{payError}</p>
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
+          <AlertCircle size={14} className="text-[#EF4444] flex-shrink-0" />
+          <p className="text-[0.8125rem] text-[#EF4444]">{payError}</p>
         </div>
       )}
 
       {/* Modo manual */}
       <button
         onClick={() => setManualMode(v => !v)}
-        className="flex items-center justify-between px-4 py-3 rounded-xl text-[0.8125rem] text-[#8A96B8]"
-        style={{ background: '#1A2340', border: '1px solid #263050' }}
+        className="flex items-center justify-between px-4 py-3 rounded-xl text-[0.8125rem] text-[#64748B] bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] transition-colors"
       >
         <span>Ingresar código manualmente</span>
         <ChevronRight size={14} className={`transition-transform ${manualMode ? 'rotate-90' : ''}`} />
@@ -525,13 +522,13 @@ function TabPagar() {
             onChange={e => setManualText(e.target.value)}
             rows={4}
             placeholder='Pega el JSON del QR aquí...'
-            className="w-full bg-[#1A2340] border border-[#263050] rounded-xl px-4 py-3 text-[0.75rem] text-white focus:outline-none focus:border-[#C4CBD8] placeholder:text-[#4E5A7A] font-mono resize-none"
+            className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.75rem] text-[#0F172A] focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_3px_#1D9E7520] placeholder:text-[#CBD5E1] font-mono resize-none"
           />
           <button
             onClick={handleManualSubmit}
             disabled={!manualText.trim()}
-            className="w-full py-3 rounded-xl text-[0.875rem] font-semibold transition-all"
-            style={{ background: manualText.trim() ? '#C4CBD8' : '#C4CBD840', color: manualText.trim() ? '#0F1628' : '#4E5A7A' }}
+            className="w-full py-3 rounded-xl text-[0.875rem] font-semibold text-white transition-all disabled:opacity-50"
+            style={{ background: '#1D9E75', boxShadow: manualText.trim() ? '0 4px 20px rgba(29,158,117,0.25)' : 'none' }}
           >
             Verificar QR
           </button>
@@ -595,8 +592,8 @@ function TabMiQR({ user }) {
   if (loading) {
     return (
       <div className="flex flex-col items-center gap-4 py-16 px-4">
-        <Loader2 size={32} className="animate-spin text-[#C4CBD8]" />
-        <p className="text-[0.875rem] text-[#8A96B8]">Generando tu QR...</p>
+        <Loader2 size={32} className="animate-spin text-[#1D9E75]" />
+        <p className="text-[0.875rem] text-[#64748B]">Generando tu QR...</p>
       </div>
     )
   }
@@ -604,11 +601,15 @@ function TabMiQR({ user }) {
   if (error) {
     return (
       <div className="flex flex-col gap-4 px-4 py-2">
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl" style={{ background: '#EF44441A', border: '1px solid #EF444433' }}>
-          <AlertCircle size={14} className="text-[#F87171] flex-shrink-0" />
-          <p className="text-[0.8125rem] text-[#F87171]">{error}</p>
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
+          <AlertCircle size={14} className="text-[#EF4444] flex-shrink-0" />
+          <p className="text-[0.8125rem] text-[#EF4444]">{error}</p>
         </div>
-        <button onClick={() => handleGenerate(true)} className="w-full py-3 rounded-2xl text-[0.875rem] font-semibold" style={{ background: '#C4CBD8', color: '#0F1628' }}>
+        <button
+          onClick={() => handleGenerate(true)}
+          className="w-full py-3 rounded-2xl text-[0.875rem] font-semibold text-white"
+          style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
+        >
           Reintentar
         </button>
       </div>
@@ -620,20 +621,20 @@ function TabMiQR({ user }) {
   return (
     <div className="flex flex-col items-center gap-5 px-4 py-2">
       {/* QR */}
-      <div className="bg-white rounded-2xl p-4 shadow-[0_0_40px_rgba(196,203,216,0.12)]">
+      <div className="bg-white rounded-2xl p-4 shadow-[0_4px_24px_rgba(15,23,42,0.08)] border border-[#E2E8F0]">
         <img src={qrData.qrBase64} alt="Mi QR Alyto" className="w-64 h-64 rounded-xl" />
       </div>
 
       {/* Nombre */}
       <div className="text-center">
-        <p className="text-[1.125rem] font-bold text-white">{user.firstName} {user.lastName}</p>
-        <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">QR permanente · Sin monto fijo</p>
-        <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.6875rem] font-semibold" style={{ background: '#22C55E1A', color: '#22C55E' }}>
+        <p className="text-[1.125rem] font-bold text-[#0F172A]">{user.firstName} {user.lastName}</p>
+        <p className="text-[0.8125rem] text-[#64748B] mt-0.5">QR permanente · Sin monto fijo</p>
+        <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.6875rem] font-semibold bg-[#1D9E751A] text-[#1D9E75]">
           Sin expiración
         </div>
       </div>
 
-      <p className="text-[0.75rem] text-[#4E5A7A] text-center px-4">
+      <p className="text-[0.75rem] text-[#94A3B8] text-center px-4">
         Cualquier usuario Alyto puede escanearlo para enviarte BOB directamente a tu wallet.
       </p>
 
@@ -641,22 +642,20 @@ function TabMiQR({ user }) {
       <div className="flex gap-3 w-full">
         <button
           onClick={handleShare}
-          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-[0.875rem] font-semibold"
-          style={{ background: '#C4CBD8', color: '#0F1628' }}
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-[0.875rem] font-semibold text-white"
+          style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
         >
           <Share2 size={16} /> Compartir
         </button>
         <button
           onClick={handleDownload}
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl"
-          style={{ background: '#1A2340', border: '1px solid #263050', color: '#C4CBD8' }}
+          className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#1D9E7533] hover:text-[#1D9E75] transition-colors"
         >
           <Download size={16} />
         </button>
         <button
           onClick={() => { localStorage.removeItem(FIXED_QR_KEY); handleGenerate(true) }}
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl"
-          style={{ background: '#1A2340', border: '1px solid #263050', color: '#C4CBD8' }}
+          className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#1D9E7533] hover:text-[#1D9E75] transition-colors"
           title="Regenerar QR"
         >
           <RefreshCw size={16} />
@@ -680,31 +679,35 @@ export default function WalletQRScreen() {
   const [tab, setTab] = useState('cobrar')
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#0F1628' }}>
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
 
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-safe pt-4 pb-4" style={{ borderBottom: '1px solid #1A2340' }}>
+      <div
+        className="flex items-center gap-3 px-4 pt-safe pt-4 pb-4"
+        style={{ borderBottom: '1px solid #E2E8F0' }}
+      >
         <button
           onClick={() => navigate('/wallet')}
-          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: '#1A2340', border: '1px solid #263050' }}
+          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white border border-[#E2E8F0] shadow-sm"
         >
-          <ArrowLeft size={18} className="text-[#C4CBD8]" />
+          <ArrowLeft size={18} className="text-[#64748B]" />
         </button>
         <div>
-          <h1 className="text-[1rem] font-bold text-white leading-tight">QR Alyto</h1>
-          <p className="text-[0.75rem] text-[#4E5A7A]">Pagar y cobrar al instante</p>
+          <h1 className="text-[1rem] font-bold text-[#0F172A] leading-tight">QR Alyto</h1>
+          <p className="text-[0.75rem] text-[#94A3B8]">Pagar y cobrar al instante</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mx-4 mt-4 mb-2 p-1 rounded-xl" style={{ background: '#1A2340', border: '1px solid #263050' }}>
+      <div className="flex gap-1 mx-4 mt-4 mb-2 p-1 rounded-xl bg-[#F1F5F9] border border-[#E2E8F0]">
         {TABS.map(({ id, label }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
             className={`flex-1 py-2.5 rounded-lg text-[0.8125rem] font-semibold transition-all ${
-              tab === id ? 'bg-[#C4CBD8] text-[#0F1628]' : 'text-[#8A96B8] hover:text-[#C4CBD8]'
+              tab === id
+                ? 'bg-[#1D9E75] text-white shadow-sm'
+                : 'text-[#64748B] hover:text-[#0F172A]'
             }`}
           >
             {label}
