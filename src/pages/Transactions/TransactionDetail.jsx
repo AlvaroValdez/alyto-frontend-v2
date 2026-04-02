@@ -636,11 +636,8 @@ export default function TransactionDetail() {
                   label="Cuenta"
                   value={maskAccount(tx.beneficiary.accountNumber) ?? '••••'}
                 />
-                {tx.beneficiary.beneficiary_first_name && !tx.beneficiary.fullName && (
-                  <Row label="Nombre" value={maskName(
-                    [tx.beneficiary.beneficiary_first_name, tx.beneficiary.beneficiary_last_name]
-                      .filter(Boolean).join(' ')
-                  )} />
+                {tx.beneficiary.accountType && (
+                  <Row label="Tipo" value={tx.beneficiary.accountType} />
                 )}
               </div>
             </Section>
@@ -706,11 +703,11 @@ export default function TransactionDetail() {
                 {/* Beneficiario */}
                 {tx.beneficiary && (
                   <div className="flex flex-col gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    {(tx.beneficiary.fullName || tx.beneficiary.beneficiary_first_name) && (
+                    {tx.beneficiary.fullName && (
                       <div className="flex items-center justify-between">
                         <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Beneficiario</span>
                         <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>
-                          {maskName(tx.beneficiary.fullName || [tx.beneficiary.beneficiary_first_name, tx.beneficiary.beneficiary_last_name].filter(Boolean).join(' '))}
+                          {tx.beneficiary.fullName}
                         </span>
                       </div>
                     )}
@@ -720,31 +717,33 @@ export default function TransactionDetail() {
                         <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>{tx.beneficiary.bankName}</span>
                       </div>
                     )}
-                    {tx.beneficiary.accountNumber && (
-                      <div className="flex items-center justify-between">
-                        <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Cuenta</span>
-                        <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>{maskAccount(tx.beneficiary.accountNumber)}</span>
-                      </div>
-                    )}
+                    <div className="flex items-center justify-between">
+                      <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Cuenta</span>
+                      <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>
+                        {maskAccount(tx.beneficiary.accountNumber) ?? '••••'}
+                      </span>
+                    </div>
                     {tx.beneficiary.accountType && (
                       <div className="flex items-center justify-between">
                         <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Tipo</span>
                         <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>{tx.beneficiary.accountType}</span>
                       </div>
                     )}
-                    {(tx.beneficiary.documentNumber ?? tx.beneficiary.document_number ?? tx.beneficiary.ci) && (
+                    {tx.beneficiary.documentNumber && (
                       <div className="flex items-center justify-between">
-                        <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>CI / Documento</span>
+                        <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>
+                          {tx.beneficiary.documentType ? tx.beneficiary.documentType.toUpperCase() : 'CI / Documento'}
+                        </span>
                         <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>
-                          {tx.beneficiary.documentNumber ?? tx.beneficiary.document_number ?? tx.beneficiary.ci}
+                          {tx.beneficiary.documentNumber}
                         </span>
                       </div>
                     )}
-                    {(tx.concept || tx.reference) && (
+                    {tx.concept && (
                       <div className="flex items-center justify-between gap-3">
                         <span style={{ color: '#64748B', fontSize: '0.8125rem', flexShrink: 0 }}>Concepto</span>
                         <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500, textAlign: 'right' }}>
-                          {tx.concept || tx.reference}
+                          {tx.concept}
                         </span>
                       </div>
                     )}
