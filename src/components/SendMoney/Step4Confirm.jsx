@@ -185,7 +185,7 @@ export default function Step4Confirm({ stepData, onNext }) {
         <div className="py-3">
           <div className="flex justify-between items-center">
             <span className="text-[0.9375rem] font-bold text-[#0F172A]">Recibe</span>
-            <span className="text-[1.125rem] font-extrabold text-[#1D9E75]">
+            <span className="text-[1.125rem] font-extrabold text-[#233E58]">
               {Number(quote?.destinationAmount || 0).toLocaleString('es-CL')}{' '}
               {quote?.destinationCurrency || ''}
             </span>
@@ -257,7 +257,7 @@ export default function Step4Confirm({ stepData, onNext }) {
           />
           <div
             className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-              confirmed ? 'bg-[#1D9E75] border-[#1D9E75]' : 'bg-transparent border-[#E2E8F0]'
+              confirmed ? 'bg-[#233E58] border-[#233E58]' : 'bg-transparent border-[#E2E8F0]'
             }`}
           >
             {confirmed && (
@@ -286,7 +286,7 @@ export default function Step4Confirm({ stepData, onNext }) {
         disabled={!confirmed || loading}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 flex items-center justify-center gap-2 ${
           confirmed && !loading
-            ? 'bg-[#1D9E75] text-white shadow-[0_4px_20px_rgba(29,158,117,0.25)] active:scale-[0.98]'
+            ? 'bg-[#233E58] text-white shadow-[0_4px_20px_rgba(35,62,88,0.25)] active:scale-[0.98]'
             : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
         }`}
       >

@@ -18,10 +18,10 @@ import { resetPassword } from '../../services/api'
 function StrengthBar({ password }) {
   if (!password.length) return null
   const colors = [
-    password.length >= 4  ? (password.length >= 12 ? '#1D9E75' : password.length >= 8 ? '#F59E0B' : '#EF4444') : '#E2E8F0',
-    password.length >= 6  ? (password.length >= 12 ? '#1D9E75' : password.length >= 8 ? '#F59E0B' : '#EF4444') : '#E2E8F0',
-    password.length >= 9  ? (password.length >= 12 ? '#1D9E75' : '#F59E0B') : '#E2E8F0',
-    password.length >= 12 ? '#1D9E75' : '#E2E8F0',
+    password.length >= 4  ? (password.length >= 12 ? '#233E58' : password.length >= 8 ? '#F59E0B' : '#EF4444') : '#E2E8F0',
+    password.length >= 6  ? (password.length >= 12 ? '#233E58' : password.length >= 8 ? '#F59E0B' : '#EF4444') : '#E2E8F0',
+    password.length >= 9  ? (password.length >= 12 ? '#233E58' : '#F59E0B') : '#E2E8F0',
+    password.length >= 12 ? '#233E58' : '#E2E8F0',
   ]
   return (
     <div className="flex gap-1 mt-1">
@@ -54,8 +54,8 @@ function InvalidTokenScreen() {
       </p>
       <Link
         to="/forgot-password"
-        className="inline-block w-full py-4 rounded-2xl text-[0.9375rem] font-bold text-white bg-[#1D9E75] hover:bg-[#18876A] transition-colors text-center"
-        style={{ boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
+        className="inline-block w-full py-4 rounded-2xl text-[0.9375rem] font-bold text-white bg-[#233E58] hover:bg-[#1C3247] transition-colors text-center"
+        style={{ boxShadow: '0 4px 20px rgba(35,62,88,0.25)' }}
       >
         Solicitar nuevo enlace
       </Link>
@@ -130,8 +130,8 @@ export default function ResetPasswordPage() {
   if (success) {
     return (
       <div className="w-full max-w-[400px] rounded-3xl p-7 text-center" style={cardStyle}>
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 bg-[#1D9E751A] border border-[#1D9E7533]">
-          <CheckCircle2 size={32} className="text-[#1D9E75]" />
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 bg-[#233E581A] border border-[#233E5833]">
+          <CheckCircle2 size={32} className="text-[#233E58]" />
         </div>
         <h2 className="text-[1.25rem] font-bold text-[#0F172A] mb-2">¡Contraseña cambiada!</h2>
         <p className="text-[0.875rem] text-[#64748B]">Redirigiendo al login…</p>
@@ -142,8 +142,8 @@ export default function ResetPasswordPage() {
   // ── Estado: formulario ────────────────────────────────────────────────────
   return (
     <div className="w-full max-w-[400px] rounded-3xl p-7" style={cardStyle}>
-      <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5 bg-[#1D9E751A] border border-[#1D9E7533]">
-        <KeyRound size={22} className="text-[#1D9E75]" />
+      <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5 bg-[#233E581A] border border-[#233E5833]">
+        <KeyRound size={22} className="text-[#233E58]" />
       </div>
 
       <h1 className="text-[1.375rem] font-bold text-[#0F172A] mb-1">Nueva contraseña</h1>
@@ -173,7 +173,7 @@ export default function ResetPasswordPage() {
               onChange={handleChange}
               placeholder="Mínimo 8 caracteres"
               autoComplete="new-password"
-              className="w-full rounded-xl px-4 py-3.5 pr-12 text-[0.9375rem] text-[#0F172A] bg-white border border-[#E2E8F0] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_3px_#1D9E7520] transition-all duration-150"
+              className="w-full rounded-xl px-4 py-3.5 pr-12 text-[0.9375rem] text-[#0F172A] bg-white border border-[#E2E8F0] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all duration-150"
             />
             <button type="button" onClick={() => setShowPwd(v => !v)} tabIndex={-1}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#64748B] transition-colors">
@@ -196,7 +196,7 @@ export default function ResetPasswordPage() {
               onChange={handleChange}
               placeholder="Repite la contraseña"
               autoComplete="new-password"
-              className={`w-full rounded-xl px-4 py-3.5 pr-12 text-[0.9375rem] text-[#0F172A] bg-white border placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_3px_#1D9E7520] transition-all duration-150 ${
+              className={`w-full rounded-xl px-4 py-3.5 pr-12 text-[0.9375rem] text-[#0F172A] bg-white border placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all duration-150 ${
                 form.confirm && form.confirm !== form.password ? 'border-[#EF4444]' : 'border-[#E2E8F0]'
               }`}
             />
@@ -210,8 +210,8 @@ export default function ResetPasswordPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full mt-1 rounded-2xl py-4 text-[0.9375rem] font-bold text-white bg-[#1D9E75] hover:bg-[#18876A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
-          style={{ boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
+          className="w-full mt-1 rounded-2xl py-4 text-[0.9375rem] font-bold text-white bg-[#233E58] hover:bg-[#1C3247] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+          style={{ boxShadow: '0 4px 20px rgba(35,62,88,0.25)' }}
         >
           {loading ? 'Cambiando contraseña…' : 'Cambiar contraseña'}
         </button>

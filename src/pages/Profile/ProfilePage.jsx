@@ -21,8 +21,8 @@ import KybTab                  from './KybTab'
 // ── Entity badge ──────────────────────────────────────────────────────────────
 
 const ENTITY_COLORS = {
-  LLC: { bg: '#1D9E751A', border: '#1D9E7533', text: '#1D9E75' },
-  SpA: { bg: '#1D9E751A', border: '#1D9E7533', text: '#1D9E75' },
+  LLC: { bg: '#233E581A', border: '#233E5833', text: '#233E58' },
+  SpA: { bg: '#233E581A', border: '#233E5833', text: '#233E58' },
   SRL: { bg: '#22C55E1A', border: '#22C55E33', text: '#22C55E' },
 }
 
@@ -69,12 +69,12 @@ function Avatar({ firstName, lastName, avatarUrl, size = 72, onUpload, uploading
         <img
           src={avatarUrl}
           alt="Foto de perfil"
-          className="rounded-full border-4 border-[#1D9E75] object-cover shadow-[0_0_0_3px_#F8FAFC]"
+          className="rounded-full border-4 border-[#233E58] object-cover shadow-[0_0_0_3px_#F8FAFC]"
           style={{ width: size, height: size }}
         />
       ) : (
         <div
-          className="rounded-full border-4 border-[#1D9E75] bg-gradient-to-br from-[#1D9E75] to-[#18876A] flex items-center justify-center font-bold text-white tracking-wide shadow-[0_0_0_3px_#F8FAFC]"
+          className="rounded-full border-4 border-[#233E58] bg-gradient-to-br from-[#233E58] to-[#1C3247] flex items-center justify-center font-bold text-white tracking-wide shadow-[0_0_0_3px_#F8FAFC]"
           style={{ width: size, height: size, fontSize: size * 0.3 }}
         >
           {initials}
@@ -86,7 +86,7 @@ function Avatar({ firstName, lastName, avatarUrl, size = 72, onUpload, uploading
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
         aria-label="Cambiar foto de perfil"
-        className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#1D9E75] border-2 border-white flex items-center justify-center shadow-md transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#233E58] border-2 border-white flex items-center justify-center shadow-md transition-opacity hover:opacity-90 disabled:opacity-50"
       >
         {uploading
           ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -240,7 +240,7 @@ export default function ProfilePage() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex-1 py-2 text-[0.75rem] font-semibold rounded-xl transition-all ${
                   activeTab === tab.key
-                    ? 'bg-[#1D9E75] text-white shadow-sm'
+                    ? 'bg-[#233E58] text-white shadow-sm'
                     : 'text-[#94A3B8] hover:text-[#64748B]'
                 }`}
               >

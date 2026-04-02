@@ -207,7 +207,7 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Buscar país o moneda…"
-              className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-9 pr-4 py-2.5 text-[0.875rem] text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#1D9E75] transition-colors"
+              className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-9 pr-4 py-2.5 text-[0.875rem] text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#233E58] transition-colors"
             />
           </div>
         </div>
@@ -220,7 +220,7 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
               onClick={() => { onSelect(c); onClose() }}
               className={`w-full flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[#F8FAFC] active:bg-[#F1F5F9] ${
                 idx < filtered.length - 1 ? 'border-b border-[#E2E8F060]' : ''
-              } ${selected?.code === c.code ? 'bg-[#1D9E751A]' : ''}`}
+              } ${selected?.code === c.code ? 'bg-[#233E581A]' : ''}`}
             >
               {/* Flag */}
               <div
@@ -240,7 +240,7 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
 
               {/* Checkmark si está seleccionado */}
               {selected?.code === c.code && (
-                <div className="w-5 h-5 rounded-full bg-[#1D9E75] flex items-center justify-center flex-shrink-0">
+                <div className="w-5 h-5 rounded-full bg-[#233E58] flex items-center justify-center flex-shrink-0">
                   <Check size={11} className="text-white" />
                 </div>
               )}
@@ -402,7 +402,7 @@ export default function Step1Amount({ initialData, onNext }) {
             value={displayAmount}
             onChange={handleAmountChange}
             placeholder="0"
-            className={`w-full bg-white border border-[#E2E8F0] rounded-xl pr-16 py-4 text-[#0F172A] text-[1.5rem] font-bold focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_3px_#1D9E7520] transition-all placeholder:text-[#CBD5E1] ${origin.symbol.length > 1 ? 'pl-14' : 'pl-8'}`}
+            className={`w-full bg-white border border-[#E2E8F0] rounded-xl pr-16 py-4 text-[#0F172A] text-[1.5rem] font-bold focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all placeholder:text-[#CBD5E1] ${origin.symbol.length > 1 ? 'pl-14' : 'pl-8'}`}
           />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[0.75rem] font-semibold text-[#94A3B8]">
             {activeCurrency}
@@ -437,7 +437,7 @@ export default function Step1Amount({ initialData, onNext }) {
           <button
             type="button"
             onClick={() => setShowCountryModal(true)}
-            className="w-full flex items-center gap-3 bg-white border border-[#E2E8F0] rounded-xl px-4 py-3.5 transition-all hover:border-[#1D9E7533] active:scale-[0.99] focus:outline-none focus:border-[#1D9E75]"
+            className="w-full flex items-center gap-3 bg-white border border-[#E2E8F0] rounded-xl px-4 py-3.5 transition-all hover:border-[#233E5833] active:scale-[0.99] focus:outline-none focus:border-[#233E58]"
           >
             {/* Flag circle */}
             <div
@@ -534,7 +534,7 @@ export default function Step1Amount({ initialData, onNext }) {
                 <span className="text-[0.8125rem] text-[#64748B]">{destCountry?.name} recibe</span>
                 <div className="flex items-center gap-2">
                   {status === 'updating' && <Loader2 size={13} className="animate-spin text-[#94A3B8]" />}
-                  <span className="text-[1.125rem] font-bold text-[#1D9E75]">
+                  <span className="text-[1.125rem] font-bold text-[#233E58]">
                     {formatDestAmount(quote.destinationAmount, quote.destinationCurrency)}
                   </span>
                 </div>
@@ -677,7 +677,7 @@ export default function Step1Amount({ initialData, onNext }) {
         disabled={!canContinue}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
           canContinue
-            ? 'bg-[#1D9E75] text-white shadow-[0_4px_20px_rgba(29,158,117,0.25)] active:scale-[0.98]'
+            ? 'bg-[#233E58] text-white shadow-[0_4px_20px_rgba(35,62,88,0.25)] active:scale-[0.98]'
             : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
         }`}
       >

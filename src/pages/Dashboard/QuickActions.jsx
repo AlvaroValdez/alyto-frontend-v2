@@ -74,8 +74,8 @@ function ActionCard({ action, kycApproved, onNavigate, onSupport }) {
         isDisabled
           ? 'bg-white border-[#E2E8F0] opacity-40 cursor-not-allowed'
           : action.primary
-            ? 'bg-[#1D9E75] border-[#1D9E75] cursor-pointer hover:bg-[#18876A]'
-            : 'bg-white border-[#E2E8F0] cursor-pointer hover:bg-[#F8FAFC] hover:border-[#1D9E7533]'
+            ? 'bg-[#233E58] border-[#233E58] cursor-pointer hover:bg-[#1C3247]'
+            : 'bg-white border-[#E2E8F0] cursor-pointer hover:bg-[#F8FAFC] hover:border-[#233E5833]'
       }`}
     >
       <div

@@ -77,13 +77,13 @@ function MethodCard({ method, selected, onSelect }) {
         isDisabled
           ? 'bg-[#F8FAFC] border-[#E2E8F0] opacity-50 cursor-not-allowed'
           : selected
-            ? 'bg-[#1D9E751A] border-[#1D9E75] shadow-[0_0_0_1px_#1D9E7533]'
-            : 'bg-white border-[#E2E8F0] hover:border-[#1D9E7533] hover:bg-[#F8FAFC] cursor-pointer'
+            ? 'bg-[#233E581A] border-[#233E58] shadow-[0_0_0_1px_#233E5833]'
+            : 'bg-white border-[#E2E8F0] hover:border-[#233E5833] hover:bg-[#F8FAFC] cursor-pointer'
       }`}
     >
       {/* Logo */}
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
-        selected ? 'bg-[#1D9E751A]' : 'bg-[#F1F5F9]'
+        selected ? 'bg-[#233E581A]' : 'bg-[#F1F5F9]'
       }`}>
         {method.logo}
       </div>
@@ -96,7 +96,7 @@ function MethodCard({ method, selected, onSelect }) {
           </span>
           <span className={`inline-flex items-center gap-1 text-[0.625rem] font-semibold px-2 py-0.5 rounded-full ${
             method.badgeType === 'instant'
-              ? 'bg-[#1D9E751A] text-[#1D9E75]'
+              ? 'bg-[#233E581A] text-[#233E58]'
               : method.badgeType === 'soon'
                 ? 'bg-[#F1F5F9] text-[#94A3B8]'
                 : 'bg-[#F1F5F9] text-[#64748B]'
@@ -113,7 +113,7 @@ function MethodCard({ method, selected, onSelect }) {
       {/* Check circle */}
       <div className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all ${
         selected
-          ? 'bg-[#1D9E75] border-[#1D9E75]'
+          ? 'bg-[#233E58] border-[#233E58]'
           : 'border-[#E2E8F0] bg-transparent'
       }`}>
         {selected && <Check size={12} className="text-white" strokeWidth={3} />}
@@ -151,10 +151,10 @@ function BankInfoRow({ label, value }) {
       </div>
       <button
         onClick={handleCopy}
-        className="ml-2 flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[#E2E8F0] hover:border-[#1D9E7533] transition-colors text-[0.75rem] text-[#64748B] hover:text-[#1D9E75] flex-shrink-0"
+        className="ml-2 flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[#E2E8F0] hover:border-[#233E5833] transition-colors text-[0.75rem] text-[#64748B] hover:text-[#233E58] flex-shrink-0"
       >
         {copied
-          ? <><CheckCheck size={12} className="text-[#1D9E75]" /> Copiado</>
+          ? <><CheckCheck size={12} className="text-[#233E58]" /> Copiado</>
           : <><Copy size={12} /> Copiar</>
         }
       </button>
@@ -200,9 +200,9 @@ function ManualCLBOScreen({ stepData, onNext }) {
       </div>
 
       {/* Monto a transferir */}
-      <div className="bg-[#1D9E751A] border border-[#1D9E7533] rounded-2xl px-5 py-4 text-center">
+      <div className="bg-[#233E581A] border border-[#233E5833] rounded-2xl px-5 py-4 text-center">
         <p className="text-[0.75rem] text-[#64748B] mb-1">Monto a transferir</p>
-        <p className="text-[1.5rem] font-bold text-[#1D9E75]">
+        <p className="text-[1.5rem] font-bold text-[#233E58]">
           {Number(originAmount).toLocaleString('es-CL')} {originCurrency}
         </p>
       </div>
@@ -216,10 +216,10 @@ function ManualCLBOScreen({ stepData, onNext }) {
           </div>
           <button
             onClick={handleCopyAll}
-            className="flex items-center gap-1.5 text-[0.75rem] text-[#64748B] hover:text-[#1D9E75] transition-colors"
+            className="flex items-center gap-1.5 text-[0.75rem] text-[#64748B] hover:text-[#233E58] transition-colors"
           >
             {copiedAll
-              ? <><CheckCheck size={12} className="text-[#1D9E75]" /> Copiado</>
+              ? <><CheckCheck size={12} className="text-[#233E58]" /> Copiado</>
               : <><Copy size={12} /> Copiar todo</>
             }
           </button>
@@ -242,7 +242,7 @@ function ManualCLBOScreen({ stepData, onNext }) {
       {/* Botón continuar */}
       <button
         onClick={() => onNext({ payinMethod: 'manual', payinVariant: 'manual' })}
-        className="w-full py-4 rounded-2xl text-[0.9375rem] font-bold bg-[#1D9E75] text-white shadow-[0_4px_20px_rgba(29,158,117,0.25)] active:scale-[0.98] transition-all duration-150"
+        className="w-full py-4 rounded-2xl text-[0.9375rem] font-bold bg-[#233E58] text-white shadow-[0_4px_20px_rgba(35,62,88,0.25)] active:scale-[0.98] transition-all duration-150"
       >
         Continuar
       </button>
@@ -312,7 +312,7 @@ export default function Step2PayinMethod({ onNext, originCountry = 'CL', stepDat
         disabled={!selected}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
           selected
-            ? 'bg-[#1D9E75] text-white shadow-[0_4px_20px_rgba(29,158,117,0.25)] active:scale-[0.98]'
+            ? 'bg-[#233E58] text-white shadow-[0_4px_20px_rgba(35,62,88,0.25)] active:scale-[0.98]'
             : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
         }`}
       >

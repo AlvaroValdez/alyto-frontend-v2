@@ -60,7 +60,7 @@ export default function AppLayout() {
           {role === 'admin' && (
             <Link
               to="/admin"
-              className="flex items-center gap-1.5 px-3 h-8 rounded-full border border-[#1D9E7533] bg-[#1D9E751A] text-[#1D9E75] text-[0.75rem] font-semibold no-underline transition-all hover:bg-[#1D9E7530]"
+              className="flex items-center gap-1.5 px-3 h-8 rounded-full border border-[#233E5833] bg-[#233E581A] text-[#233E58] text-[0.75rem] font-semibold no-underline transition-all hover:bg-[#233E5830]"
             >
               <Shield size={12} />
               Backoffice
@@ -82,8 +82,8 @@ export default function AppLayout() {
 
           <Link
             to="/profile"
-            className="w-9 h-9 rounded-full border-2 border-[#1D9E75] flex items-center justify-center text-white text-xs font-bold tracking-wide no-underline flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #1D9E75, #18876A)' }}
+            className="w-9 h-9 rounded-full border-2 border-[#233E58] flex items-center justify-center text-white text-xs font-bold tracking-wide no-underline flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #233E58, #1C3247)' }}
           >
             {firstName ? firstName.charAt(0).toUpperCase() : 'A'}
           </Link>
@@ -117,12 +117,12 @@ export default function AppLayout() {
             >
               {/* Active: teal pill background */}
               <div className={`flex items-center justify-center w-10 h-6 rounded-full transition-all ${
-                active ? 'bg-[#1D9E751A]' : ''
+                active ? 'bg-[#233E581A]' : ''
               }`}>
-                <Icon size={19} className={active ? 'text-[#1D9E75]' : 'text-[#94A3B8]'} />
+                <Icon size={19} className={active ? 'text-[#233E58]' : 'text-[#94A3B8]'} />
               </div>
               <span className={`text-[0.5625rem] font-semibold transition-colors ${
-                active ? 'text-[#1D9E75]' : 'text-[#94A3B8]'
+                active ? 'text-[#233E58]' : 'text-[#94A3B8]'
               }`}>
                 {label}
               </span>

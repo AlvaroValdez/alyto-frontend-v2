@@ -18,7 +18,7 @@ function Toggle({ enabled, onChange, disabled }) {
       disabled={disabled}
       className={`relative w-11 h-6 rounded-full transition-all duration-200 flex-shrink-0 ${
         disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-      } ${enabled ? 'bg-[#1D9E75]' : 'bg-[#E2E8F0]'}`}
+      } ${enabled ? 'bg-[#233E58]' : 'bg-[#E2E8F0]'}`}
       aria-checked={enabled}
       role="switch"
     >
@@ -44,7 +44,7 @@ function NotifRow({ icon: Icon, title, description, enabled, saving, onChange, d
         <p className="text-[0.75rem] text-[#64748B] mt-0.5 leading-snug">{description}</p>
       </div>
       <div className="flex items-center gap-2 mt-0.5">
-        {saving && <Loader2 size={12} className="text-[#1D9E75] animate-spin" />}
+        {saving && <Loader2 size={12} className="text-[#233E58] animate-spin" />}
         <Toggle enabled={enabled} onChange={onChange} disabled={disabled || saving} />
       </div>
     </div>

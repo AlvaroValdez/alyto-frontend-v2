@@ -160,7 +160,7 @@ export default function RecentTransactions({ transactions, loading }) {
         <p className="text-base font-bold text-[#0F172A]">Transferencias recientes</p>
         <Link
           to="/transactions"
-          className="text-[0.8125rem] font-medium text-[#1D9E75] no-underline"
+          className="text-[0.8125rem] font-medium text-[#233E58] no-underline"
         >
           Ver todas
         </Link>

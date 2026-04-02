@@ -77,8 +77,8 @@ export default function SplashScreen({ isLoading }) {
             inset:        0,
             borderRadius: '50%',
             border:       '3px solid transparent',
-            borderTopColor:  '#1D9E75',
-            borderRightColor: '#1D9E7566',
+            borderTopColor:  '#233E58',
+            borderRightColor: '#233E5866',
             animation:    'splashSpin 0.9s linear infinite',
           }}
         />

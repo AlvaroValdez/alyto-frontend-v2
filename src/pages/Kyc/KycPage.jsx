@@ -41,11 +41,11 @@ function IntroState({ entName, entJuris, entity, terms, onStart, loading, error,
           className="w-20 h-20 rounded-[22px] flex items-center justify-center mb-5"
           style={{
             background: 'linear-gradient(135deg, #F0FDF9 0%, #FFFFFF 100%)',
-            border:     '1.5px solid #1D9E7533',
-            boxShadow:  '0 8px 32px rgba(29,158,117,0.12), inset 0 1px 0 rgba(29,158,117,0.1)',
+            border:     '1.5px solid #233E5833',
+            boxShadow:  '0 8px 32px rgba(35,62,88,0.12), inset 0 1px 0 rgba(35,62,88,0.1)',
           }}
         >
-          <ScanFace size={36} className="text-[#1D9E75]" />
+          <ScanFace size={36} className="text-[#233E58]" />
         </div>
         <h2 className="text-[1.375rem] font-bold text-[#0F172A] text-center mb-2">Verifica tu identidad</h2>
         <p className="text-[0.875rem] text-[#64748B] text-center leading-relaxed px-2">
@@ -68,7 +68,7 @@ function IntroState({ entName, entJuris, entity, terms, onStart, loading, error,
           'Buena iluminación',
         ].map((item, i) => (
           <div key={i} className="flex items-start gap-2.5 mb-2 last:mb-0">
-            <CheckCircle2 size={14} className="text-[#1D9E75] flex-shrink-0 mt-0.5" />
+            <CheckCircle2 size={14} className="text-[#233E58] flex-shrink-0 mt-0.5" />
             <p className="text-[0.8125rem] text-[#64748B]">{item}</p>
           </div>
         ))}
@@ -85,7 +85,7 @@ function IntroState({ entName, entJuris, entity, terms, onStart, loading, error,
             className="flex-1 flex items-center gap-2 rounded-2xl px-3 py-3"
             style={{ background: 'white', border: '1px solid #E2E8F0' }}
           >
-            <Icon size={14} className="text-[#1D9E75] flex-shrink-0" />
+            <Icon size={14} className="text-[#233E58] flex-shrink-0" />
             <p className="text-[0.6875rem] font-medium text-[#64748B]">{label}</p>
           </div>
         ))}
@@ -94,11 +94,11 @@ function IntroState({ entName, entJuris, entity, terms, onStart, loading, error,
       {/* ToS */}
       <label
         className={`flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-all duration-150
-          ${tosAccepted ? 'border-[#1D9E7533] bg-[#1D9E7508]' : 'border-[#E2E8F0] bg-white hover:border-[#1D9E7533]'}`}
+          ${tosAccepted ? 'border-[#233E5833] bg-[#233E5808]' : 'border-[#E2E8F0] bg-white hover:border-[#233E5833]'}`}
       >
         <div
           className={`w-5 h-5 rounded-md flex items-center justify-center border-2 flex-shrink-0 mt-0.5 transition-all duration-150
-            ${tosAccepted ? 'bg-[#1D9E75] border-[#1D9E75]' : 'bg-transparent border-[#CBD5E1]'}`}
+            ${tosAccepted ? 'bg-[#233E58] border-[#233E58]' : 'bg-transparent border-[#CBD5E1]'}`}
           onClick={() => setTosAccepted(v => !v)}
         >
           {tosAccepted && (
@@ -111,7 +111,7 @@ function IntroState({ entName, entJuris, entity, terms, onStart, loading, error,
         <div>
           <p className="text-[0.8125rem] font-semibold text-[#0F172A] leading-snug">
             He leído y acepto los Términos de Servicio de{' '}
-            <span className="text-[#1D9E75]">{entName}</span>
+            <span className="text-[#233E58]">{entName}</span>
           </p>
           <p className="text-[0.6875rem] text-[#94A3B8] mt-1">
             {entity} · {entJuris}
@@ -132,9 +132,9 @@ function IntroState({ entName, entJuris, entity, terms, onStart, loading, error,
         disabled={!tosAccepted || loading}
         className="w-full py-4 rounded-2xl font-bold text-[0.9375rem] flex items-center justify-center gap-2.5 transition-all duration-150"
         style={{
-          background: tosAccepted && !loading ? '#1D9E75' : 'transparent',
+          background: tosAccepted && !loading ? '#233E58' : 'transparent',
           color:      tosAccepted && !loading ? 'white' : '#94A3B8',
-          boxShadow:  tosAccepted && !loading ? '0 4px 20px rgba(29,158,117,0.3)' : 'none',
+          boxShadow:  tosAccepted && !loading ? '0 4px 20px rgba(35,62,88,0.3)' : 'none',
           border:     tosAccepted && !loading ? 'none' : '2px dashed #CBD5E1',
           cursor:     tosAccepted && !loading ? 'pointer' : 'not-allowed',
         }}
@@ -165,7 +165,7 @@ function PendingState({ onDashboard, timedOut, onManualCheck }) {
       >
         {timedOut
           ? <AlertCircle size={36} className="text-[#64748B]" />
-          : <Loader2 size={36} className="text-[#1D9E75] animate-spin" />
+          : <Loader2 size={36} className="text-[#233E58] animate-spin" />
         }
       </div>
       <div className="text-center">
@@ -194,7 +194,7 @@ function PendingState({ onDashboard, timedOut, onManualCheck }) {
         <button
           onClick={onManualCheck}
           className="w-full py-3.5 rounded-2xl font-semibold text-[0.875rem] transition-colors"
-          style={{ background: '#1D9E75', color: 'white', boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
+          style={{ background: '#233E58', color: 'white', boxShadow: '0 4px 20px rgba(35,62,88,0.25)' }}
         >
           ¿Ya completaste la verificación? Verificar estado
         </button>
@@ -218,12 +218,12 @@ function ApprovedState({ onSend }) {
       <div
         className="w-20 h-20 rounded-full flex items-center justify-center"
         style={{
-          background: 'radial-gradient(circle, #1D9E751A 0%, #1D9E7506 100%)',
-          border:     '2px solid #1D9E7533',
-          boxShadow:  '0 0 40px rgba(29,158,117,0.15)',
+          background: 'radial-gradient(circle, #233E581A 0%, #233E5806 100%)',
+          border:     '2px solid #233E5833',
+          boxShadow:  '0 0 40px rgba(35,62,88,0.15)',
         }}
       >
-        <ShieldCheck size={36} className="text-[#1D9E75]" />
+        <ShieldCheck size={36} className="text-[#233E58]" />
       </div>
       <div className="text-center">
         <h2 className="text-[1.5rem] font-bold text-[#0F172A] mb-2">¡Identidad verificada!</h2>
@@ -235,8 +235,8 @@ function ApprovedState({ onSend }) {
         onClick={onSend}
         className="w-full py-4 rounded-2xl font-bold text-[0.9375rem] text-white"
         style={{
-          background: '#1D9E75',
-          boxShadow:  '0 4px 20px rgba(29,158,117,0.3)',
+          background: '#233E58',
+          boxShadow:  '0 4px 20px rgba(35,62,88,0.3)',
         }}
       >
         Empezar a enviar
@@ -276,7 +276,7 @@ function RejectedState({ onRetry }) {
         <button
           onClick={onRetry}
           className="w-full py-4 rounded-2xl font-bold text-[0.9375rem] text-white"
-          style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.3)' }}
+          style={{ background: '#233E58', boxShadow: '0 4px 20px rgba(35,62,88,0.3)' }}
         >
           Intentar de nuevo
         </button>
@@ -474,9 +474,9 @@ export default function KycPage() {
 
       {/* Banner de bienvenida (viene desde /register) */}
       {welcomeMsg && (
-        <div className="mx-5 mt-4 flex items-start gap-3 p-4 rounded-2xl bg-[#1D9E7508] border border-[#1D9E7533]">
-          <CheckCircle2 size={16} className="text-[#1D9E75] flex-shrink-0 mt-0.5" />
-          <p className="text-[0.8125rem] text-[#1D9E75]">{welcomeMsg}</p>
+        <div className="mx-5 mt-4 flex items-start gap-3 p-4 rounded-2xl bg-[#233E5808] border border-[#233E5833]">
+          <CheckCircle2 size={16} className="text-[#233E58] flex-shrink-0 mt-0.5" />
+          <p className="text-[0.8125rem] text-[#233E58]">{welcomeMsg}</p>
         </div>
       )}
 

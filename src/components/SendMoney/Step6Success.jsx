@@ -25,14 +25,14 @@ export default function Step6Success({ stepData, onReset }) {
       <div className="relative">
         <div
           className="w-24 h-24 rounded-full flex items-center justify-center"
-          style={{ background: 'radial-gradient(circle, #1D9E7525 0%, #1D9E7508 60%, transparent 75%)' }}
+          style={{ background: 'radial-gradient(circle, #233E5825 0%, #233E5808 60%, transparent 75%)' }}
         >
-          <div className="w-20 h-20 rounded-full bg-[#1D9E751A] border-2 border-[#1D9E7533] flex items-center justify-center animate-[bounce_0.5s_ease-out]">
+          <div className="w-20 h-20 rounded-full bg-[#233E581A] border-2 border-[#233E5833] flex items-center justify-center animate-[bounce_0.5s_ease-out]">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="11" stroke="#1D9E75" strokeWidth="1.5" />
+              <circle cx="12" cy="12" r="11" stroke="#233E58" strokeWidth="1.5" />
               <path
                 d="M7.5 12L10.5 15L16.5 9"
-                stroke="#1D9E75"
+                stroke="#233E58"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -63,7 +63,7 @@ export default function Step6Success({ stepData, onReset }) {
         {/* Monto destacado */}
         <div
           className="px-5 py-4 text-center"
-          style={{ background: 'linear-gradient(135deg, #1D9E7510 0%, #1D9E7505 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #233E5810 0%, #233E5805 100%)' }}
         >
           <p className="text-[0.6875rem] font-semibold text-[#64748B] uppercase tracking-wide mb-1">
             Monto enviado
@@ -72,7 +72,7 @@ export default function Step6Success({ stepData, onReset }) {
             ${Number(originAmount || 0).toLocaleString('es-CL')} CLP
           </p>
           {quote?.destinationAmount && (
-            <p className="text-[0.875rem] font-semibold text-[#1D9E75] mt-0.5">
+            <p className="text-[0.875rem] font-semibold text-[#233E58] mt-0.5">
               ≈ {Number(quote.destinationAmount).toLocaleString('es-CL')} {quote.destinationCurrency}
             </p>
           )}
@@ -108,7 +108,7 @@ export default function Step6Success({ stepData, onReset }) {
       <div className="w-full flex flex-col gap-3">
         <button
           onClick={() => navigate('/')}
-          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#1D9E75] text-white text-[0.9375rem] font-bold shadow-[0_4px_20px_rgba(29,158,117,0.25)] active:scale-[0.98] transition-all"
+          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#233E58] text-white text-[0.9375rem] font-bold shadow-[0_4px_20px_rgba(35,62,88,0.25)] active:scale-[0.98] transition-all"
         >
           <ArrowUpRight size={18} />
           Ver mis transacciones
@@ -116,7 +116,7 @@ export default function Step6Success({ stepData, onReset }) {
 
         <button
           onClick={onReset}
-          className="w-full py-3.5 rounded-2xl bg-transparent border border-[#E2E8F0] text-[#64748B] text-[0.9375rem] font-semibold hover:border-[#1D9E7533] hover:text-[#0F172A] transition-all"
+          className="w-full py-3.5 rounded-2xl bg-transparent border border-[#E2E8F0] text-[#64748B] text-[0.9375rem] font-semibold hover:border-[#233E5833] hover:text-[#0F172A] transition-all"
         >
           Enviar otro pago
         </button>

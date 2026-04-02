@@ -184,7 +184,7 @@ function StrengthBar({ password }) {
           className="h-1 flex-1 rounded-full transition-colors duration-200"
           style={{
             background: password.length >= (i + 1) * 3
-              ? password.length >= 12 ? '#1D9E75'
+              ? password.length >= 12 ? '#233E58'
                 : password.length >= 8  ? '#94A3B8'
                 : '#EF4444'
               : '#E2E8F0',
@@ -201,7 +201,7 @@ const INPUT_CLASS = `
   w-full rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0F172A]
   bg-white border border-[#E2E8F0]
   placeholder:text-[#94A3B8]
-  focus:outline-none focus:border-[#1D9E75]
+  focus:outline-none focus:border-[#233E58]
   transition-colors duration-150
 `
 
@@ -245,14 +245,14 @@ function TermsModal({ country, onAccept, onClose }) {
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(29,158,117,0.10)' }}
+              style={{ background: 'rgba(35,62,88,0.10)' }}
             >
-              <FileText size={18} className="text-[#1D9E75]" />
+              <FileText size={18} className="text-[#233E58]" />
             </div>
             <div>
               <h2 className="text-[1.0625rem] font-bold text-[#0F172A]">{terms.title}</h2>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[0.6875rem] font-semibold text-[#1D9E75] bg-[#1D9E751A] px-2 py-0.5 rounded-full">
+                <span className="text-[0.6875rem] font-semibold text-[#233E58] bg-[#233E581A] px-2 py-0.5 rounded-full">
                   {terms.badge}
                 </span>
                 <span className="text-[0.6875rem] text-[#64748B]">{terms.entity}</span>
@@ -271,12 +271,12 @@ function TermsModal({ country, onAccept, onClose }) {
         <div className="px-6 pt-4 pb-2 flex-shrink-0">
           <div
             className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl"
-            style={{ background: 'rgba(29,158,117,0.07)', border: '1px solid rgba(29,158,117,0.20)' }}
+            style={{ background: 'rgba(35,62,88,0.07)', border: '1px solid rgba(35,62,88,0.20)' }}
           >
-            <CheckCircle2 size={13} className="text-[#1D9E75] flex-shrink-0" />
+            <CheckCircle2 size={13} className="text-[#233E58] flex-shrink-0" />
             <p className="text-[0.8125rem] text-[#64748B]">
               Regulado bajo{' '}
-              <span className="text-[#1D9E75] font-semibold">{terms.regulation}</span>
+              <span className="text-[#233E58] font-semibold">{terms.regulation}</span>
               {' '}· <span className="text-[#0F172A] font-semibold">{terms.entity}</span>
             </p>
           </div>
@@ -332,7 +332,7 @@ function TermsModal({ country, onAccept, onClose }) {
         >
           <button
             onClick={onClose}
-            className="flex-1 rounded-2xl py-3.5 text-[0.875rem] font-semibold text-[#64748B] border border-[#E2E8F0] hover:border-[#1D9E7533] hover:text-[#0F172A] transition-colors"
+            className="flex-1 rounded-2xl py-3.5 text-[0.875rem] font-semibold text-[#64748B] border border-[#E2E8F0] hover:border-[#233E5833] hover:text-[#0F172A] transition-colors"
           >
             Rechazar
           </button>
@@ -341,9 +341,9 @@ function TermsModal({ country, onAccept, onClose }) {
             disabled={!hasScrolled}
             className="flex-1 rounded-2xl py-3.5 text-[0.9375rem] font-bold transition-all"
             style={{
-              background: hasScrolled ? '#1D9E75' : '#E2E8F0',
+              background: hasScrolled ? '#233E58' : '#E2E8F0',
               color:      hasScrolled ? '#FFFFFF'  : '#94A3B8',
-              boxShadow:  hasScrolled ? '0 4px 20px rgba(29,158,117,0.25)' : 'none',
+              boxShadow:  hasScrolled ? '0 4px 20px rgba(35,62,88,0.25)' : 'none',
               cursor:     hasScrolled ? 'pointer' : 'not-allowed',
             }}
             title={!hasScrolled ? 'Lee los términos completos para continuar' : undefined}
@@ -497,8 +497,8 @@ export default function RegisterPage() {
           </div>
           {/* Barra de progreso */}
           <div className="flex gap-2">
-            <div className={`h-1.5 w-10 rounded-full ${step >= 1 ? 'bg-[#1D9E75]' : 'bg-[#E2E8F0]'}`} />
-            <div className={`h-1.5 w-10 rounded-full ${step >= 2 ? 'bg-[#1D9E75]' : 'bg-[#E2E8F0]'}`} />
+            <div className={`h-1.5 w-10 rounded-full ${step >= 1 ? 'bg-[#233E58]' : 'bg-[#E2E8F0]'}`} />
+            <div className={`h-1.5 w-10 rounded-full ${step >= 2 ? 'bg-[#233E58]' : 'bg-[#E2E8F0]'}`} />
           </div>
         </div>
 
@@ -551,7 +551,7 @@ export default function RegisterPage() {
                 <select
                   name="phonePrefix" value={form.phonePrefix}
                   onChange={handleChange}
-                  className="rounded-xl px-3 py-3.5 text-[0.9375rem] text-[#0F172A] bg-white border border-[#E2E8F0] focus:outline-none focus:border-[#1D9E75] transition-colors cursor-pointer appearance-none min-w-[90px]"
+                  className="rounded-xl px-3 py-3.5 text-[0.9375rem] text-[#0F172A] bg-white border border-[#E2E8F0] focus:outline-none focus:border-[#233E58] transition-colors cursor-pointer appearance-none min-w-[90px]"
                   style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
                 >
                   {PHONE_PREFIXES.map(p => (
@@ -573,7 +573,7 @@ export default function RegisterPage() {
               <label className={LABEL_CLASS}>País de residencia <span className="text-[#EF4444]">*</span></label>
               <select
                 name="country" value={form.country} onChange={handleChange}
-                className="w-full rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0F172A] bg-white border border-[#E2E8F0] focus:outline-none focus:border-[#1D9E75] transition-colors cursor-pointer appearance-none"
+                className="w-full rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0F172A] bg-white border border-[#E2E8F0] focus:outline-none focus:border-[#233E58] transition-colors cursor-pointer appearance-none"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center' }}
               >
                 <option value="" disabled style={{ color: '#94A3B8' }}>Selecciona tu país</option>
@@ -587,15 +587,15 @@ export default function RegisterPage() {
                 return (
                   <div
                     className="flex items-start gap-3 mt-2 px-3.5 py-3 rounded-xl border"
-                    style={{ background: 'rgba(29,158,117,0.06)', borderColor: 'rgba(29,158,117,0.20)' }}
+                    style={{ background: 'rgba(35,62,88,0.06)', borderColor: 'rgba(35,62,88,0.20)' }}
                   >
                     <span className="text-xl leading-none flex-shrink-0">{ei.flag}</span>
                     <div>
-                      <p className="text-[0.8125rem] font-semibold text-[#1D9E75] leading-tight">
+                      <p className="text-[0.8125rem] font-semibold text-[#233E58] leading-tight">
                         Operarás con {ei.label} ({ei.detail}) · {ei.currency}
                       </p>
                       <p className="text-[0.6875rem] text-[#64748B] mt-0.5">
-                        Tu moneda de origen será <span className="text-[#1D9E75] font-semibold">{ei.currency}</span>
+                        Tu moneda de origen será <span className="text-[#233E58] font-semibold">{ei.currency}</span>
                       </p>
                     </div>
                   </div>
@@ -605,8 +605,8 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              className="w-full mt-2 rounded-2xl py-4 text-[0.9375rem] font-bold bg-[#1D9E75] text-white hover:bg-[#178a65] transition-colors"
-              style={{ boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
+              className="w-full mt-2 rounded-2xl py-4 text-[0.9375rem] font-bold bg-[#233E58] text-white hover:bg-[#178a65] transition-colors"
+              style={{ boxShadow: '0 4px 20px rgba(35,62,88,0.25)' }}
             >
               Continuar →
             </button>
@@ -667,7 +667,7 @@ export default function RegisterPage() {
               checked={form.ageChecked}
               onChange={handleChange}
             >
-              Tengo <span className="text-[#1D9E75] font-semibold">18 años o más</span>
+              Tengo <span className="text-[#233E58] font-semibold">18 años o más</span>
             </CheckboxItem>
 
             {/* Botones */}
@@ -675,7 +675,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => { setStep(1); setError('') }}
-                className="flex items-center gap-2 px-5 py-4 rounded-2xl text-[0.875rem] font-semibold text-[#64748B] border border-[#E2E8F0] hover:border-[#1D9E75] hover:text-[#0F172A] transition-colors"
+                className="flex items-center gap-2 px-5 py-4 rounded-2xl text-[0.875rem] font-semibold text-[#64748B] border border-[#E2E8F0] hover:border-[#233E58] hover:text-[#0F172A] transition-colors"
               >
                 <ArrowLeft size={16} />
                 Volver
@@ -683,8 +683,8 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 rounded-2xl py-4 text-[0.9375rem] font-bold bg-[#1D9E75] text-white hover:bg-[#178a65] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                style={{ boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
+                className="flex-1 rounded-2xl py-4 text-[0.9375rem] font-bold bg-[#233E58] text-white hover:bg-[#178a65] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                style={{ boxShadow: '0 4px 20px rgba(35,62,88,0.25)' }}
               >
                 {loading ? 'Creando cuenta…' : 'Crear cuenta'}
               </button>
@@ -695,7 +695,7 @@ export default function RegisterPage() {
         {/* Footer */}
         <p className="text-center text-[0.8125rem] text-[#64748B] mt-6">
           ¿Ya tienes cuenta?{' '}
-          <Link to="/login" className="text-[#1D9E75] font-semibold hover:text-[#178a65] transition-colors">
+          <Link to="/login" className="text-[#233E58] font-semibold hover:text-[#178a65] transition-colors">
             Inicia sesión
           </Link>
         </p>
@@ -723,12 +723,12 @@ function TermsCheckboxItem({ checked, onRequestOpen, onUncheck }) {
       tabIndex={0}
       onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); handleClick() } }}
       className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all duration-150 select-none
-        ${checked ? 'border-[#1D9E7533] bg-[#1D9E7508]' : 'border-[#E2E8F0] bg-[#F8FAFC] hover:border-[#1D9E7533]'}`}
+        ${checked ? 'border-[#233E5833] bg-[#233E5808]' : 'border-[#E2E8F0] bg-[#F8FAFC] hover:border-[#233E5833]'}`}
     >
       {/* Checkbox visual */}
       <div
         className={`w-5 h-5 rounded-md flex items-center justify-center border-2 flex-shrink-0 mt-0.5 transition-all duration-150
-          ${checked ? 'bg-[#1D9E75] border-[#1D9E75]' : 'bg-transparent border-[#94A3B8]'}`}
+          ${checked ? 'bg-[#233E58] border-[#233E58]' : 'bg-transparent border-[#94A3B8]'}`}
       >
         {checked && (
           <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
@@ -741,13 +741,13 @@ function TermsCheckboxItem({ checked, onRequestOpen, onUncheck }) {
       <span className="text-[0.8125rem] text-[#64748B] leading-snug">
         He leído y acepto los{' '}
         <span
-          className="text-[#1D9E75] font-semibold underline underline-offset-2 decoration-[#1D9E7533]"
+          className="text-[#233E58] font-semibold underline underline-offset-2 decoration-[#233E5833]"
           onClick={e => { e.stopPropagation(); onRequestOpen() }}
         >
           Términos de Servicio
         </span>
         {' '}y la{' '}
-        <span className="text-[#1D9E75] font-semibold">Política de Privacidad</span>
+        <span className="text-[#233E58] font-semibold">Política de Privacidad</span>
         {!checked && (
           <span className="block mt-1 text-[0.6875rem] text-[#94A3B8]">
             Haz clic para leer los términos antes de aceptar
@@ -764,11 +764,11 @@ function CheckboxItem({ name, checked, onChange, children }) {
   return (
     <label
       className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all duration-150
-        ${checked ? 'border-[#1D9E7533] bg-[#1D9E7508]' : 'border-[#E2E8F0] bg-[#F8FAFC] hover:border-[#1D9E7533]'}`}
+        ${checked ? 'border-[#233E5833] bg-[#233E5808]' : 'border-[#E2E8F0] bg-[#F8FAFC] hover:border-[#233E5833]'}`}
     >
       <div
         className={`w-5 h-5 rounded-md flex items-center justify-center border-2 flex-shrink-0 mt-0.5 transition-all duration-150
-          ${checked ? 'bg-[#1D9E75] border-[#1D9E75]' : 'bg-transparent border-[#94A3B8]'}`}
+          ${checked ? 'bg-[#233E58] border-[#233E58]' : 'bg-transparent border-[#94A3B8]'}`}
       >
         {checked && (
           <svg width="10" height="8" viewBox="0 0 10 8" fill="none">

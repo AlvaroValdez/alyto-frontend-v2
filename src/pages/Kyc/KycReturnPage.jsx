@@ -87,16 +87,16 @@ export default function KycReturnPage() {
         className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
         style={
           status === 'approved'
-            ? { background: '#1D9E751A', border: '2px solid #1D9E7533' }
+            ? { background: '#233E581A', border: '2px solid #233E5833' }
             : status === 'rejected'
             ? { background: '#EF44441A', border: '2px solid #EF444433' }
             : { background: '#F8FAFC', border: '2px solid #E2E8F0' }
         }
       >
-        {status === 'approved' && <ShieldCheck size={36} className="text-[#1D9E75]" />}
+        {status === 'approved' && <ShieldCheck size={36} className="text-[#233E58]" />}
         {status === 'rejected' && <AlertCircle size={36} className="text-[#EF4444]" />}
         {(status === 'checking' || status === 'timeout') && (
-          <Loader2 size={36} className={`text-[#1D9E75] ${status === 'checking' ? 'animate-spin' : ''}`} />
+          <Loader2 size={36} className={`text-[#233E58] ${status === 'checking' ? 'animate-spin' : ''}`} />
         )}
       </div>
 
@@ -139,7 +139,7 @@ export default function KycReturnPage() {
         <button
           onClick={() => navigate('/kyc', { replace: true })}
           className="w-full max-w-[320px] py-4 rounded-2xl font-bold text-[0.9375rem] text-white"
-          style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
+          style={{ background: '#233E58', boxShadow: '0 4px 20px rgba(35,62,88,0.25)' }}
         >
           Ir a mi verificación
         </button>

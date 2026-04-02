@@ -217,7 +217,7 @@ function TabCobrar({ user }) {
         {/* Monto + nombre */}
         <div className="text-center">
           {qrData.amount != null && (
-            <p className="text-[1.75rem] font-bold text-[#1D9E75]">Bs. {formatBOB(qrData.amount)}</p>
+            <p className="text-[1.75rem] font-bold text-[#233E58]">Bs. {formatBOB(qrData.amount)}</p>
           )}
           <p className="text-[0.875rem] text-[#64748B] mt-0.5">
             {user.firstName} {user.lastName}
@@ -230,19 +230,19 @@ function TabCobrar({ user }) {
           <button
             onClick={handleShare}
             className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-[0.875rem] font-semibold text-white"
-            style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
+            style={{ background: '#233E58', boxShadow: '0 4px 20px rgba(35,62,88,0.25)' }}
           >
             <Share2 size={16} /> Compartir
           </button>
           <button
             onClick={handleDownload}
-            className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[0.875rem] font-semibold bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#1D9E7533] hover:text-[#1D9E75] transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[0.875rem] font-semibold bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#233E5833] hover:text-[#233E58] transition-colors"
           >
             <Download size={16} />
           </button>
           <button
             onClick={handleReset}
-            className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[0.875rem] font-semibold bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#1D9E7533] hover:text-[#1D9E75] transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[0.875rem] font-semibold bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#233E5833] hover:text-[#233E58] transition-colors"
           >
             <RefreshCw size={16} />
           </button>
@@ -265,7 +265,7 @@ function TabCobrar({ user }) {
             onClick={() => setFixedAmount(val)}
             className={`flex-1 py-2 rounded-lg text-[0.8125rem] font-semibold transition-all ${
               fixedAmount === val
-                ? 'bg-[#1D9E75] text-white shadow-sm'
+                ? 'bg-[#233E58] text-white shadow-sm'
                 : 'text-[#64748B] hover:text-[#0F172A]'
             }`}
           >
@@ -289,7 +289,7 @@ function TabCobrar({ user }) {
               value={amount}
               onChange={e => setAmount(e.target.value)}
               placeholder="0.00"
-              className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-12 pr-4 py-4 text-[#0F172A] text-[1.5rem] font-bold focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_3px_#1D9E7520] transition-all placeholder:text-[#CBD5E1]"
+              className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-12 pr-4 py-4 text-[#0F172A] text-[1.5rem] font-bold focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all placeholder:text-[#CBD5E1]"
             />
           </div>
         </div>
@@ -306,7 +306,7 @@ function TabCobrar({ user }) {
           onChange={e => setDescription(e.target.value)}
           maxLength={80}
           placeholder="Ej: café, servicio, producto..."
-          className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.9375rem] focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_3px_#1D9E7520] transition-all placeholder:text-[#CBD5E1]"
+          className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.9375rem] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all placeholder:text-[#CBD5E1]"
         />
       </div>
 
@@ -321,7 +321,7 @@ function TabCobrar({ user }) {
         onClick={handleGenerate}
         disabled={loading}
         className="w-full py-4 rounded-2xl text-[0.9375rem] font-bold flex items-center justify-center gap-2 text-white transition-all disabled:opacity-50"
-        style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
+        style={{ background: '#233E58', boxShadow: '0 4px 20px rgba(35,62,88,0.25)' }}
       >
         {loading ? <Loader2 size={18} className="animate-spin" /> : <QrCode size={18} />}
         {loading ? 'Generando...' : 'Generar QR'}
@@ -442,11 +442,11 @@ function TabPagar() {
   if (result) {
     return (
       <div className="flex flex-col items-center gap-5 px-4 py-6 text-center">
-        <div className="w-16 h-16 rounded-full flex items-center justify-center bg-[#1D9E751A] border border-[#1D9E7533]">
-          <CheckCircle2 size={32} className="text-[#1D9E75]" />
+        <div className="w-16 h-16 rounded-full flex items-center justify-center bg-[#233E581A] border border-[#233E5833]">
+          <CheckCircle2 size={32} className="text-[#233E58]" />
         </div>
         <div>
-          <p className="text-[1.5rem] font-bold text-[#1D9E75]">Bs. {formatBOB(result.amount)}</p>
+          <p className="text-[1.5rem] font-bold text-[#233E58]">Bs. {formatBOB(result.amount)}</p>
           <p className="text-[0.875rem] text-[#64748B] mt-1">Enviado a {result.recipient}</p>
           <p className="text-[0.75rem] text-[#94A3B8] mt-0.5">
             Saldo actual: Bs. {formatBOB(result.balanceAfter)}
@@ -454,7 +454,7 @@ function TabPagar() {
         </div>
         <button
           onClick={handleReset}
-          className="w-full py-3 rounded-2xl text-[0.875rem] font-semibold bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#1D9E7533] hover:text-[#1D9E75] transition-colors"
+          className="w-full py-3 rounded-2xl text-[0.875rem] font-semibold bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#233E5833] hover:text-[#233E58] transition-colors"
         >
           Nuevo pago
         </button>
@@ -473,7 +473,7 @@ function TabPagar() {
           {preview.type !== 'deposit' && preview.amount != null && (
             <>
               <p className="text-[0.75rem] text-[#94A3B8] mt-3 mb-1">Monto</p>
-              <p className="text-[1.75rem] font-bold text-[#1D9E75]">Bs. {formatBOB(preview.amount)}</p>
+              <p className="text-[1.75rem] font-bold text-[#233E58]">Bs. {formatBOB(preview.amount)}</p>
             </>
           )}
 
@@ -489,7 +489,7 @@ function TabPagar() {
                   value={depositAmt}
                   onChange={e => setDepositAmt(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3 text-[#0F172A] text-[1.25rem] font-bold focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_3px_#1D9E7520] placeholder:text-[#CBD5E1]"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3 text-[#0F172A] text-[1.25rem] font-bold focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] placeholder:text-[#CBD5E1]"
                 />
               </div>
             </div>
@@ -527,7 +527,7 @@ function TabPagar() {
             onClick={handlePay}
             disabled={paying || (preview.type === 'deposit' && !depositAmt)}
             className="flex-1 py-3 rounded-2xl text-[0.875rem] font-semibold flex items-center justify-center gap-2 text-white transition-all disabled:opacity-50"
-            style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
+            style={{ background: '#233E58', boxShadow: '0 4px 20px rgba(35,62,88,0.25)' }}
           >
             {paying ? <Loader2 size={16} className="animate-spin" /> : null}
             {paying ? 'Procesando...' : 'Confirmar pago'}
@@ -549,7 +549,7 @@ function TabPagar() {
             <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" playsInline muted />
             {/* Marco de escaneo */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-48 h-48 border-2 border-[#1D9E75] rounded-2xl opacity-80" />
+              <div className="w-48 h-48 border-2 border-[#233E58] rounded-2xl opacity-80" />
             </div>
             <button
               onClick={stopCamera}
@@ -564,7 +564,7 @@ function TabPagar() {
             className="flex flex-col items-center gap-3 py-12"
           >
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white border border-[#E2E8F0] shadow-sm">
-              <Camera size={28} className="text-[#1D9E75]" />
+              <Camera size={28} className="text-[#233E58]" />
             </div>
             <p className="text-[0.875rem] font-semibold text-[#0F172A]">Activar cámara</p>
             <p className="text-[0.75rem] text-[#94A3B8]">Apunta al QR Alyto</p>
@@ -604,13 +604,13 @@ function TabPagar() {
             onChange={e => setManualText(e.target.value)}
             rows={4}
             placeholder='Pega el JSON del QR aquí...'
-            className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.75rem] text-[#0F172A] focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_3px_#1D9E7520] placeholder:text-[#CBD5E1] font-mono resize-none"
+            className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.75rem] text-[#0F172A] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] placeholder:text-[#CBD5E1] font-mono resize-none"
           />
           <button
             onClick={handleManualSubmit}
             disabled={!manualText.trim()}
             className="w-full py-3 rounded-xl text-[0.875rem] font-semibold text-white transition-all disabled:opacity-50"
-            style={{ background: '#1D9E75', boxShadow: manualText.trim() ? '0 4px 20px rgba(29,158,117,0.25)' : 'none' }}
+            style={{ background: '#233E58', boxShadow: manualText.trim() ? '0 4px 20px rgba(35,62,88,0.25)' : 'none' }}
           >
             Verificar QR
           </button>
@@ -675,7 +675,7 @@ function TabMiQR({ user }) {
   if (loading) {
     return (
       <div className="flex flex-col items-center gap-4 py-16 px-4">
-        <Loader2 size={32} className="animate-spin text-[#1D9E75]" />
+        <Loader2 size={32} className="animate-spin text-[#233E58]" />
         <p className="text-[0.875rem] text-[#64748B]">Generando tu QR...</p>
       </div>
     )
@@ -691,7 +691,7 @@ function TabMiQR({ user }) {
         <button
           onClick={() => handleGenerate(true)}
           className="w-full py-3 rounded-2xl text-[0.875rem] font-semibold text-white"
-          style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
+          style={{ background: '#233E58', boxShadow: '0 4px 20px rgba(35,62,88,0.25)' }}
         >
           Reintentar
         </button>
@@ -712,7 +712,7 @@ function TabMiQR({ user }) {
       <div className="text-center">
         <p className="text-[1.125rem] font-bold text-[#0F172A]">{user.firstName} {user.lastName}</p>
         <p className="text-[0.8125rem] text-[#64748B] mt-0.5">QR permanente · Sin monto fijo</p>
-        <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.6875rem] font-semibold bg-[#1D9E751A] text-[#1D9E75]">
+        <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.6875rem] font-semibold bg-[#233E581A] text-[#233E58]">
           Sin expiración
         </div>
       </div>
@@ -726,19 +726,19 @@ function TabMiQR({ user }) {
         <button
           onClick={handleShare}
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-[0.875rem] font-semibold text-white"
-          style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
+          style={{ background: '#233E58', boxShadow: '0 4px 20px rgba(35,62,88,0.25)' }}
         >
           <Share2 size={16} /> Compartir
         </button>
         <button
           onClick={handleDownload}
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#1D9E7533] hover:text-[#1D9E75] transition-colors"
+          className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#233E5833] hover:text-[#233E58] transition-colors"
         >
           <Download size={16} />
         </button>
         <button
           onClick={() => { localStorage.removeItem(FIXED_QR_KEY); handleGenerate(true) }}
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#1D9E7533] hover:text-[#1D9E75] transition-colors"
+          className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#233E5833] hover:text-[#233E58] transition-colors"
           title="Regenerar QR"
         >
           <RefreshCw size={16} />
@@ -789,7 +789,7 @@ export default function WalletQRScreen() {
             onClick={() => setTab(id)}
             className={`flex-1 py-2.5 rounded-lg text-[0.8125rem] font-semibold transition-all ${
               tab === id
-                ? 'bg-[#1D9E75] text-white shadow-sm'
+                ? 'bg-[#233E58] text-white shadow-sm'
                 : 'text-[#64748B] hover:text-[#0F172A]'
             }`}
           >

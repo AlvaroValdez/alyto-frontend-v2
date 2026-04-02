@@ -83,9 +83,9 @@ export default function LoginPage() {
 
       {/* Banner sesión cerrada */}
       {loggedOut && !error && (
-        <div className="flex items-center gap-2.5 bg-[#1D9E751A] border border-[#1D9E7533] rounded-2xl px-4 py-3 mb-5">
-          <CheckCircle size={15} className="text-[#1D9E75] flex-shrink-0" />
-          <p className="text-[0.8125rem] text-[#1D9E75]">Sesión cerrada correctamente.</p>
+        <div className="flex items-center gap-2.5 bg-[#233E581A] border border-[#233E5833] rounded-2xl px-4 py-3 mb-5">
+          <CheckCircle size={15} className="text-[#233E58] flex-shrink-0" />
+          <p className="text-[0.8125rem] text-[#233E58]">Sesión cerrada correctamente.</p>
         </div>
       )}
 
@@ -127,7 +127,7 @@ export default function LoginPage() {
             onChange={handleChange}
             placeholder="tu@email.com"
             autoComplete="email"
-            className="w-full rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0F172A] bg-white border border-[#E2E8F0] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_3px_#1D9E7520] transition-all duration-150"
+            className="w-full rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0F172A] bg-white border border-[#E2E8F0] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all duration-150"
           />
         </div>
 
@@ -139,7 +139,7 @@ export default function LoginPage() {
             </label>
             <Link
               to="/forgot-password"
-              className="text-[0.75rem] text-[#1D9E75] hover:text-[#18876A] font-medium transition-colors"
+              className="text-[0.75rem] text-[#233E58] hover:text-[#1C3247] font-medium transition-colors"
             >
               ¿Olvidaste tu contraseña?
             </Link>
@@ -152,7 +152,7 @@ export default function LoginPage() {
               onChange={handleChange}
               placeholder="••••••••"
               autoComplete="current-password"
-              className="w-full rounded-xl px-4 py-3.5 pr-12 text-[0.9375rem] text-[#0F172A] bg-white border border-[#E2E8F0] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_3px_#1D9E7520] transition-all duration-150"
+              className="w-full rounded-xl px-4 py-3.5 pr-12 text-[0.9375rem] text-[#0F172A] bg-white border border-[#E2E8F0] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all duration-150"
             />
             <button
               type="button"
@@ -169,7 +169,7 @@ export default function LoginPage() {
         <label className="flex items-center gap-3 cursor-pointer select-none">
           <div
             className={`w-5 h-5 rounded-md flex items-center justify-center border-2 flex-shrink-0 transition-all duration-150
-              ${form.rememberMe ? 'bg-[#1D9E75] border-[#1D9E75]' : 'bg-transparent border-[#E2E8F0]'}`}
+              ${form.rememberMe ? 'bg-[#233E58] border-[#233E58]' : 'bg-transparent border-[#E2E8F0]'}`}
             onClick={() => setForm(prev => ({ ...prev, rememberMe: !prev.rememberMe }))}
           >
             {form.rememberMe && (
@@ -186,8 +186,8 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full mt-1 rounded-2xl py-4 text-[0.9375rem] font-bold text-white bg-[#1D9E75] hover:bg-[#18876A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
-          style={{ boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
+          className="w-full mt-1 rounded-2xl py-4 text-[0.9375rem] font-bold text-white bg-[#233E58] hover:bg-[#1C3247] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+          style={{ boxShadow: '0 4px 20px rgba(35,62,88,0.25)' }}
         >
           {loading ? 'Iniciando sesión…' : 'Iniciar sesión'}
         </button>
@@ -196,7 +196,7 @@ export default function LoginPage() {
       {/* Footer */}
       <p className="text-center text-[0.8125rem] text-[#94A3B8] mt-6">
         ¿No tienes cuenta?{' '}
-        <Link to="/register" className="text-[#1D9E75] font-semibold hover:text-[#18876A] transition-colors">
+        <Link to="/register" className="text-[#233E58] font-semibold hover:text-[#1C3247] transition-colors">
           Regístrate
         </Link>
       </p>

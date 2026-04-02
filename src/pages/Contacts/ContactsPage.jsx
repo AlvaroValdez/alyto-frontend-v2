@@ -120,7 +120,7 @@ function ContactDetailModal({ contact, onClose, onDelete, onToggleFavorite }) {
             {contact.lastSentAt && (
               <div className="flex justify-between">
                 <span className="text-[0.75rem] text-[#64748B]">Último envío</span>
-                <span className="text-[0.875rem] text-[#1D9E75]">
+                <span className="text-[0.875rem] text-[#233E58]">
                   {contact.lastAmount?.toLocaleString('es-CL')} {contact.lastCurrency} · {timeAgo(contact.lastSentAt)}
                 </span>
               </div>
@@ -208,7 +208,7 @@ export default function ContactsPage() {
         <div className="mx-4 mt-4 flex flex-col items-center text-center py-16 bg-white rounded-3xl border border-[#E2E8F0]">
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-            style={{ background: '#1D9E751A', border: '1px solid #1D9E7533' }}
+            style={{ background: '#233E581A', border: '1px solid #233E5833' }}
           >
             <Users size={28} className="text-[#94A3B8]" />
           </div>
@@ -242,7 +242,7 @@ export default function ContactsPage() {
               >
                 {/* Avatar */}
                 <div className="w-11 h-11 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center flex-shrink-0">
-                  <span className="text-[1rem] font-bold text-[#1D9E75]">
+                  <span className="text-[1rem] font-bold text-[#233E58]">
                     {name.charAt(0).toUpperCase()}
                   </span>
                 </div>

@@ -172,7 +172,7 @@ export default function DashboardPage() {
           <div className="mx-4 mb-3">
             <Link
               to="/wallet"
-              className="flex items-center justify-between px-4 py-4 rounded-2xl bg-white border border-[#E2E8F0] no-underline hover:border-[#1D9E7533] transition-colors group"
+              className="flex items-center justify-between px-4 py-4 rounded-2xl bg-white border border-[#E2E8F0] no-underline hover:border-[#233E5833] transition-colors group"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#22C55E1A] flex items-center justify-center flex-shrink-0">
@@ -187,7 +187,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-              <ChevronRight size={18} className="text-[#94A3B8] group-hover:text-[#1D9E75] transition-colors flex-shrink-0" />
+              <ChevronRight size={18} className="text-[#94A3B8] group-hover:text-[#233E58] transition-colors flex-shrink-0" />
             </Link>
           </div>
         )}
@@ -228,7 +228,7 @@ export default function DashboardPage() {
             <StatCard
               label="Transferencias"
               value={stats.totalTransactions}
-              accent="#1D9E75"
+              accent="#233E58"
             />
             <StatCard
               label="Completadas"
@@ -238,7 +238,7 @@ export default function DashboardPage() {
             <StatCard
               label="En proceso"
               value={stats.activeTransactions}
-              accent={stats.activeTransactions > 0 ? '#1D9E75' : '#94A3B8'}
+              accent={stats.activeTransactions > 0 ? '#233E58' : '#94A3B8'}
             />
           </div>
         )}
@@ -255,11 +255,11 @@ export default function DashboardPage() {
           <div className="mx-4 mb-4">
             <Link
               to="/institutional"
-              className="flex items-center justify-between px-4 py-4 rounded-2xl bg-white border border-[#E2E8F0] no-underline hover:border-[#1D9E7533] transition-colors group"
+              className="flex items-center justify-between px-4 py-4 rounded-2xl bg-white border border-[#E2E8F0] no-underline hover:border-[#233E5833] transition-colors group"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#1D9E751A] flex items-center justify-center flex-shrink-0">
-                  <Shield size={18} className="text-[#1D9E75]" />
+                <div className="w-10 h-10 rounded-xl bg-[#233E581A] flex items-center justify-center flex-shrink-0">
+                  <Shield size={18} className="text-[#233E58]" />
                 </div>
                 <div>
                   <p className="text-[0.9375rem] font-bold text-[#0F172A] leading-tight">
@@ -270,7 +270,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-              <ChevronRight size={18} className="text-[#94A3B8] group-hover:text-[#1D9E75] transition-colors flex-shrink-0" />
+              <ChevronRight size={18} className="text-[#94A3B8] group-hover:text-[#233E58] transition-colors flex-shrink-0" />
             </Link>
           </div>
         )}
@@ -281,7 +281,7 @@ export default function DashboardPage() {
         <div className="mx-4 mb-4">
           <Link
             to="/reclamos"
-            className="flex items-center justify-between px-4 py-4 rounded-2xl bg-white border border-[#E2E8F0] no-underline hover:border-[#1D9E7533] transition-colors group"
+            className="flex items-center justify-between px-4 py-4 rounded-2xl bg-white border border-[#E2E8F0] no-underline hover:border-[#233E5833] transition-colors group"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#3B82F61A] flex items-center justify-center flex-shrink-0">
@@ -296,7 +296,7 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-            <ChevronRight size={18} className="text-[#94A3B8] group-hover:text-[#1D9E75] transition-colors flex-shrink-0" />
+            <ChevronRight size={18} className="text-[#94A3B8] group-hover:text-[#233E58] transition-colors flex-shrink-0" />
           </Link>
         </div>
 

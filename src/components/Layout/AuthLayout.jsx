@@ -19,7 +19,7 @@ export default function AuthLayout() {
           src="/assets/LogoAlyto.png"
           alt="Alyto"
           className="h-10 w-auto object-contain"
-          style={{ filter: 'drop-shadow(0 2px 8px rgba(29,158,117,0.08))' }}
+          style={{ filter: 'drop-shadow(0 2px 8px rgba(35,62,88,0.08))' }}
         />
         <p className="text-[0.75rem] font-medium text-[#94A3B8] tracking-widest uppercase">
           Plataforma Financiera

@@ -126,7 +126,7 @@ function PaymentInstructionsModal({ tx, onClose }) {
               {qrSrc && (
                 <button
                   onClick={downloadQR}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#E2E8F0] text-[0.8125rem] text-[#64748B] hover:text-[#0F172A] hover:border-[#1D9E7533] transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#E2E8F0] text-[0.8125rem] text-[#64748B] hover:text-[#0F172A] hover:border-[#233E5833] transition-colors"
                 >
                   <Download size={13} /> Descargar QR
                 </button>
@@ -159,7 +159,7 @@ function PaymentInstructionsModal({ tx, onClose }) {
               ].map(([label, value]) => (
                 <div key={label} className="flex items-center justify-between py-2.5">
                   <span className="text-[0.75rem] text-[#94A3B8]">{label}</span>
-                  <span className={`text-[0.875rem] font-semibold ${label === 'Monto' ? 'text-[#1D9E75]' : 'text-[#0F172A]'}`}>{value}</span>
+                  <span className={`text-[0.875rem] font-semibold ${label === 'Monto' ? 'text-[#233E58]' : 'text-[#0F172A]'}`}>{value}</span>
                 </div>
               ))}
             </div>
@@ -173,7 +173,7 @@ function PaymentInstructionsModal({ tx, onClose }) {
                 className="ml-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] text-[0.75rem] text-[#64748B] hover:text-[#0F172A] transition-colors flex-shrink-0"
               >
                 {copiedRef
-                  ? <><CheckCheck size={12} className="text-[#1D9E75]" /> Copiado</>
+                  ? <><CheckCheck size={12} className="text-[#233E58]" /> Copiado</>
                   : <><Copy size={12} /> Copiar</>
                 }
               </button>
@@ -208,13 +208,13 @@ import { getPaymentQR }           from '../../services/paymentsService.js'
 const STATUS_CONFIG = {
   initiated:        { label: 'Iniciada',          color: '#64748B', bg: '#64748B1A' },
   payin_pending:    { label: 'Pago pendiente',     color: '#64748B', bg: '#64748B1A' },
-  payin_confirmed:  { label: 'Pago confirmado',    color: '#1D9E75', bg: '#1D9E751A' },
-  payin_completed:  { label: 'Pago completado',    color: '#1D9E75', bg: '#1D9E751A' },
+  payin_confirmed:  { label: 'Pago confirmado',    color: '#233E58', bg: '#233E581A' },
+  payin_completed:  { label: 'Pago completado',    color: '#233E58', bg: '#233E581A' },
   processing:       { label: 'Procesando',         color: '#3B82F6', bg: '#3B82F61A' },
   in_transit:       { label: 'En tránsito',        color: '#3B82F6', bg: '#3B82F61A' },
-  payout_pending:   { label: 'Enviando...',        color: '#1D9E75', bg: '#1D9E751A' },
+  payout_pending:   { label: 'Enviando...',        color: '#233E58', bg: '#233E581A' },
   payout_sent:      { label: 'Enviado al banco',   color: '#3B82F6', bg: '#3B82F61A' },
-  completed:        { label: 'Completada',         color: '#1D9E75', bg: '#1D9E751A' },
+  completed:        { label: 'Completada',         color: '#233E58', bg: '#233E581A' },
   failed:           { label: 'Fallida',            color: '#EF4444', bg: '#EF44441A' },
   refunded:         { label: 'Reembolsada',        color: '#F59E0B', bg: '#F59E0B1A' },
 }
@@ -446,7 +446,7 @@ export default function TransactionDetail() {
           </div>
           <p className="text-[#0F172A] font-semibold mb-1">No se pudo cargar</p>
           <p className="text-[#64748B] text-sm mb-4">{error}</p>
-          <button onClick={loadDetail} className="px-4 py-2 rounded-xl font-semibold text-sm text-white" style={{ background: '#1D9E75' }}>
+          <button onClick={loadDetail} className="px-4 py-2 rounded-xl font-semibold text-sm text-white" style={{ background: '#233E58' }}>
             Reintentar
           </button>
         </div>
@@ -520,8 +520,8 @@ export default function TransactionDetail() {
                   const active = step.activeWhen(tx.status)
                   const isLast = i === TIMELINE_STEPS.length - 1
 
-                  const nodeColor  = done ? '#1D9E75' : active ? cfg.color : '#E2E8F0'
-                  const nodeBorder = done ? '#1D9E75' : active ? cfg.color : '#E2E8F0'
+                  const nodeColor  = done ? '#233E58' : active ? cfg.color : '#E2E8F0'
+                  const nodeBorder = done ? '#233E58' : active ? cfg.color : '#E2E8F0'
 
                   return (
                     <div key={step.label} className="flex items-center flex-1">
@@ -530,12 +530,12 @@ export default function TransactionDetail() {
                         <div
                           className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
                           style={{
-                            background: done ? '#1D9E751A' : active ? cfg.bg : '#F8FAFC',
+                            background: done ? '#233E581A' : active ? cfg.bg : '#F8FAFC',
                             border:     `2px solid ${nodeBorder}`,
                           }}
                         >
                           {done
-                            ? <CheckCircle size={12} color="#1D9E75" />
+                            ? <CheckCircle size={12} color="#233E58" />
                             : active
                               ? <RefreshCw size={10} color={cfg.color} className="animate-spin" style={{ animationDuration: '2s' }} />
                               : <div className="w-2 h-2 rounded-full bg-[#CBD5E1]" />
@@ -543,7 +543,7 @@ export default function TransactionDetail() {
                         </div>
                         <span
                           className="text-[0.5625rem] font-medium text-center mt-1.5 max-w-[52px] leading-tight"
-                          style={{ color: done ? '#1D9E75' : active ? cfg.color : '#94A3B8' }}
+                          style={{ color: done ? '#233E58' : active ? cfg.color : '#94A3B8' }}
                         >
                           {step.label}
                         </span>
@@ -553,7 +553,7 @@ export default function TransactionDetail() {
                       {!isLast && (
                         <div
                           className="h-0.5 flex-1 mx-1 mb-5"
-                          style={{ background: done ? '#1D9E7540' : '#E2E8F0' }}
+                          style={{ background: done ? '#233E5840' : '#E2E8F0' }}
                         />
                       )}
                     </div>
@@ -613,7 +613,7 @@ export default function TransactionDetail() {
                   ? formatAmount(effectiveDestAmount, tx.destinationCurrency)
                   : '—'}
                 bold
-                valueColor="#1D9E75"
+                valueColor="#233E58"
               />
               <Row
                 label="Tiempo estimado"
@@ -649,11 +649,11 @@ export default function TransactionDetail() {
             <div ref={comprobanteRef} className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
 
               {/* Header branding */}
-              <div className="flex flex-col items-center py-5 px-5" style={{ background: 'linear-gradient(180deg, #1D9E750D 0%, #ffffff 100%)' }}>
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-2" style={{ background: '#1D9E75' }}>
+              <div className="flex flex-col items-center py-5 px-5" style={{ background: 'linear-gradient(180deg, #233E580D 0%, #ffffff 100%)' }}>
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-2" style={{ background: '#233E58' }}>
                   <span style={{ color: 'white', fontWeight: 900, fontSize: '1.125rem' }}>A</span>
                 </div>
-                <p style={{ color: '#1D9E75', fontWeight: 700, fontSize: '0.6875rem', letterSpacing: '0.12em' }}>ALYTO</p>
+                <p style={{ color: '#233E58', fontWeight: 700, fontSize: '0.6875rem', letterSpacing: '0.12em' }}>ALYTO</p>
                 <p style={{ color: '#94A3B8', fontSize: '0.6875rem', marginTop: 2 }}>Comprobante de transferencia</p>
               </div>
 
@@ -665,15 +665,15 @@ export default function TransactionDetail() {
                   <button
                     onClick={handleCopy}
                     className="flex items-center gap-2 w-full text-left hover:opacity-70 transition-opacity"
-                    style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: copied ? '#1D9E75' : '#0F172A' }}
+                    style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: copied ? '#233E58' : '#0F172A' }}
                   >
                     <span className="truncate">{tx.transactionId}</span>
                     {copied
-                      ? <CheckCircle size={13} color="#1D9E75" style={{ flexShrink: 0 }} />
+                      ? <CheckCircle size={13} color="#233E58" style={{ flexShrink: 0 }} />
                       : <Copy size={13} color="#94A3B8" style={{ flexShrink: 0 }} />
                     }
                   </button>
-                  {copied && <p style={{ color: '#1D9E75', fontSize: '0.625rem', marginTop: 2 }}>¡Copiado!</p>}
+                  {copied && <p style={{ color: '#233E58', fontSize: '0.625rem', marginTop: 2 }}>¡Copiado!</p>}
                 </div>
 
                 {/* Tú enviaste / Ellos reciben / Tasa */}
@@ -686,7 +686,7 @@ export default function TransactionDetail() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Ellos reciben</span>
-                    <span style={{ color: '#1D9E75', fontSize: '0.8125rem', fontWeight: 700 }}>
+                    <span style={{ color: '#233E58', fontSize: '0.8125rem', fontWeight: 700 }}>
                       {countryFlag(tx.destinationCountry)} {formatAmount(effectiveDestAmount, tx.destinationCurrency)}
                     </span>
                   </div>
@@ -808,8 +808,8 @@ export default function TransactionDetail() {
           {tx.status === 'completed' && (
             <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-lg bg-[#1D9E751A] flex items-center justify-center flex-shrink-0">
-                  <Link2 size={14} className="text-[#1D9E75]" />
+                <div className="w-7 h-7 rounded-lg bg-[#233E581A] flex items-center justify-center flex-shrink-0">
+                  <Link2 size={14} className="text-[#233E58]" />
                 </div>
                 <p className="text-[0.6875rem] font-semibold text-[#94A3B8] uppercase tracking-wider">
                   Verificado en blockchain
@@ -840,11 +840,11 @@ export default function TransactionDetail() {
                             setTimeout(() => setCopiedTxid(false), 2000)
                           })
                         }}
-                        className="flex-shrink-0 text-[#94A3B8] hover:text-[#1D9E75] transition-colors"
+                        className="flex-shrink-0 text-[#94A3B8] hover:text-[#233E58] transition-colors"
                         title="Copiar TXID completo"
                       >
                         {copiedTxid
-                          ? <CheckCircle size={14} className="text-[#1D9E75]" />
+                          ? <CheckCircle size={14} className="text-[#233E58]" />
                           : <Copy size={14} />
                         }
                       </button>
@@ -852,7 +852,7 @@ export default function TransactionDetail() {
                   </div>
 
                   {copiedTxid && (
-                    <p className="text-[0.6875rem] text-[#1D9E75] text-right -mt-1">¡TXID copiado!</p>
+                    <p className="text-[0.6875rem] text-[#233E58] text-right -mt-1">¡TXID copiado!</p>
                   )}
 
                   <a
@@ -861,7 +861,7 @@ export default function TransactionDetail() {
                     }/tx/${tx.stellarTxId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#1D9E7533] text-[#1D9E75] text-sm font-medium transition-colors hover:bg-[#1D9E751A]"
+                    className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#233E5833] text-[#233E58] text-sm font-medium transition-colors hover:bg-[#233E581A]"
                   >
                     Ver en Stellar Explorer
                     <ExternalLink size={14} />
@@ -893,9 +893,9 @@ export default function TransactionDetail() {
                     rel="noopener noreferrer"
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border transition-colors"
                     style={{
-                      background:   '#1D9E751A',
-                      borderColor:  '#1D9E7533',
-                      color:        '#1D9E75',
+                      background:   '#233E581A',
+                      borderColor:  '#233E5833',
+                      color:        '#233E58',
                     }}
                   >
                     <MessageCircle size={16} />

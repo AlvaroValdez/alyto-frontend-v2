@@ -137,7 +137,7 @@ function TransactionItem({ tx, onPress }) {
             {formatAmount(tx.originAmount, tx.originCurrency)}
           </p>
           <span className="text-[#94A3B8] text-sm flex-shrink-0">→</span>
-          <p className="text-[0.875rem] font-medium text-[#1D9E75] truncate">
+          <p className="text-[0.875rem] font-medium text-[#233E58] truncate">
             {tx.destinationAmount != null
               ? formatAmount(tx.destinationAmount, tx.destinationCurrency)
               : '—'
@@ -149,7 +149,7 @@ function TransactionItem({ tx, onPress }) {
             <p className="text-[0.75rem] text-[#64748B] truncate">{beneficiaryName}</p>
           )}
           {corridorLabel && (
-            <span className="text-[0.625rem] font-semibold px-1.5 py-0.5 rounded border border-[#1D9E7533] text-[#1D9E75] flex-shrink-0">
+            <span className="text-[0.625rem] font-semibold px-1.5 py-0.5 rounded border border-[#233E5833] text-[#233E58] flex-shrink-0">
               {corridorLabel}
             </span>
           )}
@@ -230,8 +230,8 @@ export default function TransactionsPage() {
             onClick={() => setActiveTab(tab.key)}
             className={`px-3 py-1.5 rounded-full text-[0.75rem] font-medium border transition-all flex-shrink-0 ${
               activeTab === tab.key
-                ? 'bg-[#1D9E751A] border-[#1D9E7533] text-[#1D9E75]'
-                : 'bg-transparent border-[#E2E8F0] text-[#94A3B8] hover:border-[#1D9E7533] hover:text-[#64748B]'
+                ? 'bg-[#233E581A] border-[#233E5833] text-[#233E58]'
+                : 'bg-transparent border-[#E2E8F0] text-[#94A3B8] hover:border-[#233E5833] hover:text-[#64748B]'
             }`}
           >
             {tab.label}
@@ -249,7 +249,7 @@ export default function TransactionsPage() {
         {/* Indicador pull-to-refresh */}
         {refreshing && (
           <div className="flex justify-center py-2 mb-2">
-            <RefreshCw size={18} className="text-[#1D9E75] animate-spin" />
+            <RefreshCw size={18} className="text-[#233E58] animate-spin" />
           </div>
         )}
 
@@ -271,7 +271,7 @@ export default function TransactionsPage() {
             <button
               onClick={() => loadTransactions()}
               className="px-4 py-2 rounded-xl font-semibold text-sm text-white"
-              style={{ background: '#1D9E75' }}
+              style={{ background: '#233E58' }}
             >
               Reintentar
             </button>
@@ -305,7 +305,7 @@ export default function TransactionsPage() {
                 <button
                   onClick={() => navigate('/send')}
                   className="px-6 py-3 rounded-2xl font-bold text-[0.9375rem] text-white"
-                  style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.25)' }}
+                  style={{ background: '#233E58', boxShadow: '0 4px 20px rgba(35,62,88,0.25)' }}
                 >
                   Enviar dinero
                 </button>
@@ -331,7 +331,7 @@ export default function TransactionsPage() {
             {activeTab === 'all' && pagination.page < pagination.totalPages && (
               <button
                 onClick={fetchMore}
-                className="w-full mt-4 py-3 rounded-2xl border border-[#E2E8F0] text-[#64748B] text-sm font-medium transition-colors hover:border-[#1D9E7533] hover:text-[#1D9E75]"
+                className="w-full mt-4 py-3 rounded-2xl border border-[#E2E8F0] text-[#64748B] text-sm font-medium transition-colors hover:border-[#233E5833] hover:text-[#233E58]"
               >
                 Cargar más
               </button>

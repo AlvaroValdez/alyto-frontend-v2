@@ -76,7 +76,7 @@ export default function SendMoneyPage() {
         <header className="flex items-center justify-between px-4 pt-3 pb-3 flex-shrink-0">
           <button
             onClick={handleBack}
-            className="w-9 h-9 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] hover:border-[#1D9E7533] transition-all"
+            className="w-9 h-9 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] hover:border-[#233E5833] transition-all"
           >
             <ArrowLeft size={18} />
           </button>
@@ -88,7 +88,7 @@ export default function SendMoneyPage() {
           {step < 5 ? (
             <button
               onClick={handleCancel}
-              className="w-9 h-9 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] hover:border-[#1D9E7533] transition-all"
+              className="w-9 h-9 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] hover:border-[#233E5833] transition-all"
             >
               <X size={18} />
             </button>

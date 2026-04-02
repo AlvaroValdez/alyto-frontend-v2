@@ -184,7 +184,7 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
 
   const baseInput = `w-full bg-white border rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0F172A]
     placeholder:text-[#CBD5E1] focus:outline-none transition-all`
-  const borderOk  = 'border-[#E2E8F0] focus:border-[#1D9E75] focus:shadow-[0_0_0_3px_#1D9E7520]'
+  const borderOk  = 'border-[#E2E8F0] focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820]'
   const borderErr = 'border-[#EF4444] shadow-[0_0_0_2px_#EF44441A]'
 
   // Chile — tipo documento: campo único "rut" → ocultar visualmente pero mantener el auto-set
@@ -347,8 +347,8 @@ function PayoutTypeToggle({ value, onChange }) {
             onClick={() => onChange(o.id)}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-[0.875rem] font-semibold transition-all ${
               active
-                ? 'bg-[#1D9E751A] border-[#1D9E75] text-[#1D9E75]'
-                : 'bg-white border-[#E2E8F0] text-[#64748B] hover:border-[#1D9E7533]'
+                ? 'bg-[#233E581A] border-[#233E58] text-[#233E58]'
+                : 'bg-white border-[#E2E8F0] text-[#64748B] hover:border-[#233E5833]'
             }`}
           >
             <o.icon size={16} />
@@ -401,7 +401,7 @@ function QRUpload({ qrBase64, onQrChange }) {
           </button>
         </div>
       ) : (
-        <label className="flex flex-col items-center justify-center gap-2 w-full py-8 rounded-xl border border-dashed border-[#94A3B8] text-[#64748B] hover:text-[#1D9E75] hover:border-[#1D9E7533] transition-colors cursor-pointer">
+        <label className="flex flex-col items-center justify-center gap-2 w-full py-8 rounded-xl border border-dashed border-[#94A3B8] text-[#64748B] hover:text-[#233E58] hover:border-[#233E5833] transition-colors cursor-pointer">
           <Upload size={20} />
           <span className="text-[0.875rem]">Subir imagen del QR</span>
           <span className="text-[0.6875rem] text-[#94A3B8]">JPG o PNG — máx. 5MB</span>
@@ -463,7 +463,7 @@ function ContactPickerModal({ contacts, onSelect, onClose }) {
                 }`}
               >
                 <div className="w-10 h-10 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center flex-shrink-0">
-                  <span className="text-[0.875rem] font-bold text-[#1D9E75]">
+                  <span className="text-[0.875rem] font-bold text-[#233E58]">
                     {name.charAt(0).toUpperCase()}
                   </span>
                 </div>
@@ -679,8 +679,8 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
           <p className="text-[0.75rem] text-[#64748B]">{loadError}</p>
           <button
             onClick={refetch}
-            className="self-start px-4 py-2 rounded-xl border border-[#1D9E7533] text-[0.875rem]
-              font-semibold text-[#1D9E75] hover:bg-[#1D9E751A] transition-colors"
+            className="self-start px-4 py-2 rounded-xl border border-[#233E5833] text-[0.875rem]
+              font-semibold text-[#233E58] hover:bg-[#233E581A] transition-colors"
           >
             Reintentar
           </button>
@@ -709,10 +709,10 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
         <button
           type="button"
           onClick={() => setShowContactPicker(true)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-white border border-[#E2E8F0] rounded-xl hover:border-[#1D9E7533] transition-colors"
+          className="w-full flex items-center justify-between px-4 py-3 bg-white border border-[#E2E8F0] rounded-xl hover:border-[#233E5833] transition-colors"
         >
           <div className="flex items-center gap-2.5">
-            <UserCheck size={16} className="text-[#1D9E75]" />
+            <UserCheck size={16} className="text-[#233E58]" />
             <span className="text-[0.875rem] font-semibold text-[#0F172A]">
               Usar contacto guardado
             </span>
@@ -762,7 +762,7 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
             onClick={() => setSaveAsContact(v => !v)}
             className={`w-5 h-5 rounded flex items-center justify-center border transition-colors flex-shrink-0 ${
               saveAsContact
-                ? 'bg-[#1D9E75] border-[#1D9E75]'
+                ? 'bg-[#233E58] border-[#233E58]'
                 : 'bg-white border-[#E2E8F0]'
             }`}
           >
@@ -779,7 +779,7 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
             value={contactNickname}
             onChange={e => setContactNickname(e.target.value)}
             placeholder='Apodo (opcional) — ej: "Mamá", "Pedro trabajo"'
-            className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#1D9E75] transition-colors"
+            className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58] transition-colors"
           />
         )}
       </div>
@@ -798,7 +798,7 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
         disabled={!allValid}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
           allValid
-            ? 'bg-[#1D9E75] text-white shadow-[0_4px_20px_rgba(29,158,117,0.25)] active:scale-[0.98]'
+            ? 'bg-[#233E58] text-white shadow-[0_4px_20px_rgba(35,62,88,0.25)] active:scale-[0.98]'
             : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
         }`}
       >

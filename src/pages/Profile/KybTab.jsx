@@ -67,8 +67,8 @@ function NotStartedCard({ navigate, isSRL }) {
         }}
       >
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-2xl bg-[#1D9E751A] border border-[#1D9E7533] flex items-center justify-center">
-            <Building2 size={20} className="text-[#1D9E75]" />
+          <div className="w-10 h-10 rounded-2xl bg-[#233E581A] border border-[#233E5833] flex items-center justify-center">
+            <Building2 size={20} className="text-[#233E58]" />
           </div>
           <div>
             <h3 className="text-[0.9375rem] font-bold text-[#0F172A]">Cuenta Business</h3>
@@ -79,7 +79,7 @@ function NotStartedCard({ navigate, isSRL }) {
         <ul className="space-y-2 mb-5">
           {benefits.map(b => (
             <li key={b} className="flex items-start gap-2 text-[0.8125rem] text-[#64748B]">
-              <CheckCircle2 size={14} className="text-[#1D9E75] mt-0.5 flex-shrink-0" />
+              <CheckCircle2 size={14} className="text-[#233E58] mt-0.5 flex-shrink-0" />
               {b}
             </li>
           ))}
@@ -88,7 +88,7 @@ function NotStartedCard({ navigate, isSRL }) {
         <button
           onClick={() => navigate('/kyb')}
           className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-white flex items-center justify-center gap-2"
-          style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.3)' }}
+          style={{ background: '#233E58', boxShadow: '0 4px 20px rgba(35,62,88,0.3)' }}
         >
           Solicitar cuenta Business <ChevronRight size={16} />
         </button>
@@ -119,7 +119,7 @@ function PendingCard({ kybData, navigate }) {
       )}
       <button
         onClick={() => navigate('/kyb')}
-        className="text-[0.8125rem] font-medium text-[#1D9E75] flex items-center gap-1"
+        className="text-[0.8125rem] font-medium text-[#233E58] flex items-center gap-1"
       >
         Ver detalle <ChevronRight size={13} />
       </button>
@@ -143,7 +143,7 @@ function MoreInfoCard({ navigate }) {
       <button
         onClick={() => navigate('/kyb')}
         className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-white"
-        style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.3)' }}
+        style={{ background: '#233E58', boxShadow: '0 4px 20px rgba(35,62,88,0.3)' }}
       >
         Subir documentos
       </button>
@@ -176,10 +176,10 @@ function ApprovedCard({ kybData, navigate, isSRL }) {
     <div className="space-y-3">
       <div
         className="rounded-2xl p-5"
-        style={{ background: 'white', border: '1px solid #1D9E7533' }}
+        style={{ background: 'white', border: '1px solid #233E5833' }}
       >
         <div className="flex items-center gap-2 mb-4">
-          <CheckCircle2 size={20} className="text-[#1D9E75]" />
+          <CheckCircle2 size={20} className="text-[#233E58]" />
           <p className="text-[0.9375rem] font-bold text-[#0F172A]">Cuenta Business activa</p>
         </div>
         <div className="space-y-2 mb-4">
@@ -197,7 +197,7 @@ function ApprovedCard({ kybData, navigate, isSRL }) {
         <button
           onClick={() => navigate('/send')}
           className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-white flex items-center justify-center gap-2"
-          style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.3)' }}
+          style={{ background: '#233E58', boxShadow: '0 4px 20px rgba(35,62,88,0.3)' }}
         >
           Empezar a operar →
         </button>
@@ -228,7 +228,7 @@ function RejectedCard({ kybData }) {
         target="_blank"
         rel="noopener noreferrer"
         className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-white text-center block"
-        style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.3)' }}
+        style={{ background: '#233E58', boxShadow: '0 4px 20px rgba(35,62,88,0.3)' }}
       >
         Contactar soporte
       </a>
@@ -269,9 +269,9 @@ export default function KybTab({ kycStatus, legalEntity }) {
         >
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center mb-4"
-            style={{ background: '#1D9E751A', border: '1px solid #1D9E7533' }}
+            style={{ background: '#233E581A', border: '1px solid #233E5833' }}
           >
-            <ShieldCheck size={22} className="text-[#1D9E75]" />
+            <ShieldCheck size={22} className="text-[#233E58]" />
           </div>
           <p className="text-[0.9375rem] font-bold text-[#0F172A] mb-2">
             Verifica tu identidad primero
@@ -282,7 +282,7 @@ export default function KybTab({ kycStatus, legalEntity }) {
           <button
             onClick={() => navigate('/kyc')}
             className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-white"
-            style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.3)' }}
+            style={{ background: '#233E58', boxShadow: '0 4px 20px rgba(35,62,88,0.3)' }}
           >
             Completar verificación →
           </button>

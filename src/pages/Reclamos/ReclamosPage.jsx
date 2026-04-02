@@ -34,7 +34,7 @@ const TIPO_LABELS = {
 const STATUS_CONFIG = {
   recibido:       { label: 'Recibido',        color: '#3B82F6', bg: '#3B82F61A' },
   en_revision:    { label: 'En revisión',     color: '#EAB308', bg: '#EAB3081A' },
-  resuelto:       { label: 'Resuelto',        color: '#1D9E75', bg: '#1D9E751A' },
+  resuelto:       { label: 'Resuelto',        color: '#233E58', bg: '#233E581A' },
   escalado_asfi:  { label: 'Escalado ASFI',   color: '#F97316', bg: '#F973161A' },
   cerrado:        { label: 'Cerrado',         color: '#64748B', bg: '#64748B1A' },
 }
@@ -134,7 +134,7 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
             </label>
             <select
               name="tipo" value={form.tipo} onChange={handleChange}
-              className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_2px_#1D9E7520]"
+              className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_2px_#233E5820]"
               required
             >
               <option value="">Seleccionar tipo...</option>
@@ -153,7 +153,7 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
               name="descripcion" value={form.descripcion} onChange={handleChange}
               rows={4} maxLength={1000}
               placeholder="Describe detalladamente el problema..."
-              className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_2px_#1D9E7520] resize-none"
+              className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_2px_#233E5820] resize-none"
               required
             />
             <p className="text-[0.6875rem] text-[#94A3B8] mt-1 text-right">{form.descripcion.length}/1000</p>
@@ -169,7 +169,7 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
                 type="number" name="montoReclamado" value={form.montoReclamado}
                 onChange={handleChange} min="0" step="any"
                 placeholder="0.00"
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#1D9E75]"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58]"
               />
             </div>
             <div>
@@ -180,7 +180,7 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
                 type="text" name="currency" value={form.currency}
                 onChange={handleChange} placeholder="BOB, CLP, USD..."
                 maxLength={5}
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#1D9E75]"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58]"
               />
             </div>
           </div>
@@ -193,7 +193,7 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
             <input
               type="text" name="transactionId" value={form.transactionId}
               onChange={handleChange} placeholder="ALY-B-... o WTX-..."
-              className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#1D9E75] font-mono text-[0.8125rem]"
+              className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58] font-mono text-[0.8125rem]"
             />
           </div>
 
@@ -202,7 +202,7 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
             <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
               Documentos adjuntos <span className="text-[#94A3B8]">(opcional — máx. 3, JPG/PNG/PDF, 5 MB c/u)</span>
             </label>
-            <label className="flex items-center gap-3 px-4 py-3 bg-white border border-[#E2E8F0] border-dashed rounded-xl cursor-pointer hover:border-[#1D9E7533] transition-colors">
+            <label className="flex items-center gap-3 px-4 py-3 bg-white border border-[#E2E8F0] border-dashed rounded-xl cursor-pointer hover:border-[#233E5833] transition-colors">
               <Paperclip size={16} className="text-[#64748B] flex-shrink-0" />
               <span className="text-[0.8125rem] text-[#64748B]">
                 {files.length > 0 ? `${files.length} archivo(s) seleccionado(s)` : 'Adjuntar archivos...'}
@@ -236,7 +236,7 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
           <button
             type="submit" disabled={loading}
             className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white transition-all disabled:opacity-50"
-            style={{ background: '#1D9E75', boxShadow: '0 4px 20px rgba(29,158,117,0.3)' }}
+            style={{ background: '#233E58', boxShadow: '0 4px 20px rgba(35,62,88,0.3)' }}
           >
             {loading ? 'Enviando...' : 'Enviar reclamo'}
           </button>
@@ -255,8 +255,8 @@ function ReclamoExitoso({ data, onClose }) {
       style={{ background: '#0F172A99' }}>
       <div className="w-full max-w-sm bg-white rounded-3xl border border-[#E2E8F0] p-8 text-center">
         <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-          style={{ background: '#1D9E751A' }}>
-          <CheckCircle2 size={28} className="text-[#1D9E75]" />
+          style={{ background: '#233E581A' }}>
+          <CheckCircle2 size={28} className="text-[#233E58]" />
         </div>
         <h3 className="text-[#0F172A] font-bold text-lg mb-2">Reclamo recibido</h3>
         <p className="text-[0.8125rem] text-[#64748B] mb-5">{data.message}</p>
@@ -273,7 +273,7 @@ function ReclamoExitoso({ data, onClose }) {
         <button
           onClick={onClose}
           className="w-full py-3 rounded-2xl font-bold text-[0.9375rem] text-white"
-          style={{ background: '#1D9E75' }}
+          style={{ background: '#233E58' }}
         >
           Entendido
         </button>
@@ -323,7 +323,7 @@ function ReclamoCard({ reclamo }) {
           {reclamo.respuesta && (
             <button
               onClick={() => setExpanded(v => !v)}
-              className="flex items-center gap-1 text-[0.75rem] text-[#1D9E75] font-medium"
+              className="flex items-center gap-1 text-[0.75rem] text-[#233E58] font-medium"
             >
               Ver respuesta
               {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
@@ -335,7 +335,7 @@ function ReclamoCard({ reclamo }) {
       {expanded && reclamo.respuesta && (
         <div className="px-4 pb-4">
           <div className="bg-[#F8FAFC] rounded-xl p-3 border border-[#E2E8F0]">
-            <p className="text-[0.6875rem] font-semibold text-[#1D9E75] mb-1.5 uppercase tracking-wide">
+            <p className="text-[0.6875rem] font-semibold text-[#233E58] mb-1.5 uppercase tracking-wide">
               Respuesta de Alyto
             </p>
             <p className="text-[0.8125rem] text-[#64748B] whitespace-pre-wrap">{reclamo.respuesta}</p>
@@ -394,7 +394,7 @@ export default function ReclamosPage() {
         <button
           onClick={() => setShowModal(true)}
           className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-semibold text-[0.8125rem] text-white"
-          style={{ background: '#1D9E75' }}
+          style={{ background: '#233E58' }}
         >
           <Plus size={15} />
           Presentar
