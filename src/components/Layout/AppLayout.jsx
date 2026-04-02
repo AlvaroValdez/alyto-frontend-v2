@@ -50,7 +50,7 @@ export default function AppLayout() {
       >
         <Link to="/dashboard" className="no-underline flex-shrink-0">
           <img
-            src="/assets/logo-alyto.png"
+            src="/assets/LogoAlyto.png"
             alt="Alyto"
             className="h-8 w-auto object-contain"
           />

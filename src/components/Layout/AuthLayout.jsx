@@ -1,7 +1,7 @@
 /**
  * AuthLayout.jsx — Layout para páginas públicas de autenticación
  *
- * Centra el contenido verticalmente con el logo de Alyto arriba.
+ * Tema: Alyto Arctic Light
  * Usado en: /login, /register, /forgot-password, /reset-password
  */
 
@@ -9,16 +9,20 @@ import { Outlet } from 'react-router-dom'
 
 export default function AuthLayout() {
   return (
-    <div className="min-h-screen bg-[#0F1628] flex flex-col items-center justify-center px-5 py-10 font-sans">
+    <div
+      className="min-h-screen flex flex-col items-center justify-center px-5 py-10 font-sans"
+      style={{ background: 'linear-gradient(160deg, #F8FAFC 0%, #EEF2F7 100%)' }}
+    >
       {/* Logo */}
-      <div className="mb-8 flex flex-col items-center gap-3">
+      <div className="mb-8 flex flex-col items-center gap-2">
         <img
-          src="/assets/logo-alyto.png"
+          src="/assets/LogoAlyto.png"
           alt="Alyto"
-          className="h-9 w-auto object-contain"
+          className="h-10 w-auto object-contain"
+          style={{ filter: 'drop-shadow(0 2px 8px rgba(29,158,117,0.08))' }}
         />
-        <p className="text-[0.8125rem] text-[#8A96B8] tracking-wide">
-          Plataforma Financiera Multi-Entidad
+        <p className="text-[0.75rem] font-medium text-[#94A3B8] tracking-widest uppercase">
+          Plataforma Financiera
         </p>
       </div>
 
@@ -26,7 +30,7 @@ export default function AuthLayout() {
       <Outlet />
 
       {/* Footer legal */}
-      <p className="mt-6 text-center text-[0.6875rem] text-[#4E5A7A] max-w-[320px] leading-relaxed">
+      <p className="mt-6 text-center text-[0.6875rem] text-[#94A3B8] max-w-[320px] leading-relaxed">
         Al acceder aceptas los Términos de Servicio de AV Finance LLC, SpA y SRL
         según la jurisdicción correspondiente a tu cuenta.
       </p>
