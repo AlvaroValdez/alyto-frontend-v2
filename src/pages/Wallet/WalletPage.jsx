@@ -595,39 +595,39 @@ export default function WalletPage() {
               )}
             </div>
           )}
-        </div>
 
-        {/* ── Botones de acción ───────────────────────────────────────── */}
-        {wallet?.status === 'active' ? (
-          <div className="flex gap-3 px-4 mb-6">
-            {[
-              { label: 'Cargar', icon: ArrowDownToLine, action: () => setShowDeposit(true),        primary: true  },
-              { label: 'Enviar', icon: ArrowUpRight,    action: () => setShowSend(true),          primary: false },
-              { label: 'QR',     icon: QrCode,          action: () => navigate('/wallet/qr'),     primary: false },
-              { label: 'Retirar', icon: Wallet,         action: () => setShowWithdraw(true),      primary: false },
-            ].map(({ label, icon: Icon, action, primary }) => (
-              <button key={label} onClick={action}
-                className="flex-1 flex flex-col items-center gap-2 py-4 rounded-2xl transition-all"
-                style={{
-                  background: primary ? 'white' : 'rgba(255,255,255,0.2)',
-                  border: primary ? 'none' : '1px solid rgba(255,255,255,0.3)',
-                }}>
-                <Icon size={20} style={{ color: primary ? '#1D9E75' : 'white' }} />
-                <span className="text-[0.75rem] font-semibold" style={{ color: primary ? '#1D9E75' : 'white' }}>
-                  {label}
-                </span>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="mx-4 mb-5 rounded-2xl px-4 py-3 flex items-center gap-3"
-            style={{ background: '#EF44441A', border: '1px solid #EF444433' }}>
-            <AlertCircle size={18} className="text-[#F87171] flex-shrink-0" />
-            <p className="text-[0.8125rem] text-[#F87171]">
-              Wallet {wallet?.status === 'frozen' ? 'congelada por compliance ASFI' : 'suspendida'}. Contacta a soporte.
-            </p>
-          </div>
-        )}
+          {/* ── Botones de acción — dentro de la card ─────────────────── */}
+          {wallet?.status === 'active' ? (
+            <div className="flex gap-3 mt-5">
+              {[
+                { label: 'Cargar',  icon: ArrowDownToLine, action: () => setShowDeposit(true),    primary: true  },
+                { label: 'Enviar',  icon: ArrowUpRight,    action: () => setShowSend(true),        primary: false },
+                { label: 'QR',      icon: QrCode,          action: () => navigate('/wallet/qr'),  primary: false },
+                { label: 'Retirar', icon: Wallet,          action: () => setShowWithdraw(true),   primary: false },
+              ].map(({ label, icon: Icon, action, primary }) => (
+                <button key={label} onClick={action}
+                  className="flex-1 flex flex-col items-center gap-2 py-3.5 rounded-2xl transition-all active:scale-95"
+                  style={{
+                    background: primary ? 'white' : 'rgba(255,255,255,0.18)',
+                    border:     primary ? 'none'  : '1px solid rgba(255,255,255,0.3)',
+                  }}>
+                  <Icon size={20} style={{ color: primary ? '#1D9E75' : 'white' }} />
+                  <span className="text-[0.75rem] font-semibold" style={{ color: primary ? '#1D9E75' : 'white' }}>
+                    {label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-2xl px-4 py-3 flex items-center gap-3"
+              style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)' }}>
+              <AlertCircle size={18} className="text-[#F87171] flex-shrink-0" />
+              <p className="text-[0.8125rem] text-[#F87171]">
+                Wallet {wallet?.status === 'frozen' ? 'congelada por compliance ASFI' : 'suspendida'}. Contacta a soporte.
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* ── Historial ───────────────────────────────────────────────── */}
         <div className="px-4">
