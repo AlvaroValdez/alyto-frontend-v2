@@ -22,6 +22,83 @@ import { request } from '../../services/api'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+/**
+ * Superpone el logo de Alyto en el centro del QR base64.
+ * Usa Canvas API del navegador — no requiere dependencias adicionales.
+ * El logo ocupa ~22% del ancho del QR (seguro con errorCorrectionLevel 'H').
+ */
+async function overlayLogoOnQR(qrBase64) {
+  return new Promise((resolve) => {
+    const qrImg   = new Image()
+    const logoImg = new Image()
+    let loaded = 0
+
+    const onLoad = () => {
+      loaded++
+      if (loaded < 2) return
+
+      const size       = qrImg.naturalWidth  || 400
+      const canvas     = document.createElement('canvas')
+      canvas.width     = size
+      canvas.height    = size
+      const ctx        = canvas.getContext('2d')
+
+      // Dibuja el QR base
+      ctx.drawImage(qrImg, 0, 0, size, size)
+
+      // Tamaño del logo: 22% del QR
+      const logoSize  = Math.round(size * 0.22)
+      const padding   = Math.round(logoSize * 0.18)
+      const boxSize   = logoSize + padding * 2
+      const x         = Math.round((size - boxSize) / 2)
+      const y         = Math.round((size - boxSize) / 2)
+
+      // Fondo blanco redondeado detrás del logo
+      ctx.fillStyle = '#FFFFFF'
+      const r = Math.round(boxSize * 0.18)
+      ctx.beginPath()
+      ctx.moveTo(x + r, y)
+      ctx.lineTo(x + boxSize - r, y)
+      ctx.quadraticCurveTo(x + boxSize, y, x + boxSize, y + r)
+      ctx.lineTo(x + boxSize, y + boxSize - r)
+      ctx.quadraticCurveTo(x + boxSize, y + boxSize, x + boxSize - r, y + boxSize)
+      ctx.lineTo(x + r, y + boxSize)
+      ctx.quadraticCurveTo(x, y + boxSize, x, y + boxSize - r)
+      ctx.lineTo(x, y + r)
+      ctx.quadraticCurveTo(x, y, x + r, y)
+      ctx.closePath()
+      ctx.fill()
+
+      // Dibuja el logo centrado sobre el fondo
+      ctx.drawImage(logoImg, x + padding, y + padding, logoSize, logoSize)
+
+      resolve(canvas.toDataURL('image/png'))
+    }
+
+    qrImg.onload   = onLoad
+    logoImg.onload = onLoad
+    qrImg.onerror  = () => resolve(qrBase64) // fallback: QR sin logo
+    logoImg.onerror = () => resolve(qrBase64)
+
+    qrImg.src   = qrBase64
+    logoImg.src = '/assets/LogoAlytoBlack.png'
+  })
+}
+
+/**
+ * Hook: recibe qrBase64 del servidor y devuelve la versión con logo superpuesto.
+ */
+function useQRWithLogo(qrBase64) {
+  const [composited, setComposited] = useState(null)
+
+  useEffect(() => {
+    if (!qrBase64) { setComposited(null); return }
+    overlayLogoOnQR(qrBase64).then(setComposited)
+  }, [qrBase64])
+
+  return composited
+}
+
 function formatBOB(amount) {
   if (amount == null || amount === '') return ''
   return new Intl.NumberFormat('es-BO', {
@@ -99,8 +176,11 @@ function TabCobrar({ user }) {
     }
   }
 
+  const qrWithLogo = useQRWithLogo(qrData?.qrBase64)
+
   function handleShare() {
-    if (!qrData?.qrBase64) return
+    const src = qrWithLogo ?? qrData?.qrBase64
+    if (!src) return
     if (navigator.share) {
       navigator.share({ title: 'QR Alyto', text: `Págame Bs. ${formatBOB(qrData.amount)} con Alyto` })
         .catch(() => {})
@@ -110,9 +190,10 @@ function TabCobrar({ user }) {
   }
 
   function handleDownload() {
-    if (!qrData?.qrBase64) return
+    const src = qrWithLogo ?? qrData?.qrBase64
+    if (!src) return
     const a = document.createElement('a')
-    a.href     = qrData.qrBase64
+    a.href     = src
     a.download = `alyto-qr-${qrData.qrId}.png`
     a.click()
   }
@@ -129,7 +210,7 @@ function TabCobrar({ user }) {
       <div className="flex flex-col items-center gap-5 px-4 py-2">
         {/* QR image */}
         <div className="bg-white rounded-2xl p-4 shadow-[0_4px_24px_rgba(15,23,42,0.08)] border border-[#E2E8F0]">
-          <img src={qrData.qrBase64} alt="QR Alyto" className="w-64 h-64 rounded-xl" />
+          <img src={qrWithLogo ?? qrData.qrBase64} alt="QR Alyto" className="w-64 h-64 rounded-xl" />
         </div>
 
         {/* Monto + nombre */}
@@ -571,8 +652,11 @@ function TabMiQR({ user }) {
     if (!qrData) handleGenerate()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const qrWithLogo = useQRWithLogo(qrData?.qrBase64)
+
   function handleShare() {
-    if (!qrData?.qrBase64) return
+    const src = qrWithLogo ?? qrData?.qrBase64
+    if (!src) return
     if (navigator.share) {
       navigator.share({ title: `QR Alyto de ${user.firstName}`, text: 'Escanéame para enviarme BOB en Alyto' })
         .catch(() => {})
@@ -582,9 +666,10 @@ function TabMiQR({ user }) {
   }
 
   function handleDownload() {
-    if (!qrData?.qrBase64) return
+    const src = qrWithLogo ?? qrData?.qrBase64
+    if (!src) return
     const a = document.createElement('a')
-    a.href     = qrData.qrBase64
+    a.href     = src
     a.download = `alyto-mi-qr-${user.firstName}.png`
     a.click()
   }
@@ -622,7 +707,7 @@ function TabMiQR({ user }) {
     <div className="flex flex-col items-center gap-5 px-4 py-2">
       {/* QR */}
       <div className="bg-white rounded-2xl p-4 shadow-[0_4px_24px_rgba(15,23,42,0.08)] border border-[#E2E8F0]">
-        <img src={qrData.qrBase64} alt="Mi QR Alyto" className="w-64 h-64 rounded-xl" />
+        <img src={qrWithLogo ?? qrData.qrBase64} alt="Mi QR Alyto" className="w-64 h-64 rounded-xl" />
       </div>
 
       {/* Nombre */}
