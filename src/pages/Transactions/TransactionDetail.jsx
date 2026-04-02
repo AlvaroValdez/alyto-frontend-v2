@@ -271,6 +271,16 @@ function formatExactDate(dateStr) {
   })
 }
 
+function countryFlag(code) {
+  if (!code || code.length !== 2) return '🌍'
+  return String.fromCodePoint(...[...code.toUpperCase()].map(c => 0x1F1E6 - 65 + c.charCodeAt(0)))
+}
+
+function currencyToCountry(currency) {
+  const map = { BOB: 'BO', CLP: 'CL', USD: 'US', COP: 'CO', PEN: 'PE', ARS: 'AR', MXN: 'MX', BRL: 'BR', EUR: 'EU', GBP: 'GB' }
+  return map[currency] ?? null
+}
+
 // ── Sub-componentes ───────────────────────────────────────────────────────────
 
 function Row({ label, value, bold, valueColor }) {
@@ -344,26 +354,30 @@ export default function TransactionDetail() {
     window.print()
   }
 
+  async function captureComprobante() {
+    return html2canvas(comprobanteRef.current, {
+      backgroundColor: '#FFFFFF',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+    })
+  }
+
   async function handleShareImage() {
     if (!comprobanteRef.current || sharing) return
     setSharing(true)
     try {
-      const canvas = await html2canvas(comprobanteRef.current, {
-        backgroundColor: '#FFFFFF',
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      })
+      const canvas = await captureComprobante()
       canvas.toBlob(async (blob) => {
         const filename = `comprobante-alyto-${tx.transactionId}.png`
-        if (navigator.share && navigator.canShare?.({ files: [new File([blob], filename, { type: 'image/png' })] })) {
+        const file = new File([blob], filename, { type: 'image/png' })
+        if (navigator.share && navigator.canShare?.({ files: [file] })) {
           await navigator.share({
             title: 'Comprobante Alyto',
             text:  `Transferencia ${tx.transactionId}`,
-            files: [new File([blob], filename, { type: 'image/png' })],
+            files: [file],
           })
         } else {
-          // Fallback: descargar como PNG
           const url = URL.createObjectURL(blob)
           const a   = document.createElement('a')
           a.href     = url
@@ -371,6 +385,25 @@ export default function TransactionDetail() {
           a.click()
           URL.revokeObjectURL(url)
         }
+        setSharing(false)
+      }, 'image/png')
+    } catch {
+      setSharing(false)
+    }
+  }
+
+  async function handleDownloadImage() {
+    if (!comprobanteRef.current || sharing) return
+    setSharing(true)
+    try {
+      const canvas = await captureComprobante()
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob)
+        const a   = document.createElement('a')
+        a.href     = url
+        a.download = `comprobante-alyto-${tx.transactionId}.png`
+        a.click()
+        URL.revokeObjectURL(url)
         setSharing(false)
       }, 'image/png')
     } catch {
@@ -614,54 +647,156 @@ export default function TransactionDetail() {
           )}
 
           {/* ── 4. COMPROBANTE ───────────────────────────────────────────── */}
-          <div ref={comprobanteRef} className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
-            <p className="text-[0.6875rem] font-semibold text-[#94A3B8] uppercase tracking-wider mb-4">
-              Comprobante
-            </p>
+          <div>
+            {/* Comprobante card — solo esta parte es capturada por html2canvas */}
+            <div ref={comprobanteRef} className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
 
-            <div className="flex flex-col gap-3 mb-5">
-              {/* ID copiable */}
-              <div>
-                <p className="text-[0.6875rem] text-[#94A3B8] mb-1">ID de transacción</p>
-                <button
-                  onClick={handleCopy}
-                  className="flex items-center gap-2 text-[0.8125rem] font-mono text-[#0F172A] hover:text-[#1D9E75] transition-colors w-full text-left"
-                >
-                  <span className="truncate">{tx.transactionId}</span>
-                  {copied
-                    ? <CheckCircle size={14} className="text-[#1D9E75] flex-shrink-0" />
-                    : <Copy size={14} className="text-[#94A3B8] flex-shrink-0" />
-                  }
-                </button>
-                {copied && (
-                  <p className="text-[0.6875rem] text-[#1D9E75] mt-1">¡Copiado!</p>
-                )}
+              {/* Header branding */}
+              <div className="flex flex-col items-center py-5 px-5" style={{ background: 'linear-gradient(180deg, #1D9E750D 0%, #ffffff 100%)' }}>
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-2" style={{ background: '#1D9E75' }}>
+                  <span style={{ color: 'white', fontWeight: 900, fontSize: '1.125rem' }}>A</span>
+                </div>
+                <p style={{ color: '#1D9E75', fontWeight: 700, fontSize: '0.6875rem', letterSpacing: '0.12em' }}>ALYTO</p>
+                <p style={{ color: '#94A3B8', fontSize: '0.6875rem', marginTop: 2 }}>Comprobante de transferencia</p>
               </div>
 
-              <Row label="Fecha y hora" value={formatExactDate(tx.createdAt)} />
+              <div className="px-5 pb-5 flex flex-col">
 
-              {tx.updatedAt && tx.updatedAt !== tx.createdAt && (
-                <Row label="Última actualización" value={formatExactDate(tx.updatedAt)} />
-              )}
+                {/* ID de transacción */}
+                <div className="mb-4 pb-4" style={{ borderBottom: '1px solid #F1F5F9' }}>
+                  <p style={{ color: '#94A3B8', fontSize: '0.6875rem', marginBottom: 4 }}>ID de transacción</p>
+                  <button
+                    onClick={handleCopy}
+                    className="flex items-center gap-2 w-full text-left hover:opacity-70 transition-opacity"
+                    style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: copied ? '#1D9E75' : '#0F172A' }}
+                  >
+                    <span className="truncate">{tx.transactionId}</span>
+                    {copied
+                      ? <CheckCircle size={13} color="#1D9E75" style={{ flexShrink: 0 }} />
+                      : <Copy size={13} color="#94A3B8" style={{ flexShrink: 0 }} />
+                    }
+                  </button>
+                  {copied && <p style={{ color: '#1D9E75', fontSize: '0.625rem', marginTop: 2 }}>¡Copiado!</p>}
+                </div>
+
+                {/* Tú enviaste / Ellos reciben / Tasa */}
+                <div className="flex flex-col gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid #F1F5F9' }}>
+                  <div className="flex items-center justify-between">
+                    <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Tú enviaste</span>
+                    <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 600 }}>
+                      {countryFlag(currencyToCountry(tx.originCurrency))} {formatAmount(tx.originAmount, tx.originCurrency)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Ellos reciben</span>
+                    <span style={{ color: '#1D9E75', fontSize: '0.8125rem', fontWeight: 700 }}>
+                      {countryFlag(tx.destinationCountry)} {formatAmount(effectiveDestAmount, tx.destinationCurrency)}
+                    </span>
+                  </div>
+                  {tx.exchangeRate > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Tasa de cambio</span>
+                      <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>
+                        1 {tx.originCurrency} = {tx.exchangeRate.toLocaleString('es-CL', { maximumFractionDigits: 4 })} {tx.destinationCurrency}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Beneficiario */}
+                {tx.beneficiary && (
+                  <div className="flex flex-col gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    {(tx.beneficiary.fullName || tx.beneficiary.beneficiary_first_name) && (
+                      <div className="flex items-center justify-between">
+                        <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Beneficiario</span>
+                        <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>
+                          {maskName(tx.beneficiary.fullName || [tx.beneficiary.beneficiary_first_name, tx.beneficiary.beneficiary_last_name].filter(Boolean).join(' '))}
+                        </span>
+                      </div>
+                    )}
+                    {tx.beneficiary.bankName && (
+                      <div className="flex items-center justify-between">
+                        <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Banco</span>
+                        <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>{tx.beneficiary.bankName}</span>
+                      </div>
+                    )}
+                    {tx.beneficiary.accountNumber && (
+                      <div className="flex items-center justify-between">
+                        <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Cuenta</span>
+                        <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>{maskAccount(tx.beneficiary.accountNumber)}</span>
+                      </div>
+                    )}
+                    {tx.beneficiary.accountType && (
+                      <div className="flex items-center justify-between">
+                        <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Tipo</span>
+                        <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>{tx.beneficiary.accountType}</span>
+                      </div>
+                    )}
+                    {(tx.beneficiary.documentNumber ?? tx.beneficiary.document_number ?? tx.beneficiary.ci) && (
+                      <div className="flex items-center justify-between">
+                        <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>CI / Documento</span>
+                        <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>
+                          {tx.beneficiary.documentNumber ?? tx.beneficiary.document_number ?? tx.beneficiary.ci}
+                        </span>
+                      </div>
+                    )}
+                    {(tx.concept || tx.reference) && (
+                      <div className="flex items-center justify-between gap-3">
+                        <span style={{ color: '#64748B', fontSize: '0.8125rem', flexShrink: 0 }}>Concepto</span>
+                        <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500, textAlign: 'right' }}>
+                          {tx.concept || tx.reference}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Fecha, tiempo estimado, estado */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Fecha de envío</span>
+                    <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>{formatExactDate(tx.createdAt)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Tiempo estimado</span>
+                    <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>{deliveryLabel}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Estado</span>
+                    <span
+                      style={{ background: cfg.bg, color: cfg.color, fontSize: '0.75rem', fontWeight: 600, padding: '3px 12px', borderRadius: 999 }}
+                    >
+                      {cfg.label}
+                    </span>
+                  </div>
+                </div>
+
+              </div>
             </div>
 
-            {/* Botones compartir */}
-            <div className="flex gap-2">
+            {/* Botones — FUERA del ref: no aparecen en la imagen capturada */}
+            <div className="flex gap-2 mt-3">
               <button
                 onClick={handleShareImage}
                 disabled={sharing}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60"
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all active:scale-95 disabled:opacity-60"
+                style={{ background: '#25D366', color: 'white' }}
+              >
+                {sharing ? <RefreshCw size={15} className="animate-spin" /> : <MessageCircle size={15} />}
+                WhatsApp
+              </button>
+              <button
+                onClick={handleDownloadImage}
+                disabled={sharing}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all active:scale-95 disabled:opacity-60"
                 style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', color: '#64748B' }}
               >
-                {sharing
-                  ? <RefreshCw size={15} className="animate-spin" />
-                  : <Share2 size={15} />
-                }
-                Compartir
+                <Download size={15} />
+                Guardar
               </button>
               <button
                 onClick={handlePrint}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all active:scale-95"
                 style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', color: '#64748B' }}
                 title="Imprimir / PDF"
               >
