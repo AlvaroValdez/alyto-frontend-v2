@@ -23,11 +23,10 @@ import { request } from '../../services/api'
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /**
- * Superpone el logo de Alyto en el centro del QR base64.
- * Usa Canvas API del navegador — no requiere dependencias adicionales.
- * El logo ocupa ~22% del ancho del QR (seguro con errorCorrectionLevel 'H').
+ * Superpone el logo sobre el QR con canvas (para descargar).
+ * El logo ocupa ~22% del ancho (seguro con errorCorrectionLevel 'H').
  */
-async function overlayLogoOnQR(qrBase64) {
+async function buildQRWithLogo(qrBase64) {
   return new Promise((resolve) => {
     const qrImg   = new Image()
     const logoImg = new Image()
@@ -36,26 +35,21 @@ async function overlayLogoOnQR(qrBase64) {
     const onLoad = () => {
       loaded++
       if (loaded < 2) return
-
-      const size       = qrImg.naturalWidth  || 400
-      const canvas     = document.createElement('canvas')
-      canvas.width     = size
-      canvas.height    = size
-      const ctx        = canvas.getContext('2d')
-
-      // Dibuja el QR base
+      const size    = 400
+      const canvas  = document.createElement('canvas')
+      canvas.width  = size
+      canvas.height = size
+      const ctx     = canvas.getContext('2d')
       ctx.drawImage(qrImg, 0, 0, size, size)
 
-      // Tamaño del logo: 22% del QR
-      const logoSize  = Math.round(size * 0.22)
-      const padding   = Math.round(logoSize * 0.18)
-      const boxSize   = logoSize + padding * 2
-      const x         = Math.round((size - boxSize) / 2)
-      const y         = Math.round((size - boxSize) / 2)
+      const logoSize = Math.round(size * 0.22)
+      const padding  = Math.round(logoSize * 0.18)
+      const boxSize  = logoSize + padding * 2
+      const x        = Math.round((size - boxSize) / 2)
+      const y        = Math.round((size - boxSize) / 2)
+      const r        = Math.round(boxSize * 0.18)
 
-      // Fondo blanco redondeado detrás del logo
       ctx.fillStyle = '#FFFFFF'
-      const r = Math.round(boxSize * 0.18)
       ctx.beginPath()
       ctx.moveTo(x + r, y)
       ctx.lineTo(x + boxSize - r, y)
@@ -68,16 +62,15 @@ async function overlayLogoOnQR(qrBase64) {
       ctx.quadraticCurveTo(x, y, x + r, y)
       ctx.closePath()
       ctx.fill()
-
-      // Dibuja el logo centrado sobre el fondo
       ctx.drawImage(logoImg, x + padding, y + padding, logoSize, logoSize)
 
-      resolve(canvas.toDataURL('image/png'))
+      try { resolve(canvas.toDataURL('image/png')) }
+      catch { resolve(qrBase64) }
     }
 
-    qrImg.onload   = onLoad
-    logoImg.onload = onLoad
-    qrImg.onerror  = () => resolve(qrBase64) // fallback: QR sin logo
+    qrImg.onload    = onLoad
+    logoImg.onload  = onLoad
+    qrImg.onerror   = () => resolve(qrBase64)
     logoImg.onerror = () => resolve(qrBase64)
 
     qrImg.src   = qrBase64
@@ -86,17 +79,28 @@ async function overlayLogoOnQR(qrBase64) {
 }
 
 /**
- * Hook: recibe qrBase64 del servidor y devuelve la versión con logo superpuesto.
+ * QRDisplay — muestra el QR con el logo de Alyto superpuesto vía CSS.
+ * No usa canvas → no hay riesgo de taint ni errores de carga.
  */
-function useQRWithLogo(qrBase64) {
-  const [composited, setComposited] = useState(null)
-
-  useEffect(() => {
-    if (!qrBase64) { setComposited(null); return }
-    overlayLogoOnQR(qrBase64).then(setComposited)
-  }, [qrBase64])
-
-  return composited
+function QRDisplay({ src, alt, className }) {
+  return (
+    <div className={`relative inline-block ${className ?? ''}`}>
+      <img src={src} alt={alt} className="w-full h-full rounded-xl block" />
+      {/* Logo overlay centrado */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div
+          className="flex items-center justify-center rounded-xl bg-white"
+          style={{ width: '22%', height: '22%', padding: '3%', boxShadow: '0 0 0 1.5px #E2E8F0' }}
+        >
+          <img
+            src="/assets/LogoAlytoBlack.png"
+            alt="Alyto"
+            className="w-full h-full object-contain"
+          />
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function formatBOB(amount) {
@@ -176,11 +180,8 @@ function TabCobrar({ user }) {
     }
   }
 
-  const qrWithLogo = useQRWithLogo(qrData?.qrBase64)
-
   function handleShare() {
-    const src = qrWithLogo ?? qrData?.qrBase64
-    if (!src) return
+    if (!qrData?.qrBase64) return
     if (navigator.share) {
       navigator.share({ title: 'QR Alyto', text: `Págame Bs. ${formatBOB(qrData.amount)} con Alyto` })
         .catch(() => {})
@@ -189,9 +190,9 @@ function TabCobrar({ user }) {
     }
   }
 
-  function handleDownload() {
-    const src = qrWithLogo ?? qrData?.qrBase64
-    if (!src) return
+  async function handleDownload() {
+    if (!qrData?.qrBase64) return
+    const src = await buildQRWithLogo(qrData.qrBase64)
     const a = document.createElement('a')
     a.href     = src
     a.download = `alyto-qr-${qrData.qrId}.png`
@@ -210,7 +211,7 @@ function TabCobrar({ user }) {
       <div className="flex flex-col items-center gap-5 px-4 py-2">
         {/* QR image */}
         <div className="bg-white rounded-2xl p-4 shadow-[0_4px_24px_rgba(15,23,42,0.08)] border border-[#E2E8F0]">
-          <img src={qrWithLogo ?? qrData.qrBase64} alt="QR Alyto" className="w-64 h-64 rounded-xl" />
+          <QRDisplay src={qrData.qrBase64} alt="QR Alyto" className="w-64 h-64" />
         </div>
 
         {/* Monto + nombre */}
@@ -652,11 +653,8 @@ function TabMiQR({ user }) {
     if (!qrData) handleGenerate()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const qrWithLogo = useQRWithLogo(qrData?.qrBase64)
-
   function handleShare() {
-    const src = qrWithLogo ?? qrData?.qrBase64
-    if (!src) return
+    if (!qrData?.qrBase64) return
     if (navigator.share) {
       navigator.share({ title: `QR Alyto de ${user.firstName}`, text: 'Escanéame para enviarme BOB en Alyto' })
         .catch(() => {})
@@ -665,9 +663,9 @@ function TabMiQR({ user }) {
     }
   }
 
-  function handleDownload() {
-    const src = qrWithLogo ?? qrData?.qrBase64
-    if (!src) return
+  async function handleDownload() {
+    if (!qrData?.qrBase64) return
+    const src = await buildQRWithLogo(qrData.qrBase64)
     const a = document.createElement('a')
     a.href     = src
     a.download = `alyto-mi-qr-${user.firstName}.png`
@@ -707,7 +705,7 @@ function TabMiQR({ user }) {
     <div className="flex flex-col items-center gap-5 px-4 py-2">
       {/* QR */}
       <div className="bg-white rounded-2xl p-4 shadow-[0_4px_24px_rgba(15,23,42,0.08)] border border-[#E2E8F0]">
-        <img src={qrWithLogo ?? qrData.qrBase64} alt="Mi QR Alyto" className="w-64 h-64 rounded-xl" />
+        <QRDisplay src={qrData.qrBase64} alt="Mi QR Alyto" className="w-64 h-64" />
       </div>
 
       {/* Nombre */}
