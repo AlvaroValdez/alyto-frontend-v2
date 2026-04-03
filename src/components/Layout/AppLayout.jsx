@@ -8,6 +8,7 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { Bell, Home, BarChart2, FileText, User, Shield, LogOut, Users } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { usePushNotifications } from '../../hooks/usePushNotifications'
 
 const NAV_ITEMS = [
   { icon: Home,      label: 'Inicio',        to: '/dashboard'    },
@@ -24,6 +25,8 @@ export default function AppLayout() {
 
   const firstName = user?.firstName ?? ''
   const role      = user?.role      ?? ''
+
+  const { permission, requestPermission } = usePushNotifications()
 
   function handleLogout() {
     logout()
@@ -68,10 +71,29 @@ export default function AppLayout() {
           )}
 
           <button
-            className="w-9 h-9 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center shadow-sm"
+            onClick={permission === 'default' ? requestPermission : undefined}
+            className="w-9 h-9 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center shadow-sm relative"
             aria-label="Notificaciones"
+            title={
+              permission === 'default' ? 'Activar notificaciones' :
+              permission === 'granted' ? 'Notificaciones activas' :
+              'Notificaciones desactivadas'
+            }
           >
-            <Bell size={16} className="text-[#64748B]" />
+            <Bell
+              size={16}
+              className={
+                permission === 'granted' ? 'text-[#1D9E75]' :
+                permission === 'denied'  ? 'text-[#CBD5E1]' :
+                'text-[#64748B]'
+              }
+            />
+            {permission === 'default' && (
+              <span
+                className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#F59E0B] border border-white"
+                aria-hidden="true"
+              />
+            )}
           </button>
 
           {firstName && (
