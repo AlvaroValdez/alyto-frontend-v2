@@ -73,9 +73,10 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
 
   // Sincronizar desde el perfil cargado — push activo solo si hay token + permiso real
   useEffect(() => {
-    if (profile?.notifications) {
-      setEmailEnabled(profile.notifications.email ?? true)
-      const profilePush   = profile.notifications.push ?? false
+    const notifPrefs = profile?.preferences?.notifications ?? profile?.notifications
+    if (notifPrefs) {
+      setEmailEnabled(notifPrefs.email ?? true)
+      const profilePush   = notifPrefs.push ?? false
       const hasToken      = !!localStorage.getItem('alyto_fcm_token')
       const hasPermission = typeof Notification !== 'undefined' && Notification.permission === 'granted'
       setPushEnabled(profilePush && hasToken && hasPermission)
@@ -86,7 +87,7 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
     setEmailEnabled(val)
     setSavingEmail(true)
     try {
-      await onUpdate({ notifications: { email: val, push: pushEnabled } })
+      await onUpdate({ preferences: { notifications: { email: val, push: pushEnabled } } })
     } catch {
       setEmailEnabled(!val)
     } finally {
@@ -106,7 +107,7 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
         const granted = typeof Notification !== 'undefined' && Notification.permission === 'granted'
         if (granted) {
           setPushEnabled(true)
-          await onUpdate({ notifications: { email: emailEnabled, push: true } })
+          await onUpdate({ preferences: { notifications: { email: emailEnabled, push: true } } })
         }
         // Si el usuario negó el diálogo, el switch no cambia
       } catch {
@@ -121,7 +122,7 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
     setPushEnabled(val)
     setSavingPush(true)
     try {
-      await onUpdate({ notifications: { email: emailEnabled, push: val } })
+      await onUpdate({ preferences: { notifications: { email: emailEnabled, push: val } } })
       // Al desactivar: eliminar token FCM del backend
       if (!val) {
         const fcmToken = localStorage.getItem('alyto_fcm_token')
