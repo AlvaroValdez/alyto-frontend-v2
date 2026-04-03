@@ -20,7 +20,7 @@ function Toggle({ enabled, onChange, disabled }) {
       disabled={disabled}
       className={`relative w-11 h-6 rounded-full transition-all duration-200 flex-shrink-0 ${
         disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-      } ${enabled ? 'bg-[#233E58]' : 'bg-[#E2E8F0]'}`}
+      } ${enabled ? 'bg-[#1D9E75]' : 'bg-[#263050]'}`}
       aria-checked={enabled}
       role="switch"
     >
@@ -37,16 +37,16 @@ function Toggle({ enabled, onChange, disabled }) {
 
 function NotifRow({ icon: Icon, title, description, enabled, saving, onChange, disabled }) {
   return (
-    <div className="flex items-start gap-3 px-4 py-4">
-      <div className="w-9 h-9 rounded-xl bg-[#F8FAFC] flex items-center justify-center flex-shrink-0 mt-0.5">
+    <div className="flex items-center gap-3 px-4 py-4">
+      <div className="w-9 h-9 rounded-xl bg-[#F8FAFC] flex items-center justify-center flex-shrink-0">
         <Icon size={15} className="text-[#64748B]" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[0.9375rem] font-semibold text-[#0F172A] leading-tight">{title}</p>
         <p className="text-[0.75rem] text-[#64748B] mt-0.5 leading-snug">{description}</p>
       </div>
-      <div className="flex items-center gap-2 mt-0.5">
-        {saving && <Loader2 size={12} className="text-[#233E58] animate-spin" />}
+      <div className="flex items-center gap-2">
+        {saving && <Loader2 size={12} className="text-[#1D9E75] animate-spin" />}
         <Toggle enabled={enabled} onChange={onChange} disabled={disabled || saving} />
       </div>
     </div>
@@ -103,9 +103,11 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
       setSavingPush(true)
       try {
         await requestPermission()
-        // requestPermission() ya registra el token en backend y localStorage
-        const granted = typeof Notification !== 'undefined' && Notification.permission === 'granted'
+        // Verificar directamente localStorage — requestPermission() guarda el token ahí
+        const newToken = localStorage.getItem('alyto_fcm_token')
+        const granted  = typeof Notification !== 'undefined' && Notification.permission === 'granted'
         if (granted) {
+          // Con o sin token: guardamos preferencia. Sin token = SW aún no activo, reintentará al recargar.
           setPushEnabled(true)
           await onUpdate({ preferences: { notifications: { email: emailEnabled, push: true } } })
         }
