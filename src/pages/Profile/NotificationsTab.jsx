@@ -2,11 +2,13 @@
  * NotificationsTab.jsx — Preferencias de notificaciones.
  *
  * Toggle switches para email y push. Auto-save via PATCH /user/profile.
- * Detecta si el navegador tiene notificaciones bloqueadas a nivel de sistema.
+ * Conecta el toggle de push a FCM real: pide permiso al navegador,
+ * genera token y lo registra en backend vía usePushNotifications.
  */
 
 import { useState, useEffect } from 'react'
 import { Mail, Bell, BellOff, Loader2 } from 'lucide-react'
+import { usePushNotifications } from '../../hooks/usePushNotifications'
 
 // ── Toggle Switch ─────────────────────────────────────────────────────────────
 
@@ -53,21 +55,30 @@ function NotifRow({ icon: Icon, title, description, enabled, saving, onChange, d
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export default function NotificationsTab({ profile, saving, onUpdate }) {
+export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDevice }) {
   const [emailEnabled, setEmailEnabled] = useState(true)
   const [pushEnabled,  setPushEnabled]  = useState(false)
   const [savingEmail,  setSavingEmail]  = useState(false)
   const [savingPush,   setSavingPush]   = useState(false)
 
-  const pushBlocked = typeof window !== 'undefined'
-    && 'Notification' in window
-    && Notification.permission === 'denied'
+  const {
+    permission,
+    token,
+    requestPermission,
+  } = usePushNotifications()
 
-  // Sincronizar desde el perfil cargado
+  const pushBlocked = permission === 'denied'
+  const pushGranted = permission === 'granted' && !!token
+  const pushDefault = permission === 'default'
+
+  // Sincronizar desde el perfil cargado — push activo solo si hay token + permiso real
   useEffect(() => {
     if (profile?.notifications) {
       setEmailEnabled(profile.notifications.email ?? true)
-      setPushEnabled(profile.notifications.push   ?? false)
+      const profilePush   = profile.notifications.push ?? false
+      const hasToken      = !!localStorage.getItem('alyto_fcm_token')
+      const hasPermission = typeof Notification !== 'undefined' && Notification.permission === 'granted'
+      setPushEnabled(profilePush && hasToken && hasPermission)
     }
   }, [profile])
 
@@ -77,7 +88,6 @@ export default function NotificationsTab({ profile, saving, onUpdate }) {
     try {
       await onUpdate({ notifications: { email: val, push: pushEnabled } })
     } catch {
-      // Revertir en caso de error
       setEmailEnabled(!val)
     } finally {
       setSavingEmail(false)
@@ -86,10 +96,39 @@ export default function NotificationsTab({ profile, saving, onUpdate }) {
 
   async function handlePushToggle(val) {
     if (pushBlocked) return
+
+    // Activar: si el permiso aún no fue otorgado, pedirlo primero
+    if (val && permission !== 'granted') {
+      setSavingPush(true)
+      try {
+        await requestPermission()
+        // requestPermission() ya registra el token en backend y localStorage
+        const granted = typeof Notification !== 'undefined' && Notification.permission === 'granted'
+        if (granted) {
+          setPushEnabled(true)
+          await onUpdate({ notifications: { email: emailEnabled, push: true } })
+        }
+        // Si el usuario negó el diálogo, el switch no cambia
+      } catch {
+        setPushEnabled(false)
+      } finally {
+        setSavingPush(false)
+      }
+      return
+    }
+
+    // Desactivar (o activar cuando ya tiene permiso) — guarda preferencia
     setPushEnabled(val)
     setSavingPush(true)
     try {
       await onUpdate({ notifications: { email: emailEnabled, push: val } })
+      // Al desactivar: eliminar token FCM del backend
+      if (!val) {
+        const fcmToken = localStorage.getItem('alyto_fcm_token')
+        if (fcmToken && onRemoveDevice) {
+          await onRemoveDevice(fcmToken)
+        }
+      }
     } catch {
       setPushEnabled(!val)
     } finally {
@@ -116,21 +155,37 @@ export default function NotificationsTab({ profile, saving, onUpdate }) {
         <NotifRow
           icon={pushBlocked ? BellOff : Bell}
           title="Notificaciones push"
-          description="Recibir alertas en este dispositivo"
-          enabled={pushEnabled && !pushBlocked}
+          description={
+            pushBlocked ? 'Bloqueadas en el navegador — actívalas en configuración' :
+            pushGranted ? 'Activas en este dispositivo' :
+            pushDefault ? 'Toca para activar alertas en este dispositivo' :
+                          'Recibir alertas en este dispositivo'
+          }
+          enabled={pushEnabled && pushGranted}
           saving={savingPush}
           onChange={handlePushToggle}
           disabled={pushBlocked}
         />
       </div>
 
-      {/* Aviso bloqueadas en navegador */}
+      {/* Aviso: bloqueadas en el navegador */}
       {pushBlocked && (
         <div className="mx-4 mt-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl px-4 py-3.5 flex items-start gap-3">
           <BellOff size={16} className="text-[#64748B] flex-shrink-0 mt-0.5" />
           <p className="text-[0.8125rem] text-[#64748B] leading-snug">
             Las notificaciones están <strong className="text-[#0F172A]">bloqueadas</strong> en tu navegador.
             Actívalas en la configuración de tu navegador para recibir alertas.
+          </p>
+        </div>
+      )}
+
+      {/* Aviso: permiso no solicitado aún */}
+      {!pushBlocked && pushDefault && !pushEnabled && (
+        <div className="mx-4 mt-3 bg-[#EFF6FF] border border-[#BFDBFE] rounded-2xl px-4 py-3.5 flex items-start gap-3">
+          <Bell size={16} className="text-[#3B82F6] flex-shrink-0 mt-0.5" />
+          <p className="text-[0.8125rem] text-[#1D4ED8] leading-snug">
+            Activa las notificaciones para recibir alertas instantáneas
+            cuando tus pagos sean procesados.
           </p>
         </div>
       )}

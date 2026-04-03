@@ -271,6 +271,7 @@ export default function ProfilePage() {
             profile={profile}
             saving={saving}
             onUpdate={updateProfile}
+            onRemoveDevice={removeDevice}
           />
         )}
         {activeTab === 'business' && (
