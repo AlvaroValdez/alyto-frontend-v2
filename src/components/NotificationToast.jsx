@@ -10,14 +10,14 @@
  *   onNavigate — Callback(transactionId) para "Ver transacción"
  */
 
-import { X, ArrowDownLeft, ArrowUpRight, Clock, AlertCircle, Bell } from 'lucide-react'
+import { X, ArrowDownLeft, ArrowUpRight, Clock, AlertCircle, Bell, CheckCircle2 } from 'lucide-react'
 
-// ── Mapa de tipos de notificación ─────────────────────────────────────────
+// ── Mapa de tipos — sincronizado con NOTIFICATIONS en backend/services/notifications.js
 const TYPE_CONFIG = {
-  payment_received: { Icon: ArrowDownLeft, color: '#22C55E', bg: '#22C55E1A' },
-  payment_sent:     { Icon: ArrowUpRight,  color: '#C4CBD8', bg: '#C4CBD81A' },
-  payment_pending:  { Icon: Clock,         color: '#C4CBD8', bg: '#C4CBD81A' },
-  payment_failed:   { Icon: AlertCircle,   color: '#EF4444', bg: '#EF44441A' },
+  payin_confirmed:   { Icon: ArrowDownLeft, color: '#22C55E', bg: '#22C55E1A' },
+  payment_completed: { Icon: CheckCircle2,  color: '#22C55E', bg: '#22C55E1A' },
+  payout_sent:       { Icon: ArrowUpRight,  color: '#8AB4F8', bg: '#1D346133' },
+  payment_failed:    { Icon: AlertCircle,   color: '#EF4444', bg: '#EF44441A' },
 }
 
 function getConfig(type) {
