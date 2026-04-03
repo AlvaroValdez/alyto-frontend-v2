@@ -27,43 +27,48 @@ const ENTITY_ORIGIN = {
 // ── Info de países para enriquecer la respuesta del backend ──────────────────
 
 const COUNTRY_INFO = {
-  // LatAm — Vita
-  CO: { name: 'Colombia',          currency: 'COP', flag: '🇨🇴' },
-  PE: { name: 'Perú',              currency: 'PEN', flag: '🇵🇪' },
-  BO: { name: 'Bolivia',           currency: 'BOB', flag: '🇧🇴' },
-  AR: { name: 'Argentina',         currency: 'ARS', flag: '🇦🇷' },
-  MX: { name: 'México',            currency: 'MXN', flag: '🇲🇽' },
-  BR: { name: 'Brasil',            currency: 'BRL', flag: '🇧🇷' },
-  CL: { name: 'Chile',             currency: 'CLP', flag: '🇨🇱' },
-  EC: { name: 'Ecuador',           currency: 'USD', flag: '🇪🇨' },
-  VE: { name: 'Venezuela',         currency: 'USD', flag: '🇻🇪' },
-  PY: { name: 'Paraguay',          currency: 'PYG', flag: '🇵🇾' },
-  UY: { name: 'Uruguay',           currency: 'UYU', flag: '🇺🇾' },
-  CR: { name: 'Costa Rica',        currency: 'CRC', flag: '🇨🇷' },
-  PA: { name: 'Panamá',            currency: 'USD', flag: '🇵🇦' },
-  DO: { name: 'Rep. Dominicana',   currency: 'DOP', flag: '🇩🇴' },
-  GT: { name: 'Guatemala',         currency: 'GTQ', flag: '🇬🇹' },
-  HT: { name: 'Haití',             currency: 'HTG', flag: '🇭🇹' },
-  SV: { name: 'El Salvador',       currency: 'USD', flag: '🇸🇻' },
-  ES: { name: 'España',            currency: 'EUR', flag: '🇪🇸' },
-  PL: { name: 'Polonia',           currency: 'PLN', flag: '🇵🇱' },
-  // Global — OwlPay
-  US: { name: 'Estados Unidos',    currency: 'USD', flag: '🇺🇸' },
-  EU: { name: 'Europa (EUR)',       currency: 'EUR', flag: '🇪🇺' },
-  CN: { name: 'China',             currency: 'CNY', flag: '🇨🇳' },
-  AE: { name: 'Emiratos Árabes',   currency: 'AED', flag: '🇦🇪' },
-  GB: { name: 'Reino Unido',       currency: 'GBP', flag: '🇬🇧' },
-  CA: { name: 'Canadá',            currency: 'CAD', flag: '🇨🇦' },
-  AU: { name: 'Australia',         currency: 'AUD', flag: '🇦🇺' },
-  JP: { name: 'Japón',             currency: 'JPY', flag: '🇯🇵' },
-  IN: { name: 'India',             currency: 'INR', flag: '🇮🇳' },
-  SG: { name: 'Singapur',          currency: 'SGD', flag: '🇸🇬' },
+  // ── LatAm — Vita ────────────────────────────────────────────────────────────
+  CO: { name: 'Colombia',          currency: 'COP', currencyName: 'Peso colombiano',      flag: '🇨🇴' },
+  PE: { name: 'Perú',              currency: 'PEN', currencyName: 'Sol peruano',           flag: '🇵🇪' },
+  BO: { name: 'Bolivia',           currency: 'BOB', currencyName: 'Boliviano',             flag: '🇧🇴' },
+  AR: { name: 'Argentina',         currency: 'ARS', currencyName: 'Peso argentino',        flag: '🇦🇷' },
+  MX: { name: 'México',            currency: 'MXN', currencyName: 'Peso mexicano',         flag: '🇲🇽' },
+  BR: { name: 'Brasil',            currency: 'BRL', currencyName: 'Real brasileño',        flag: '🇧🇷' },
+  CL: { name: 'Chile',             currency: 'CLP', currencyName: 'Peso chileno',          flag: '🇨🇱' },
+  EC: { name: 'Ecuador',           currency: 'USD', currencyName: 'Dólar estadounidense',  flag: '🇪🇨' },
+  VE: { name: 'Venezuela',         currency: 'USD', currencyName: 'Dólar estadounidense',  flag: '🇻🇪' },
+  PY: { name: 'Paraguay',          currency: 'PYG', currencyName: 'Guaraní paraguayo',     flag: '🇵🇾' },
+  UY: { name: 'Uruguay',           currency: 'UYU', currencyName: 'Peso uruguayo',         flag: '🇺🇾' },
+  CR: { name: 'Costa Rica',        currency: 'CRC', currencyName: 'Colón costarricense',   flag: '🇨🇷' },
+  PA: { name: 'Panamá',            currency: 'USD', currencyName: 'Dólar estadounidense',  flag: '🇵🇦' },
+  DO: { name: 'Rep. Dominicana',   currency: 'DOP', currencyName: 'Peso dominicano',       flag: '🇩🇴' },
+  GT: { name: 'Guatemala',         currency: 'GTQ', currencyName: 'Quetzal guatemalteco',  flag: '🇬🇹' },
+  HT: { name: 'Haití',             currency: 'HTG', currencyName: 'Gourde haitiano',       flag: '🇭🇹' },
+  SV: { name: 'El Salvador',       currency: 'USD', currencyName: 'Dólar estadounidense',  flag: '🇸🇻' },
+  // ── Europa — Vita vita_sent ──────────────────────────────────────────────────
+  ES: { name: 'España',            currency: 'EUR', currencyName: 'Euro',                  flag: '🇪🇸' },
+  PL: { name: 'Polonia',           currency: 'PLN', currencyName: 'Esloti polaco',         flag: '🇵🇱' },
+  // ── Global — OwlPay / Vita withdrawal ───────────────────────────────────────
+  US: { name: 'Estados Unidos',    currency: 'USD', currencyName: 'Dólar estadounidense',  flag: '🇺🇸' },
+  EU: { name: 'Europa',            currency: 'EUR', currencyName: 'Euro',                  flag: '🇪🇺' },
+  CN: { name: 'China',             currency: 'CNY', currencyName: 'Yuan chino',            flag: '🇨🇳' },
+  AE: { name: 'Emiratos Árabes',   currency: 'AED', currencyName: 'Dírham emiratí',        flag: '🇦🇪' },
+  GB: { name: 'Reino Unido',       currency: 'GBP', currencyName: 'Libra esterlina',       flag: '🇬🇧' },
+  CA: { name: 'Canadá',            currency: 'CAD', currencyName: 'Dólar canadiense',      flag: '🇨🇦' },
+  AU: { name: 'Australia',         currency: 'AUD', currencyName: 'Dólar australiano',     flag: '🇦🇺' },
+  HK: { name: 'Hong Kong',         currency: 'HKD', currencyName: 'Dólar de Hong Kong',   flag: '🇭🇰' },
+  JP: { name: 'Japón',             currency: 'JPY', currencyName: 'Yen japonés',           flag: '🇯🇵' },
+  SG: { name: 'Singapur',          currency: 'SGD', currencyName: 'Dólar de Singapur',    flag: '🇸🇬' },
+  ZA: { name: 'Sudáfrica',         currency: 'ZAR', currencyName: 'Rand sudafricano',      flag: '🇿🇦' },
+  NG: { name: 'Nigeria',           currency: 'NGN', currencyName: 'Naira nigeriana',       flag: '🇳🇬' },
+  IN: { name: 'India',             currency: 'INR', currencyName: 'Rupia india',           flag: '🇮🇳' },
 }
 
+// Orden de aparición preferido (los más usados primero, el resto va alfabético al final)
 const COUNTRY_PRIORITY = {
-  SpA: ['CO', 'PE', 'AR', 'MX', 'BR', 'US', 'EC', 'VE', 'PY', 'UY', 'BO', 'EU', 'CN', 'AE', 'GB'],
-  SRL: ['CO', 'PE', 'CL', 'AR', 'MX', 'BR', 'EC', 'VE', 'PY', 'UY', 'US', 'EU', 'CN', 'AE', 'GB'],
-  LLC: ['CO', 'PE', 'AR', 'MX', 'BR', 'CL', 'EU', 'CN', 'AE', 'US', 'GB'],
+  SpA: ['CO', 'PE', 'AR', 'MX', 'BR', 'US', 'EC', 'VE', 'PY', 'UY', 'BO', 'CR', 'PA', 'DO', 'GT', 'SV', 'AU', 'GB', 'EU', 'CN', 'AE', 'HT'],
+  SRL: ['CO', 'PE', 'CL', 'AR', 'MX', 'BR', 'EC', 'VE', 'PY', 'UY', 'US', 'CR', 'PA', 'DO', 'GT', 'SV', 'ES', 'PL', 'CA', 'HK', 'EU', 'GB', 'AU', 'CN', 'AE', 'JP', 'SG', 'ZA', 'NG', 'HT'],
+  LLC: ['CO', 'PE', 'AR', 'MX', 'BR', 'CL', 'EC', 'VE', 'PY', 'UY', 'US', 'EU', 'GB', 'CN', 'AE', 'AU', 'CA', 'JP', 'SG'],
 }
 
 /** Convierte la lista de corredores en opciones de país destino únicas, ordenadas por relevancia */
@@ -74,12 +79,14 @@ function corridorsToCountries(corridors, legalEntity = 'SpA') {
     const code = c.destinationCountry
     if (!code || seen.has(code)) continue
     seen.add(code)
-    const info = COUNTRY_INFO[code] ?? {}
+    const info     = COUNTRY_INFO[code] ?? {}
+    const currency = c.destinationCurrency ?? info.currency ?? '—'
     result.push({
       code,
-      name:     info.name     ?? code,
-      currency: c.destinationCurrency ?? info.currency ?? '—',
-      flag:     info.flag     ?? '🌍',
+      name:         c.destinationCountryName ?? info.name ?? code,
+      currency,
+      currencyName: info.currencyName ?? currency,
+      flag:         info.flag ?? c.destinationFlag ?? '🌍',
     })
   }
   const priority = COUNTRY_PRIORITY[legalEntity] ?? []
@@ -162,11 +169,13 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
     if (e.target === e.currentTarget) onClose()
   }
 
-  const filtered = search.trim()
+  const q = search.trim().toLowerCase()
+  const filtered = q
     ? countries.filter(c =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.currency.toLowerCase().includes(search.toLowerCase()) ||
-        c.code.toLowerCase().includes(search.toLowerCase())
+        c.name.toLowerCase().includes(q) ||
+        (c.currencyName ?? '').toLowerCase().includes(q) ||
+        c.currency.toLowerCase().includes(q) ||
+        c.code.toLowerCase().includes(q)
       )
     : countries
 
@@ -235,7 +244,7 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
                 <p className="text-[0.9375rem] font-semibold text-[#0F172A] leading-tight truncate">
                   {c.name}
                 </p>
-                <p className="text-[0.75rem] text-[#64748B]">{c.currency}</p>
+                <p className="text-[0.75rem] text-[#64748B]">{c.currencyName ?? c.currency}</p>
               </div>
 
               {/* Checkmark si está seleccionado */}
@@ -454,7 +463,9 @@ export default function Step1Amount({ initialData, onNext }) {
                   <p className="text-[0.9375rem] font-semibold text-[#0F172A] leading-tight">
                     {selectedCountry.name}
                   </p>
-                  <p className="text-[0.75rem] text-[#64748B]">{selectedCountry.currency}</p>
+                  <p className="text-[0.75rem] text-[#64748B]">
+                    {selectedCountry.currencyName ?? selectedCountry.currency}
+                  </p>
                 </>
               ) : (
                 <p className="text-[0.9375rem] text-[#94A3B8]">Selecciona un país</p>
