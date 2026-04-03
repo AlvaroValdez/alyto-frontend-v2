@@ -16,6 +16,23 @@ import { useQuoteSocket } from '../../hooks/useQuoteSocket'
 import { useAuth }        from '../../context/AuthContext'
 import { listUserCorridors, getCurrentExchangeRates } from '../../services/paymentsService'
 
+// ── Flag image usando CDN (compatible con todos los SO/navegadores) ───────────
+
+function FlagImg({ code, size = 32 }) {
+  const h = Math.round(size * 0.75)
+  return (
+    <img
+      src={`https://flagcdn.com/${size}x${h}/${code.toLowerCase()}.png`}
+      alt={code}
+      width={size}
+      height={h}
+      className="rounded object-cover"
+      style={{ width: size, height: h }}
+      onError={e => { e.currentTarget.style.opacity = '0' }}
+    />
+  )
+}
+
 // ── Origen según entidad legal ────────────────────────────────────────────────
 
 const ENTITY_ORIGIN = {
@@ -233,10 +250,10 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
             >
               {/* Flag */}
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-xl"
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
                 style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}
               >
-                {c.flag}
+                <FlagImg code={c.code} size={40} />
               </div>
 
               {/* Nombre + moneda */}
@@ -450,10 +467,13 @@ export default function Step1Amount({ initialData, onNext }) {
           >
             {/* Flag circle */}
             <div
-              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-xl"
+              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
               style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}
             >
-              {selectedCountry?.flag || '🌎'}
+              {selectedCountry
+                ? <FlagImg code={selectedCountry.code} size={36} />
+                : <span className="text-lg">🌎</span>
+              }
             </div>
 
             {/* Text */}

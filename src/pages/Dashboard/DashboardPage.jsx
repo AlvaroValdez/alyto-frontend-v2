@@ -102,11 +102,40 @@ const COUNTRY_META = {
   NG: { name: 'Nigeria',           currencyName: 'Naira nigeriana',       flag: '🇳🇬' },
 }
 
+function CountryFlag({ code }) {
+  const src = `https://flagcdn.com/48x36/${code.toLowerCase()}.png`
+  return (
+    <img
+      src={src}
+      alt={code}
+      width={48}
+      height={36}
+      className="rounded-md object-cover shadow-sm"
+      style={{ width: 40, height: 30 }}
+      onError={e => {
+        e.currentTarget.style.display = 'none'
+        e.currentTarget.nextSibling && (e.currentTarget.nextSibling.style.display = 'flex')
+      }}
+    />
+  )
+}
+
 function DestinationCountryCard({ country }) {
   const isManual = country.payinMethod === 'manual'
   return (
     <div className="flex-shrink-0 bg-white rounded-2xl p-3.5 border border-[#E2E8F0] min-w-[108px] flex flex-col items-center gap-2">
-      <span className="text-[2rem] leading-none">{country.flag}</span>
+      {/* Flag image — flagcdn.com renders en todos los SO/navegadores */}
+      <div className="relative flex items-center justify-center" style={{ width: 40, height: 30 }}>
+        <CountryFlag code={country.code} />
+        {/* Fallback si la imagen falla */}
+        <div
+          className="absolute inset-0 items-center justify-center rounded-md bg-[#F1F5F9] text-[0.625rem] font-bold text-[#94A3B8]"
+          style={{ display: 'none' }}
+        >
+          {country.code}
+        </div>
+      </div>
+
       <div className="text-center">
         <p className="text-[0.75rem] font-semibold text-[#0F172A] leading-tight">{country.name}</p>
         <p className="text-[0.625rem] text-[#94A3B8] mt-0.5">{country.currencyName}</p>
