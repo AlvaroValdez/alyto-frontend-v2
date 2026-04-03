@@ -142,9 +142,9 @@ export default function DashboardPage() {
           const meta = COUNTRY_META[code] ?? {}
           list.push({
             code,
-            name:         c.destinationCountryName ?? meta.name ?? code,
-            flag:         c.destinationFlag        ?? meta.flag ?? '🌍',
-            currencyName: meta.currencyName         ?? c.destinationCurrency ?? '—',
+            name:         meta.name         || c.destinationCountryName || code,
+            flag:         meta.flag         || c.destinationFlag        || '🌍',
+            currencyName: meta.currencyName  || c.destinationCurrency   || '—',
             payinMethod:  c.payinMethod ?? null,
           })
         }

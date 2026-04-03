@@ -83,10 +83,10 @@ function corridorsToCountries(corridors, legalEntity = 'SpA') {
     const currency = c.destinationCurrency ?? info.currency ?? '—'
     result.push({
       code,
-      name:         c.destinationCountryName ?? info.name ?? code,
+      name:         info.name         || c.destinationCountryName || code,
       currency,
-      currencyName: info.currencyName ?? currency,
-      flag:         info.flag ?? c.destinationFlag ?? '🌍',
+      currencyName: info.currencyName  || currency,
+      flag:         info.flag          || c.destinationFlag        || '🌍',
     })
   }
   const priority = COUNTRY_PRIORITY[legalEntity] ?? []
