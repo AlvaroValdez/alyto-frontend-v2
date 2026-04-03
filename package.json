@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/inject-firebase-sw.js",
     "preview": "vite preview",
+    "inject:sw": "node scripts/inject-firebase-sw.js",
     "check:production": "node scripts/checkProduction.js",
-    "build:production": "npm run check:production && vite build"
+    "build:production": "npm run check:production && vite build && node scripts/inject-firebase-sw.js"
   },
   "dependencies": {
     "@sentry/react": "^10.45.0",
