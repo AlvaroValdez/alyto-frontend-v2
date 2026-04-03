@@ -90,6 +90,15 @@ const COUNTRY_PRIORITY = {
 
 /** Convierte la lista de corredores en opciones de país destino únicas, ordenadas por relevancia */
 function corridorsToCountries(corridors, legalEntity = 'SpA') {
+  // Calcular el mínimo de envío por país (puede haber varios corredores al mismo destino)
+  const minByCountry = {}
+  for (const c of corridors) {
+    const code = c.destinationCountry
+    if (!code) continue
+    const m = c.minAmountOrigin ?? 0
+    minByCountry[code] = minByCountry[code] === undefined ? m : Math.min(minByCountry[code], m)
+  }
+
   const seen   = new Set()
   const result = []
   for (const c of corridors) {
@@ -104,6 +113,7 @@ function corridorsToCountries(corridors, legalEntity = 'SpA') {
       currency,
       currencyName: info.currencyName  || currency,
       flag:         info.flag          || c.destinationFlag        || '🌍',
+      minAmount:    minByCountry[code] ?? 0,
     })
   }
   const priority = COUNTRY_PRIORITY[legalEntity] ?? []
@@ -256,12 +266,17 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
                 <FlagImg code={c.code} size={40} />
               </div>
 
-              {/* Nombre + moneda */}
+              {/* Nombre + moneda + mínimo */}
               <div className="flex-1 text-left min-w-0">
                 <p className="text-[0.9375rem] font-semibold text-[#0F172A] leading-tight truncate">
                   {c.name}
                 </p>
                 <p className="text-[0.75rem] text-[#64748B]">{c.currencyName ?? c.currency}</p>
+                {c.minAmount > 0 && (
+                  <p className="text-[0.625rem] text-[#94A3B8] mt-0.5">
+                    Mín. {c.minAmount.toLocaleString('es-CL')}
+                  </p>
+                )}
               </div>
 
               {/* Checkmark si está seleccionado */}
@@ -388,9 +403,13 @@ export default function Step1Amount({ initialData, onNext }) {
 
   const activeCurrency = quote?.originCurrency ?? origin.currency
 
+  // ── Validación mínimo ─────────────────────────────────────────────────────
+  const minAmount  = selectedCountry?.minAmount ?? 0
+  const belowMin   = rawAmount > 0 && minAmount > 0 && rawAmount < minAmount
+
   const isBlocked   = status === 'connecting' || status === 'expired' ||
                       status === 'disconnected' || status === 'error'
-  const canContinue = !!quote && !isBlocked && !!rawAmount && !!selectedCountry
+  const canContinue = !!quote && !isBlocked && !!rawAmount && !!selectedCountry && !belowMin
 
   function handleNext() {
     if (!canContinue) return
@@ -428,12 +447,33 @@ export default function Step1Amount({ initialData, onNext }) {
             value={displayAmount}
             onChange={handleAmountChange}
             placeholder="0"
-            className={`w-full bg-white border border-[#E2E8F0] rounded-xl pr-16 py-4 text-[#0F172A] text-[1.5rem] font-bold focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all placeholder:text-[#CBD5E1] ${origin.symbol.length > 1 ? 'pl-14' : 'pl-8'}`}
+            className={`w-full bg-white border rounded-xl pr-16 py-4 text-[1.5rem] font-bold focus:outline-none transition-all placeholder:text-[#CBD5E1] ${origin.symbol.length > 1 ? 'pl-14' : 'pl-8'} ${
+              belowMin
+                ? 'border-[#EF4444] text-[#EF4444] focus:border-[#EF4444] focus:shadow-[0_0_0_3px_#EF444420]'
+                : 'border-[#E2E8F0] text-[#0F172A] focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820]'
+            }`}
           />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[0.75rem] font-semibold text-[#94A3B8]">
             {activeCurrency}
           </span>
         </div>
+
+        {/* Error mínimo */}
+        {belowMin && (
+          <div className="flex items-center gap-1.5 mt-2">
+            <AlertCircle size={13} className="text-[#EF4444] flex-shrink-0" />
+            <p className="text-[0.75rem] text-[#EF4444] font-medium">
+              Monto mínimo: {origin.symbol}{minAmount.toLocaleString('es-CL')} {activeCurrency}
+            </p>
+          </div>
+        )}
+
+        {/* Hint mínimo cuando aún no se ingresó monto */}
+        {!belowMin && minAmount > 0 && rawAmount === 0 && selectedCountry && (
+          <p className="text-[0.6875rem] text-[#94A3B8] mt-1.5">
+            Mínimo: {origin.symbol}{minAmount.toLocaleString('es-CL')} {activeCurrency}
+          </p>
+        )}
       </div>
 
       {/* ── Selector de país destino ── */}
