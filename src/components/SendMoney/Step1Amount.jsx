@@ -406,12 +406,21 @@ export default function Step1Amount({ initialData, onNext }) {
   // ── Validación mínimo ─────────────────────────────────────────────────────
   const minAmount  = selectedCountry?.minAmount ?? 0
   const belowMin   = rawAmount > 0 && minAmount > 0 && rawAmount < minAmount
+  const amountEmpty = !rawAmount || rawAmount <= 0
 
   const isBlocked   = status === 'connecting' || status === 'expired' ||
                       status === 'disconnected' || status === 'error'
-  const canContinue = !!quote && !isBlocked && !!rawAmount && !!selectedCountry && !belowMin
+  const canContinue = !!quote &&
+                      !isBlocked &&
+                      !amountEmpty &&
+                      !!selectedCountry &&
+                      !belowMin &&
+                      (minAmount === 0 || rawAmount >= minAmount)
 
   function handleNext() {
+    if (!selectedCountry) return
+    if (amountEmpty) return
+    if (minAmount > 0 && rawAmount < minAmount) return
     if (!canContinue) return
     onNext({ originAmount: rawAmount, destinationCountry: selectedCountry.code, quote })
   }

@@ -247,8 +247,8 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
 
       ) : type === 'select' ? (
         <select
-          value={value}
-          onChange={e => onChange(key, e.target.value)}
+          value={value ?? ''}
+          onChange={e => { onChange(key, e.target.value); onBlur(key) }}
           onBlur={() => onBlur(key)}
           className={`${baseInput} appearance-none ${error ? borderErr : borderOk}`}
         >
@@ -597,11 +597,11 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
   }
 
   function handleNext() {
-    if (!allValid) {
-      const allTouched = Object.fromEntries(visibleFields.map(f => [f.key, true]))
-      setTouched(prev => ({ ...prev, ...allTouched }))
-      return
-    }
+    // Marcar siempre todos los campos visibles como tocados para mostrar errores
+    const allTouched = Object.fromEntries(visibleFields.map(f => [f.key, true]))
+    setTouched(prev => ({ ...prev, ...allTouched }))
+
+    if (!allValid) return
 
     const beneficiaryData = Object.fromEntries(
       visibleFields
@@ -792,14 +792,13 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
         </p>
       </div>
 
-      {/* Botón continuar */}
+      {/* Botón continuar — nunca disabled para que handleNext muestre todos los errores */}
       <button
         onClick={handleNext}
-        disabled={!allValid}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
           allValid
             ? 'bg-[#233E58] text-white shadow-[0_4px_20px_rgba(35,62,88,0.25)] active:scale-[0.98]'
-            : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
+            : 'bg-[#E2E8F0] text-[#94A3B8]'
         }`}
       >
         Continuar
