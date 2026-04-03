@@ -281,6 +281,71 @@ function currencyToCountry(currency) {
   return map[currency] ?? null
 }
 
+// Códigos bancarios de Vita Wallet → nombre legible
+const VITA_BANK_NAMES = {
+  // Colombia
+  '1':   'Banco de Bogotá',
+  '2':   'Banco Popular',
+  '6':   'Banco Corpbanca',
+  '7':   'Bancolombia',
+  '9':   'Citibank Colombia',
+  '12':  'Banco GNB Sudameris',
+  '13':  'BBVA Colombia',
+  '23':  'Banco de Occidente',
+  '31':  'Bancoldex',
+  '32':  'Bancoomeva',
+  '40':  'Banco Agrario',
+  '41':  'Banco Agrario',
+  '42':  'Banco Santander',
+  '47':  'Banco Multibank',
+  '51':  'Davivienda',
+  '52':  'Banco Av Villas',
+  '53':  'Banco WWB',
+  '58':  'Banco Caja Social',
+  '62':  'Banco Falabella',
+  '66':  'Banco Coopcentral',
+  '83':  'Compensar',
+  '84':  'Aportes en Línea',
+  '86':  'IRIS',
+  '87':  'Itaú',
+  '89':  'Banco Pichincha',
+  '891': 'Bancolombia',
+  '90':  'Banco Finandina',
+  '93':  'Banco Credifinanciera',
+  '94':  'Banco Agrario',
+  '121': 'Juriscoop',
+  '283': 'CFA Cooperativa Financiera',
+  '289': 'Confiar',
+  '292': 'Confiar Cooperativa',
+  '370': 'Coltefinanciera',
+  '507': 'Nequi',
+  '550': 'DECEVAL',
+  '685': 'Daviplata',
+  '706': 'Itaú',
+  '755': 'Daviplata',
+  '777': 'Nequi',
+  // Chile
+  '001': 'Banco de Chile',
+  '009': 'Banco Internacional',
+  '012': 'Banco Estado',
+  '014': 'Scotiabank',
+  '016': 'BCI',
+  '028': 'Banco BICE',
+  '031': 'HSBC Chile',
+  '037': 'Banco Santander',
+  '039': 'Itaú Chile',
+  '049': 'Banco Security',
+  '051': 'Falabella',
+  '053': 'Banco Ripley',
+  '055': 'Banco Consorcio',
+  '067': 'Coopeuch',
+}
+
+function resolveBankName(code) {
+  if (!code) return null
+  return VITA_BANK_NAMES[String(code)] ?? null
+}
+
 // ── Sub-componentes ───────────────────────────────────────────────────────────
 
 function Row({ label, value, bold, valueColor }) {
@@ -630,7 +695,7 @@ export default function TransactionDetail() {
                   <Row label="Nombre" value={maskName(tx.beneficiary.fullName)} />
                 )}
                 {tx.beneficiary.bankName && (
-                  <Row label="Banco" value={tx.beneficiary.bankName} />
+                  <Row label="Banco" value={resolveBankName(tx.beneficiary.bankName) ?? tx.beneficiary.bankName} />
                 )}
                 <Row
                   label="Cuenta"
@@ -650,10 +715,12 @@ export default function TransactionDetail() {
 
               {/* Header branding */}
               <div className="flex flex-col items-center py-5 px-5" style={{ background: 'linear-gradient(180deg, #233E580D 0%, #ffffff 100%)' }}>
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-2" style={{ background: '#233E58' }}>
-                  <span style={{ color: 'white', fontWeight: 900, fontSize: '1.125rem' }}>A</span>
-                </div>
-                <p style={{ color: '#233E58', fontWeight: 700, fontSize: '0.6875rem', letterSpacing: '0.12em' }}>ALYTO</p>
+                <img
+                  src="/assets/logo-alyto.png"
+                  alt="Alyto"
+                  crossOrigin="anonymous"
+                  style={{ height: '28px', width: 'auto', marginBottom: 6 }}
+                />
                 <p style={{ color: '#94A3B8', fontSize: '0.6875rem', marginTop: 2 }}>Comprobante de transferencia</p>
               </div>
 
@@ -714,7 +781,9 @@ export default function TransactionDetail() {
                     {tx.beneficiary.bankName && (
                       <div className="flex items-center justify-between">
                         <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Banco</span>
-                        <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>{tx.beneficiary.bankName}</span>
+                        <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>
+                          {resolveBankName(tx.beneficiary.bankName) ?? tx.beneficiary.bankName}
+                        </span>
                       </div>
                     )}
                     <div className="flex items-center justify-between">
@@ -943,7 +1012,7 @@ export default function TransactionDetail() {
           <div className="row"><span className="label">Beneficiario:</span><span className="value">{tx.beneficiary.fullName}</span></div>
         )}
         {tx.beneficiary?.bankName && (
-          <div className="row"><span className="label">Banco:</span><span className="value">{tx.beneficiary.bankName}</span></div>
+          <div className="row"><span className="label">Banco:</span><span className="value">{resolveBankName(tx.beneficiary.bankName) ?? tx.beneficiary.bankName}</span></div>
         )}
         {tx.beneficiary?.accountNumber && (
           <div className="row"><span className="label">Cuenta:</span><span className="value">{tx.beneficiary.accountNumber}</span></div>
