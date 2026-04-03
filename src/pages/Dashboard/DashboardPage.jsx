@@ -30,16 +30,6 @@ function formatCLP(amount) {
   }).format(Math.round(amount ?? 0))
 }
 
-const COUNTRY_FLAGS = {
-  CL: '🇨🇱', BO: '🇧🇴', US: '🇺🇸', AR: '🇦🇷',
-  CO: '🇨🇴', PE: '🇵🇪', MX: '🇲🇽', BR: '🇧🇷',
-  UY: '🇺🇾', EC: '🇪🇨', PY: '🇵🇾', ANY: '🌍',
-}
-
-function countryFlag(code) {
-  return COUNTRY_FLAGS[code] ?? '🌍'
-}
-
 // ── Stat Card ─────────────────────────────────────────────────────────────────
 
 function StatCard({ label, value, accent }) {
@@ -76,18 +66,40 @@ function StatsSkeletons() {
 // ── Destination countries section ─────────────────────────────────────────────
 
 const COUNTRY_META = {
-  CO: { name: 'Colombia',       flag: '🇨🇴' },
-  PE: { name: 'Perú',           flag: '🇵🇪' },
-  BO: { name: 'Bolivia',        flag: '🇧🇴' },
-  AR: { name: 'Argentina',      flag: '🇦🇷' },
-  MX: { name: 'México',         flag: '🇲🇽' },
-  BR: { name: 'Brasil',         flag: '🇧🇷' },
-  US: { name: 'Estados Unidos', flag: '🇺🇸' },
-  EC: { name: 'Ecuador',        flag: '🇪🇨' },
-  VE: { name: 'Venezuela',      flag: '🇻🇪' },
-  PY: { name: 'Paraguay',       flag: '🇵🇾' },
-  UY: { name: 'Uruguay',        flag: '🇺🇾' },
-  CL: { name: 'Chile',          flag: '🇨🇱' },
+  // LatAm — Vita
+  CO: { name: 'Colombia',          currencyName: 'Peso colombiano',      flag: '🇨🇴' },
+  PE: { name: 'Perú',              currencyName: 'Sol peruano',           flag: '🇵🇪' },
+  BO: { name: 'Bolivia',           currencyName: 'Boliviano',             flag: '🇧🇴' },
+  AR: { name: 'Argentina',         currencyName: 'Peso argentino',        flag: '🇦🇷' },
+  MX: { name: 'México',            currencyName: 'Peso mexicano',         flag: '🇲🇽' },
+  BR: { name: 'Brasil',            currencyName: 'Real brasileño',        flag: '🇧🇷' },
+  CL: { name: 'Chile',             currencyName: 'Peso chileno',          flag: '🇨🇱' },
+  EC: { name: 'Ecuador',           currencyName: 'Dólar',                 flag: '🇪🇨' },
+  VE: { name: 'Venezuela',         currencyName: 'Dólar',                 flag: '🇻🇪' },
+  PY: { name: 'Paraguay',          currencyName: 'Guaraní',               flag: '🇵🇾' },
+  UY: { name: 'Uruguay',           currencyName: 'Peso uruguayo',         flag: '🇺🇾' },
+  CR: { name: 'Costa Rica',        currencyName: 'Colón',                 flag: '🇨🇷' },
+  PA: { name: 'Panamá',            currencyName: 'Dólar',                 flag: '🇵🇦' },
+  DO: { name: 'Rep. Dominicana',   currencyName: 'Peso dominicano',       flag: '🇩🇴' },
+  GT: { name: 'Guatemala',         currencyName: 'Quetzal',               flag: '🇬🇹' },
+  HT: { name: 'Haití',             currencyName: 'Gourde',                flag: '🇭🇹' },
+  SV: { name: 'El Salvador',       currencyName: 'Dólar',                 flag: '🇸🇻' },
+  // Europa — Vita vita_sent
+  ES: { name: 'España',            currencyName: 'Euro',                  flag: '🇪🇸' },
+  PL: { name: 'Polonia',           currencyName: 'Esloti polaco',         flag: '🇵🇱' },
+  // Global — OwlPay / Vita withdrawal
+  US: { name: 'Estados Unidos',    currencyName: 'Dólar',                 flag: '🇺🇸' },
+  EU: { name: 'Europa',            currencyName: 'Euro',                  flag: '🇪🇺' },
+  CN: { name: 'China',             currencyName: 'Yuan chino',            flag: '🇨🇳' },
+  AE: { name: 'Emiratos Árabes',   currencyName: 'Dírham emiratí',        flag: '🇦🇪' },
+  GB: { name: 'Reino Unido',       currencyName: 'Libra esterlina',       flag: '🇬🇧' },
+  CA: { name: 'Canadá',            currencyName: 'Dólar canadiense',      flag: '🇨🇦' },
+  AU: { name: 'Australia',         currencyName: 'Dólar australiano',     flag: '🇦🇺' },
+  HK: { name: 'Hong Kong',         currencyName: 'Dólar de Hong Kong',    flag: '🇭🇰' },
+  JP: { name: 'Japón',             currencyName: 'Yen japonés',           flag: '🇯🇵' },
+  SG: { name: 'Singapur',          currencyName: 'Dólar de Singapur',    flag: '🇸🇬' },
+  ZA: { name: 'Sudáfrica',         currencyName: 'Rand sudafricano',      flag: '🇿🇦' },
+  NG: { name: 'Nigeria',           currencyName: 'Naira nigeriana',       flag: '🇳🇬' },
 }
 
 function DestinationCountryCard({ country }) {
@@ -97,7 +109,7 @@ function DestinationCountryCard({ country }) {
       <span className="text-[2rem] leading-none">{country.flag}</span>
       <div className="text-center">
         <p className="text-[0.75rem] font-semibold text-[#0F172A] leading-tight">{country.name}</p>
-        <p className="text-[0.625rem] text-[#94A3B8] mt-0.5">{country.currency}</p>
+        <p className="text-[0.625rem] text-[#94A3B8] mt-0.5">{country.currencyName}</p>
         {isManual && (
           <span className="inline-block mt-1 text-[0.5625rem] font-semibold text-[#FBBF24] bg-[#F59E0B1A] border border-[#F59E0B33] px-1.5 py-0.5 rounded-full leading-none">
             Verificación manual
@@ -130,10 +142,10 @@ export default function DashboardPage() {
           const meta = COUNTRY_META[code] ?? {}
           list.push({
             code,
-            name:        meta.name ?? code,
-            flag:        meta.flag ?? '🌍',
-            currency:    c.destinationCurrency ?? '—',
-            payinMethod: c.payinMethod ?? null,
+            name:         c.destinationCountryName ?? meta.name ?? code,
+            flag:         c.destinationFlag        ?? meta.flag ?? '🌍',
+            currencyName: meta.currencyName         ?? c.destinationCurrency ?? '—',
+            payinMethod:  c.payinMethod ?? null,
           })
         }
         setDestCountries(list)
