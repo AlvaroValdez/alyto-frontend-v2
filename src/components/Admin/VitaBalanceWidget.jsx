@@ -93,9 +93,14 @@ function BalanceCard({ currency, amount, threshold }) {
             style={{ width: `${pct}%`, background: barColor }}
           />
         </div>
-        <p className="text-[0.625rem] text-[#4E5A7A] mt-1">
-          Mínimo: {formatBalance(threshold, currency)} {currency}
-        </p>
+        <div className="flex justify-between items-center mt-1">
+          <span style={{ fontSize: '0.6875rem', color: '#4E5A7A' }}>
+            Mínimo requerido
+          </span>
+          <span style={{ fontSize: '0.6875rem', color: isOk ? '#4E5A7A' : barColor }}>
+            {formatBalance(threshold, currency)} {currency}
+          </span>
+        </div>
       </div>
     </div>
   )

@@ -33,16 +33,15 @@ export default function AdminLayout() {
   const { user } = useAuth()
   const adminName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Admin'
 
-  const [alertBanner, setAlertBanner]       = useState(null)   // { level, currencies }
+  const [alertBanner, setAlertBanner]       = useState(null)   // { level, alerts }
   const [bannerDismissed, setBannerDismissed] = useState(false)
 
   useEffect(() => {
     request('/admin/vita/balance')
       .then(data => {
         if (data?.hasAlerts) {
-          const currencies = data.alerts.map(a => a.currency).join(', ')
           const level = data.alerts.some(a => a.level === 'critical') ? 'critical' : 'warning'
-          setAlertBanner({ level, currencies })
+          setAlertBanner({ level, alerts: data.alerts })
         }
       })
       .catch(() => {})
@@ -131,8 +130,25 @@ export default function AdminLayout() {
             >
               <div className="flex items-center gap-2">
                 <Icon size={15} style={{ color, flexShrink: 0 }} />
-                <p className="text-[0.8125rem] font-semibold" style={{ color }}>
-                  Saldo Vita bajo en {alertBanner.currencies} — revisa el fondeo
+                <p className="text-[0.8125rem] font-semibold flex flex-wrap items-baseline gap-x-1" style={{ color }}>
+                  <span>Saldo Vita bajo —&nbsp;</span>
+                  {alertBanner.alerts.map((a, i) => {
+                    const fmt = (n, cur) => {
+                      if (cur === 'CLP' || cur === 'COP') {
+                        return `$${Number(n).toLocaleString('es-CL', { maximumFractionDigits: 0 })}`
+                      }
+                      return `$${Number(n).toFixed(2)}`
+                    }
+                    return (
+                      <span key={a.currency}>
+                        {i > 0 && <span className="mx-1 opacity-50">·</span>}
+                        <strong>{a.currency}</strong>
+                        {' '}{fmt(a.current, a.currency)}
+                        <span className="opacity-60"> (mín {fmt(a.threshold, a.currency)})</span>
+                      </span>
+                    )
+                  })}
+                  <span>&nbsp;— revisa el fondeo</span>
                 </p>
               </div>
               <button
