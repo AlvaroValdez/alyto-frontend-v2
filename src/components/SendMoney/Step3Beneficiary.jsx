@@ -22,7 +22,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useWithdrawalRules } from '../../hooks/useWithdrawalRules'
-import { useAuth }             from '../../context/AuthContext'
 import { useContacts }         from '../../hooks/useContacts'
 import { Upload, X, Building2, QrCode, UserCheck, Star, ChevronRight, Check } from 'lucide-react'
 import { createContact } from '../../services/api'
@@ -117,6 +116,80 @@ function validateField(field, value) {
     }
     if (field.type === 'phone' && !/^[+\d\s\-()\u00A0]{5,25}$/.test(v)) {
       return 'Número de teléfono inválido'
+    }
+
+    // ── Validaciones específicas por tipo de campo ──────────────────────
+
+    // Numérico puro (type: 'numeric')
+    if (field.type === 'numeric' && v !== '') {
+      if (!/^\d+$/.test(v)) return 'Solo se permiten números'
+    }
+
+    // CLABE México — exactamente 18 dígitos
+    if (field.key === 'account_bank' && field.name === 'CLABE' && v !== '') {
+      if (!/^\d{18}$/.test(v)) return 'CLABE debe tener exactamente 18 dígitos'
+    }
+
+    // CBU / CVU Argentina — exactamente 22 dígitos
+    if (field.key === 'account_bank' &&
+        (field.name?.includes('CBU') || field.name?.includes('CVU')) && v !== '') {
+      if (!/^\d{22}$/.test(v)) return 'CBU/CVU debe tener exactamente 22 dígitos'
+    }
+
+    // Código interbancario Perú (CCI) — exactamente 20 dígitos
+    if (field.key === 'account_bank' && field.name?.includes('interbancario') && v !== '') {
+      if (!/^\d{20}$/.test(v)) return 'El código interbancario debe tener 20 dígitos'
+    }
+
+    // IBAN (Europa, Reino Unido, etc.) — mínimo 15 chars, empieza con 2 letras
+    if (field.key === 'account_bank' && field.name?.includes('IBAN') && v !== '') {
+      const clean = v.replace(/\s/g, '').toUpperCase()
+      if (!/^[A-Z]{2}/.test(clean)) return 'El IBAN debe comenzar con el código de país (ej. ES, GB, DE)'
+      if (clean.length < 15) return 'IBAN demasiado corto'
+      if (clean.length > 34) return 'IBAN demasiado largo'
+    }
+
+    // Routing Number USA — exactamente 9 dígitos
+    if (field.key === 'routing_number' && v !== '') {
+      if (!/^\d{9}$/.test(v)) return 'El routing number debe tener exactamente 9 dígitos'
+    }
+
+    // Sort Code Reino Unido — 6 dígitos (con o sin guiones: 20-00-00 o 200000)
+    if (field.key === 'swift_bic' && field.name === 'Sort Code' && v !== '') {
+      const clean = v.replace(/-/g, '').replace(/\s/g, '')
+      if (!/^\d{6}$/.test(clean)) return 'Sort Code debe tener 6 dígitos (ej. 20-00-00)'
+    }
+
+    // SWIFT / BIC — 8 u 11 caracteres alfanuméricos (excluyendo Sort Code)
+    if (field.key === 'swift_bic' && field.name !== 'Sort Code' &&
+        !field.name?.includes('ruta') && v !== '') {
+      const clean = v.replace(/\s/g, '').toUpperCase()
+      if (!/^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(clean)) {
+        return 'Código SWIFT/BIC inválido (8 u 11 caracteres alfanuméricos)'
+      }
+    }
+
+    // Número de ruta USA Wires (campo swift_bic en uswires) — 9 dígitos
+    if (field.key === 'swift_bic' && field.name?.includes('ruta') && v !== '') {
+      if (!/^\d{9}$/.test(v)) return 'El número de ruta debe tener exactamente 9 dígitos'
+    }
+
+    // CUIL / CUIT Argentina — exactamente 11 dígitos numéricos
+    if (field.key === 'beneficiary_document_number' &&
+        field.min === 11 && field.max === 11 && v !== '') {
+      if (!/^\d{11}$/.test(v)) return 'CUIL/CUIT debe tener exactamente 11 dígitos'
+    }
+
+    // NIT Colombia / Ecuador — mínimo 8 dígitos numéricos
+    if (field.key === 'beneficiary_document_number' &&
+        field.min >= 6 && !field.max && v !== '') {
+      if (!/^\d+$/.test(v)) return 'El documento solo puede contener números'
+    }
+
+    // Cuenta Costa Rica IBAN — exactamente 22 caracteres
+    if (field.key === 'account_bank' && field.min === 22 && field.max === 22 && v !== '') {
+      const clean = v.replace(/\s/g, '')
+      if (clean.length !== 22) return 'El número de cuenta debe tener exactamente 22 caracteres'
     }
   }
 
@@ -278,7 +351,12 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
         <input
           type={type === 'email' ? 'email' : 'text'}
           value={value}
-          onChange={e => onChange(key, e.target.value)}
+          onChange={e => {
+            onChange(key, e.target.value)
+            // Para campos con formato exacto, validar en tiempo real
+            const exactLengthFields = ['account_bank', 'routing_number', 'swift_bic']
+            if (exactLengthFields.includes(key)) onBlur(key)
+          }}
           onBlur={() => onBlur(key)}
           placeholder={placeholder}
           className={`${baseInput} ${error ? borderErr : borderOk}`}
@@ -504,8 +582,6 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
   const { rules, loading, error: loadError, refetch } = useWithdrawalRules(
     isManualCorridor ? null : destinationCountry,
   )
-  const { user } = useAuth()
-
   // Bolivia manual: toggle between bank_data and qr_image payout types
   const [payoutType, setPayoutType] = useState('bank_data')
   const [qrBase64, setQrBase64]     = useState(null)
