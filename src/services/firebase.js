@@ -28,6 +28,23 @@ try {
     const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig)
     messaging = getMessaging(app)
     console.info('[Alyto FCM] Firebase inicializado. Project:', firebaseConfig.projectId)
+
+    // ── Cleanup orphan SWs (solo conservar firebase-messaging-sw.js) ────
+    navigator.serviceWorker.getRegistrations().then((regs) => {
+      for (const reg of regs) {
+        const swUrl = reg.active?.scriptURL ?? reg.installing?.scriptURL ?? ''
+        if (swUrl && !swUrl.includes('firebase-messaging-sw')) {
+          console.warn('[Alyto FCM] Removing orphan SW:', swUrl)
+          reg.unregister()
+        }
+      }
+    })
+
+    // ── Update detection: auto-reload cuando hay nuevo SW ───────────────
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      console.info('[Alyto FCM] New SW active — reloading...')
+      window.location.reload()
+    })
   }
 } catch (err) {
   console.error('[Alyto FCM] Firebase init failed:', err.message)

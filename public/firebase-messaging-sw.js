@@ -1,9 +1,16 @@
 /**
  * firebase-messaging-sw.js — Service Worker para notificaciones push en background.
+ * @version 2.0.0
  *
  * Las credenciales Firebase son públicas por diseño (igual que cualquier SDK web).
  * La seguridad real se maneja via Firebase Security Rules.
  */
+
+// ── Lifecycle: activar inmediatamente sin esperar tabs abiertas ──────────
+self.addEventListener('install', () => self.skipWaiting())
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim())
+})
 
 importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js')
 importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-messaging-compat.js')
