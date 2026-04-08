@@ -13,7 +13,7 @@
  */
 
 import { useState, useCallback, useRef } from 'react'
-import { messaging, getToken, onMessage } from '../services/firebase'
+import { messaging, getToken, onMessage, registerFirebaseSW } from '../services/firebase'
 import { registerFcmToken } from '../services/api'
 
 // ── Claves de storage ──────────────────────────────────────────────────────
@@ -53,21 +53,14 @@ export function usePushNotifications() {
         return
       }
 
-      // Registrar SW explícitamente antes de getToken para garantizar
-      // que Firebase use el SW correcto con el scope adecuado
-      let swRegistration = null
-      try {
-        swRegistration = await navigator.serviceWorker.register(
-          '/firebase-messaging-sw.js',
-          { scope: '/firebase-cloud-messaging-push-scope' }
-        )
-        await navigator.serviceWorker.ready
-        console.info('[Alyto FCM] SW registrado:', swRegistration.scope)
-      } catch (swErr) {
-        console.error('[Alyto FCM] SW registration failed — push will not work:', swErr)
+      // Obtener SW registration (ya registrado al arranque en main.jsx)
+      const swRegistration = await registerFirebaseSW()
+      if (!swRegistration) {
+        console.error('[Alyto FCM] SW registration unavailable — push will not work')
         setError('Service Worker registration failed')
         return
       }
+      console.info('[Alyto FCM] SW listo:', swRegistration.scope)
 
       // Obtener token FCM pasando el SW registration explícitamente
       console.info('[FCM_TOKEN] calling getToken', {

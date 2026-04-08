@@ -59,4 +59,39 @@ try {
   console.error('[Alyto FCM] Firebase init failed:', err.message)
 }
 
+// ── Registro explícito del Service Worker ─────────────────────────────────
+let swRegistrationPromise = null
+
+export function registerFirebaseSW() {
+  if (swRegistrationPromise) return swRegistrationPromise
+  if (!('serviceWorker' in navigator)) {
+    console.warn('[FCM_SW] serviceWorker not supported')
+    return Promise.resolve(null)
+  }
+
+  swRegistrationPromise = navigator.serviceWorker
+    .register('/firebase-messaging-sw.js', { scope: '/' })
+    .then(async (reg) => {
+      console.log('[FCM_SW] registered, scope:', reg.scope)
+      if (reg.installing) {
+        console.log('[FCM_SW] waiting for SW to activate...')
+        await new Promise((resolve) => {
+          reg.installing.addEventListener('statechange', (e) => {
+            if (e.target.state === 'activated') resolve()
+          })
+        })
+      }
+      await navigator.serviceWorker.ready
+      console.log('[FCM_SW] ready, active state:', reg.active?.state)
+      return reg
+    })
+    .catch((err) => {
+      console.error('[FCM_SW] registration failed:', err)
+      swRegistrationPromise = null
+      return null
+    })
+
+  return swRegistrationPromise
+}
+
 export { messaging, getToken, onMessage }

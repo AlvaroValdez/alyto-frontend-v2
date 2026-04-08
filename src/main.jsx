@@ -5,6 +5,10 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
+import { registerFirebaseSW } from './services/firebase'
+
+// Registrar SW de FCM al arranque (sin bloquear render)
+registerFirebaseSW()
 
 /** Fallback que se muestra cuando un error no capturado llega al ErrorBoundary raíz. */
 function ErrorFallback({ eventId, resetError }) {
