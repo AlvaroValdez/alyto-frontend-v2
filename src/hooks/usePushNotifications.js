@@ -159,6 +159,15 @@ export function usePushNotifications() {
     localStorage.setItem(BANNER_DENIED_KEY, 'dismissed')
   }, [])
 
+  // ── clearToken ──────────────────────────────────────────────────────────
+  const clearToken = useCallback(() => {
+    console.info('[FCM_TOKEN] clearing token from state and localStorage')
+    setToken(null)
+    try {
+      localStorage.removeItem(FCM_TOKEN_KEY)
+    } catch {}
+  }, [])
+
   return {
     permission,
     token,
@@ -168,5 +177,6 @@ export function usePushNotifications() {
     setupForegroundNotifications,
     triggerBannerCheck,
     dismissBanner,
+    clearToken,
   }
 }

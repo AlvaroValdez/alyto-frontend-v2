@@ -40,6 +40,7 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
     permission,
     token,
     requestPermission,
+    clearToken,
   } = usePushNotifications()
 
   const pushBlocked = permission === 'denied'
@@ -86,6 +87,7 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
         if (fcmToken && onRemoveDevice) {
           await onRemoveDevice(fcmToken)
         }
+        clearToken()
       } catch {
         setPushEnabled(true)
       } finally {
@@ -94,21 +96,12 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
       return
     }
 
-    // CASO 2 y 3: Activar
+    // CASO 2 y 3 unificados: Activar (con o sin permiso/token previos)
     setSavingPush(true)
     try {
-      // CASO 2: Sin permiso → pedirlo (requestPermission internamente pide token)
-      if (permission !== 'granted') {
-        console.info('[PUSH_TOGGLE] requesting permission...')
-        await requestPermission()
-      }
-      // CASO 3: Permiso ya concedido pero sin token → pedirlo ahora
-      else if (!token) {
-        console.info('[PUSH_TOGGLE] permission granted but no token, fetching...')
-        await requestPermission()
-      }
+      console.info('[PUSH_TOGGLE] activating, calling requestPermission (idempotent)...')
+      await requestPermission()
 
-      // Verificar resultado tras requestPermission
       const newToken = localStorage.getItem('alyto_fcm_token')
       const granted  = typeof Notification !== 'undefined' && Notification.permission === 'granted'
       console.info('[PUSH_TOGGLE] after requestPermission:', { granted, hasToken: !!newToken })
