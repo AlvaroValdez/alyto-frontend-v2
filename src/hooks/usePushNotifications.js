@@ -45,15 +45,17 @@ export function usePushNotifications() {
     if (!('Notification' in window) || !messaging) return
 
     try {
-      const result = await Notification.requestPermission()
-      setPermission(result)
-
-      if (result !== 'granted') {
-        setShowBanner(false)
-        return
+      // Pedir permiso solo si no está ya concedido
+      if (Notification.permission !== 'granted') {
+        const result = await Notification.requestPermission()
+        setPermission(result)
+        if (result !== 'granted') {
+          setShowBanner(false)
+          return
+        }
       }
 
-      // Obtener SW registration (ya registrado al arranque en main.jsx)
+      // SIEMPRE intentar obtener token (aunque el permiso ya estuviera concedido)
       const swRegistration = await registerFirebaseSW()
       if (!swRegistration) {
         console.error('[Alyto FCM] SW registration unavailable — push will not work')

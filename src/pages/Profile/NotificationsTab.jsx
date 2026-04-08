@@ -76,47 +76,54 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
     console.info('[PUSH_TOGGLE] handlePushToggle called:', { val, permission, token, pushBlocked })
     if (pushBlocked) return
 
-    // Activar: si el permiso aún no fue otorgado, pedirlo primero
-    if (val && permission !== 'granted') {
+    // CASO 1: Desactivar
+    if (!val) {
+      setPushEnabled(false)
       setSavingPush(true)
       try {
-        console.info('[PUSH_TOGGLE] requesting permission...')
-        await requestPermission()
-
-        // Verificar directamente localStorage — requestPermission() guarda el token ahí
-        const newToken = localStorage.getItem('alyto_fcm_token')
-        const granted  = typeof Notification !== 'undefined' && Notification.permission === 'granted'
-        console.info('[PUSH_TOGGLE] after requestPermission:', { granted, newToken: !!newToken })
-
-        if (granted) {
-          setPushEnabled(true)
-          console.info('[PUSH_TOGGLE] saving push=true to backend...')
-          await onUpdate({ preferences: { notifications: { email: emailEnabled, push: true } } })
+        await onUpdate({ preferences: { notifications: { email: emailEnabled, push: false } } })
+        const fcmToken = localStorage.getItem('alyto_fcm_token')
+        if (fcmToken && onRemoveDevice) {
+          await onRemoveDevice(fcmToken)
         }
-      } catch (err) {
-        console.error('[PUSH_TOGGLE] requestPermission error:', err)
-        setPushEnabled(false)
+      } catch {
+        setPushEnabled(true)
       } finally {
         setSavingPush(false)
       }
       return
     }
 
-    // Desactivar (o activar cuando ya tiene permiso) — guarda preferencia
-    setPushEnabled(val)
+    // CASO 2 y 3: Activar
     setSavingPush(true)
     try {
-      console.info('[PUSH_TOGGLE] saving push preference:', val)
-      await onUpdate({ preferences: { notifications: { email: emailEnabled, push: val } } })
-      // Al desactivar: eliminar token FCM del backend
-      if (!val) {
-        const fcmToken = localStorage.getItem('alyto_fcm_token')
-        if (fcmToken && onRemoveDevice) {
-          await onRemoveDevice(fcmToken)
-        }
+      // CASO 2: Sin permiso → pedirlo (requestPermission internamente pide token)
+      if (permission !== 'granted') {
+        console.info('[PUSH_TOGGLE] requesting permission...')
+        await requestPermission()
       }
-    } catch {
-      setPushEnabled(!val)
+      // CASO 3: Permiso ya concedido pero sin token → pedirlo ahora
+      else if (!token) {
+        console.info('[PUSH_TOGGLE] permission granted but no token, fetching...')
+        await requestPermission()
+      }
+
+      // Verificar resultado tras requestPermission
+      const newToken = localStorage.getItem('alyto_fcm_token')
+      const granted  = typeof Notification !== 'undefined' && Notification.permission === 'granted'
+      console.info('[PUSH_TOGGLE] after requestPermission:', { granted, hasToken: !!newToken })
+
+      if (granted && newToken) {
+        setPushEnabled(true)
+        console.info('[PUSH_TOGGLE] saving push=true to backend...')
+        await onUpdate({ preferences: { notifications: { email: emailEnabled, push: true } } })
+      } else {
+        console.warn('[PUSH_TOGGLE] activation failed:', { granted, hasToken: !!newToken })
+        setPushEnabled(false)
+      }
+    } catch (err) {
+      console.error('[PUSH_TOGGLE] activation error:', err)
+      setPushEnabled(false)
     } finally {
       setSavingPush(false)
     }
