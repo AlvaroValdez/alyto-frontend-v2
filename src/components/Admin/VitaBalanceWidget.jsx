@@ -176,9 +176,8 @@ export default function VitaBalanceWidget({ compact = false }) {
 
   const balances       = data?.balances ?? {}
   const alerts         = data?.alerts   ?? []
-  const worstLevel     = alerts.some(a => a.level === 'critical') ? 'critical' : 'warning'
   const shownCurrencies = Object.keys(CURRENCY_CONFIG).filter(
-    cur => (balances[cur.toLowerCase()] ?? 0) > 0 || CURRENCY_CONFIG[cur].threshold > 0
+    () => true  // Mostrar siempre todas las monedas configuradas
   )
 
   return (

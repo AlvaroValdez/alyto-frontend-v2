@@ -6,7 +6,7 @@
 
 import { Outlet, NavLink, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { BarChart2, Layers, ArrowLeft, ShieldCheck, TrendingUp, Wallet, Building2, QrCode, Banknote, AlertCircle, ShieldAlert, Settings2, AlertTriangle, X } from 'lucide-react'
+import { BarChart2, Layers, ArrowLeft, ShieldCheck, TrendingUp, Wallet, Building2, QrCode, Banknote, AlertCircle, ShieldAlert, Settings2, AlertTriangle, CheckCircle2, X } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { request } from '../../services/api'
 
@@ -33,21 +33,19 @@ export default function AdminLayout() {
   const { user } = useAuth()
   const adminName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Admin'
 
-  const [alertBanner, setAlertBanner]       = useState(null)   // { level, alerts }
+  const [alertBanner, setAlertBanner]       = useState({ alerts: [], balances: {} })
   const [bannerDismissed, setBannerDismissed] = useState(false)
 
   useEffect(() => {
     request('/admin/vita/balance')
       .then(data => {
-        if (data?.hasAlerts) {
-          const level = data.alerts.some(a => a.level === 'critical') ? 'critical' : 'warning'
-          setAlertBanner({ level, alerts: data.alerts })
-        }
+        const level = data.alerts?.some(a => a.level === 'critical') ? 'critical' : 'warning'
+        setAlertBanner({ level, alerts: data.alerts ?? [], balances: data.balances ?? {} })
       })
       .catch(() => {})
   }, [])
 
-  const showBanner = alertBanner && !bannerDismissed
+  const showBanner = !bannerDismissed
 
   return (
     <div className="min-h-screen bg-[#0F1628] font-sans flex">
@@ -116,46 +114,47 @@ export default function AdminLayout() {
           <span className="ml-auto text-[0.75rem] text-[#4E5A7A]">{adminName}</span>
         </header>
 
-        {/* Banner de alerta de liquidez */}
+        {/* Banner de saldos Vita — siempre visible */}
         {showBanner && (() => {
-          const isCrit  = alertBanner.level === 'critical'
-          const bg      = isCrit ? '#7F1D1D' : '#78350F'
-          const border  = isCrit ? '#EF444455' : '#F59E0B55'
-          const color   = isCrit ? '#FCA5A5' : '#FCD34D'
-          const Icon    = isCrit ? AlertCircle : AlertTriangle
+          const hasAlerts = alertBanner.alerts?.length > 0
+          const isCrit    = alertBanner.alerts?.some(a => a.level === 'critical')
+          const bg        = isCrit ? '#7F1D1D' : hasAlerts ? '#78350F' : '#1A2340'
+          const border    = isCrit ? '#EF444455' : hasAlerts ? '#F59E0B55' : '#26305055'
+          const labelColor = isCrit ? '#FCA5A5' : hasAlerts ? '#FCD34D' : '#8A96B8'
+          const Icon      = isCrit ? AlertCircle : hasAlerts ? AlertTriangle : CheckCircle2
+          const THRESHOLDS = { USD: 500, CLP: 500000, USDT: 500, USDC: 500, COP: 2000000 }
+          const fmt = (n, cur) =>
+            cur === 'CLP' || cur === 'COP'
+              ? `$${Number(n).toLocaleString('es-CL', { maximumFractionDigits: 0 })}`
+              : `$${Number(n).toFixed(2)}`
           return (
             <div
               className="flex items-center justify-between gap-3 px-6 py-3"
               style={{ background: bg, borderBottom: `1px solid ${border}` }}
             >
-              <div className="flex items-center gap-2">
-                <Icon size={15} style={{ color, flexShrink: 0 }} />
-                <p className="text-[0.8125rem] font-semibold flex flex-wrap items-baseline gap-x-1" style={{ color }}>
-                  <span>Saldo Vita bajo —&nbsp;</span>
-                  {alertBanner.alerts.map((a, i) => {
-                    const fmt = (n, cur) => {
-                      if (cur === 'CLP' || cur === 'COP') {
-                        return `$${Number(n).toLocaleString('es-CL', { maximumFractionDigits: 0 })}`
-                      }
-                      return `$${Number(n).toFixed(2)}`
-                    }
+              <div className="flex items-center gap-2 min-w-0">
+                <Icon size={15} style={{ color: labelColor, flexShrink: 0 }} />
+                <p className="text-[0.8125rem] font-semibold flex flex-wrap items-baseline gap-x-1" style={{ color: labelColor }}>
+                  <span>Vita —&nbsp;</span>
+                  {['USD', 'CLP', 'USDT', 'USDC', 'COP'].map((cur, i) => {
+                    const bal   = alertBanner.balances?.[cur.toLowerCase()] ?? 0
+                    const isOk  = bal >= (THRESHOLDS[cur] ?? 0)
                     return (
-                      <span key={a.currency}>
-                        {i > 0 && <span className="mx-1 opacity-50">·</span>}
-                        <strong>{a.currency}</strong>
-                        {' '}{fmt(a.current, a.currency)}
-                        <span className="opacity-60"> (mín {fmt(a.threshold, a.currency)})</span>
+                      <span key={cur}>
+                        {i > 0 && <span className="mx-2 opacity-30">|</span>}
+                        <strong>{cur}</strong>{' '}
+                        <span style={{ color: isOk ? '#22C55E' : '#F87171' }}>{fmt(bal, cur)}</span>
                       </span>
                     )
                   })}
-                  <span>&nbsp;— revisa el fondeo</span>
+                  {hasAlerts && <span className="ml-2 opacity-80">— revisa el fondeo</span>}
                 </p>
               </div>
               <button
                 onClick={() => setBannerDismissed(true)}
                 className="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
               >
-                <X size={14} style={{ color }} />
+                <X size={14} style={{ color: labelColor }} />
               </button>
             </div>
           )
