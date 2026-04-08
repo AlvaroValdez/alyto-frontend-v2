@@ -7,35 +7,13 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Mail, Bell, BellOff, Loader2 } from 'lucide-react'
+import { Mail, Bell, BellOff } from 'lucide-react'
+import Toggle from '../../components/ui/Toggle'
 import { usePushNotifications } from '../../hooks/usePushNotifications'
-
-// ── Toggle Switch ─────────────────────────────────────────────────────────────
-
-function Toggle({ enabled, onChange, disabled }) {
-  return (
-    <button
-      type="button"
-      onClick={() => !disabled && onChange(!enabled)}
-      disabled={disabled}
-      className={`relative w-11 h-6 rounded-full transition-all duration-200 flex-shrink-0 ${
-        disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-      } ${enabled ? 'bg-[#1D9E75]' : 'bg-[#263050]'}`}
-      aria-checked={enabled}
-      role="switch"
-    >
-      <span
-        className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${
-          enabled ? 'translate-x-5' : 'translate-x-0.5'
-        }`}
-      />
-    </button>
-  )
-}
 
 // ── Notification row ──────────────────────────────────────────────────────────
 
-function NotifRow({ icon: Icon, title, description, enabled, saving, onChange, disabled }) {
+function NotifRow({ icon: Icon, title, description, checked, loading, onChange, disabled }) {
   return (
     <div className="flex items-center gap-3 px-4 py-4">
       <div className="w-9 h-9 rounded-xl bg-[#F8FAFC] flex items-center justify-center flex-shrink-0">
@@ -45,10 +23,7 @@ function NotifRow({ icon: Icon, title, description, enabled, saving, onChange, d
         <p className="text-[0.9375rem] font-semibold text-[#0F172A] leading-tight">{title}</p>
         <p className="text-[0.75rem] text-[#64748B] mt-0.5 leading-snug">{description}</p>
       </div>
-      <div className="flex items-center gap-2">
-        {saving && <Loader2 size={12} className="text-[#1D9E75] animate-spin" />}
-        <Toggle enabled={enabled} onChange={onChange} disabled={disabled || saving} />
-      </div>
+      <Toggle checked={checked} onChange={onChange} disabled={disabled || loading} loading={loading} />
     </div>
   )
 }
@@ -79,7 +54,9 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
       const profilePush   = notifPrefs.push ?? false
       const hasToken      = !!localStorage.getItem('alyto_fcm_token')
       const hasPermission = typeof Notification !== 'undefined' && Notification.permission === 'granted'
-      setPushEnabled(profilePush && hasToken && hasPermission)
+      const resolved = profilePush && hasToken && hasPermission
+      console.info('[PUSH_TOGGLE] sync from profile:', { profilePush, hasToken, hasPermission, resolved })
+      setPushEnabled(resolved)
     }
   }, [profile])
 
@@ -96,23 +73,28 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
   }
 
   async function handlePushToggle(val) {
+    console.info('[PUSH_TOGGLE] handlePushToggle called:', { val, permission, token, pushBlocked })
     if (pushBlocked) return
 
     // Activar: si el permiso aún no fue otorgado, pedirlo primero
     if (val && permission !== 'granted') {
       setSavingPush(true)
       try {
+        console.info('[PUSH_TOGGLE] requesting permission...')
         await requestPermission()
+
         // Verificar directamente localStorage — requestPermission() guarda el token ahí
         const newToken = localStorage.getItem('alyto_fcm_token')
         const granted  = typeof Notification !== 'undefined' && Notification.permission === 'granted'
+        console.info('[PUSH_TOGGLE] after requestPermission:', { granted, newToken: !!newToken })
+
         if (granted) {
-          // Con o sin token: guardamos preferencia. Sin token = SW aún no activo, reintentará al recargar.
           setPushEnabled(true)
+          console.info('[PUSH_TOGGLE] saving push=true to backend...')
           await onUpdate({ preferences: { notifications: { email: emailEnabled, push: true } } })
         }
-        // Si el usuario negó el diálogo, el switch no cambia
-      } catch {
+      } catch (err) {
+        console.error('[PUSH_TOGGLE] requestPermission error:', err)
         setPushEnabled(false)
       } finally {
         setSavingPush(false)
@@ -124,6 +106,7 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
     setPushEnabled(val)
     setSavingPush(true)
     try {
+      console.info('[PUSH_TOGGLE] saving push preference:', val)
       await onUpdate({ preferences: { notifications: { email: emailEnabled, push: val } } })
       // Al desactivar: eliminar token FCM del backend
       if (!val) {
@@ -150,8 +133,8 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
           icon={Mail}
           title="Notificaciones por email"
           description="Recibir emails cuando tu transferencia cambie de estado"
-          enabled={emailEnabled}
-          saving={savingEmail}
+          checked={emailEnabled}
+          loading={savingEmail}
           onChange={handleEmailToggle}
         />
 
@@ -164,8 +147,8 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
             pushDefault ? 'Toca para activar alertas en este dispositivo' :
                           'Recibir alertas en este dispositivo'
           }
-          enabled={pushEnabled && pushGranted}
-          saving={savingPush}
+          checked={pushEnabled && pushGranted}
+          loading={savingPush}
           onChange={handlePushToggle}
           disabled={pushBlocked}
         />
