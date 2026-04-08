@@ -313,6 +313,14 @@ export function updateSpaConfig(data) {
 // ── Notificaciones push manuales ──────────────────────────────────────────────
 
 /**
+ * Obtiene la lista de tipos de notificación disponibles.
+ * @returns {Promise<{ types: Array<{ value: string, label: string }> }>}
+ */
+export function getAdminNotificationTypes() {
+  return request('/admin/notifications/types')
+}
+
+/**
  * Envía una notificación push manual a un usuario específico.
  * @param {{ userId: string, notificationType: string, metadata?: object }} data
  * @returns {Promise<{ ok: boolean, message: string }>}

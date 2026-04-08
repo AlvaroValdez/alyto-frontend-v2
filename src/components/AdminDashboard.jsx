@@ -24,14 +24,12 @@ import {
   ChevronRight,
   LayoutGrid,
   Bell,
-  ChevronDown,
-  ChevronUp,
   Send,
   X,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { fetchAdminUsers, fetchAdminLedger } from '../services/api'
-import { sendAdminNotification } from '../services/adminService'
+import { getAdminNotificationTypes, sendAdminNotification } from '../services/adminService'
 import VitaBalanceWidget from './Admin/VitaBalanceWidget'
 
 // ── Constantes de diseño ────────────────────────────────────────────────────
@@ -247,18 +245,6 @@ function LedgerSection({ transactions, loading, error }) {
   )
 }
 
-// ── Tipos de notificación disponibles ────────────────────────────────────────
-
-const NOTIFICATION_TYPES = [
-  { value: 'payin_confirmed',    label: 'Pay-in confirmado'         },
-  { value: 'payment_completed',  label: 'Pago completado'           },
-  { value: 'payout_sent',        label: 'Payout enviado'            },
-  { value: 'payment_failed',     label: 'Pago fallido'              },
-  { value: 'kyc_approved',       label: 'KYC aprobado'              },
-  { value: 'kyc_rejected',       label: 'KYC rechazado'             },
-  { value: 'transaction_update', label: 'Actualización de transacción' },
-]
-
 // ── Toast inline ──────────────────────────────────────────────────────────────
 
 function InlineToast({ toast, onDismiss }) {
@@ -293,29 +279,64 @@ function SendPushNotificationWidget() {
   const [notificationType, setNotificationType] = useState('')
   const [metadataRaw,      setMetadataRaw]      = useState('')
   const [metaOpen,         setMetaOpen]         = useState(false)
-  const [loading,          setLoading]          = useState(false)
+  const [sending,          setSending]          = useState(false)
   const [toast,            setToast]            = useState(null)
+  const [inlineError,      setInlineError]      = useState(null)
 
+  // ── fetch types on mount ──────────────────────────────────────────────────
+  const [types,        setTypes]        = useState([])
+  const [typesLoading, setTypesLoading] = useState(true)
+  const [typesError,   setTypesError]   = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    getAdminNotificationTypes()
+      .then(data => {
+        if (cancelled) return
+        // backend may return { types: [...] } with value/label or plain strings
+        const raw = data.types ?? data ?? []
+        setTypes(raw.map(t =>
+          typeof t === 'string' ? { value: t, label: t } : t
+        ))
+      })
+      .catch(err => {
+        if (cancelled) return
+        setTypesError(err.message || 'Error al cargar los tipos de notificación.')
+      })
+      .finally(() => { if (!cancelled) setTypesLoading(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  // ── helpers ───────────────────────────────────────────────────────────────
   const showToast = (type, message) => {
     setToast({ type, message })
     setTimeout(() => setToast(null), 5000)
   }
 
+  const resetForm = () => {
+    setUserId('')
+    setNotificationType('')
+    setMetadataRaw('')
+    setMetaOpen(false)
+    setInlineError(null)
+  }
+
   const handleSubmit = async () => {
-    if (!userId.trim())      return showToast('error', 'El User ID es obligatorio.')
-    if (!notificationType)   return showToast('error', 'Selecciona un tipo de notificación.')
+    setInlineError(null)
+    if (!userId.trim())    { setInlineError('El User ID es obligatorio.');             return }
+    if (!notificationType) { setInlineError('Selecciona un tipo de notificación.');    return }
 
     let metadata = undefined
     if (metadataRaw.trim()) {
       try {
         metadata = JSON.parse(metadataRaw)
       } catch {
-        return showToast('error', 'El metadata no es un JSON válido.')
+        setInlineError('El metadata no es un JSON válido.')
+        return
       }
     }
 
-    setLoading(true)
-    setToast(null)
+    setSending(true)
     try {
       await sendAdminNotification({
         userId: userId.trim(),
@@ -323,14 +344,11 @@ function SendPushNotificationWidget() {
         ...(metadata !== undefined && { metadata }),
       })
       showToast('success', 'Notificación enviada correctamente.')
-      setUserId('')
-      setNotificationType('')
-      setMetadataRaw('')
-      setMetaOpen(false)
+      resetForm()
     } catch (err) {
-      showToast('error', err.message || 'Error al enviar la notificación.')
+      setInlineError(err.message || 'Error al enviar la notificación.')
     } finally {
-      setLoading(false)
+      setSending(false)
     }
   }
 
@@ -365,11 +383,11 @@ function SendPushNotificationWidget() {
             value={userId}
             onChange={e => setUserId(e.target.value)}
             placeholder="64a3f1c2e45b7d0012a9b3c8"
-            className="w-full rounded-xl px-4 py-3 text-[0.9375rem] text-white bg-[#0F1628] border border-[#263050] placeholder-[#4E5A7A] transition-all outline-none focus:border-[#C4CBD8]"
+            className="w-full rounded-xl px-4 py-3 text-[0.9375rem] text-white bg-[#0F1628] border border-[#263050] placeholder-[#4E5A7A] transition-all outline-none"
             style={{ boxShadow: 'none' }}
-            onFocus={e  => { e.target.style.boxShadow = '0 0 0 2px #C4CBD820' }}
-            onBlur={e   => { e.target.style.boxShadow = 'none' }}
-            disabled={loading}
+            onFocus={e => { e.target.style.boxShadow = '0 0 0 2px #C4CBD820'; e.target.style.borderColor = '#C4CBD8' }}
+            onBlur={e  => { e.target.style.boxShadow = 'none';                e.target.style.borderColor = '#263050' }}
+            disabled={sending}
           />
         </div>
 
@@ -378,75 +396,113 @@ function SendPushNotificationWidget() {
           <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wider">
             Tipo de Notificación
           </label>
-          <select
-            value={notificationType}
-            onChange={e => setNotificationType(e.target.value)}
-            className="w-full rounded-xl px-4 py-3 text-[0.9375rem] bg-[#0F1628] border border-[#263050] outline-none transition-all appearance-none cursor-pointer"
-            style={{ color: notificationType ? '#FFFFFF' : '#4E5A7A' }}
-            onFocus={e  => { e.target.style.boxShadow = '0 0 0 2px #C4CBD820'; e.target.style.borderColor = '#C4CBD8' }}
-            onBlur={e   => { e.target.style.boxShadow = 'none';                e.target.style.borderColor = '#263050' }}
-            disabled={loading}
-          >
-            <option value="" disabled style={{ color: '#4E5A7A', background: '#0F1628' }}>
-              Seleccionar tipo…
-            </option>
-            {NOTIFICATION_TYPES.map(nt => (
-              <option key={nt.value} value={nt.value} style={{ color: '#FFFFFF', background: '#0F1628' }}>
-                {nt.label}
-              </option>
-            ))}
-          </select>
-        </div>
 
-        {/* Metadata (collapsible) */}
-        <div>
-          <button
-            type="button"
-            onClick={() => setMetaOpen(o => !o)}
-            className="flex items-center gap-2 text-[0.8125rem] font-semibold text-[#4E5A7A] hover:text-[#8A96B8] transition-colors mb-2"
-            disabled={loading}
-          >
-            {metaOpen
-              ? <ChevronUp  size={14} />
-              : <ChevronDown size={14} />
-            }
-            Metadata opcional (JSON)
-          </button>
-          {metaOpen && (
-            <textarea
-              value={metadataRaw}
-              onChange={e => setMetadataRaw(e.target.value)}
-              placeholder={'{\n  "transactionId": "abc123"\n}'}
-              rows={5}
-              className="w-full rounded-xl px-4 py-3 text-[0.8125rem] font-mono text-white bg-[#0F1628] border border-[#263050] placeholder-[#4E5A7A] resize-none outline-none transition-all"
+          {typesLoading && (
+            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#0F1628] border border-[#263050]">
+              <RefreshCw size={13} className="animate-spin text-[#4E5A7A]" />
+              <span className="text-[0.875rem] text-[#4E5A7A]">Cargando tipos…</span>
+            </div>
+          )}
+
+          {typesError && !typesLoading && (
+            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
+              <AlertCircle size={13} className="text-[#F87171] flex-shrink-0" />
+              <span className="text-[0.8125rem] text-[#F87171]">{typesError}</span>
+            </div>
+          )}
+
+          {!typesLoading && !typesError && (
+            <select
+              value={notificationType}
+              onChange={e => setNotificationType(e.target.value)}
+              className="w-full rounded-xl px-4 py-3 text-[0.9375rem] bg-[#0F1628] border border-[#263050] outline-none transition-all appearance-none cursor-pointer"
+              style={{ color: notificationType ? '#FFFFFF' : '#4E5A7A' }}
               onFocus={e => { e.target.style.boxShadow = '0 0 0 2px #C4CBD820'; e.target.style.borderColor = '#C4CBD8' }}
               onBlur={e  => { e.target.style.boxShadow = 'none';                e.target.style.borderColor = '#263050' }}
-              disabled={loading}
-            />
+              disabled={sending}
+            >
+              <option value="" disabled style={{ color: '#4E5A7A', background: '#0F1628' }}>
+                Seleccionar tipo…
+              </option>
+              {types.map(nt => (
+                <option key={nt.value} value={nt.value} style={{ color: '#FFFFFF', background: '#0F1628' }}>
+                  {nt.label}
+                </option>
+              ))}
+            </select>
           )}
         </div>
 
-        {/* Toast */}
+        {/* Metadata (collapsible via link) */}
+        <div>
+          {!metaOpen && (
+            <button
+              type="button"
+              onClick={() => setMetaOpen(true)}
+              className="text-[0.8125rem] font-medium text-[#4E5A7A] hover:text-[#8A96B8] transition-colors"
+              disabled={sending}
+            >
+              ＋ metadata
+            </button>
+          )}
+          {metaOpen && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wider">
+                  Metadata (JSON opcional)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => { setMetaOpen(false); setMetadataRaw('') }}
+                  className="text-[0.75rem] text-[#4E5A7A] hover:text-[#8A96B8] transition-colors"
+                  disabled={sending}
+                >
+                  − ocultar
+                </button>
+              </div>
+              <textarea
+                value={metadataRaw}
+                onChange={e => setMetadataRaw(e.target.value)}
+                placeholder={'{\n  "transactionId": "abc123"\n}'}
+                rows={5}
+                className="w-full rounded-xl px-4 py-3 text-[0.8125rem] font-mono text-white bg-[#0F1628] border border-[#263050] placeholder-[#4E5A7A] resize-none outline-none transition-all"
+                onFocus={e => { e.target.style.boxShadow = '0 0 0 2px #C4CBD820'; e.target.style.borderColor = '#C4CBD8' }}
+                onBlur={e  => { e.target.style.boxShadow = 'none';                e.target.style.borderColor = '#263050' }}
+                disabled={sending}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Success toast */}
         <InlineToast toast={toast} onDismiss={() => setToast(null)} />
+
+        {/* Inline error below button */}
+        {inlineError && (
+          <div className="flex items-start gap-2 px-3.5 py-3 rounded-2xl bg-[#EF44441A] border border-[#EF444433]">
+            <AlertCircle size={14} className="text-[#F87171] flex-shrink-0 mt-0.5" />
+            <p className="text-[0.8125rem] text-[#F87171]">{inlineError}</p>
+          </div>
+        )}
 
         {/* Submit */}
         <button
           onClick={handleSubmit}
-          disabled={loading}
+          disabled={sending || typesLoading}
           className="w-full flex items-center justify-center gap-2.5 rounded-xl py-3.5 text-[0.9375rem] font-bold transition-all"
           style={{
-            background:  loading ? '#C4CBD840' : '#C4CBD8',
-            color:       loading ? '#8A96B880' : '#0F1628',
-            boxShadow:   loading ? 'none' : '0 4px 20px rgba(196,203,216,0.25)',
-            cursor:      loading ? 'not-allowed' : 'pointer',
+            background: (sending || typesLoading) ? '#C4CBD840' : '#C4CBD8',
+            color:      (sending || typesLoading) ? '#8A96B880' : '#0F1628',
+            boxShadow:  (sending || typesLoading) ? 'none' : '0 4px 20px rgba(196,203,216,0.25)',
+            cursor:     (sending || typesLoading) ? 'not-allowed' : 'pointer',
           }}
         >
-          {loading ? (
+          {sending ? (
             <RefreshCw size={16} className="animate-spin" />
           ) : (
             <Send size={16} />
           )}
-          {loading ? 'Enviando…' : 'Enviar'}
+          {sending ? 'Enviando…' : 'Enviar'}
         </button>
       </div>
     </div>
