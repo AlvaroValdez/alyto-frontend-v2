@@ -1,11 +1,10 @@
 /**
  * Toggle.jsx — Switch toggle reutilizable.
  *
- * Props:
- *   checked   — Boolean (estado actual)
- *   onChange  — (newValue: boolean) => void
- *   disabled  — Boolean (deshabilita interacción)
- *   loading   — Boolean (muestra estado de carga visual)
+ * @param {boolean}           checked   — Estado actual del toggle
+ * @param {(val: boolean) => void} onChange — Callback al cambiar estado
+ * @param {boolean}           [disabled] — Deshabilita interacción
+ * @param {boolean}           [loading]  — Muestra spinner de carga; implica disabled
  */
 
 import { Loader2 } from 'lucide-react'
@@ -22,7 +21,6 @@ export default function Toggle({ checked, onChange, disabled, loading }) {
         aria-checked={checked}
         aria-disabled={isDisabled}
         onClick={() => {
-          console.log('[TOGGLE_CLICK]', { checked, disabled, loading })
           if (disabled || loading) return
           onChange(!checked)
         }}

@@ -72,9 +72,7 @@ export function registerFirebaseSW() {
   swRegistrationPromise = navigator.serviceWorker
     .register('/firebase-messaging-sw.js', { scope: '/' })
     .then(async (reg) => {
-      console.log('[FCM_SW] registered, scope:', reg.scope)
       if (reg.installing) {
-        console.log('[FCM_SW] waiting for SW to activate...')
         await new Promise((resolve) => {
           reg.installing.addEventListener('statechange', (e) => {
             if (e.target.state === 'activated') resolve()
@@ -82,7 +80,6 @@ export function registerFirebaseSW() {
         })
       }
       await navigator.serviceWorker.ready
-      console.log('[FCM_SW] ready, active state:', reg.active?.state)
       return reg
     })
     .catch((err) => {

@@ -56,7 +56,6 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
       const hasToken      = !!localStorage.getItem('alyto_fcm_token')
       const hasPermission = typeof Notification !== 'undefined' && Notification.permission === 'granted'
       const resolved = profilePush && hasToken && hasPermission
-      console.info('[PUSH_TOGGLE] sync from profile:', { profilePush, hasToken, hasPermission, resolved })
       setPushEnabled(resolved)
     }
   }, [profile])
@@ -74,7 +73,6 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
   }
 
   async function handlePushToggle(val) {
-    console.info('[PUSH_TOGGLE] handlePushToggle called:', { val, permission, token, pushBlocked })
     if (pushBlocked) return
 
     // CASO 1: Desactivar
@@ -99,23 +97,20 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
     // CASO 2 y 3 unificados: Activar (con o sin permiso/token previos)
     setSavingPush(true)
     try {
-      console.info('[PUSH_TOGGLE] activating, calling requestPermission (idempotent)...')
       await requestPermission()
 
       const newToken = localStorage.getItem('alyto_fcm_token')
       const granted  = typeof Notification !== 'undefined' && Notification.permission === 'granted'
-      console.info('[PUSH_TOGGLE] after requestPermission:', { granted, hasToken: !!newToken })
 
       if (granted && newToken) {
         setPushEnabled(true)
-        console.info('[PUSH_TOGGLE] saving push=true to backend...')
         await onUpdate({ preferences: { notifications: { email: emailEnabled, push: true } } })
       } else {
-        console.warn('[PUSH_TOGGLE] activation failed:', { granted, hasToken: !!newToken })
+        console.warn('[FCM] Push activation failed:', { granted, hasToken: !!newToken })
         setPushEnabled(false)
       }
     } catch (err) {
-      console.error('[PUSH_TOGGLE] activation error:', err)
+      console.error('[FCM] Push activation error:', err)
       setPushEnabled(false)
     } finally {
       setSavingPush(false)

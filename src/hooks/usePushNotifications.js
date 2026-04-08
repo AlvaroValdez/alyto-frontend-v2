@@ -62,21 +62,10 @@ export function usePushNotifications() {
         setError('Service Worker registration failed')
         return
       }
-      console.info('[Alyto FCM] SW listo:', swRegistration.scope)
-
-      // Obtener token FCM pasando el SW registration explícitamente
-      console.info('[FCM_TOKEN] calling getToken', {
-        hasVapidKey: !!VAPID_KEY,
-        hasSWReg: !!swRegistration,
-        swState: swRegistration?.active?.state ?? swRegistration?.installing?.state ?? 'unknown',
-      })
-
       const fcmToken = await getToken(messaging, {
         vapidKey: VAPID_KEY,
         serviceWorkerRegistration: swRegistration,
       })
-
-      console.info('[FCM_TOKEN] result:', { token: fcmToken ? fcmToken.substring(0, 20) + '...' : null })
 
       if (!fcmToken) {
         console.error('[FCM_TOKEN] getToken returned null — cannot register push')
@@ -161,7 +150,6 @@ export function usePushNotifications() {
 
   // ── clearToken ──────────────────────────────────────────────────────────
   const clearToken = useCallback(() => {
-    console.info('[FCM_TOKEN] clearing token from state and localStorage')
     setToken(null)
     try {
       localStorage.removeItem(FCM_TOKEN_KEY)
