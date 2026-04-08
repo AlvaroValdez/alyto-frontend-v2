@@ -23,6 +23,9 @@ const BANNER_SHOWN_KEY    = 'alyto_notif_banner_shown'   // sessionStorage
 const BANNER_DENIED_KEY   = 'alyto_notif_banner_denied'  // localStorage (permanente)
 const BANNER_COOLDOWN_MS  = 24 * 60 * 60 * 1000         // 24 h
 
+// VAPID key pública — generada en Firebase Console > Cloud Messaging
+const VAPID_KEY = 'BHssXZMwSwImsxvw6h4V-l5lhnQbUbrl1d64t6t3iR5wxnoijY3M6K1bOQ2Yw7Oo3NS5bele6seI2MmY5KUCT-4'
+
 // ── Helper ─────────────────────────────────────────────────────────────────
 function getInitialPermission() {
   if (typeof window === 'undefined' || !('Notification' in window)) return 'denied'
@@ -50,10 +53,24 @@ export function usePushNotifications() {
         return
       }
 
-      // Obtener token FCM
+      // Registrar SW explícitamente antes de getToken para garantizar
+      // que Firebase use el SW correcto con el scope adecuado
+      let swRegistration = null
+      try {
+        swRegistration = await navigator.serviceWorker.register(
+          '/firebase-messaging-sw.js',
+          { scope: '/firebase-cloud-messaging-push-scope' }
+        )
+        await navigator.serviceWorker.ready
+        console.info('[Alyto FCM] SW registrado:', swRegistration.scope)
+      } catch (swErr) {
+        console.warn('[Alyto FCM] SW registration failed:', swErr.message)
+      }
+
+      // Obtener token FCM pasando el SW registration explícitamente
       const fcmToken = await getToken(messaging, {
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
-          || 'BHssXZMwSwImsxvw6h4V-l5lhnQbUbrl1d64t6t3iR5wxnoijY3M6K1bOQ2Yw7Oo3NS5bele6seI2MmY5KUCT-4',
+        vapidKey: VAPID_KEY,
+        serviceWorkerRegistration: swRegistration ?? undefined,
       })
 
       // Registrar en el backend solo si el token cambió

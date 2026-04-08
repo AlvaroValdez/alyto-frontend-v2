@@ -1,26 +1,21 @@
 /**
  * firebase-messaging-sw.js — Service Worker para notificaciones push en background.
  *
- * IMPORTANTE: Las variables FIREBASE_* deben ser inyectadas en este archivo
- * antes del deploy (ej. con un script de build) o reemplazadas con los
- * valores reales del proyecto Firebase. No son variables de entorno Vite
- * ya que los Service Workers no pasan por el bundler.
- *
- * Valores disponibles en Firebase Console → Configuración del proyecto → Web apps.
+ * Las credenciales Firebase son públicas por diseño (igual que cualquier SDK web).
+ * La seguridad real se maneja via Firebase Security Rules.
  */
 
 importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js')
 importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-messaging-compat.js')
 
 // ── Configuración ─────────────────────────────────────────────────────────
-// Reemplazar estos valores con los del proyecto Firebase antes del deploy.
 firebase.initializeApp({
-  apiKey:            self.FIREBASE_API_KEY,
-  authDomain:        self.FIREBASE_AUTH_DOMAIN,
-  projectId:         self.FIREBASE_PROJECT_ID,
-  storageBucket:     self.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: self.FIREBASE_MESSAGING_SENDER_ID,
-  appId:             self.FIREBASE_APP_ID,
+  apiKey:            "AIzaSyA7i-m4O9qVFcr2QjzNP9mzYQge75JLEFE",
+  authDomain:        "alyto-14283.firebaseapp.com",
+  projectId:         "alyto-14283",
+  storageBucket:     "alyto-14283.firebasestorage.app",
+  messagingSenderId: "786578849025",
+  appId:             "1:786578849025:web:aeeb9211525363541eef00",
 })
 
 const messaging = firebase.messaging()
