@@ -64,14 +64,30 @@ export function usePushNotifications() {
         await navigator.serviceWorker.ready
         console.info('[Alyto FCM] SW registrado:', swRegistration.scope)
       } catch (swErr) {
-        console.warn('[Alyto FCM] SW registration failed:', swErr.message)
+        console.error('[Alyto FCM] SW registration failed — push will not work:', swErr)
+        setError('Service Worker registration failed')
+        return
       }
 
       // Obtener token FCM pasando el SW registration explícitamente
+      console.info('[FCM_TOKEN] calling getToken', {
+        hasVapidKey: !!VAPID_KEY,
+        hasSWReg: !!swRegistration,
+        swState: swRegistration?.active?.state ?? swRegistration?.installing?.state ?? 'unknown',
+      })
+
       const fcmToken = await getToken(messaging, {
         vapidKey: VAPID_KEY,
-        serviceWorkerRegistration: swRegistration ?? undefined,
+        serviceWorkerRegistration: swRegistration,
       })
+
+      console.info('[FCM_TOKEN] result:', { token: fcmToken ? fcmToken.substring(0, 20) + '...' : null })
+
+      if (!fcmToken) {
+        console.error('[FCM_TOKEN] getToken returned null — cannot register push')
+        setError('FCM token unavailable')
+        return
+      }
 
       // Registrar en el backend solo si el token cambió
       const savedToken = localStorage.getItem(FCM_TOKEN_KEY)
@@ -85,6 +101,7 @@ export function usePushNotifications() {
       // Marcar como aceptado permanentemente para no volver a mostrar el banner
       localStorage.setItem(BANNER_DENIED_KEY, 'accepted')
     } catch (err) {
+      console.error('[FCM_TOKEN] requestPermission error:', err)
       setError(err.message)
     }
   }, [])

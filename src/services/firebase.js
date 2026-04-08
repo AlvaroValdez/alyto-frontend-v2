@@ -41,7 +41,16 @@ try {
     })
 
     // ── Update detection: auto-reload cuando hay nuevo SW ───────────────
+    // Guard: solo recargar si no es la primera activación (evitar reload
+    // durante el flujo inicial de requestPermission + getToken)
+    let hasController = !!navigator.serviceWorker.controller
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hasController) {
+        // Primera vez que se activa un controller — no recargar
+        hasController = true
+        console.info('[Alyto FCM] Initial SW controller set — skip reload')
+        return
+      }
       console.info('[Alyto FCM] New SW active — reloading...')
       window.location.reload()
     })
