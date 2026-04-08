@@ -53,12 +53,12 @@ export default function AppNotifications() {
     if (!isAuth) return
     if (!('Notification' in window)) return
 
-    // 1. Evaluar si mostrar el banner de solicitud
-    triggerBannerCheck()
+    // Delay para asegurar que el componente está montado antes de mostrar el banner
+    const timer = setTimeout(() => triggerBannerCheck(), 1500)
 
-    // 2. Escuchar notificaciones con la app en primer plano
+    // Escuchar notificaciones con la app en primer plano
     const cleanup = setupForegroundNotifications(addToast)
-    return cleanup
+    return () => { clearTimeout(timer); cleanup?.() }
   }, [isAuth, triggerBannerCheck, setupForegroundNotifications, addToast])
 
   // ── Limpiar toasts al hacer logout ───────────────────────────────────────

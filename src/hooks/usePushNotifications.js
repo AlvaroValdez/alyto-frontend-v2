@@ -122,13 +122,17 @@ export function usePushNotifications() {
    *  - Han pasado más de 24 h desde la última vez que se preguntó
    */
   const triggerBannerCheck = useCallback(() => {
-    if (!('Notification' in window))                                 return
-    if (Notification.permission !== 'default')                       return
-    if (localStorage.getItem(BANNER_DENIED_KEY))                     return
-    if (sessionStorage.getItem(BANNER_SHOWN_KEY) === 'true')        return
-
-    const lastAsked = Number(localStorage.getItem(ASKED_AT_KEY) || 0)
-    if (Date.now() - lastAsked < BANNER_COOLDOWN_MS)                 return
+    if (!('Notification' in window))           return
+    if (Notification.permission !== 'default') return
+    // Solo bloquear si el usuario explícitamente dismisseó:
+    // 'accepted' → ya aceptó, no mostrar más
+    // 'dismissed' → cerró, respetar cooldown de 24h
+    const denied = localStorage.getItem(BANNER_DENIED_KEY)
+    if (denied === 'accepted') return
+    if (denied === 'dismissed') {
+      const lastAsked = Number(localStorage.getItem(ASKED_AT_KEY) || 0)
+      if (Date.now() - lastAsked < BANNER_COOLDOWN_MS) return
+    }
 
     setShowBanner(true)
     sessionStorage.setItem(BANNER_SHOWN_KEY, 'true')
