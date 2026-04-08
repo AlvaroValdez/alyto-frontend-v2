@@ -309,3 +309,17 @@ export function updateSpaConfig(data) {
     body:   JSON.stringify(data),
   })
 }
+
+// ── Notificaciones push manuales ──────────────────────────────────────────────
+
+/**
+ * Envía una notificación push manual a un usuario específico.
+ * @param {{ userId: string, notificationType: string, metadata?: object }} data
+ * @returns {Promise<{ ok: boolean, message: string }>}
+ */
+export function sendAdminNotification(data) {
+  return request('/admin/notifications/send', {
+    method: 'POST',
+    body:   JSON.stringify(data),
+  })
+}

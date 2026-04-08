@@ -23,9 +23,15 @@ import {
   XCircle,
   ChevronRight,
   LayoutGrid,
+  Bell,
+  ChevronDown,
+  ChevronUp,
+  Send,
+  X,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { fetchAdminUsers, fetchAdminLedger } from '../services/api'
+import { sendAdminNotification } from '../services/adminService'
 import VitaBalanceWidget from './Admin/VitaBalanceWidget'
 
 // ── Constantes de diseño ────────────────────────────────────────────────────
@@ -241,6 +247,212 @@ function LedgerSection({ transactions, loading, error }) {
   )
 }
 
+// ── Tipos de notificación disponibles ────────────────────────────────────────
+
+const NOTIFICATION_TYPES = [
+  { value: 'payin_confirmed',    label: 'Pay-in confirmado'         },
+  { value: 'payment_completed',  label: 'Pago completado'           },
+  { value: 'payout_sent',        label: 'Payout enviado'            },
+  { value: 'payment_failed',     label: 'Pago fallido'              },
+  { value: 'kyc_approved',       label: 'KYC aprobado'              },
+  { value: 'kyc_rejected',       label: 'KYC rechazado'             },
+  { value: 'transaction_update', label: 'Actualización de transacción' },
+]
+
+// ── Toast inline ──────────────────────────────────────────────────────────────
+
+function InlineToast({ toast, onDismiss }) {
+  if (!toast) return null
+  const isSuccess = toast.type === 'success'
+  return (
+    <div
+      className="flex items-start gap-3 p-3.5 rounded-2xl border"
+      style={{
+        background:   isSuccess ? '#22C55E1A' : '#EF44441A',
+        borderColor:  isSuccess ? '#22C55E33' : '#EF444433',
+      }}
+    >
+      {isSuccess
+        ? <CheckCircle2 size={16} className="text-[#22C55E] flex-shrink-0 mt-0.5" />
+        : <AlertCircle  size={16} className="text-[#F87171]  flex-shrink-0 mt-0.5" />
+      }
+      <p className="flex-1 text-[0.8125rem]" style={{ color: isSuccess ? '#22C55E' : '#F87171' }}>
+        {toast.message}
+      </p>
+      <button onClick={onDismiss} className="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity">
+        <X size={14} style={{ color: isSuccess ? '#22C55E' : '#F87171' }} />
+      </button>
+    </div>
+  )
+}
+
+// ── Widget: Enviar Notificación Manual ────────────────────────────────────────
+
+function SendPushNotificationWidget() {
+  const [userId,           setUserId]           = useState('')
+  const [notificationType, setNotificationType] = useState('')
+  const [metadataRaw,      setMetadataRaw]      = useState('')
+  const [metaOpen,         setMetaOpen]         = useState(false)
+  const [loading,          setLoading]          = useState(false)
+  const [toast,            setToast]            = useState(null)
+
+  const showToast = (type, message) => {
+    setToast({ type, message })
+    setTimeout(() => setToast(null), 5000)
+  }
+
+  const handleSubmit = async () => {
+    if (!userId.trim())      return showToast('error', 'El User ID es obligatorio.')
+    if (!notificationType)   return showToast('error', 'Selecciona un tipo de notificación.')
+
+    let metadata = undefined
+    if (metadataRaw.trim()) {
+      try {
+        metadata = JSON.parse(metadataRaw)
+      } catch {
+        return showToast('error', 'El metadata no es un JSON válido.')
+      }
+    }
+
+    setLoading(true)
+    setToast(null)
+    try {
+      await sendAdminNotification({
+        userId: userId.trim(),
+        notificationType,
+        ...(metadata !== undefined && { metadata }),
+      })
+      showToast('success', 'Notificación enviada correctamente.')
+      setUserId('')
+      setNotificationType('')
+      setMetadataRaw('')
+      setMetaOpen(false)
+    } catch (err) {
+      showToast('error', err.message || 'Error al enviar la notificación.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div
+      className="rounded-2xl border border-[#263050] overflow-hidden mb-6"
+      style={{ background: '#1A2340' }}
+    >
+      {/* Header */}
+      <div className="px-4 py-4 border-b border-[#26305060] flex items-center gap-3">
+        <div
+          className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: '#C4CBD81A' }}
+        >
+          <Bell size={14} className="text-[#C4CBD8]" />
+        </div>
+        <h2 className="text-[0.9375rem] font-bold text-white flex-1">
+          Enviar Notificación Manual
+        </h2>
+      </div>
+
+      {/* Form */}
+      <div className="p-4 space-y-4">
+
+        {/* User ID */}
+        <div className="space-y-1.5">
+          <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wider">
+            User ID
+          </label>
+          <input
+            type="text"
+            value={userId}
+            onChange={e => setUserId(e.target.value)}
+            placeholder="64a3f1c2e45b7d0012a9b3c8"
+            className="w-full rounded-xl px-4 py-3 text-[0.9375rem] text-white bg-[#0F1628] border border-[#263050] placeholder-[#4E5A7A] transition-all outline-none focus:border-[#C4CBD8]"
+            style={{ boxShadow: 'none' }}
+            onFocus={e  => { e.target.style.boxShadow = '0 0 0 2px #C4CBD820' }}
+            onBlur={e   => { e.target.style.boxShadow = 'none' }}
+            disabled={loading}
+          />
+        </div>
+
+        {/* Notification Type */}
+        <div className="space-y-1.5">
+          <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wider">
+            Tipo de Notificación
+          </label>
+          <select
+            value={notificationType}
+            onChange={e => setNotificationType(e.target.value)}
+            className="w-full rounded-xl px-4 py-3 text-[0.9375rem] bg-[#0F1628] border border-[#263050] outline-none transition-all appearance-none cursor-pointer"
+            style={{ color: notificationType ? '#FFFFFF' : '#4E5A7A' }}
+            onFocus={e  => { e.target.style.boxShadow = '0 0 0 2px #C4CBD820'; e.target.style.borderColor = '#C4CBD8' }}
+            onBlur={e   => { e.target.style.boxShadow = 'none';                e.target.style.borderColor = '#263050' }}
+            disabled={loading}
+          >
+            <option value="" disabled style={{ color: '#4E5A7A', background: '#0F1628' }}>
+              Seleccionar tipo…
+            </option>
+            {NOTIFICATION_TYPES.map(nt => (
+              <option key={nt.value} value={nt.value} style={{ color: '#FFFFFF', background: '#0F1628' }}>
+                {nt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Metadata (collapsible) */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setMetaOpen(o => !o)}
+            className="flex items-center gap-2 text-[0.8125rem] font-semibold text-[#4E5A7A] hover:text-[#8A96B8] transition-colors mb-2"
+            disabled={loading}
+          >
+            {metaOpen
+              ? <ChevronUp  size={14} />
+              : <ChevronDown size={14} />
+            }
+            Metadata opcional (JSON)
+          </button>
+          {metaOpen && (
+            <textarea
+              value={metadataRaw}
+              onChange={e => setMetadataRaw(e.target.value)}
+              placeholder={'{\n  "transactionId": "abc123"\n}'}
+              rows={5}
+              className="w-full rounded-xl px-4 py-3 text-[0.8125rem] font-mono text-white bg-[#0F1628] border border-[#263050] placeholder-[#4E5A7A] resize-none outline-none transition-all"
+              onFocus={e => { e.target.style.boxShadow = '0 0 0 2px #C4CBD820'; e.target.style.borderColor = '#C4CBD8' }}
+              onBlur={e  => { e.target.style.boxShadow = 'none';                e.target.style.borderColor = '#263050' }}
+              disabled={loading}
+            />
+          )}
+        </div>
+
+        {/* Toast */}
+        <InlineToast toast={toast} onDismiss={() => setToast(null)} />
+
+        {/* Submit */}
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2.5 rounded-xl py-3.5 text-[0.9375rem] font-bold transition-all"
+          style={{
+            background:  loading ? '#C4CBD840' : '#C4CBD8',
+            color:       loading ? '#8A96B880' : '#0F1628',
+            boxShadow:   loading ? 'none' : '0 4px 20px rgba(196,203,216,0.25)',
+            cursor:      loading ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {loading ? (
+            <RefreshCw size={16} className="animate-spin" />
+          ) : (
+            <Send size={16} />
+          )}
+          {loading ? 'Enviando…' : 'Enviar'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── AdminDashboard (componente principal) ────────────────────────────────────
 
 export default function AdminDashboard() {
@@ -398,6 +610,9 @@ export default function AdminDashboard() {
 
       {/* ── CONTENIDO ────────────────────────────────────────────────── */}
       <main className="max-w-5xl mx-auto px-4 pb-12">
+
+        {/* Widget: notificación push manual */}
+        <SendPushNotificationWidget />
 
         {/* Stats rápidas */}
         <div className="grid grid-cols-2 gap-3 mb-6">
