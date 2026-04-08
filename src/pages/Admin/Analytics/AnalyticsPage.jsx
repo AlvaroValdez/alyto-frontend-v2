@@ -168,14 +168,14 @@ export default function AnalyticsPage() {
               icon={DollarSign}
               label="Volumen total"
               value={global.totalVolume != null ? `$${fmt(global.totalVolume)}` : '—'}
-              sub="CLP"
+              sub="origen"
               color="#C4CBD8"
             />
             <KpiCard
               icon={TrendingUp}
               label="Ganancia total"
               value={global.totalProfit != null ? `$${fmt(global.totalProfit)}` : '—'}
-              sub="CLP"
+              sub="origen"
               color="#22C55E"
             />
             <KpiCard

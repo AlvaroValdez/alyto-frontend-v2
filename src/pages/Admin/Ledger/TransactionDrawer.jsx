@@ -230,7 +230,7 @@ function PayinManualBanner({ tx, onConfirmed }) {
       <div className="pl-1 space-y-0.5">
         <p className="text-[0.8125rem] text-[#8A96B8]">El usuario debe transferir:</p>
         <p className="text-[1.125rem] font-extrabold text-white tabular-nums">
-          {tx.originCurrency === 'CLP' ? '$' : 'Bs '}{tx.originalAmount?.toLocaleString('es-CL')} {tx.originCurrency ?? 'BOB'}
+          {tx.originCurrency === 'BOB' ? 'Bs ' : tx.originCurrency === 'EUR' ? '€ ' : '$ '}{tx.originalAmount?.toLocaleString('es-CL')} {tx.originCurrency ?? 'BOB'}
         </p>
         <p className="text-[0.75rem] font-mono text-[#4E5A7A]">
           Ref: {tx.alytoTransactionId}

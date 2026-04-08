@@ -21,15 +21,6 @@ import WelcomeBanner          from './WelcomeBanner'
 import QuickActions           from './QuickActions'
 import RecentTransactions     from './RecentTransactions'
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatCLP(amount) {
-  return new Intl.NumberFormat('es-CL', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(Math.round(amount ?? 0))
-}
-
 // ── Stat Card ─────────────────────────────────────────────────────────────────
 
 function StatCard({ label, value, accent }) {

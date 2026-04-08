@@ -14,8 +14,9 @@ const LANGUAGES = [
 ]
 
 const CURRENCIES = [
-  { value: 'CLP', label: 'CLP — Peso chileno' },
-  { value: 'USD', label: 'USD — Dólar estadounidense' },
+  { value: 'BOB',  label: 'BOB — Boliviano' },
+  { value: 'CLP',  label: 'CLP — Peso chileno' },
+  { value: 'USD',  label: 'USD — Dólar estadounidense' },
   { value: 'USDC', label: 'USDC — USD Coin' },
 ]
 
@@ -51,6 +52,10 @@ function ReadField({ icon: Icon, label, value, locked }) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function PersonalInfoTab({ profile, saving, onUpdate }) {
+  const defaultCurrency =
+    profile?.legalEntity === 'SRL' ? 'BOB' :
+    profile?.legalEntity === 'LLC' ? 'USD' : 'CLP'
+
   const [editing,   setEditing]   = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [form,      setForm]      = useState({
@@ -58,7 +63,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
     lastName:          '',
     phone:             '',
     preferredLanguage: 'es',
-    preferredCurrency: 'CLP',
+    preferredCurrency: defaultCurrency,
   })
 
   // Sincronizar form cuando llega el perfil
@@ -69,7 +74,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
         lastName:          profile.lastName          ?? '',
         phone:             profile.phone             ?? '',
         preferredLanguage: profile.preferredLanguage ?? 'es',
-        preferredCurrency: profile.preferredCurrency ?? 'CLP',
+        preferredCurrency: profile.preferredCurrency ?? defaultCurrency,
       })
     }
   }, [profile])
@@ -86,7 +91,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
         lastName:          profile.lastName          ?? '',
         phone:             profile.phone             ?? '',
         preferredLanguage: profile.preferredLanguage ?? 'es',
-        preferredCurrency: profile.preferredCurrency ?? 'CLP',
+        preferredCurrency: profile.preferredCurrency ?? defaultCurrency,
       })
     }
     setEditing(false)
@@ -253,7 +258,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
             <ReadField icon={Phone}     label="Teléfono"        value={profile?.phone} />
             <ReadField icon={Globe}     label="País / Entidad"  value={countryLabel} locked />
             <ReadField icon={Languages} label="Idioma"          value={LANGUAGES.find(l => l.value === (profile?.preferredLanguage ?? 'es'))?.label} />
-            <ReadField icon={DollarSign} label="Moneda"         value={profile?.preferredCurrency ?? 'CLP'} />
+            <ReadField icon={DollarSign} label="Moneda"         value={profile?.preferredCurrency ?? defaultCurrency} />
           </>
         )}
       </div>
