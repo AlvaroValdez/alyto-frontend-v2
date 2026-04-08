@@ -9,7 +9,8 @@
  */
 
 import { useNavigate } from 'react-router-dom'
-import { Send, List, User, MessageCircle } from 'lucide-react'
+import { Send, List, User, MessageCircle, QrCode } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
 
 const WHATSAPP_NUMBER = import.meta.env.VITE_SUPPORT_WHATSAPP ?? ''
 
@@ -52,7 +53,7 @@ const ACTIONS = [
   },
 ]
 
-function ActionCard({ action, kycApproved, onNavigate, onSupport }) {
+function ActionCard({ action, kycApproved, onNavigate, onSupport, colSpan2 = false }) {
   const Icon       = action.icon
   const isDisabled = action.requiresKyc && !kycApproved
 
@@ -70,7 +71,7 @@ function ActionCard({ action, kycApproved, onNavigate, onSupport }) {
       onClick={handleClick}
       disabled={isDisabled}
       title={isDisabled ? 'Disponible tras verificar tu identidad' : undefined}
-      className={`flex flex-col items-start gap-3 p-4 rounded-2xl border transition-all text-left w-full ${
+      className={`flex flex-col items-start gap-3 p-4 rounded-2xl border transition-all text-left w-full ${colSpan2 ? 'col-span-2' : ''} ${
         isDisabled
           ? 'bg-white border-[#E2E8F0] opacity-40 cursor-not-allowed'
           : action.primary
@@ -113,7 +114,9 @@ function ActionCard({ action, kycApproved, onNavigate, onSupport }) {
 
 export default function QuickActions({ kycStatus }) {
   const navigate    = useNavigate()
+  const { user }    = useAuth()
   const kycApproved = kycStatus === 'approved'
+  const isSRL       = user?.legalEntity === 'SRL'
 
   function handleSupport() {
     if (WHATSAPP_NUMBER) {
@@ -128,7 +131,7 @@ export default function QuickActions({ kycStatus }) {
         <p className="text-base font-bold text-[#0F172A]">Acciones rápidas</p>
       </div>
 
-      {/* Grid 2×2 */}
+      {/* Grid 2×2 (2×3 para usuarios SRL con botón QR) */}
       <div className="grid grid-cols-2 gap-3">
         {ACTIONS.map((action) => (
           <ActionCard
@@ -139,6 +142,22 @@ export default function QuickActions({ kycStatus }) {
             onSupport={handleSupport}
           />
         ))}
+        {isSRL && (
+          <ActionCard
+            action={{
+              id:          'qr',
+              icon:        QrCode,
+              label:       'QR',
+              primary:     false,
+              requiresKyc: false,
+              route:       '/wallet/qr',
+            }}
+            kycApproved={kycApproved}
+            onNavigate={navigate}
+            onSupport={handleSupport}
+            colSpan2
+          />
+        )}
       </div>
     </div>
   )
