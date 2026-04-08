@@ -52,7 +52,8 @@ export function usePushNotifications() {
 
       // Obtener token FCM
       const fcmToken = await getToken(messaging, {
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
+          || 'BHssXZMwSwImsxvw6h4V-l5lhnQbUbrl1d64t6t3iR5wxnoijY3M6K1bOQ2Yw7Oo3NS5bele6seI2MmY5KUCT-4',
       })
 
       // Registrar en el backend solo si el token cambió

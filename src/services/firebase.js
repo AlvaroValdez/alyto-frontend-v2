@@ -10,12 +10,12 @@ import { initializeApp } from 'firebase/app'
 import { getMessaging, getToken, onMessage } from 'firebase/messaging'
 
 const firebaseConfig = {
-  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId:             import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY            || 'AIzaSyA7i-m4O9qVFcr2QjzNP9mzYQge75JLEFE',
+  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN        || 'alyto-14283.firebaseapp.com',
+  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID         || 'alyto-14283',
+  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET     || 'alyto-14283.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID|| '786578849025',
+  appId:             import.meta.env.VITE_FIREBASE_APP_ID             || '1:786578849025:web:aeeb9211525363541eef00',
 }
 
 let messaging = null
