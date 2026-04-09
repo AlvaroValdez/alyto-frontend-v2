@@ -53,8 +53,8 @@ function ReadField({ icon: Icon, label, value, locked }) {
 
 export default function PersonalInfoTab({ profile, saving, onUpdate }) {
   const defaultCurrency =
-    profile?.legalEntity === 'SRL' ? 'BOB' :
-    profile?.legalEntity === 'LLC' ? 'USD' : 'CLP'
+    profile?.entity === 'SRL' ? 'BOB' :
+    profile?.entity === 'LLC' ? 'USD' : 'CLP'
 
   const [editing,   setEditing]   = useState(false)
   const [showToast, setShowToast] = useState(false)
@@ -70,11 +70,11 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
   useEffect(() => {
     if (profile) {
       setForm({
-        firstName:         profile.firstName         ?? '',
-        lastName:          profile.lastName          ?? '',
-        phone:             profile.phone             ?? '',
-        preferredLanguage: profile.preferredLanguage ?? 'es',
-        preferredCurrency: profile.preferredCurrency ?? defaultCurrency,
+        firstName:         profile.firstName                ?? '',
+        lastName:          profile.lastName                 ?? '',
+        phone:             profile.phone                    ?? '',
+        preferredLanguage: profile.preferences?.language    ?? 'es',
+        preferredCurrency: profile.preferences?.currency    ?? defaultCurrency,
       })
     }
   }, [profile])
@@ -87,11 +87,11 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
     // Revertir al estado del perfil guardado
     if (profile) {
       setForm({
-        firstName:         profile.firstName         ?? '',
-        lastName:          profile.lastName          ?? '',
-        phone:             profile.phone             ?? '',
-        preferredLanguage: profile.preferredLanguage ?? 'es',
-        preferredCurrency: profile.preferredCurrency ?? defaultCurrency,
+        firstName:         profile.firstName                ?? '',
+        lastName:          profile.lastName                 ?? '',
+        phone:             profile.phone                    ?? '',
+        preferredLanguage: profile.preferences?.language    ?? 'es',
+        preferredCurrency: profile.preferences?.currency    ?? defaultCurrency,
       })
     }
     setEditing(false)
@@ -99,7 +99,15 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
 
   async function handleSave() {
     try {
-      await onUpdate(form)
+      await onUpdate({
+        firstName: form.firstName,
+        lastName:  form.lastName,
+        phone:     form.phone,
+        preferences: {
+          language: form.preferredLanguage,
+          currency: form.preferredCurrency,
+        },
+      })
       setEditing(false)
       setShowToast(true)
       setTimeout(() => setShowToast(false), 3000)
@@ -109,7 +117,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
   }
 
   const countryLabel = profile?.country
-    ? `${profile.country}${profile.legalEntity ? ` · ${profile.legalEntity}` : ''}`
+    ? `${profile.country}${profile.entity ? ` · ${profile.entity}` : ''}`
     : '—'
 
   return (
@@ -257,8 +265,8 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
             <ReadField icon={User}      label="Nombre"          value={`${profile?.firstName ?? ''} ${profile?.lastName ?? ''}`.trim()} />
             <ReadField icon={Phone}     label="Teléfono"        value={profile?.phone} />
             <ReadField icon={Globe}     label="País / Entidad"  value={countryLabel} locked />
-            <ReadField icon={Languages} label="Idioma"          value={LANGUAGES.find(l => l.value === (profile?.preferredLanguage ?? 'es'))?.label} />
-            <ReadField icon={DollarSign} label="Moneda"         value={profile?.preferredCurrency ?? defaultCurrency} />
+            <ReadField icon={Languages} label="Idioma"          value={LANGUAGES.find(l => l.value === (profile?.preferences?.language ?? 'es'))?.label} />
+            <ReadField icon={DollarSign} label="Moneda"         value={profile?.preferences?.currency ?? defaultCurrency} />
           </>
         )}
       </div>
