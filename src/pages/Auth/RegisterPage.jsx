@@ -15,15 +15,9 @@ import { useAuth } from '../../context/AuthContext'
 // ── Países disponibles ────────────────────────────────────────────────────────
 
 const COUNTRIES = [
-  { value: 'CL',    label: '🇨🇱  Chile',          entity: 'SpA' },
-  { value: 'BO',    label: '🇧🇴  Bolivia',         entity: 'SRL' },
-  { value: 'US',    label: '🇺🇸  Estados Unidos',  entity: 'LLC' },
-  { value: 'AR',    label: '🇦🇷  Argentina',       entity: 'LLC' },
-  { value: 'CO',    label: '🇨🇴  Colombia',        entity: 'LLC' },
-  { value: 'MX',    label: '🇲🇽  México',          entity: 'LLC' },
-  { value: 'BR',    label: '🇧🇷  Brasil',          entity: 'LLC' },
-  { value: 'PE',    label: '🇵🇪  Perú',            entity: 'LLC' },
-  { value: 'OTHER', label: '🌐  Otro país',        entity: 'LLC' },
+  { value: 'CL',    label: '🇨🇱  Chile',     entity: 'SpA' },
+  { value: 'BO',    label: '🇧🇴  Bolivia',    entity: 'SRL' },
+  { value: 'OTHER', label: '🌐  Otro país',  entity: 'LLC' },
 ]
 
 const ENTITY_INFO = {

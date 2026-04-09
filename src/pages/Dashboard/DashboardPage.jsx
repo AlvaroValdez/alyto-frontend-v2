@@ -187,11 +187,20 @@ export default function DashboardPage() {
   const originCurrency = legalEntity === 'SRL' ? 'BOB' : legalEntity === 'LLC' ? 'USD' : 'CLP'
 
   function formatOriginAmount(amount) {
-    const decimals = originCurrency === 'CLP' ? 0 : 2
-    return new Intl.NumberFormat('es-CL', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    }).format(amount ?? 0)
+    if (!amount && amount !== 0) return '—'
+    if (originCurrency === 'BOB') {
+      return `Bs ${Number(amount).toLocaleString('es-BO', {
+        minimumFractionDigits: 2, maximumFractionDigits: 2,
+      })}`
+    }
+    if (originCurrency === 'USD') {
+      return `$ ${Number(amount).toLocaleString('en-US', {
+        minimumFractionDigits: 2, maximumFractionDigits: 2,
+      })}`
+    }
+    return `$ ${Number(amount).toLocaleString('es-CL', {
+      minimumFractionDigits: 0, maximumFractionDigits: 0,
+    })}`
   }
 
   return (
@@ -254,7 +263,7 @@ export default function DashboardPage() {
           <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 mb-4 pb-1">
             <StatCard
               label="Total enviado"
-              value={`${formatOriginAmount(stats.totalSent)} ${originCurrency}`}
+              value={`${formatOriginAmount(stats.totalSent)}`}
               accent="#0F172A"
             />
             <StatCard
