@@ -331,3 +331,22 @@ export function sendAdminNotification(data) {
     body:   JSON.stringify(data),
   })
 }
+
+// ── Factura B2B (Admin) ──────────────────────────────────────────────────────
+
+/**
+ * Descarga el Comprobante Oficial de Servicio B2B (PDF) desde el panel admin.
+ * @param {string} transactionId — alytoTransactionId
+ */
+export async function getBusinessInvoice(transactionId) {
+  const res = await request(`/admin/transactions/${transactionId}/business-invoice`)
+  const blob = await res.blob()
+  const filename = res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1]
+    ?? `factura_b2b_${transactionId}.pdf`
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}

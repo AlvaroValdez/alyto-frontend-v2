@@ -11,7 +11,7 @@ import {
   Clock, CheckCircle2, XCircle, AlertCircle, Loader,
   User, Banknote, List, Edit3, ArrowRight, Paperclip, ZoomIn, FileText,
 } from 'lucide-react'
-import { getTransactionDetail, updateTransactionStatus, getTransactionComprobante } from '../../../services/adminService'
+import { getTransactionDetail, updateTransactionStatus, getTransactionComprobante, getBusinessInvoice } from '../../../services/adminService'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -436,6 +436,7 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
   const [saving,      setSaving]      = useState(false)
   const [saveError,   setSaveError]   = useState(null)
   const [saveOk,      setSaveOk]      = useState(false)
+  const [downloadingB2B, setDownloadingB2B] = useState(false)
 
   const load = useCallback(async () => {
     if (!transactionId) return
@@ -671,6 +672,40 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
                     <Field label="Entidad" value={tx.userId.legalEntity} dim />
                     <Field label="KYC" value={tx.userId.kycStatus} dim />
                   </div>
+                  <Divider />
+                </>
+              )}
+
+              {/* ── 4b. Factura B2B — solo business + completed + SRL ──── */}
+              {tx.status === 'completed' && tx.legalEntity === 'SRL' && tx.userId?.accountType === 'business' && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <SectionTitle icon={FileText}>Factura B2B</SectionTitle>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      setDownloadingB2B(true)
+                      try {
+                        await getBusinessInvoice(tx.alytoTransactionId)
+                      } catch {
+                        // silently handled
+                      } finally {
+                        setDownloadingB2B(false)
+                      }
+                    }}
+                    disabled={downloadingB2B}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[0.8125rem] font-semibold transition-all active:scale-95 disabled:opacity-50"
+                    style={{
+                      background: downloadingB2B ? '#C4CBD840' : '#C4CBD8',
+                      color: '#0F1628',
+                      boxShadow: downloadingB2B ? 'none' : '0 4px 20px rgba(196,203,216,0.3)',
+                    }}
+                  >
+                    {downloadingB2B
+                      ? <Loader size={13} className="animate-spin" />
+                      : <FileText size={13} />}
+                    {downloadingB2B ? 'Generando...' : 'Descargar Comprobante B2B'}
+                  </button>
                   <Divider />
                 </>
               )}

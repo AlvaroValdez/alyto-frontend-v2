@@ -202,6 +202,8 @@ function PaymentInstructionsModal({ tx, onClose }) {
 }
 import { fetchTransactionDetail } from '../../services/transactionsService.js'
 import { getPaymentQR }           from '../../services/paymentsService.js'
+import { downloadBusinessInvoice } from '../../services/api.js'
+import { useAuth }                 from '../../context/AuthContext.jsx'
 
 // ── Configuración de estados ──────────────────────────────────────────────────
 
@@ -378,6 +380,7 @@ function Section({ title, children }) {
 export default function TransactionDetail() {
   const { transactionId } = useParams()
   const navigate          = useNavigate()
+  const { user }          = useAuth()
 
   const [tx, setTx]           = useState(null)
   const [loading, setLoading] = useState(true)
@@ -386,6 +389,7 @@ export default function TransactionDetail() {
   const [copiedTxid, setCopiedTxid] = useState(false)
   const [showPaymentInstructions, setShowPaymentInstructions] = useState(false)
   const [sharing, setSharing] = useState(false)
+  const [downloadingB2B, setDownloadingB2B] = useState(false)
 
   const comprobanteRef = useRef(null)
 
@@ -954,7 +958,41 @@ export default function TransactionDetail() {
             </div>
           )}
 
-          {/* ── 6. SOPORTE — solo si falló ────────────────────────────────── */}
+          {/* ── 6. FACTURA B2B — solo para business + completed ────────── */}
+          {tx.status === 'completed' && user?.accountType === 'business' && (
+            <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-7 h-7 rounded-lg bg-[#233E581A] flex items-center justify-center flex-shrink-0">
+                  <Download size={14} className="text-[#233E58]" />
+                </div>
+                <p className="text-[0.6875rem] font-semibold text-[#94A3B8] uppercase tracking-wider">
+                  Comprobante de Servicio B2B
+                </p>
+              </div>
+              <button
+                onClick={async () => {
+                  setDownloadingB2B(true)
+                  try {
+                    await downloadBusinessInvoice(tx.transactionId)
+                  } catch {
+                    // silently fail — request() will handle 401
+                  } finally {
+                    setDownloadingB2B(false)
+                  }
+                }}
+                disabled={downloadingB2B}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all active:scale-95 disabled:opacity-60"
+                style={{ background: '#233E58', color: 'white' }}
+              >
+                {downloadingB2B
+                  ? <RefreshCw size={15} className="animate-spin" />
+                  : <Download size={15} />}
+                {downloadingB2B ? 'Generando...' : 'Descargar Factura B2B'}
+              </button>
+            </div>
+          )}
+
+          {/* ── 7. SOPORTE — solo si falló ────────────────────────────────── */}
           {isFailed && (
             <div className="rounded-2xl p-5 border border-[#EF444433]" style={{ background: '#EF44441A' }}>
               <p className="text-[#0F172A] font-semibold mb-1">¿Necesitas ayuda?</p>

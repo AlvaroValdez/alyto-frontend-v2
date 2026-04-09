@@ -420,3 +420,24 @@ export const deleteContact = (id) =>
 
 export const toggleContactFavorite = (id) =>
   request(`/contacts/${id}/favorite`, { method: 'PATCH' })
+
+// ── Factura B2B ──────────────────────────────────────────────────────────
+
+/**
+ * Descarga el Comprobante Oficial de Servicio B2B (PDF) de una transacción.
+ * Solo disponible para cuentas Business con KYB aprobado y transacciones SRL completadas.
+ *
+ * @param {string} transactionId — alytoTransactionId
+ */
+export async function downloadBusinessInvoice(transactionId) {
+  const res = await request(`/payments/${transactionId}/business-invoice`)
+  const blob = await res.blob()
+  const filename = res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1]
+    ?? `factura_b2b_${transactionId}.pdf`
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
