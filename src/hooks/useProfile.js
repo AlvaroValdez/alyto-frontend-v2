@@ -94,7 +94,7 @@ export function useProfile() {
 
       // No usar request() genérico porque este endpoint es multipart
       const token = localStorage.getItem('alyto_token') || sessionStorage.getItem('alyto_token')
-      const BASE   = import.meta.env.VITE_API_URL ?? 'https://alyto-backend-v2.onrender.com/api/v1'
+      const BASE   = import.meta.env.VITE_API_URL ?? ''
       const res    = await fetch(`${BASE}/user/avatar`, {
         method:  'PATCH',
         headers: token ? { Authorization: `Bearer ${token}` } : {},

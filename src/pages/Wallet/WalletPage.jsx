@@ -127,6 +127,9 @@ function Modal({ open, onClose, title, children }) {
 
 // ── Modal Cargar Saldo BOB ────────────────────────────────────────────────────
 
+const DEPOSIT_MIN_BOB = parseInt(import.meta.env.VITE_DEPOSIT_MIN_BOB || '50', 10)
+const DEPOSIT_MAX_BOB = parseInt(import.meta.env.VITE_DEPOSIT_MAX_BOB || '10000', 10)
+
 function DepositModal({ open, onClose, onSuccess }) {
   const [amount, setAmount]   = useState('')
   const [loading, setLoading] = useState(false)
@@ -143,8 +146,8 @@ function DepositModal({ open, onClose, onSuccess }) {
     e.preventDefault()
     setError('')
     const n = Number(amount)
-    if (!n || n < 50)  return setError('El monto mínimo es Bs. 50.')
-    if (n > 10000)     return setError('El monto máximo por depósito es Bs. 10.000.')
+    if (!n || n < DEPOSIT_MIN_BOB)  return setError(`El monto mínimo es Bs. ${DEPOSIT_MIN_BOB}.`)
+    if (n > DEPOSIT_MAX_BOB)        return setError(`El monto máximo por depósito es Bs. ${DEPOSIT_MAX_BOB.toLocaleString('es-BO')}.`)
     setLoading(true)
     try {
       const data = await request('/wallet/deposit/initiate', {
@@ -173,11 +176,11 @@ function DepositModal({ open, onClose, onSuccess }) {
             <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Monto a depositar (BOB)</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-semibold text-sm">Bs.</span>
-              <input type="number" min={50} max={10000} value={amount}
+              <input type="number" min={DEPOSIT_MIN_BOB} max={DEPOSIT_MAX_BOB} value={amount}
                 onChange={e => setAmount(e.target.value)} placeholder="100"
                 className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none" />
             </div>
-            <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Mínimo Bs. 50 — Máximo Bs. 10.000</p>
+            <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Mínimo Bs. {DEPOSIT_MIN_BOB} — Máximo Bs. {DEPOSIT_MAX_BOB.toLocaleString('es-BO')}</p>
           </div>
           {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>}
           <button type="submit" disabled={loading || !amount}

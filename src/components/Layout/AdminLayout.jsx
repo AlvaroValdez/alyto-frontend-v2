@@ -122,7 +122,13 @@ export default function AdminLayout() {
           const border    = isCrit ? '#EF444455' : hasAlerts ? '#F59E0B55' : '#26305055'
           const labelColor = isCrit ? '#FCA5A5' : hasAlerts ? '#FCD34D' : '#8A96B8'
           const Icon      = isCrit ? AlertCircle : hasAlerts ? AlertTriangle : CheckCircle2
-          const THRESHOLDS = { USD: 500, CLP: 500000, USDT: 500, USDC: 500, COP: 2000000 }
+          const THRESHOLDS = {
+            USD:  parseInt(import.meta.env.VITE_ALERT_THRESHOLD_USD  || '500', 10),
+            CLP:  parseInt(import.meta.env.VITE_ALERT_THRESHOLD_CLP  || '500000', 10),
+            USDT: parseInt(import.meta.env.VITE_ALERT_THRESHOLD_USDT || '500', 10),
+            USDC: parseInt(import.meta.env.VITE_ALERT_THRESHOLD_USDC || '500', 10),
+            COP:  parseInt(import.meta.env.VITE_ALERT_THRESHOLD_COP  || '2000000', 10),
+          }
           const fmt = (n, cur) =>
             cur === 'CLP' || cur === 'COP'
               ? `$${Number(n).toLocaleString('es-CL', { maximumFractionDigits: 0 })}`

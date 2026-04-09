@@ -251,10 +251,10 @@ export default function KybListPage() {
             const stale = item.kybStatus === 'pending' && isOlderThan24h(item.createdAt)
             return (
               <div
-                key={item._id ?? item.businessId}
+                key={item.businessId ?? item._id}
                 className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-5 py-4 items-center transition-colors cursor-pointer hover:bg-[#1F2B4D]"
                 style={{ borderBottom: '1px solid #263050' }}
-                onClick={() => navigate(`/admin/kyb/${item._id ?? item.businessId}`)}
+                onClick={() => navigate(`/admin/kyb/${item.businessId}`)}
               >
                 {/* Empresa */}
                 <div className="min-w-0">
@@ -287,7 +287,7 @@ export default function KybListPage() {
 
                 {/* Acción */}
                 <button
-                  onClick={e => { e.stopPropagation(); navigate(`/admin/kyb/${item._id ?? item.businessId}`) }}
+                  onClick={e => { e.stopPropagation(); navigate(`/admin/kyb/${item.businessId}`) }}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[0.75rem] font-medium text-[#C4CBD8] hover:bg-[#C4CBD81A] transition-colors"
                 >
                   Revisar <ChevronRight size={14} />

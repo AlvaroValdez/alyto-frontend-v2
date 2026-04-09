@@ -34,6 +34,10 @@ const ENV_COLOR  = '#22C55E'
 const ENV_BG     = '#22C55E1A'
 const ENV_BORDER = '#22C55E33'
 
+// Límites on-ramp institucional (configurable vía env)
+const CORP_MIN_USD = parseInt(import.meta.env.VITE_CORP_MIN_USD || '1000', 10)
+const CORP_MAX_USD = parseInt(import.meta.env.VITE_CORP_MAX_USD || '500000', 10)
+
 // ── Validación de wallet Stellar ──────────────────────────────────────────────
 
 function isValidStellarKey(key) {
@@ -170,7 +174,7 @@ export default function CorporateView() {
   const numAmount      = parseFloat(amount.replace(/,/g, '')) || 0
   const walletTrimmed  = wallet.trim()
   const walletValid    = isValidStellarKey(walletTrimmed)
-  const canSubmit      = numAmount >= 1000 && numAmount <= 500000 && walletValid && !loading
+  const canSubmit      = numAmount >= CORP_MIN_USD && numAmount <= CORP_MAX_USD && walletValid && !loading
 
   function handleAmountChange(e) {
     setAmount(e.target.value.replace(/[^0-9.]/g, ''))
@@ -179,8 +183,8 @@ export default function CorporateView() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
-    if (numAmount < 1000)    { setError('El monto mínimo es $1,000 USD.'); return }
-    if (numAmount > 500000)  { setError('El monto máximo es $500,000 USD.'); return }
+    if (numAmount < CORP_MIN_USD)  { setError(`El monto mínimo es $${CORP_MIN_USD.toLocaleString('en-US')} USD.`); return }
+    if (numAmount > CORP_MAX_USD)  { setError(`El monto máximo es $${CORP_MAX_USD.toLocaleString('en-US')} USD.`); return }
     if (!walletValid)        { setError('Wallet Stellar inválida — debe comenzar con G y tener 56 caracteres.'); return }
 
     setLoading(true)

@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronDown, AlertCircle, Loader2 } from 'lucide-react'
 import { initiatePayin } from '../services/api'
 
-// Tipo de cambio referencial CLP → USDC (se actualizará desde backend)
-const CLP_TO_USDC = 0.00108
+// Fallbacks — sobreescritos con valores dinámicos del backend
+const CLP_TO_USDC_FALLBACK = parseFloat(import.meta.env.VITE_CLP_TO_USDC || '0.00108')
+const CLP_FEE_RATE_FALLBACK = parseFloat(import.meta.env.VITE_CLP_FEE_RATE || '0.012')
+const CLP_MIN_AMOUNT = parseInt(import.meta.env.VITE_CLP_MIN_TRANSFER || '5000', 10)
 
 export default function TransferView() {
   const navigate = useNavigate()
@@ -23,8 +25,8 @@ export default function TransferView() {
   }, [])
 
   const clpValue   = parseFloat(amount.replace(/\./g, '').replace(',', '.')) || 0
-  const usdcValue  = (clpValue * CLP_TO_USDC).toFixed(2)
-  const feeClp     = Math.round(clpValue * 0.012)          // 1.2% de fee referencial
+  const usdcValue  = (clpValue * CLP_TO_USDC_FALLBACK).toFixed(2)
+  const feeClp     = Math.round(clpValue * CLP_FEE_RATE_FALLBACK)
   const totalClp   = clpValue + feeClp
 
   function handleAmountChange(e) {
@@ -38,8 +40,8 @@ export default function TransferView() {
     e.preventDefault()
     setError(null)
 
-    if (clpValue < 5000) {
-      setError('El monto mínimo es $5.000 CLP')
+    if (clpValue < CLP_MIN_AMOUNT) {
+      setError(`El monto mínimo es $${CLP_MIN_AMOUNT.toLocaleString('es-CL')} CLP`)
       return
     }
 

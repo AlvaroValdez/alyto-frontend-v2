@@ -27,11 +27,23 @@ import {
   Landmark,
   RefreshCw,
 } from 'lucide-react'
-import { processBoliviaPayout } from '../services/api'
+import { processBoliviaPayout, request } from '../services/api'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const BOB_RATE = 6.98 // tipo de cambio referencial USDC/BOB
+// Tasa fallback — se sobreescribe con valor dinámico del backend
+let _cachedBobRate = null
+
+async function fetchBOBRate() {
+  if (_cachedBobRate) return _cachedBobRate
+  try {
+    const data = await request('/payments/exchange-rates/USDC-BOB')
+    if (data?.rate) { _cachedBobRate = data.rate; return data.rate }
+  } catch { /* fallback silencioso */ }
+  return parseFloat(import.meta.env.VITE_BOB_RATE || '6.96')
+}
+
+const BOB_RATE_FALLBACK = parseFloat(import.meta.env.VITE_BOB_RATE || '6.96')
 
 function fmtUSDC(val) {
   return `${Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`
@@ -60,8 +72,8 @@ function fmtBOB(val) {
  *    → cardState.error (string) visible
  *    → <button style={AMARILLO}>Reintentar</button>
  */
-function SettlementCard({ tx, cardState, onProcess }) {
-  const bobEquiv = fmtBOB((tx.digitalAssetAmount ?? tx.originalAmount) * (tx.exchangeRate ?? BOB_RATE))
+function SettlementCard({ tx, cardState, onProcess, bobRate }) {
+  const bobEquiv = fmtBOB((tx.digitalAssetAmount ?? tx.originalAmount) * (tx.exchangeRate ?? bobRate))
   const isIdle      = !cardState || cardState.status === 'idle'
   const isLoading   = cardState?.status === 'loading'
   const isCompleted = cardState?.status === 'completed'
@@ -135,7 +147,7 @@ function SettlementCard({ tx, cardState, onProcess }) {
         </div>
 
         <div className="flex justify-between items-center">
-          <span className="text-[0.75rem] text-[#4E5A7A]">Equiv. BOB <span className="text-[#263050]">(× {tx.exchangeRate ?? BOB_RATE})</span></span>
+          <span className="text-[0.75rem] text-[#4E5A7A]">Equiv. BOB <span className="text-[#263050]">(× {tx.exchangeRate ?? bobRate})</span></span>
           <span className="text-[0.875rem] font-semibold text-[#C4CBD8]">{bobEquiv}</span>
         </div>
 
@@ -206,6 +218,10 @@ export default function SettlementView() {
   const [transactions, setTransactions] = useState([])
   const [loadingTxs, setLoadingTxs]     = useState(true)
   const [fetchError, setFetchError]     = useState(null)
+  const [bobRate, setBobRate]           = useState(BOB_RATE_FALLBACK)
+
+  // Cargar tasa BOB dinámica del backend
+  useEffect(() => { fetchBOBRate().then(setBobRate) }, [])
 
   // Estado independiente por tarjeta: { [txId]: { status, blob, filename, error } }
   const [cardStates, setCardStates] = useState({})
@@ -300,6 +316,7 @@ export default function SettlementView() {
               tx={tx}
               cardState={cardStates[tx._id]}
               onProcess={handleProcess}
+              bobRate={bobRate}
             />
           ))}
 
