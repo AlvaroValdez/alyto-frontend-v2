@@ -58,6 +58,7 @@ import WalletQRScreen     from '../pages/Wallet/WalletQRScreen'
 import WalletAdminPage    from '../pages/Admin/Wallet/WalletAdminPage'
 import ReclamosPage       from '../pages/Reclamos/ReclamosPage'
 import ContactsPage       from '../pages/Contacts/ContactsPage'
+import NotificationsPage  from '../pages/Notifications/NotificationsPage'
 import ReclamosAdminPage  from '../pages/Admin/Reclamos/ReclamosAdminPage'
 import SanctionsPage      from '../pages/Admin/Sanctions/SanctionsPage'
 
@@ -143,7 +144,7 @@ export default function AppRouter() {
         <Route path="/contacts" element={<ContactsPage />} />
 
         {/* Notificaciones */}
-        <Route path="/notifications" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
 
         {/* Plataforma Institucional LLC */}
         <Route path="/institutional" element={<CorporateView />} />

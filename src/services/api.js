@@ -302,6 +302,23 @@ export function registerFcmToken(token) {
   })
 }
 
+// ── Centro de Notificaciones ────────────────────────────────────────────────
+
+export function fetchNotifications(page = 1, limit = 20) {
+  return request(`/notifications?page=${page}&limit=${limit}`)
+}
+
+export function fetchUnreadCount() {
+  return request('/notifications/unread')
+}
+
+export function markNotificationsRead(notificationIds) {
+  return request('/notifications/read', {
+    method: 'PATCH',
+    body:   JSON.stringify(notificationIds?.length ? { notificationIds } : {}),
+  })
+}
+
 // ── Dashboard ───────────────────────────────────────────────────────────────
 
 /**

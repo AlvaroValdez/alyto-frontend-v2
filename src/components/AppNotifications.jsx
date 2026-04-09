@@ -42,6 +42,8 @@ export default function AppNotifications() {
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id))
     }, TOAST_DURATION_MS)
+    // Señalar a AppLayout que actualice el badge de no leídas
+    window.dispatchEvent(new CustomEvent('alyto:notification-received'))
   }, [])
 
   const removeToast = useCallback((id) => {

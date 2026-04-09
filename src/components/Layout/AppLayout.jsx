@@ -5,10 +5,11 @@
  * Header y bottom nav con glassmorphism sobre fondo #F8FAFC.
  */
 
+import { useState, useEffect } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { Bell, Home, Wallet, FileText, User, Shield, LogOut, Users } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { usePushNotifications } from '../../hooks/usePushNotifications'
+import { fetchUnreadCount } from '../../services/api'
 
 export default function AppLayout() {
   const { user, logout } = useAuth()
@@ -29,7 +30,30 @@ export default function AppLayout() {
   const firstName = user?.firstName ?? ''
   const role      = user?.role      ?? ''
 
-  const { permission, requestPermission } = usePushNotifications()
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  // Fetch unread count on navigation + on push received + on mark-as-read
+  useEffect(() => {
+    let cancelled = false
+    fetchUnreadCount()
+      .then(data => { if (!cancelled) setUnreadCount(data.unreadCount ?? 0) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [location.pathname])
+
+  useEffect(() => {
+    const refresh = () => {
+      fetchUnreadCount()
+        .then(data => setUnreadCount(data.unreadCount ?? 0))
+        .catch(() => {})
+    }
+    window.addEventListener('alyto:notification-received', refresh)
+    window.addEventListener('alyto:notifications-read', refresh)
+    return () => {
+      window.removeEventListener('alyto:notification-received', refresh)
+      window.removeEventListener('alyto:notifications-read', refresh)
+    }
+  }, [])
 
   function handleLogout() {
     logout()
@@ -74,28 +98,15 @@ export default function AppLayout() {
           )}
 
           <button
-            onClick={permission === 'default' ? requestPermission : undefined}
+            onClick={() => navigate('/notifications')}
             className="w-9 h-9 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center shadow-sm relative"
             aria-label="Notificaciones"
-            title={
-              permission === 'default' ? 'Activar notificaciones' :
-              permission === 'granted' ? 'Notificaciones activas' :
-              'Notificaciones desactivadas'
-            }
           >
-            <Bell
-              size={16}
-              className={
-                permission === 'granted' ? 'text-[#1D9E75]' :
-                permission === 'denied'  ? 'text-[#CBD5E1]' :
-                'text-[#64748B]'
-              }
-            />
-            {permission === 'default' && (
-              <span
-                className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#F59E0B] border border-white"
-                aria-hidden="true"
-              />
+            <Bell size={16} className="text-[#233E58]" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-[#EF4444] text-white text-[0.625rem] font-bold flex items-center justify-center px-1 border-2 border-white">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
             )}
           </button>
 
