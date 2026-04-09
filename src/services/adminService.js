@@ -310,6 +310,26 @@ export function updateSpaConfig(data) {
   })
 }
 
+// ── Conversiones BOB → USDC (Admin) ──────────────────────────────────────────
+
+export function listPendingConversions() {
+  return request('/admin/wallet/usdc/conversions/pending')
+}
+
+export function confirmConversion(wtxId, note) {
+  return request('/admin/wallet/usdc/conversions/confirm', {
+    method: 'POST',
+    body:   JSON.stringify({ wtxId, note }),
+  })
+}
+
+export function rejectConversion(wtxId, rejectReason) {
+  return request('/admin/wallet/usdc/conversions/reject', {
+    method: 'POST',
+    body:   JSON.stringify({ wtxId, rejectReason }),
+  })
+}
+
 // ── Notificaciones push manuales ──────────────────────────────────────────────
 
 /**

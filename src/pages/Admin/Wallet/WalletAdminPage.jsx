@@ -2,15 +2,17 @@
  * WalletAdminPage.jsx — Panel Admin: Wallets BOB Bolivia (Fase 25)
  *
  * Sección 1: Depósitos pendientes de confirmar
- * Sección 2: Wallets activas con opción de congelar
+ * Sección 2: Conversiones BOB→USDC pendientes
+ * Sección 3: Wallets activas con opción de congelar
  */
 
 import { useState, useEffect, useCallback } from 'react'
 import {
   Wallet, CheckCircle2, AlertCircle, Loader2, RefreshCw,
-  ChevronDown, X, Lock, Unlock,
+  ChevronDown, X, Lock, Unlock, ArrowRightLeft,
 } from 'lucide-react'
 import { request } from '../../../services/api'
+import { listPendingConversions, confirmConversion, rejectConversion } from '../../../services/adminService'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -252,25 +254,219 @@ function FreezeModal({ wallet, open, onClose, onSuccess }) {
   )
 }
 
+// ── Modal Confirmar Conversión ────────────────────────────────────────────────
+
+function ConfirmConversionModal({ conversion, open, onClose, onSuccess }) {
+  const [note, setNote]       = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
+
+  function handleClose() {
+    setNote(''); setError(''); onClose()
+  }
+
+  async function handleConfirm(e) {
+    e.preventDefault(); setError('')
+    setLoading(true)
+    try {
+      await confirmConversion(conversion?.wtxId, note)
+      onSuccess?.()
+      handleClose()
+    } catch (err) {
+      setError(err.message ?? 'Error al confirmar la conversión.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!open || !conversion) return null
+
+  const { bobAmount, usdcAmount, bobPerUsdc } = conversion.metadata ?? {}
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: '#0F162299' }}>
+      <div className="w-full max-w-md bg-[#1A2340] rounded-2xl p-6"
+        style={{ border: '1px solid #263050' }}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-[1rem] font-bold text-white">Confirmar conversión BOB→USDC</h3>
+          <button onClick={handleClose} className="w-8 h-8 rounded-full bg-[#0F1628] flex items-center justify-center">
+            <X size={16} className="text-[#8A96B8]" />
+          </button>
+        </div>
+
+        <div className="bg-[#0F1628] rounded-xl p-4 mb-4 space-y-2">
+          <div className="flex justify-between">
+            <span className="text-[0.75rem] text-[#8A96B8]">Usuario</span>
+            <span className="text-[0.875rem] font-semibold text-white">
+              {conversion.userId?.firstName} {conversion.userId?.lastName}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[0.75rem] text-[#8A96B8]">Email</span>
+            <span className="text-[0.875rem] text-[#C4CBD8]">{conversion.userId?.email}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[0.75rem] text-[#8A96B8]">Débito BOB</span>
+            <span className="text-[0.9375rem] font-bold text-[#F87171]">-{formatBOB(bobAmount)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[0.75rem] text-[#8A96B8]">Crédito USDC</span>
+            <span className="text-[0.9375rem] font-bold text-[#22C55E]">+{Number(usdcAmount ?? 0).toFixed(6)} USDC</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[0.75rem] text-[#8A96B8]">Tasa</span>
+            <span className="text-[0.75rem] text-[#C4CBD8]">1 USDC = {Number(bobPerUsdc ?? 0).toFixed(2)} BOB</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[0.75rem] text-[#8A96B8]">Referencia</span>
+            <span className="text-[0.75rem] font-mono text-[#C4CBD8]">{conversion.wtxId}</span>
+          </div>
+        </div>
+
+        <form onSubmit={handleConfirm} className="space-y-4">
+          <div>
+            <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">Nota interna (opcional)</label>
+            <input type="text" value={note} onChange={e => setNote(e.target.value)}
+              placeholder="Observaciones del admin"
+              className="w-full bg-[#0F1628] border border-[#263050] rounded-xl px-4 py-3 text-white text-[0.875rem] focus:border-[#C4CBD8] focus:outline-none" />
+          </div>
+          {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-2">{error}</p>}
+          <div className="flex gap-3">
+            <button type="button" onClick={handleClose}
+              className="flex-1 py-3 rounded-xl font-semibold text-[0.875rem] text-white"
+              style={{ border: '1.5px solid #263050' }}>
+              Cancelar
+            </button>
+            <button type="submit" disabled={loading}
+              className="flex-1 py-3 rounded-xl font-bold text-[0.875rem] text-[#0F1628] disabled:opacity-40"
+              style={{ background: '#22C55E' }}>
+              {loading ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Aprobar conversión'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ── Modal Rechazar Conversión ─────────────────────────────────────────────────
+
+function RejectConversionModal({ conversion, open, onClose, onSuccess }) {
+  const [reason, setReason]   = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
+
+  function handleClose() {
+    setReason(''); setError(''); onClose()
+  }
+
+  async function handleReject(e) {
+    e.preventDefault(); setError('')
+    if (!reason.trim()) return setError('Indica la razón del rechazo.')
+    setLoading(true)
+    try {
+      await rejectConversion(conversion?.wtxId, reason)
+      onSuccess?.()
+      handleClose()
+    } catch (err) {
+      setError(err.message ?? 'Error al rechazar la conversión.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!open || !conversion) return null
+
+  const { bobAmount } = conversion.metadata ?? {}
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: '#0F162299' }}>
+      <div className="w-full max-w-md bg-[#1A2340] rounded-2xl p-6"
+        style={{ border: '1px solid #263050' }}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-[1rem] font-bold text-white">Rechazar conversión</h3>
+          <button onClick={handleClose} className="w-8 h-8 rounded-full bg-[#0F1628] flex items-center justify-center">
+            <X size={16} className="text-[#8A96B8]" />
+          </button>
+        </div>
+
+        <div className="bg-[#0F1628] rounded-xl p-4 mb-4 space-y-2">
+          <div className="flex justify-between">
+            <span className="text-[0.75rem] text-[#8A96B8]">Usuario</span>
+            <span className="text-[0.875rem] font-semibold text-white">
+              {conversion.userId?.firstName} {conversion.userId?.lastName}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[0.75rem] text-[#8A96B8]">Monto</span>
+            <span className="text-[0.9375rem] font-bold text-white">{formatBOB(bobAmount)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[0.75rem] text-[#8A96B8]">Referencia</span>
+            <span className="text-[0.75rem] font-mono text-[#C4CBD8]">{conversion.wtxId}</span>
+          </div>
+        </div>
+
+        <div className="bg-[#EF44441A] rounded-xl px-4 py-3 mb-4">
+          <p className="text-[0.8125rem] text-[#F87171]">
+            Al rechazar, los Bs. {Number(bobAmount ?? 0).toFixed(2)} reservados se devolverán al saldo disponible del usuario.
+          </p>
+        </div>
+
+        <form onSubmit={handleReject} className="space-y-4">
+          <div>
+            <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">
+              Razón del rechazo <span className="text-[#F87171]">*</span>
+            </label>
+            <input type="text" value={reason} onChange={e => setReason(e.target.value)}
+              placeholder="Ej: Fondos no verificados, monto excede límite..."
+              className="w-full bg-[#0F1628] border border-[#263050] rounded-xl px-4 py-3 text-white text-[0.875rem] focus:border-[#C4CBD8] focus:outline-none" />
+          </div>
+          {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-2">{error}</p>}
+          <div className="flex gap-3">
+            <button type="button" onClick={handleClose}
+              className="flex-1 py-3 rounded-xl font-semibold text-[0.875rem] text-white"
+              style={{ border: '1.5px solid #263050' }}>
+              Cancelar
+            </button>
+            <button type="submit" disabled={loading}
+              className="flex-1 py-3 rounded-xl font-bold text-[0.875rem] text-white disabled:opacity-40"
+              style={{ background: '#EF4444' }}>
+              {loading ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Rechazar conversión'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function WalletAdminPage() {
-  const [deposits, setDeposits]     = useState([])
-  const [wallets, setWallets]       = useState([])
-  const [loading, setLoading]       = useState(true)
+  const [deposits, setDeposits]       = useState([])
+  const [conversions, setConversions] = useState([])
+  const [wallets, setWallets]         = useState([])
+  const [loading, setLoading]         = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
 
-  const [confirmDeposit, setConfirmDeposit] = useState(null)
-  const [freezeWallet, setFreezeWallet]     = useState(null)
+  const [confirmDeposit, setConfirmDeposit]       = useState(null)
+  const [confirmConv, setConfirmConv]             = useState(null)
+  const [rejectConv, setRejectConv]               = useState(null)
+  const [freezeWallet, setFreezeWallet]           = useState(null)
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
-      const [dep, wal] = await Promise.all([
+      const [dep, conv, wal] = await Promise.all([
         request('/admin/wallet/deposits/pending'),
+        listPendingConversions(),
         request(`/admin/wallet${statusFilter ? `?status=${statusFilter}` : ''}`),
       ])
       setDeposits(dep.deposits ?? [])
+      setConversions(conv.conversions ?? [])
       setWallets(wal.wallets ?? [])
     } catch {
       // silencioso
@@ -371,7 +567,74 @@ export default function WalletAdminPage() {
         )}
       </section>
 
-      {/* ── SECCIÓN 2: Wallets activas ──────────────────────────────────── */}
+      {/* ── SECCIÓN 2: Conversiones BOB→USDC pendientes ─────────────────── */}
+      <section>
+        <div className="flex items-center gap-3 mb-4">
+          <h2 className="text-[1rem] font-bold text-white flex items-center gap-2">
+            <ArrowRightLeft size={16} className="text-[#C4CBD8]" />
+            Conversiones BOB→USDC
+          </h2>
+          {conversions.length > 0 && (
+            <span className="text-[0.6875rem] font-bold px-2 py-0.5 rounded-full"
+              style={{ background: '#F59E0B1A', color: '#F59E0B', border: '1px solid #F59E0B33' }}>
+              {conversions.length}
+            </span>
+          )}
+        </div>
+
+        {conversions.length === 0 ? (
+          <div className="bg-[#1A2340] rounded-2xl p-8 text-center" style={{ border: '1px solid #263050' }}>
+            <CheckCircle2 size={28} className="mx-auto text-[#22C55E] mb-2" />
+            <p className="text-[0.875rem] font-semibold text-[#8A96B8]">Sin conversiones pendientes</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {conversions.map(conv => {
+              const { bobAmount, usdcAmount, bobPerUsdc } = conv.metadata ?? {}
+              return (
+                <div key={conv._id ?? conv.wtxId}
+                  className="flex items-center gap-4 px-5 py-4 rounded-2xl"
+                  style={{ background: '#1A2340', border: '1px solid #263050' }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="text-[0.9375rem] font-bold text-white">
+                        {conv.userId?.firstName} {conv.userId?.lastName}
+                      </p>
+                      <span className="text-[0.625rem] font-semibold px-2 py-0.5 rounded-full"
+                        style={{ background: '#C4CBD81A', color: '#C4CBD8' }}>
+                        {conv.userId?.kycStatus}
+                      </span>
+                    </div>
+                    <p className="text-[0.75rem] text-[#8A96B8]">{conv.userId?.email}</p>
+                    <p className="text-[0.6875rem] text-[#4E5A7A] mt-0.5">
+                      {formatBOB(bobAmount)} → {Number(usdcAmount ?? 0).toFixed(6)} USDC
+                      <span className="text-[#4E5A7A] ml-1">(1 USDC = {Number(bobPerUsdc ?? 0).toFixed(2)} BOB)</span>
+                    </p>
+                    <p className="text-[0.6875rem] text-[#4E5A7A] font-mono">Ref: {conv.wtxId}</p>
+                    <p className="text-[0.6875rem] text-[#4E5A7A]">{formatDate(conv.createdAt)}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0 space-y-1.5">
+                    <button
+                      onClick={() => setConfirmConv(conv)}
+                      className="block w-full text-[0.75rem] font-bold px-3 py-1.5 rounded-xl text-[#0F1628]"
+                      style={{ background: '#22C55E' }}>
+                      Aprobar
+                    </button>
+                    <button
+                      onClick={() => setRejectConv(conv)}
+                      className="block w-full text-[0.75rem] font-bold px-3 py-1.5 rounded-xl text-[#F87171]"
+                      style={{ background: '#EF44441A', border: '1px solid #EF444433' }}>
+                      Rechazar
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* ── SECCIÓN 3: Wallets activas ──────────────────────────────────── */}
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[1rem] font-bold text-white">Wallets</h2>
@@ -462,6 +725,18 @@ export default function WalletAdminPage() {
         wallet={freezeWallet}
         open={!!freezeWallet}
         onClose={() => setFreezeWallet(null)}
+        onSuccess={fetchAll}
+      />
+      <ConfirmConversionModal
+        conversion={confirmConv}
+        open={!!confirmConv}
+        onClose={() => setConfirmConv(null)}
+        onSuccess={fetchAll}
+      />
+      <RejectConversionModal
+        conversion={rejectConv}
+        open={!!rejectConv}
+        onClose={() => setRejectConv(null)}
         onSuccess={fetchAll}
       />
     </div>

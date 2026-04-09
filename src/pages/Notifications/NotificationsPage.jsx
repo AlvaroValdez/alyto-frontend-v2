@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Bell, CheckCircle2, ArrowDownLeft, ArrowUpRight,
+  Bell, CheckCircle2, ArrowDownLeft, ArrowUpRight, ArrowRightLeft,
   AlertCircle, Snowflake, Sun, Wallet, Loader2, CheckCheck,
 } from 'lucide-react'
 import { fetchNotifications, markNotificationsRead } from '../../services/api'
@@ -25,6 +25,8 @@ const TYPE_CONFIG = {
   wallet_frozen:        { Icon: Snowflake,      color: '#EF4444', bg: '#EF44441A' },
   wallet_unfrozen:      { Icon: Sun,            color: '#1D9E75', bg: '#1D9E751A' },
   p2p_received:         { Icon: Wallet,         color: '#1D9E75', bg: '#1D9E751A' },
+  conversion_confirmed: { Icon: ArrowRightLeft, color: '#1D9E75', bg: '#1D9E751A' },
+  conversion_rejected:  { Icon: AlertCircle,    color: '#EF4444', bg: '#EF44441A' },
 }
 
 function getConfig(type) {
