@@ -57,8 +57,8 @@ export function getKybDetail(businessId) {
  *           rejectionReason: string, maxTransactionUsd: number, maxMonthlyUsd: number }} data
  */
 export function decideKyb(businessId, data) {
-  return request(`/admin/kyb/${businessId}/decide`, {
-    method: 'POST',
+  return request(`/admin/kyb/${businessId}/review`, {
+    method: 'PATCH',
     body: JSON.stringify(data),
   })
 }

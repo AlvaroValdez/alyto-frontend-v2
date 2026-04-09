@@ -207,11 +207,13 @@ function DecisionPanel({ businessId, currentStatus, onDecision }) {
     setError(null)
     try {
       await decideKyb(businessId, {
-        decision,
+        status:            decision,
         note:              note.trim() || undefined,
-        rejectionReason:   decision === 'rejected'  ? rejReason.trim() : undefined,
-        maxTransactionUsd: decision === 'approved'  ? Number(maxTx)    : undefined,
-        maxMonthlyUsd:     decision === 'approved'  ? Number(maxMonthly) : undefined,
+        rejectionReason:   decision === 'rejected' ? rejReason.trim() : undefined,
+        transactionLimits: decision === 'approved' ? {
+          maxSingleTransaction: Number(maxTx),
+          maxMonthlyVolume:     Number(maxMonthly),
+        } : undefined,
       })
       setSuccess(true)
       onDecision()
