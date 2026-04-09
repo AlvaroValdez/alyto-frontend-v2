@@ -420,11 +420,18 @@ export default function TransactionDetail() {
   }
 
   async function captureComprobante() {
-    return html2canvas(comprobanteRef.current, {
+    const el = comprobanteRef.current
+    return html2canvas(el, {
       backgroundColor: '#FFFFFF',
       scale: 2,
       useCORS: true,
       logging: false,
+      width:  el.scrollWidth,
+      height: el.scrollHeight,
+      windowWidth:  el.scrollWidth,
+      windowHeight: el.scrollHeight,
+      scrollX: 0,
+      scrollY: -window.scrollY,
     })
   }
 
@@ -711,7 +718,7 @@ export default function TransactionDetail() {
           {/* ── 4. COMPROBANTE ───────────────────────────────────────────── */}
           <div>
             {/* Comprobante card — solo esta parte es capturada por html2canvas */}
-            <div ref={comprobanteRef} className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
+            <div ref={comprobanteRef} className="bg-white rounded-2xl border border-[#E2E8F0]">
 
               {/* Header branding */}
               <div className="flex flex-col items-center py-5 px-5" style={{ background: 'linear-gradient(180deg, #233E580D 0%, #ffffff 100%)' }}>
@@ -724,7 +731,7 @@ export default function TransactionDetail() {
                 <p style={{ color: '#94A3B8', fontSize: '0.6875rem', marginTop: 2 }}>Comprobante de transferencia</p>
               </div>
 
-              <div className="px-5 pb-5 flex flex-col">
+              <div className="px-5 pb-6 flex flex-col">
 
                 {/* ID de transacción */}
                 <div className="mb-4 pb-4" style={{ borderBottom: '1px solid #F1F5F9' }}>
