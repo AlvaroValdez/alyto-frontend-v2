@@ -4,7 +4,7 @@
  * Secciones:
  *   1. Datos de la empresa
  *   2. Representante legal
- *   3. Documentos (viewer inline)
+ *   3. Documentos (viewer inline con base64)
  *   4. Usuario asociado
  *   5. Panel de decisión: Aprobar / Rechazar / Más información
  */
@@ -14,6 +14,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft, Building2, User, FileText, ExternalLink,
   CheckCircle2, XCircle, AlertTriangle, Loader2, ChevronRight,
+  Download, Eye, EyeOff,
 } from 'lucide-react'
 import { getKybDetail, decideKyb } from '../../../services/kybService'
 
@@ -31,15 +32,31 @@ const STATUS_META = {
 const COUNTRIES = {
   BO: 'Bolivia', CL: 'Chile', PE: 'Perú', AR: 'Argentina',
   CO: 'Colombia', BR: 'Brasil', MX: 'México', US: 'EEUU',
-  ES: 'España', CN: 'China', AE: 'Emiratos', OTHER: 'Otro',
+  ES: 'España', CN: 'China', AE: 'Emiratos',
 }
 
 const DOC_LABELS = {
-  docTaxId:         'RUT/NIT',
-  docConstitution:  'Escritura de constitución',
-  docRepId:         'CI representante legal',
-  docDomicile:      'Comprobante de domicilio',
-  docBankStatement: 'Estado de cuenta bancaria',
+  docTaxId:          'RUT/NIT',
+  docConstitution:   'Escritura de constitución',
+  docRepId:          'CI representante legal',
+  docDomicile:       'Comprobante de domicilio',
+  docBankStatement:  'Estado de cuenta bancaria',
+  tax_certificate:   'Certificado tributario',
+  incorporation_deed:'Escritura de constitución',
+  legal_rep_id:      'CI representante legal',
+  address_proof:     'Comprobante de domicilio',
+  bank_statement:    'Estado de cuenta bancaria',
+  other:             'Otro documento',
+}
+
+const BUSINESS_TYPES = {
+  sole_proprietor: 'Persona natural con actividad comercial',
+  llc:             'SRL / LLC',
+  corporation:     'SA / Corp',
+  partnership:     'Sociedad de personas',
+  ngo:             'ONG / Fundación',
+  SRL:             'SRL',
+  SA:              'SA',
 }
 
 // ── Clases ─────────────────────────────────────────────────────────────────
@@ -93,13 +110,12 @@ function StatusBadge({ status }) {
   )
 }
 
-// ── Document viewer ────────────────────────────────────────────────────────
+// ── Document viewer (base64) ──────────────────────────────────────────────
 
-function DocViewer({ url, label }) {
+function DocViewer({ doc, label }) {
   const [open, setOpen] = useState(false)
-  const isPdf = url?.toLowerCase().includes('.pdf')
 
-  if (!url) return (
+  if (!doc || !doc.data) return (
     <div
       className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
       style={{ background: '#0F1628', border: '1px dashed #263050' }}
@@ -109,6 +125,17 @@ function DocViewer({ url, label }) {
     </div>
   )
 
+  const isPdf = doc.mimetype === 'application/pdf'
+  const dataUrl = `data:${doc.mimetype};base64,${doc.data}`
+
+  function handleDownload(e) {
+    e.stopPropagation()
+    const a = document.createElement('a')
+    a.href = dataUrl
+    a.download = doc.filename ?? `${label}.${isPdf ? 'pdf' : 'jpg'}`
+    a.click()
+  }
+
   return (
     <div>
       <div
@@ -116,38 +143,38 @@ function DocViewer({ url, label }) {
         style={{ background: '#0F1628', border: '1px solid #263050' }}
         onClick={() => setOpen(o => !o)}
       >
-        <div className="flex items-center gap-2">
-          <FileText size={14} className="text-[#C4CBD8]" />
-          <span className="text-[0.8125rem] font-medium text-white">{label}</span>
+        <div className="flex items-center gap-2 min-w-0">
+          <FileText size={14} className="text-[#C4CBD8] flex-shrink-0" />
+          <span className="text-[0.8125rem] font-medium text-white truncate">{label}</span>
+          <span className="text-[0.6875rem] text-[#4E5A7A] flex-shrink-0">
+            ({doc.filename})
+          </span>
         </div>
-        <div className="flex items-center gap-2">
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={e => e.stopPropagation()}
-            className="text-[#4E5A7A] hover:text-[#C4CBD8] transition-colors"
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={handleDownload}
+            className="text-[#4E5A7A] hover:text-[#C4CBD8] transition-colors p-1"
+            title="Descargar"
           >
-            <ExternalLink size={13} />
-          </a>
-          <ChevronRight
-            size={14}
-            className={`text-[#4E5A7A] transition-transform ${open ? 'rotate-90' : ''}`}
-          />
+            <Download size={13} />
+          </button>
+          {open
+            ? <EyeOff size={14} className="text-[#4E5A7A]" />
+            : <Eye size={14} className="text-[#4E5A7A]" />}
         </div>
       </div>
       {open && (
         <div className="mt-2 rounded-xl overflow-hidden" style={{ border: '1px solid #263050' }}>
           {isPdf ? (
             <iframe
-              src={url}
+              src={dataUrl}
               title={label}
               className="w-full"
-              style={{ height: '400px' }}
+              style={{ height: '500px' }}
             />
           ) : (
             <img
-              src={url}
+              src={dataUrl}
               alt={label}
               className="w-full object-contain max-h-96"
               style={{ background: '#0F1628' }}
@@ -382,7 +409,31 @@ export default function KybDetailPage() {
 
   if (!data) return null
 
-  const docs = data.documents ?? {}
+  // ── Map documents array → lookup by type ──────────────────────────────
+  const docsArray = Array.isArray(data.documents) ? data.documents : []
+  const docsByType = {}
+  docsArray.forEach(doc => {
+    if (doc.type) docsByType[doc.type] = doc
+  })
+
+  // ── Representante legal — accept both flat and nested formats ────────
+  const rep = data.legalRepresentative ?? {}
+  const repName     = rep.name ?? [rep.firstName, rep.lastName].filter(Boolean).join(' ') ?? data.repName
+  const repDocType  = rep.docType ?? rep.documentType ?? data.repDocType
+  const repDocNum   = rep.docNumber ?? rep.documentNumber ?? data.repDocNumber
+  const repEmail    = rep.email ?? data.repEmail
+  const repPhone    = rep.phone ?? data.repPhone
+
+  // ── País — accept both fields ────────────────────────────────────────
+  const country = data.countryOfIncorporation ?? data.country
+  const countryLabel = COUNTRIES[country] ?? country
+
+  // ── Tipo de empresa ──────────────────────────────────────────────────
+  const bizType = data.businessType ?? data.companyType
+  const bizTypeLabel = BUSINESS_TYPES[bizType] ?? bizType
+
+  // ── User — backend returns populated userId ──────────────────────────
+  const user = data.userId && typeof data.userId === 'object' ? data.userId : data.user
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -410,24 +461,25 @@ export default function KybDetailPage() {
 
           {/* 1. Datos de la empresa */}
           <SectionCard icon={Building2} title="Datos de la empresa">
-            <InfoRow label="Razón social"        value={data.legalName}                              />
-            <InfoRow label="Nombre comercial"    value={data.tradeName}                              />
-            <InfoRow label="RUT / NIT"           value={data.taxId}                                  />
-            <InfoRow label="País"                value={COUNTRIES[data.country] ?? data.country}     />
-            <InfoRow label="Tipo de empresa"     value={data.companyType}                            />
-            <InfoRow label="Industria"           value={data.industry}                               />
-            <InfoRow label="Sitio web"           value={data.website}                                />
-            <InfoRow label="Teléfono"            value={data.phone}                                  />
-            <InfoRow label="Dirección"           value={data.address}                                />
+            <InfoRow label="Razón social"        value={data.legalName}       />
+            <InfoRow label="Nombre comercial"    value={data.tradeName}       />
+            <InfoRow label="RUT / NIT"           value={data.taxId}           />
+            <InfoRow label="País"                value={countryLabel}         />
+            <InfoRow label="Tipo de empresa"     value={bizTypeLabel}         />
+            <InfoRow label="Industria"           value={data.industry}        />
+            <InfoRow label="Sitio web"           value={data.website}         />
+            <InfoRow label="Teléfono"            value={data.phone}           />
+            <InfoRow label="Dirección"           value={data.address}         />
+            {data.city && <InfoRow label="Ciudad" value={data.city}           />}
           </SectionCard>
 
           {/* 2. Representante legal */}
           <SectionCard icon={User} title="Representante legal">
-            <InfoRow label="Nombre completo"     value={data.repName}                                />
-            <InfoRow label="Tipo de documento"   value={data.repDocType}                             />
-            <InfoRow label="N° de documento"     value={data.repDocNumber}                           />
-            <InfoRow label="Email"               value={data.repEmail}                               />
-            <InfoRow label="Teléfono"            value={data.repPhone}                               />
+            <InfoRow label="Nombre completo"     value={repName}              />
+            <InfoRow label="Tipo de documento"   value={repDocType}           />
+            <InfoRow label="N° de documento"     value={repDocNum}            />
+            <InfoRow label="Email"               value={repEmail}             />
+            <InfoRow label="Teléfono"            value={repPhone}             />
           </SectionCard>
 
           {/* 3. Documentos */}
@@ -437,17 +489,40 @@ export default function KybDetailPage() {
           >
             <div className="flex items-center gap-2 mb-4">
               <FileText size={16} className="text-[#C4CBD8]" />
-              <h2 className="text-[0.875rem] font-bold text-white">Documentos</h2>
+              <h2 className="text-[0.875rem] font-bold text-white">
+                Documentos ({docsArray.length})
+              </h2>
             </div>
             <div className="space-y-2">
-              {Object.entries(DOC_LABELS).map(([key, label]) => (
-                <DocViewer key={key} url={docs[key]} label={label} />
-              ))}
+              {docsArray.length > 0 ? (
+                docsArray.map((doc, i) => (
+                  <DocViewer
+                    key={doc._id ?? i}
+                    doc={doc}
+                    label={DOC_LABELS[doc.type] ?? doc.type ?? `Documento ${i + 1}`}
+                  />
+                ))
+              ) : (
+                <p className="text-[0.8125rem] text-[#4E5A7A]">
+                  No se adjuntaron documentos.
+                </p>
+              )}
             </div>
           </div>
 
-          {/* 4. Usuario asociado */}
-          {data.user && (
+          {/* 4. Información operativa */}
+          {(data.estimatedMonthlyVolume || data.mainCorridors?.length > 0 || data.businessDescription) && (
+            <SectionCard icon={Building2} title="Información operativa">
+              <InfoRow label="Volumen mensual estimado" value={data.estimatedMonthlyVolume} />
+              <InfoRow label="Corredores de interés"    value={data.mainCorridors?.join(', ')} />
+              <div className="col-span-2">
+                <InfoRow label="Descripción del negocio" value={data.businessDescription} />
+              </div>
+            </SectionCard>
+          )}
+
+          {/* 5. Usuario asociado */}
+          {user && (
             <div
               className="rounded-2xl p-5"
               style={{ background: '#1A2340', border: '1px solid #263050' }}
@@ -459,19 +534,15 @@ export default function KybDetailPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[0.9375rem] font-semibold text-white">
-                    {[data.user.firstName, data.user.lastName].filter(Boolean).join(' ')}
+                    {[user.firstName, user.lastName].filter(Boolean).join(' ') || user.email}
                   </p>
-                  <p className="text-[0.8125rem] text-[#8A96B8]">{data.user.email}</p>
+                  <p className="text-[0.8125rem] text-[#8A96B8]">{user.email}</p>
                   <p className="text-[0.75rem] text-[#4E5A7A] mt-0.5">
-                    KYC: <span className="text-[#C4CBD8]">{data.user.kycStatus ?? '—'}</span>
+                    KYC: <span className="text-[#C4CBD8]">{user.kycStatus ?? '—'}</span>
+                    {' · '}
+                    Entidad: <span className="text-[#C4CBD8]">{user.legalEntity ?? '—'}</span>
                   </p>
                 </div>
-                <Link
-                  to={`/admin/users/${data.user._id ?? data.userId}`}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[0.75rem] font-medium text-[#C4CBD8] hover:bg-[#C4CBD81A] transition-colors"
-                >
-                  Ver perfil <ChevronRight size={13} />
-                </Link>
               </div>
             </div>
           )}
@@ -480,7 +551,7 @@ export default function KybDetailPage() {
         {/* ── Right column: decisión ── */}
         <div className="sticky top-8">
           <DecisionPanel
-            businessId={businessId}
+            businessId={data.businessId ?? businessId}
             currentStatus={data.kybStatus}
             onDecision={fetchDetail}
           />
