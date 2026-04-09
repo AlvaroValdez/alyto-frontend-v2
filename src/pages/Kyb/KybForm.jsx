@@ -527,15 +527,35 @@ export default function KybForm() {
     try {
       const fd = new FormData()
 
-      // Datos del formulario
-      Object.entries(form).forEach(([k, v]) => {
-        if (Array.isArray(v)) fd.append(k, JSON.stringify(v))
-        else fd.append(k, v ?? '')
-      })
+      // Construir businessData JSON con nombres que espera el backend
+      const fileEntries = Object.entries(files).filter(([, v]) => v)
+      const businessData = {
+        legalName:              form.legalName,
+        tradeName:              form.tradeName,
+        taxId:                  form.taxId,
+        countryOfIncorporation: form.country,
+        businessType:           form.companyType,
+        industry:               form.industry,
+        website:                form.website,
+        phone:                  form.phone,
+        address:                form.address,
+        legalRepresentative: {
+          name:      form.repName,
+          docType:   form.repDocType,
+          docNumber: form.repDocNumber,
+          email:     form.repEmail,
+          phone:     form.repPhone,
+        },
+        estimatedMonthlyVolume: form.estimatedVolume,
+        mainCorridors:          form.corridors,
+        businessDescription:    form.businessDescription,
+        documentTypes:          fileEntries.map(([key]) => key),
+      }
+      fd.append('businessData', JSON.stringify(businessData))
 
-      // Archivos
-      Object.entries(files).forEach(([k, v]) => {
-        if (v) fd.append(k, v, v.name)
+      // Archivos — todos bajo el campo 'documentos' (multer upload.array)
+      fileEntries.forEach(([, file]) => {
+        fd.append('documentos', file, file.name)
       })
 
       await applyKyb(fd)
