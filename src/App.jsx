@@ -12,7 +12,14 @@ import AppRouter         from './router/index'
 import SplashScreen      from './components/SplashScreen'
 
 function AppContent() {
-  const { isLoading } = useAuth()
+  const { isLoading, user } = useAuth()
+
+  // Sincronizar idioma del documento con preferencia del usuario
+  const lang = user?.preferences?.language ?? localStorage.getItem('alyto_language') ?? 'es'
+  if (document.documentElement.lang !== lang) {
+    document.documentElement.lang = lang
+  }
+
   return (
     <>
       <SplashScreen isLoading={isLoading} />

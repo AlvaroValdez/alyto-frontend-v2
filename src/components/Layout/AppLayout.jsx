@@ -5,11 +5,12 @@
  * Header y bottom nav con glassmorphism sobre fondo #F8FAFC.
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { Bell, Home, Wallet, FileText, User, Shield, LogOut, Users } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { fetchUnreadCount } from '../../services/api'
+import { useInactivityTimeout } from '../../hooks/useInactivityTimeout'
 
 export default function AppLayout() {
   const { user, logout } = useAuth()
@@ -49,16 +50,22 @@ export default function AppLayout() {
     }
     window.addEventListener('alyto:notification-received', refresh)
     window.addEventListener('alyto:notifications-read', refresh)
+    // Polling cada 60s para detectar notificaciones nuevas
+    const interval = setInterval(refresh, 60_000)
     return () => {
       window.removeEventListener('alyto:notification-received', refresh)
       window.removeEventListener('alyto:notifications-read', refresh)
+      clearInterval(interval)
     }
   }, [])
 
-  function handleLogout() {
+  const handleLogout = useCallback(() => {
     logout()
     navigate('/login?logout=1', { replace: true })
-  }
+  }, [logout, navigate])
+
+  const { showModal: showInactivityModal, countdown, continueSession, endSession } =
+    useInactivityTimeout({ onLogout: handleLogout })
 
   function isActive(to) {
     if (to === '/dashboard') return location.pathname === '/dashboard' || location.pathname === '/'
@@ -121,7 +128,7 @@ export default function AppLayout() {
             className="w-9 h-9 rounded-full border-2 border-[#233E58] flex items-center justify-center text-white text-xs font-bold tracking-wide no-underline flex-shrink-0"
             style={{ background: 'linear-gradient(135deg, #233E58, #1C3247)' }}
           >
-            {firstName ? firstName.charAt(0).toUpperCase() : 'A'}
+            {firstName ? firstName.charAt(0).toUpperCase() : '?'}
           </Link>
         </div>
       </header>
@@ -176,6 +183,41 @@ export default function AppLayout() {
           <span className="text-[0.5625rem] font-semibold">Salir</span>
         </button>
       </nav>
+
+      {/* ── INACTIVITY MODAL ───────────────────────────────────── */}
+      {showInactivityModal && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-6">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-[#F59E0B1A] flex items-center justify-center mx-auto mb-4">
+              <Bell size={24} className="text-[#F59E0B]" />
+            </div>
+            <h2 className="text-[1.125rem] font-bold text-[#0F172A] mb-2">
+              ¿Sigues ahí?
+            </h2>
+            <p className="text-[0.875rem] text-[#64748B] mb-1">
+              Tu sesión se cerrará por inactividad en
+            </p>
+            <p className="text-[2rem] font-bold text-[#233E58] mb-5 tabular-nums">
+              {countdown}<span className="text-[1rem] font-normal text-[#94A3B8] ml-1">seg</span>
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={endSession}
+                className="flex-1 py-3 rounded-2xl border border-[#E2E8F0] text-[0.875rem] font-semibold text-[#64748B] hover:bg-[#F8FAFC] transition-colors"
+              >
+                Cerrar sesión
+              </button>
+              <button
+                onClick={continueSession}
+                className="flex-1 py-3 rounded-2xl text-[0.875rem] font-bold text-white transition-colors"
+                style={{ background: '#233E58' }}
+              >
+                Continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )

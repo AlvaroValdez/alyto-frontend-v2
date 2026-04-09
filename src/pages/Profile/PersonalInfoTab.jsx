@@ -108,6 +108,9 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
           currency: form.preferredCurrency,
         },
       })
+      // Persistir idioma en localStorage para acceso global
+      localStorage.setItem('alyto_language', form.preferredLanguage)
+      document.documentElement.lang = form.preferredLanguage
       setEditing(false)
       setShowToast(true)
       setTimeout(() => setShowToast(false), 3000)

@@ -98,6 +98,16 @@ export default function Step4Confirm({ stepData, onNext }) {
         sessionStorage.setItem('lastTransactionId', res.transactionId)
       }
 
+      // Toast de éxito — se renderiza via AppNotifications
+      window.dispatchEvent(new CustomEvent('alyto:show-toast', {
+        detail: {
+          notification: {
+            title: '¡Transferencia iniciada!',
+            body:  'Tu transferencia fue creada. Te avisaremos cuando recibamos tu pago.',
+          },
+        },
+      }))
+
       onNext({
         transactionId: res.transactionId,
         // Algunos backends retornan widgetUrl en lugar de payinUrl (Fintoc)

@@ -63,6 +63,17 @@ export default function AppNotifications() {
     return () => { clearTimeout(timer); cleanup?.() }
   }, [isAuth, triggerBannerCheck, setupForegroundNotifications, addToast])
 
+  // ── Escuchar toasts manuales (desde cualquier componente) ───────────────
+  useEffect(() => {
+    if (!isAuth) return
+    const handler = (e) => {
+      const payload = e.detail ?? {}
+      addToast(payload)
+    }
+    window.addEventListener('alyto:show-toast', handler)
+    return () => window.removeEventListener('alyto:show-toast', handler)
+  }, [isAuth, addToast])
+
   // ── Limpiar toasts al hacer logout ───────────────────────────────────────
   useEffect(() => {
     if (!isAuth) setToasts([])

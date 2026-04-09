@@ -444,26 +444,29 @@ export default function TransactionDetail() {
     setSharing(true)
     try {
       const canvas = await captureComprobante()
-      canvas.toBlob(async (blob) => {
-        const filename = `comprobante-alyto-${tx.transactionId}.png`
-        const file = new File([blob], filename, { type: 'image/png' })
-        if (navigator.share && navigator.canShare?.({ files: [file] })) {
-          await navigator.share({
-            title: 'Comprobante Alyto',
-            text:  `Transferencia ${tx.transactionId}`,
-            files: [file],
-          })
-        } else {
-          const url = URL.createObjectURL(blob)
-          const a   = document.createElement('a')
-          a.href     = url
-          a.download = filename
-          a.click()
-          URL.revokeObjectURL(url)
-        }
-        setSharing(false)
-      }, 'image/png')
-    } catch {
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob returned null')), 'image/png')
+      })
+      const filename = `comprobante-alyto-${tx.transactionId}.png`
+      const file = new File([blob], filename, { type: 'image/png' })
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          title: 'Comprobante Alyto',
+          text:  `Transferencia ${tx.transactionId}`,
+          files: [file],
+        })
+      } else {
+        // Fallback: descargar imagen directamente (desktop sin Web Share API)
+        const url = URL.createObjectURL(blob)
+        const a   = document.createElement('a')
+        a.href     = url
+        a.download = filename
+        a.click()
+        URL.revokeObjectURL(url)
+      }
+    } catch (err) {
+      console.error('[Share] Error compartiendo comprobante:', err.message)
+    } finally {
       setSharing(false)
     }
   }
@@ -473,16 +476,18 @@ export default function TransactionDetail() {
     setSharing(true)
     try {
       const canvas = await captureComprobante()
-      canvas.toBlob((blob) => {
-        const url = URL.createObjectURL(blob)
-        const a   = document.createElement('a')
-        a.href     = url
-        a.download = `comprobante-alyto-${tx.transactionId}.png`
-        a.click()
-        URL.revokeObjectURL(url)
-        setSharing(false)
-      }, 'image/png')
-    } catch {
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob returned null')), 'image/png')
+      })
+      const url = URL.createObjectURL(blob)
+      const a   = document.createElement('a')
+      a.href     = url
+      a.download = `comprobante-alyto-${tx.transactionId}.png`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('[Download] Error descargando comprobante:', err.message)
+    } finally {
       setSharing(false)
     }
   }
