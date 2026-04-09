@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Bell, CheckCircle2, ArrowDownLeft, ArrowUpRight, ArrowRightLeft,
   AlertCircle, Snowflake, Sun, Wallet, Loader2, CheckCheck,
+  UserPlus, FileText, Send, Shield,
 } from 'lucide-react'
 import { fetchNotifications, markNotificationsRead } from '../../services/api'
 
@@ -30,6 +31,15 @@ const TYPE_CONFIG = {
   qr_payment:           { Icon: Wallet,         color: '#3B82F6', bg: '#3B82F61A' },
   kyc:                  { Icon: CheckCircle2,   color: '#F59E0B', bg: '#F59E0B1A' },
   system:               { Icon: Bell,           color: '#64748B', bg: '#64748B1A' },
+  // ── Admin-facing ──
+  admin_new_user:          { Icon: UserPlus,      color: '#3B82F6', bg: '#3B82F61A' },
+  admin_new_transaction:   { Icon: ArrowUpRight,  color: '#F59E0B', bg: '#F59E0B1A' },
+  admin_deposit_request:   { Icon: ArrowDownLeft, color: '#F59E0B', bg: '#F59E0B1A' },
+  admin_withdrawal_request:{ Icon: ArrowUpRight,  color: '#EF4444', bg: '#EF44441A' },
+  admin_conversion_request:{ Icon: ArrowRightLeft,color: '#F59E0B', bg: '#F59E0B1A' },
+  admin_kyb_submitted:     { Icon: Shield,        color: '#3B82F6', bg: '#3B82F61A' },
+  admin_payment_proof:     { Icon: FileText,      color: '#1D9E75', bg: '#1D9E751A' },
+  admin_p2p_transfer:      { Icon: Send,          color: '#3B82F6', bg: '#3B82F61A' },
 }
 
 function getConfig(type) {
