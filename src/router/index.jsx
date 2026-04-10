@@ -199,6 +199,7 @@ export default function AppRouter() {
         <Route path="/admin/wallet"          element={<WalletAdminPage />}    />
         <Route path="/admin/reclamos"        element={<ReclamosAdminPage />}  />
         <Route path="/admin/sanctions"       element={<SanctionsPage />}       />
+        <Route path="/admin/notifications"   element={<NotificationsPage />}   />
       </Route>
 
       {/* ── 404 ─────────────────────────────────────────────────────────── */}

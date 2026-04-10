@@ -4,11 +4,11 @@
  * Sidebar con links de navegación admin + contenido principal.
  */
 
-import { Outlet, NavLink, Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-import { BarChart2, Layers, ArrowLeft, ShieldCheck, TrendingUp, Wallet, Building2, QrCode, Banknote, AlertCircle, ShieldAlert, Settings2, AlertTriangle, CheckCircle2, X } from 'lucide-react'
+import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { BarChart2, Layers, ArrowLeft, ShieldCheck, TrendingUp, Wallet, Building2, QrCode, Banknote, AlertCircle, ShieldAlert, Settings2, AlertTriangle, CheckCircle2, X, Bell, UserPlus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, FileText, Send, Shield as ShieldIcon, CheckCheck, Loader2 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { request } from '../../services/api'
+import { request, fetchUnreadCount, fetchNotifications, markNotificationsRead } from '../../services/api'
 
 function SidebarLink({ to, icon: Icon, label, end }) {
   return (
@@ -29,10 +29,108 @@ function SidebarLink({ to, icon: Icon, label, end }) {
   )
 }
 
+// ── Notification type config ─────────────────────────────────────────────────
+
+const NOTIF_CONFIG = {
+  admin_new_user:           { Icon: UserPlus,       color: '#3B82F6', bg: '#3B82F61A' },
+  admin_new_transaction:    { Icon: ArrowUpRight,   color: '#F59E0B', bg: '#F59E0B1A' },
+  admin_deposit_request:    { Icon: ArrowDownLeft,  color: '#F59E0B', bg: '#F59E0B1A' },
+  admin_withdrawal_request: { Icon: ArrowUpRight,   color: '#EF4444', bg: '#EF44441A' },
+  admin_conversion_request: { Icon: ArrowRightLeft, color: '#F59E0B', bg: '#F59E0B1A' },
+  admin_kyb_submitted:      { Icon: ShieldIcon,     color: '#3B82F6', bg: '#3B82F61A' },
+  admin_payment_proof:      { Icon: FileText,       color: '#1D9E75', bg: '#1D9E751A' },
+  admin_p2p_transfer:       { Icon: Send,           color: '#3B82F6', bg: '#3B82F61A' },
+}
+
+function getNotifConfig(type) {
+  return NOTIF_CONFIG[type] ?? { Icon: Bell, color: '#64748B', bg: '#64748B1A' }
+}
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+  if (mins < 1) return 'Ahora'
+  if (mins < 60) return `${mins}m`
+  if (hours < 24) return `${hours}h`
+  if (days < 7) return `${days}d`
+  return new Date(dateStr).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
+}
+
 export default function AdminLayout() {
   const { user } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
   const adminName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Admin'
 
+  // ── Notifications state ──────────────────────────────────────────────────
+  const [unreadCount, setUnreadCount]     = useState(0)
+  const [dropdownOpen, setDropdownOpen]   = useState(false)
+  const [notifications, setNotifications] = useState([])
+  const [loadingNotifs, setLoadingNotifs] = useState(false)
+  const [markingAll, setMarkingAll]       = useState(false)
+  const dropdownRef = useRef(null)
+
+  // Fetch unread count on nav + polling
+  useEffect(() => {
+    let cancelled = false
+    fetchUnreadCount()
+      .then(data => { if (!cancelled) setUnreadCount(data.unreadCount ?? 0) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [location.pathname])
+
+  useEffect(() => {
+    const refresh = () => {
+      fetchUnreadCount()
+        .then(data => setUnreadCount(data.unreadCount ?? 0))
+        .catch(() => {})
+    }
+    window.addEventListener('alyto:notification-received', refresh)
+    window.addEventListener('alyto:notifications-read', refresh)
+    const interval = setInterval(refresh, 30_000)
+    return () => {
+      window.removeEventListener('alyto:notification-received', refresh)
+      window.removeEventListener('alyto:notifications-read', refresh)
+      clearInterval(interval)
+    }
+  }, [])
+
+  // Load notifications when dropdown opens
+  useEffect(() => {
+    if (!dropdownOpen) return
+    setLoadingNotifs(true)
+    fetchNotifications(1, 10)
+      .then(data => setNotifications(data.notifications ?? []))
+      .catch(() => {})
+      .finally(() => setLoadingNotifs(false))
+  }, [dropdownOpen])
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    if (!dropdownOpen) return
+    function handleClick(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [dropdownOpen])
+
+  async function handleMarkAll() {
+    setMarkingAll(true)
+    try {
+      await markNotificationsRead()
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+      setUnreadCount(0)
+      window.dispatchEvent(new CustomEvent('alyto:notifications-read'))
+    } catch { /* silent */ }
+    setMarkingAll(false)
+  }
+
+  // ── Vita balance banner ──────────────────────────────────────────────────
   const [alertBanner, setAlertBanner]       = useState({ alerts: [], balances: {} })
   const [bannerDismissed, setBannerDismissed] = useState(false)
 
@@ -111,7 +209,128 @@ export default function AdminLayout() {
         >
           <ShieldCheck size={18} className="text-[#C4CBD8]" />
           <span className="text-[0.875rem] font-semibold text-white">Panel de Administración</span>
-          <span className="ml-auto text-[0.75rem] text-[#4E5A7A]">{adminName}</span>
+
+          <div className="ml-auto flex items-center gap-3">
+            {/* ── Campanita de notificaciones ── */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownOpen(o => !o)}
+                className="w-9 h-9 rounded-full flex items-center justify-center relative transition-colors"
+                style={{ background: dropdownOpen ? '#1F2B4D' : 'transparent', border: '1px solid #263050' }}
+                aria-label="Notificaciones"
+              >
+                <Bell size={16} className="text-[#C4CBD8]" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-[#F59E0B] text-[#0F1628] text-[0.625rem] font-bold flex items-center justify-center px-1">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* ── Dropdown ── */}
+              {dropdownOpen && (
+                <div
+                  className="absolute right-0 top-12 w-[380px] rounded-2xl shadow-2xl z-50 overflow-hidden"
+                  style={{ background: '#141C30', border: '1px solid #1F2B4D' }}
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #1F2B4D' }}>
+                    <span className="text-[0.8125rem] font-semibold text-white">Notificaciones</span>
+                    <div className="flex items-center gap-2">
+                      {notifications.some(n => !n.read) && (
+                        <button
+                          onClick={handleMarkAll}
+                          disabled={markingAll}
+                          className="flex items-center gap-1 text-[0.6875rem] font-semibold text-[#F59E0B] hover:text-[#FCD34D] disabled:opacity-50"
+                        >
+                          {markingAll ? <Loader2 size={11} className="animate-spin" /> : <CheckCheck size={11} />}
+                          Marcar leídas
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* List */}
+                  <div className="max-h-[400px] overflow-y-auto">
+                    {loadingNotifs ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 size={18} className="animate-spin text-[#4E5A7A]" />
+                      </div>
+                    ) : notifications.length === 0 ? (
+                      <div className="flex flex-col items-center py-8 text-center">
+                        <Bell size={20} className="text-[#4E5A7A] mb-2" />
+                        <p className="text-[0.8125rem] text-[#4E5A7A]">Sin notificaciones</p>
+                      </div>
+                    ) : (
+                      notifications.map(notif => {
+                        const { Icon: NIcon, color, bg } = getNotifConfig(notif.type)
+                        return (
+                          <button
+                            key={notif._id}
+                            onClick={() => {
+                              if (!notif.read) {
+                                markNotificationsRead([notif._id]).catch(() => {})
+                                setNotifications(prev => prev.map(n => n._id === notif._id ? { ...n, read: true } : n))
+                                setUnreadCount(c => Math.max(0, c - 1))
+                              }
+                              // Navigate to relevant admin page based on type
+                              const txId = notif.data?.transactionId
+                              if (txId) navigate(`/admin/ledger`)
+                              else if (notif.type === 'admin_kyb_submitted') navigate('/admin/kyb')
+                              setDropdownOpen(false)
+                            }}
+                            className="w-full flex items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-[#1A2340]"
+                            style={{ borderBottom: '1px solid #1A234066' }}
+                          >
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                              style={{ background: bg }}
+                            >
+                              <NIcon size={14} style={{ color }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className={`text-[0.8125rem] font-semibold truncate ${notif.read ? 'text-[#4E5A7A]' : 'text-white'}`}>
+                                  {notif.title}
+                                </p>
+                                {!notif.read && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] flex-shrink-0" />
+                                )}
+                              </div>
+                              <p className={`text-[0.75rem] leading-snug truncate ${notif.read ? 'text-[#3A4565]' : 'text-[#8A96B8]'}`}>
+                                {notif.body}
+                              </p>
+                              <p className="text-[0.625rem] text-[#3A4565] mt-0.5">{timeAgo(notif.createdAt)}</p>
+                            </div>
+                          </button>
+                        )
+                      })
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <button
+                    onClick={() => { navigate('/admin/notifications'); setDropdownOpen(false) }}
+                    className="w-full py-2.5 text-center text-[0.75rem] font-semibold text-[#F59E0B] hover:bg-[#1A2340] transition-colors"
+                    style={{ borderTop: '1px solid #1F2B4D' }}
+                  >
+                    Ver todas las notificaciones
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Admin name + avatar */}
+            <div className="flex items-center gap-2">
+              <span className="text-[0.75rem] text-[#4E5A7A]">{adminName}</span>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[0.75rem] font-bold text-[#0F1628]"
+                style={{ background: '#C4CBD8' }}
+              >
+                {adminName.charAt(0).toUpperCase()}
+              </div>
+            </div>
+          </div>
         </header>
 
         {/* Banner de saldos Vita — siempre visible */}
