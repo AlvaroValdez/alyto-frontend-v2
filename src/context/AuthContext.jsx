@@ -1,119 +1,53 @@
 /**
  * AuthContext.jsx — Gestión de Estado de Autenticación Global
  *
- * Provee: user, token, login(), register(), logout()
- * Persiste: token en localStorage bajo la clave 'alyto_token'.
- * El objeto `user` se reconstruye desde el token JWT (payload) sin
- * necesidad de un endpoint /me adicional para los datos básicos.
+ * Autenticación por cookie HttpOnly `alyto_token` (seteada por el backend).
+ * No se almacena ningún token en localStorage/sessionStorage: la sesión
+ * se determina exclusivamente mediante GET /auth/me al montar la app.
  */
 
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
-import { loginUser as apiLogin, registerUser as apiRegister, getMe } from '../services/api'
+import {
+  loginUser    as apiLogin,
+  registerUser as apiRegister,
+  logoutUser   as apiLogout,
+  getMe,
+} from '../services/api'
 import Sentry from '../services/sentry.js'
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-const TOKEN_KEY = 'alyto_token'
-const USER_KEY  = 'alyto_user'
-
-/** Decodifica el payload del JWT sin verificar la firma (solo para el cliente). */
-function decodeToken(token) {
-  try {
-    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
-    return JSON.parse(atob(base64))
-  } catch {
-    return null
-  }
-}
-
-/**
- * Lee el token guardado y devuelve { token, user, storage } o nulos.
- * Prioriza sessionStorage (sesiones no persistentes) sobre localStorage.
- */
-function loadPersistedSession() {
-  // Intentar sessionStorage primero (login sin rememberMe)
-  for (const storage of [sessionStorage, localStorage]) {
-    const token = storage.getItem(TOKEN_KEY)
-    if (!token) continue
-
-    const payload = decodeToken(token)
-    if (!payload) { storage.removeItem(TOKEN_KEY); continue }
-
-    // Verificar expiración
-    if (payload.exp && Date.now() / 1000 > payload.exp) {
-      storage.removeItem(TOKEN_KEY)
-      storage.removeItem(USER_KEY)
-      continue
-    }
-
-    const savedUser = storage.getItem(USER_KEY)
-    const user = savedUser ? JSON.parse(savedUser) : { id: payload.id }
-
-    return { token, user, storage }
-  }
-
-  return { token: null, user: null, storage: null }
-}
 
 // ── Contexto ───────────────────────────────────────────────────────────────
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [session,   setSession]   = useState(() => loadPersistedSession())
-  // isLoading solo es true si NO hay sesión cacheada válida.
-  // Si ya hay token+usuario en storage, la app renderiza de inmediato y
-  // getMe() corre en background para refrescar datos sin bloquear la UI.
-  const [isLoading, setIsLoading] = useState(() => !loadPersistedSession().token)
+  const [user,      setUser]      = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  // ── Validación server-side del token al montar la app ─────────────────────
-  // Corre siempre: si hay token válido, actualiza datos en background;
-  // si el token falló server-side, limpia la sesión y redirige a login.
+  // ── Validación server-side: al montar, intentar /auth/me con la cookie ──
   useEffect(() => {
-    const { token, storage } = loadPersistedSession()
-
-    if (!token) {
-      setIsLoading(false)
-      return
-    }
-
     getMe()
       .then(data => {
-        // Actualizar usuario con datos frescos de la DB
-        const s = storage ?? localStorage
-        s.setItem(USER_KEY, JSON.stringify(data.user))
-        setSession(prev => ({ ...prev, user: data.user }))
-        Sentry.setUser({ id: data.user.id, email: data.user.email })
+        setUser(data.user)
+        Sentry.setUser({
+          id:     data.user.id,
+          email:  data.user.email,
+          role:   data.user.role,
+          entity: data.user.legalEntity,
+        })
       })
-      .catch((err) => {
-        // Solo limpiar si es 401 (token inválido/expirado server-side).
-        // Para errores de red transitorios (sin .status) NO limpiar — el usuario
-        // puede estar en medio del redirect de Stripe Identity y perder la sesión.
-        // Los 401 ya disparan el evento alyto:unauthorized via request(), este
-        // catch actúa como fallback de seguridad.
-        if (err?.status === 401) {
-          localStorage.removeItem(TOKEN_KEY)
-          localStorage.removeItem(USER_KEY)
-          sessionStorage.removeItem(TOKEN_KEY)
-          sessionStorage.removeItem(USER_KEY)
-          setSession({ token: null, user: null, storage: null })
-          Sentry.setUser(null)
-        }
-        // Error de red o 5xx → mantener la sesión cacheada en storage
+      .catch(() => {
+        // 401 o sin sesión → no autenticado
+        setUser(null)
+        Sentry.setUser(null)
       })
       .finally(() => setIsLoading(false))
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── Listener de sesión expirada (401) disparado desde api.js ─────────────
   useEffect(() => {
     function handleUnauthorized() {
-      localStorage.removeItem(TOKEN_KEY)
-      localStorage.removeItem(USER_KEY)
-      sessionStorage.removeItem(TOKEN_KEY)
-      sessionStorage.removeItem(USER_KEY)
-      setSession({ token: null, user: null, storage: null })
+      setUser(null)
       Sentry.setUser(null)
-      // Redirigir con flag para que LoginPage muestre el toast de sesión expirada
       window.location.href = '/login?expired=1'
     }
     window.addEventListener('alyto:unauthorized', handleUnauthorized)
@@ -121,75 +55,53 @@ export function AuthProvider({ children }) {
   }, [])
 
   /**
-   * Persiste la sesión en el storage elegido y actualiza el estado.
-   * @param {string}  token       JWT recibido del backend
-   * @param {object}  user        Perfil básico { id, email, legalEntity, kycStatus }
-   * @param {boolean} [remember]  true → localStorage (default); false → sessionStorage
-   */
-  const persist = useCallback((token, user, remember = true) => {
-    const storage = remember ? localStorage : sessionStorage
-    storage.setItem(TOKEN_KEY, token)
-    storage.setItem(USER_KEY, JSON.stringify(user))
-    setSession({ token, user, storage })
-    Sentry.setUser({
-      id:     user.id,
-      email:  user.email,
-      role:   user.role,
-      entity: user.legalEntity,
-    })
-  }, [])
-
-  /**
-   * login(credentials) — llama al backend y persiste la sesión.
-   * @param {{ email: string, password: string, rememberMe?: boolean }} credentials
-   * @returns {Promise<{ user, token }>}
+   * login(credentials) — llama al backend (que setea la cookie) y guarda el user.
    */
   const login = useCallback(async ({ rememberMe = true, ...credentials }) => {
     const data = await apiLogin({ ...credentials, rememberMe })
-    persist(data.token, data.user, rememberMe)
+    setUser(data.user)
+    Sentry.setUser({
+      id:     data.user.id,
+      email:  data.user.email,
+      role:   data.user.role,
+      entity: data.user.legalEntity,
+    })
     return data
-  }, [persist])
+  }, [])
 
   /**
-   * register(userData) — crea la cuenta y persiste la sesión.
-   * @param {{ email, password, country, firstName?, lastName?, phone? }} userData
-   * @returns {Promise<{ user, token }>}
+   * register(userData) — crea la cuenta (cookie seteada por el backend) y guarda el user.
    */
   const register = useCallback(async (userData) => {
     const data = await apiRegister(userData)
-    persist(data.token, data.user)
+    setUser(data.user)
+    Sentry.setUser({
+      id:     data.user.id,
+      email:  data.user.email,
+      role:   data.user.role,
+      entity: data.user.legalEntity,
+    })
     return data
-  }, [persist])
+  }, [])
 
-  /** logout() — limpia ambos storages y el estado. */
-  const logout = useCallback(() => {
+  /** logout() — revoca la sesión server-side y limpia el estado local. */
+  const logout = useCallback(async () => {
     window.Fintoc?.destroy?.()
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(USER_KEY)
-    sessionStorage.removeItem(TOKEN_KEY)
-    sessionStorage.removeItem(USER_KEY)
-    setSession({ token: null, user: null, storage: null })
+    try { await apiLogout() } catch { /* silencioso — igual limpiamos el estado */ }
+    setUser(null)
     Sentry.setUser(null)
   }, [])
 
   /**
    * updateUser(partial) — actualiza campos del usuario en contexto sin re-login.
-   * Útil cuando el backend confirma el KYC y devuelve el nuevo kycStatus.
    */
   const updateUser = useCallback((partial) => {
-    setSession(prev => {
-      const updated = { ...prev.user, ...partial }
-      // Actualizar en el mismo storage donde está la sesión activa
-      const storage = prev.storage ?? localStorage
-      storage.setItem(USER_KEY, JSON.stringify(updated))
-      return { ...prev, user: updated }
-    })
+    setUser(prev => (prev ? { ...prev, ...partial } : prev))
   }, [])
 
   const value = {
-    user:       session.user,
-    token:      session.token,
-    isAuth:     !!session.token,
+    user,
+    isAuth: !!user,
     isLoading,
     login,
     register,

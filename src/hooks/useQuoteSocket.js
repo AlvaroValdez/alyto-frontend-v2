@@ -25,10 +25,6 @@ const DEBOUNCE_MS = 600
 const BACKOFF_MS  = [1000, 2000, 4000, 8000, 16000, 30000]
 const MAX_RETRIES = 5
 
-function getToken() {
-  return localStorage.getItem('alyto_token')
-}
-
 export function useQuoteSocket(originAmount, destinationCountry) {
   const [quote,     setQuote]     = useState(null)
   const [status,    setStatus]    = useState('connecting')
@@ -99,9 +95,10 @@ export function useQuoteSocket(originAmount, destinationCountry) {
     socket.onopen = () => {
       if (!alive.current || wsRef.current !== socket) return
       retries.current = 0
+      // Autenticación: el browser adjunta automáticamente la cookie HttpOnly
+      // alyto_token en el handshake WS (el backend la verifica en verifyClient).
       socket.send(JSON.stringify({
         type:               'subscribe_quote',
-        token:              getToken(),
         originAmount:       params.current.originAmount,
         destinationCountry: params.current.destinationCountry,
       }))

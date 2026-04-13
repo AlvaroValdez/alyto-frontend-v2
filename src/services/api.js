@@ -1,42 +1,30 @@
 /**
  * api.js — Capa de Comunicación con el Backend Alyto V2.0
  *
- * La función `request()` inyecta automáticamente el header
- * Authorization: Bearer <token> si existe un token en localStorage.
+ * La sesión se mantiene vía cookie HttpOnly `alyto_token` (seteada por el backend).
+ * Todas las peticiones usan `credentials: 'include'` para que el browser
+ * adjunte la cookie automáticamente — no se lee ningún token desde storage.
  *
  * Endpoints de autenticación:
  *   loginUser(credentials)  → POST /auth/login
  *   registerUser(data)      → POST /auth/register
+ *   logoutUser()            → POST /auth/logout
  */
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1'
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-/** Lee el JWT — prioriza sessionStorage (login sin rememberMe) sobre localStorage. */
-function getStoredToken() {
-  return sessionStorage.getItem('alyto_token') || localStorage.getItem('alyto_token')
-}
-
 // ── Request base ──────────────────────────────────────────────────────────
 
-/**
- * Wrapper sobre fetch que:
- *  1. Añade Content-Type: application/json
- *  2. Inyecta Authorization: Bearer <token> si existe token guardado
- *  3. Lanza un Error enriquecido en respuestas no-ok
- */
 /**
  * Wrapper sobre fetch para subir archivos (FormData / multipart).
  * No setea Content-Type — el browser lo inyecta con el boundary correcto.
  */
 export async function requestFormData(path, formData, method = 'POST') {
-  const token = getStoredToken()
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
+    credentials: 'include',
     headers: {
       'ngrok-skip-browser-warning': 'true',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: formData,
   })
@@ -53,18 +41,16 @@ export async function requestFormData(path, formData, method = 'POST') {
 }
 
 export async function request(path, options = {}) {
-  const token = getStoredToken()
-
   const headers = {
     'Content-Type': 'application/json',
     // Bypass del interstitial de ngrok en desarrollo (ignorado en producción)
     'ngrok-skip-browser-warning': 'true',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   }
 
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
+    credentials: 'include',
     headers,
   })
 
@@ -130,6 +116,13 @@ export function registerUser(data) {
   })
 }
 
+/**
+ * Cierra la sesión: incrementa tokenVersion en el backend y limpia la cookie HttpOnly.
+ */
+export function logoutUser() {
+  return request('/auth/logout', { method: 'POST' })
+}
+
 // ── Pagos ──────────────────────────────────────────────────────────────────
 
 /**
@@ -152,13 +145,11 @@ export function initiatePayin(amount, userId) {
  * @returns {Promise<{ blob: Blob, filename: string }>}
  */
 export async function processBoliviaPayout(transactionId) {
-  const token = getStoredToken()
-
   const res = await fetch(`${BASE_URL}/payouts/bolivia/manual`, {
-    method:  'POST',
+    method:      'POST',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify({ transactionId }),
   })
@@ -380,14 +371,10 @@ export function resetPassword(data) {
  * @returns {Promise<{ message: string, user: object }>}
  */
 export async function submitKyc(formData) {
-  const token = getStoredToken()
-
   const res = await fetch(`${BASE_URL}/user/kyc`, {
-    method: 'POST',
-    headers: {
-      // No incluir Content-Type: el browser lo setea automáticamente con el boundary de multipart
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    method:      'POST',
+    credentials: 'include',
+    // No incluir Content-Type: el browser lo setea automáticamente con el boundary de multipart
     body: formData,
   })
 

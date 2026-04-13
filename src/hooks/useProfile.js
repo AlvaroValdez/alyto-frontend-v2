@@ -92,13 +92,13 @@ export function useProfile() {
       const formData = new FormData()
       formData.append('avatar', file)
 
-      // No usar request() genérico porque este endpoint es multipart
-      const token = localStorage.getItem('alyto_token') || sessionStorage.getItem('alyto_token')
-      const BASE   = import.meta.env.VITE_API_URL ?? ''
-      const res    = await fetch(`${BASE}/user/avatar`, {
-        method:  'PATCH',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body:    formData,
+      // No usar request() genérico porque este endpoint es multipart.
+      // La autenticación va por la cookie HttpOnly alyto_token (credentials: 'include').
+      const BASE = import.meta.env.VITE_API_URL ?? ''
+      const res  = await fetch(`${BASE}/user/avatar`, {
+        method:      'PATCH',
+        credentials: 'include',
+        body:        formData,
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Error al subir la foto.')
