@@ -64,8 +64,16 @@ export default function AppLayout() {
     navigate('/login?logout=1', { replace: true })
   }, [logout, navigate])
 
+  const handleInactivityLogout = useCallback(() => {
+    logout()
+    navigate('/login', {
+      replace: true,
+      state: { message: 'Tu sesión fue cerrada por inactividad.' },
+    })
+  }, [logout, navigate])
+
   const { showModal: showInactivityModal, countdown, continueSession, endSession } =
-    useInactivityTimeout({ onLogout: handleLogout })
+    useInactivityTimeout({ onLogout: handleInactivityLogout })
 
   function isActive(to) {
     if (to === '/dashboard') return location.pathname === '/dashboard' || location.pathname === '/'
