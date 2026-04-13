@@ -6,10 +6,25 @@
  * Sección 3: IP + user agent + botón cerrar sesión.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Lock, Smartphone, LogOut, Loader2, Check, X, Shield } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { messaging, getToken, registerFirebaseSW } from '../../services/firebase'
+
+const VAPID_KEY = 'BHssXZMwSwImsxvw6h4V-l5lhnQbUbrl1d64t6t3iR5wxnoijY3M6K1bOQ2Yw7Oo3NS5bele6seI2MmY5KUCT-4'
+
+async function getCurrentDeviceFcmToken() {
+  try {
+    if (!messaging) return null
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return null
+    const swRegistration = await registerFirebaseSW()
+    if (!swRegistration) return null
+    return await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swRegistration })
+  } catch {
+    return null
+  }
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -102,6 +117,13 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
   // Device
   const [devLoading, setDevLoading] = useState(false)
   const [devOk,      setDevOk]      = useState(false)
+  const [deviceToken, setDeviceToken] = useState(null)
+
+  useEffect(() => {
+    let active = true
+    getCurrentDeviceFcmToken().then(t => { if (active) setDeviceToken(t) })
+    return () => { active = false }
+  }, [])
 
   const checks   = checkPassword(newPw)
   const strength = strengthLabel(checks)
@@ -135,11 +157,12 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
   }
 
   async function handleRemoveDevice() {
-    const token = localStorage.getItem('alyto_fcm_token')
+    const token = deviceToken ?? (await getCurrentDeviceFcmToken())
     if (!token) return
     setDevLoading(true)
     try {
       await onRemoveDevice(token)
+      setDeviceToken(null)
       setDevOk(true)
     } catch {
       // silencio — el error se muestra en el padre
@@ -312,7 +335,7 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
           ) : (
             <button
               onClick={handleRemoveDevice}
-              disabled={devLoading || !localStorage.getItem('alyto_fcm_token')}
+              disabled={devLoading || !deviceToken}
               className="w-full flex items-center justify-center gap-2 border border-[#EF444433] bg-[#EF44441A] text-[#EF4444] rounded-xl py-2.5 text-[0.875rem] font-semibold disabled:opacity-40 transition-all hover:bg-[#EF444433]"
             >
               {devLoading ? <Loader2 size={14} className="animate-spin" /> : <Smartphone size={14} />}

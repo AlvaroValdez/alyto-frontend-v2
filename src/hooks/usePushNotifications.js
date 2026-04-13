@@ -17,7 +17,12 @@ import { messaging, getToken, onMessage, registerFirebaseSW } from '../services/
 import { registerFcmToken } from '../services/api'
 
 // ── Claves de storage ──────────────────────────────────────────────────────
-const FCM_TOKEN_KEY       = 'alyto_fcm_token'
+// ⚠️ No persistimos el token FCM en localStorage — solo un flag booleano que
+// indica si este dispositivo ya se registró en el backend. El token se
+// obtiene de Firebase en cada carga y se envía al servidor fire-and-forget.
+// Almacenar el token en localStorage habilitaría phishing push dirigido si un
+// script malicioso lo lee + abusa de la API de FCM.
+const FCM_REGISTERED_KEY  = 'alyto_fcm_registered'
 const ASKED_AT_KEY        = 'alyto_notif_asked_at'
 const BANNER_SHOWN_KEY    = 'alyto_notif_banner_shown'   // sessionStorage
 const BANNER_DENIED_KEY   = 'alyto_notif_banner_denied'  // localStorage (permanente)
@@ -35,7 +40,7 @@ function getInitialPermission() {
 // ── Hook ───────────────────────────────────────────────────────────────────
 export function usePushNotifications() {
   const [permission, setPermission] = useState(getInitialPermission)
-  const [token,      setToken]      = useState(() => localStorage.getItem(FCM_TOKEN_KEY))
+  const [token,      setToken]      = useState(null)
   const [error,      setError]      = useState(null)
   const [showBanner, setShowBanner] = useState(false)
   const unsubRef = useRef(null)
@@ -73,12 +78,12 @@ export function usePushNotifications() {
         return
       }
 
-      // Registrar en el backend solo si el token cambió
-      const savedToken = localStorage.getItem(FCM_TOKEN_KEY)
-      if (fcmToken !== savedToken) {
-        await registerFcmToken(fcmToken)
-        localStorage.setItem(FCM_TOKEN_KEY, fcmToken)
-      }
+      // Siempre enviamos el token al backend: la autoridad sobre qué tokens
+      // están vigentes vive en el servidor (fcmTokens array en User). El
+      // backend usa $addToSet para evitar duplicados, así que reenviar el
+      // mismo token es idempotente.
+      await registerFcmToken(fcmToken)
+      localStorage.setItem(FCM_REGISTERED_KEY, '1')
 
       setToken(fcmToken)
       setShowBanner(false)
@@ -152,7 +157,7 @@ export function usePushNotifications() {
   const clearToken = useCallback(() => {
     setToken(null)
     try {
-      localStorage.removeItem(FCM_TOKEN_KEY)
+      localStorage.removeItem(FCM_REGISTERED_KEY)
     } catch {}
   }, [])
 

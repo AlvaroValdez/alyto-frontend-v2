@@ -47,18 +47,17 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
   const pushGranted = permission === 'granted' && !!token
   const pushDefault = permission === 'default'
 
-  // Sincronizar desde el perfil cargado — push activo solo si hay token + permiso real
+  // Sincronizar desde el perfil cargado — push activo solo si el dispositivo
+  // obtuvo token en esta sesión + tiene permiso de navegador.
   useEffect(() => {
     const notifPrefs = profile?.preferences?.notifications ?? profile?.notifications
     if (notifPrefs) {
       setEmailEnabled(notifPrefs.email ?? true)
       const profilePush   = notifPrefs.push ?? false
-      const hasToken      = !!localStorage.getItem('alyto_fcm_token')
       const hasPermission = typeof Notification !== 'undefined' && Notification.permission === 'granted'
-      const resolved = profilePush && hasToken && hasPermission
-      setPushEnabled(resolved)
+      setPushEnabled(profilePush && !!token && hasPermission)
     }
-  }, [profile])
+  }, [profile, token])
 
   async function handleEmailToggle(val) {
     setEmailEnabled(val)
@@ -81,9 +80,8 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
       setSavingPush(true)
       try {
         await onUpdate({ preferences: { notifications: { email: emailEnabled, push: false } } })
-        const fcmToken = localStorage.getItem('alyto_fcm_token')
-        if (fcmToken && onRemoveDevice) {
-          await onRemoveDevice(fcmToken)
+        if (token && onRemoveDevice) {
+          await onRemoveDevice(token)
         }
         clearToken()
       } catch {
@@ -99,14 +97,13 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
     try {
       await requestPermission()
 
-      const newToken = localStorage.getItem('alyto_fcm_token')
-      const granted  = typeof Notification !== 'undefined' && Notification.permission === 'granted'
+      const granted = typeof Notification !== 'undefined' && Notification.permission === 'granted'
 
-      if (granted && newToken) {
+      if (granted) {
         setPushEnabled(true)
         await onUpdate({ preferences: { notifications: { email: emailEnabled, push: true } } })
       } else {
-        console.warn('[FCM] Push activation failed:', { granted, hasToken: !!newToken })
+        console.warn('[FCM] Push activation failed: permission not granted')
         setPushEnabled(false)
       }
     } catch (err) {

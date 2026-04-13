@@ -123,8 +123,6 @@ export function useProfile() {
         method: 'DELETE',
         body:   JSON.stringify({ token }),
       })
-      // Limpiar token del storage local
-      localStorage.removeItem('alyto_fcm_token')
     } catch (err) {
       setError(err.message ?? 'Error al desvincular el dispositivo')
       throw err
