@@ -11,6 +11,8 @@ import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, AlertCircle, CheckCircle2, ArrowLeft, X, FileText } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import LegalModal from '../../components/Legal/LegalModal'
+import { LEGAL_VERSION } from '../../legal/terms'
 
 // ── Países disponibles ────────────────────────────────────────────────────────
 
@@ -369,11 +371,12 @@ export default function RegisterPage() {
     termsChecked: false,
     ageChecked:   false,
   })
-  const [showPwd,        setShowPwd]        = useState(false)
-  const [showConfirm,    setShowConfirm]    = useState(false)
-  const [loading,        setLoading]        = useState(false)
-  const [error,          setError]          = useState('')
-  const [termsModalOpen, setTermsModalOpen] = useState(false)
+  const [showPwd,          setShowPwd]          = useState(false)
+  const [showConfirm,      setShowConfirm]      = useState(false)
+  const [loading,          setLoading]          = useState(false)
+  const [error,            setError]            = useState('')
+  const [termsModalOpen,   setTermsModalOpen]   = useState(false)
+  const [privacyModalOpen, setPrivacyModalOpen] = useState(false)
 
   const selectedCountry = COUNTRIES.find(c => c.value === form.country)
 
@@ -444,12 +447,15 @@ export default function RegisterPage() {
         : undefined
 
       await register({
-        firstName: form.firstName.trim(),
-        lastName:  form.lastName.trim() || undefined,
-        email:     form.email.trim(),
-        password:  form.password,
-        country:   form.country,
+        firstName:       form.firstName.trim(),
+        lastName:        form.lastName.trim() || undefined,
+        email:           form.email.trim(),
+        password:        form.password,
+        country:         form.country,
         phone,
+        termsAccepted:   true,
+        termsAcceptedAt: new Date().toISOString(),
+        termsVersion:    LEGAL_VERSION,
       })
 
       navigate('/kyc', {
@@ -474,6 +480,12 @@ export default function RegisterPage() {
           onClose={() => setTermsModalOpen(false)}
         />
       )}
+
+      <LegalModal
+        isOpen={privacyModalOpen}
+        onClose={() => setPrivacyModalOpen(false)}
+        docType="privacy"
+      />
 
       <div
         className="w-full max-w-[420px] rounded-3xl p-7"
@@ -652,6 +664,7 @@ export default function RegisterPage() {
             <TermsCheckboxItem
               checked={form.termsChecked}
               onRequestOpen={() => setTermsModalOpen(true)}
+              onOpenPrivacy={() => setPrivacyModalOpen(true)}
               onUncheck={() => setForm(prev => ({ ...prev, termsChecked: false }))}
             />
 
@@ -700,7 +713,7 @@ export default function RegisterPage() {
 
 // ── TermsCheckboxItem — solo activable a través del modal ─────────────────────
 
-function TermsCheckboxItem({ checked, onRequestOpen, onUncheck }) {
+function TermsCheckboxItem({ checked, onRequestOpen, onOpenPrivacy, onUncheck }) {
   function handleClick() {
     if (checked) {
       onUncheck()
@@ -741,7 +754,12 @@ function TermsCheckboxItem({ checked, onRequestOpen, onUncheck }) {
           Términos de Servicio
         </span>
         {' '}y la{' '}
-        <span className="text-[#233E58] font-semibold">Política de Privacidad</span>
+        <span
+          className="text-[#233E58] font-semibold underline underline-offset-2 decoration-[#233E5833]"
+          onClick={(e) => { e.stopPropagation(); onOpenPrivacy?.() }}
+        >
+          Política de Privacidad
+        </span>
         {!checked && (
           <span className="block mt-1 text-[0.6875rem] text-[#94A3B8]">
             Haz clic para leer los términos antes de aceptar

@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { Camera }              from 'lucide-react'
+import { Camera, FileText, Shield, ChevronRight } from 'lucide-react'
 import { useAuth }             from '../../context/AuthContext'
 import { useProfile }          from '../../hooks/useProfile'
 import KycStatusCard           from './KycStatusCard'
@@ -17,6 +17,7 @@ import PersonalInfoTab         from './PersonalInfoTab'
 import SecurityTab             from './SecurityTab'
 import NotificationsTab        from './NotificationsTab'
 import KybTab                  from './KybTab'
+import LegalModal              from '../../components/Legal/LegalModal'
 
 // ── Entity badge ──────────────────────────────────────────────────────────────
 
@@ -159,6 +160,7 @@ export default function ProfilePage() {
 
   const [activeTab,     setActiveTab]     = useState('info')
   const [avatarError,   setAvatarError]   = useState('')
+  const [legalDoc,      setLegalDoc]      = useState(null)
 
   useEffect(() => {
     fetchProfile()
@@ -277,6 +279,45 @@ export default function ProfilePage() {
         {activeTab === 'business' && (
           <KybTab kycStatus={kycStatus} legalEntity={legalEntity} />
         )}
+
+        {/* ── LEGAL SECTION ───────────────────────────────────────── */}
+        <div className="px-4 mt-6 mb-4">
+          <p className="text-[0.6875rem] font-semibold text-[#94A3B8] uppercase tracking-wider mb-2 px-1">
+            Legal
+          </p>
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
+            <button
+              onClick={() => setLegalDoc('terms')}
+              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#F8FAFC] transition-colors border-b border-[#E2E8F0]"
+            >
+              <div className="w-8 h-8 rounded-lg bg-[#233E581A] flex items-center justify-center flex-shrink-0">
+                <FileText size={15} className="text-[#233E58]" />
+              </div>
+              <span className="flex-1 text-left text-[0.875rem] font-semibold text-[#0F172A]">
+                Términos y Condiciones
+              </span>
+              <ChevronRight size={16} className="text-[#94A3B8] flex-shrink-0" />
+            </button>
+            <button
+              onClick={() => setLegalDoc('privacy')}
+              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#F8FAFC] transition-colors"
+            >
+              <div className="w-8 h-8 rounded-lg bg-[#233E581A] flex items-center justify-center flex-shrink-0">
+                <Shield size={15} className="text-[#233E58]" />
+              </div>
+              <span className="flex-1 text-left text-[0.875rem] font-semibold text-[#0F172A]">
+                Política de Privacidad
+              </span>
+              <ChevronRight size={16} className="text-[#94A3B8] flex-shrink-0" />
+            </button>
+          </div>
+        </div>
+
+        <LegalModal
+          isOpen={!!legalDoc}
+          onClose={() => setLegalDoc(null)}
+          docType={legalDoc ?? 'terms'}
+        />
 
     </div>
   )
