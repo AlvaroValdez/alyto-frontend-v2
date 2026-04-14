@@ -68,8 +68,9 @@ export async function request(path, options = {}) {
   const data = await res.json()
 
   if (!res.ok) {
-    // 401 → sesión expirada o token inválido: disparar evento global para auto-logout
-    if (res.status === 401) {
+    // 401 → sesión expirada. No disparar para /auth/me (check de sesión inicial,
+    // un 401 ahí sólo significa "no logeado" y AuthContext ya lo maneja).
+    if (res.status === 401 && !path.startsWith('/auth/me')) {
       window.dispatchEvent(new CustomEvent('alyto:unauthorized'))
     }
     const err = new Error(data.error || data.message || `Error ${res.status}`)
