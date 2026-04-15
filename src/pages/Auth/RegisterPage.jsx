@@ -663,6 +663,7 @@ export default function RegisterPage() {
             {/* Checkbox términos — solo activable via modal */}
             <TermsCheckboxItem
               checked={form.termsChecked}
+              country={form.country}
               onRequestOpen={() => setTermsModalOpen(true)}
               onOpenPrivacy={() => setPrivacyModalOpen(true)}
               onUncheck={() => setForm(prev => ({ ...prev, termsChecked: false }))}
@@ -713,7 +714,7 @@ export default function RegisterPage() {
 
 // ── TermsCheckboxItem — solo activable a través del modal ─────────────────────
 
-function TermsCheckboxItem({ checked, onRequestOpen, onOpenPrivacy, onUncheck }) {
+function TermsCheckboxItem({ checked, country, onRequestOpen, onOpenPrivacy, onUncheck }) {
   function handleClick() {
     if (checked) {
       onUncheck()
@@ -721,6 +722,8 @@ function TermsCheckboxItem({ checked, onRequestOpen, onOpenPrivacy, onUncheck })
       onRequestOpen()
     }
   }
+
+  const isBolivia = country === 'BO'
 
   return (
     <div
@@ -744,7 +747,7 @@ function TermsCheckboxItem({ checked, onRequestOpen, onOpenPrivacy, onUncheck })
         )}
       </div>
 
-      {/* Texto */}
+      {/* Texto — label dinámico por país (BO requiere disclosure PSAV explícito) */}
       <span className="text-[0.8125rem] text-[#64748B] leading-snug">
         He leído y acepto los{' '}
         <span
@@ -753,13 +756,25 @@ function TermsCheckboxItem({ checked, onRequestOpen, onOpenPrivacy, onUncheck })
         >
           Términos de Servicio
         </span>
-        {' '}y la{' '}
-        <span
-          className="text-[#233E58] font-semibold underline underline-offset-2 decoration-[#233E5833]"
-          onClick={(e) => { e.stopPropagation(); onOpenPrivacy?.() }}
-        >
-          Política de Privacidad
-        </span>
+        {isBolivia ? (
+          <>
+            , incluyendo la{' '}
+            <strong className="text-[#0F172A] font-semibold">
+              custodia transitoria de fondos BOB y activos USDC por AV Finance SRL
+            </strong>
+            {' '}(PSAV bajo DS 5384)
+          </>
+        ) : (
+          <>
+            {' '}y la{' '}
+            <span
+              className="text-[#233E58] font-semibold underline underline-offset-2 decoration-[#233E5833]"
+              onClick={(e) => { e.stopPropagation(); onOpenPrivacy?.() }}
+            >
+              Política de Privacidad
+            </span>
+          </>
+        )}
         {!checked && (
           <span className="block mt-1 text-[0.6875rem] text-[#94A3B8]">
             Haz clic para leer los términos antes de aceptar
