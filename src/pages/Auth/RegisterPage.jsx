@@ -12,7 +12,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, AlertCircle, CheckCircle2, ArrowLeft, X, FileText } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import LegalModal from '../../components/Legal/LegalModal'
-import { LEGAL_VERSION } from '../../legal/terms'
+import { LEGAL_VERSION, LEGAL_DOCS } from '../../legal/terms'
 
 // ── Países disponibles ────────────────────────────────────────────────────────
 
@@ -40,132 +40,16 @@ const PHONE_PREFIXES = [
   { code: '+51', flag: '🇵🇪', label: 'PE' },
 ]
 
-// ── Contenido de términos por país ────────────────────────────────────────────
+// ── Metadata de entidad por país (header del modal de T&C) ───────────────────
 
-function getTermsContent(country) {
+function getTermsMeta(country) {
   if (country === 'CL') {
-    return {
-      entity:     'AV Finance SpA',
-      regulation: 'AV Finance SpA — Chile',
-      badge:      '🇨🇱 Chile',
-      title:      'Términos y Condiciones de Uso',
-      sections: [
-        {
-          title: '1. Naturaleza del Servicio',
-          body:  'AV Finance SpA, a través de su plataforma Alyto, provee exclusivamente servicios de infraestructura tecnológica, interfaces de software y herramientas algorítmicas de análisis de mercado. Alyto NO es un banco, NO es una institución financiera de captación, NO es una cámara de compensación y NO actúa como custodio de los fondos de los Usuarios.',
-        },
-        {
-          title: '2. Arquitectura Tecnológica No-Custodia',
-          body:  'El Usuario reconoce y acepta que los servicios de Alyto operan bajo una arquitectura tecnológica No-Custodia sobre redes descentralizadas. El Usuario mantiene, en todo momento, el control exclusivo, la propiedad y la administración de sus credenciales de acceso y activos digitales. AV Finance SpA no tiene acceso técnico ni legal para mover, retener, congelar o confiscar los activos digitales o fondos del Usuario.',
-        },
-        {
-          title: '3. Ejecución de Operaciones y Responsabilidad',
-          body:  'Toda sugerencia o notificación emitida por la plataforma tiene carácter estrictamente informativo y de asesoría analítica. La decisión final de ejecutar, firmar o rechazar cualquier transferencia de valor transfronteriza recae única y exclusivamente en el Usuario. Toda transacción confirmada por el Usuario en su dispositivo es final e irreversible, no existiendo responsabilidad de AV Finance SpA por errores de tipeo, envíos a destinatarios incorrectos o fluctuaciones del mercado durante la ejecución.',
-        },
-        {
-          title: '4. Interacción con Proveedores de Pago',
-          body:  'Para facilitar la conexión entre el dinero fiduciario y la red tecnológica, Alyto integra interfaces de programación de proveedores de pago independientes. AV Finance SpA no es responsable por demoras, rechazos de cumplimiento normativo o bloqueos ejercidos de manera independiente por estos proveedores externos sobre los flujos de capital. AV Finance SpA responde por el correcto funcionamiento de su plataforma tecnológica, no por las operaciones de los proveedores de pago.',
-        },
-        {
-          title: '5. Cumplimiento Normativo y Origen de Fondos',
-          body:  'El Usuario declara que los fondos utilizados en la plataforma Alyto provienen de actividades lícitas y comerciales legítimas. AV Finance SpA se reserva el derecho de suspender el acceso a la interfaz de software — sin que esto implique retención de fondos, dado el modelo No-Custodia — en caso de detectar comportamientos transaccionales anómalos, cooperando activamente con la Unidad de Análisis Financiero (UAF) de Chile cuando la ley lo requiera.',
-        },
-        {
-          title: '6. Propiedad Intelectual',
-          body:  'El código fuente, algoritmos y arquitectura de la plataforma Alyto son propiedad de AV Finance LLC (Delaware, EE.UU.), licenciados para su operación en Chile a través de AV Finance SpA.',
-        },
-        {
-          title: '7. Ley Aplicable',
-          body:  'Estos términos se rigen por las leyes de la República de Chile. Cualquier disputa será sometida a los tribunales competentes de la ciudad de Santiago de Chile.',
-        },
-        {
-          title: '8. Modificaciones',
-          body:  'AV Finance SpA se reserva el derecho de modificar estos términos con previo aviso de 30 días al email registrado por el Usuario.',
-        },
-      ],
-    }
+    return { entity: 'AV Finance SpA', regulation: 'AV Finance SpA — Chile',          badge: '🇨🇱 Chile',         lang: 'es' }
   }
-
   if (country === 'BO') {
-    return {
-      entity:     'AV Finance SRL',
-      regulation: 'AV Finance SRL — Bolivia',
-      badge:      '🇧🇴 Bolivia',
-      title:      'Términos y Condiciones de Uso',
-      sections: [
-        {
-          title: '1. Naturaleza del Servicio',
-          body:  'AV Finance SRL, a través de su plataforma Alyto, provee exclusivamente servicios de infraestructura tecnológica e interfaces de software para pagos transfronterizos. Alyto NO es un banco, NO es una institución financiera de captación y NO actúa como custodio de los fondos de los Usuarios.',
-        },
-        {
-          title: '2. Arquitectura Tecnológica No-Custodia',
-          body:  'El Usuario reconoce que los servicios de Alyto operan bajo una arquitectura tecnológica No-Custodia. El Usuario mantiene en todo momento el control exclusivo de sus credenciales y activos. AV Finance SRL no tiene acceso para mover, retener o confiscar los fondos del Usuario.',
-        },
-        {
-          title: '3. Ejecución de Operaciones y Responsabilidad',
-          body:  'La decisión final de ejecutar cualquier transferencia recae única y exclusivamente en el Usuario. Toda transacción confirmada por el Usuario es final e irreversible. AV Finance SRL no es responsable por errores de tipeo, envíos incorrectos o fluctuaciones del mercado durante la ejecución.',
-        },
-        {
-          title: '4. Interacción con Proveedores de Pago',
-          body:  'Para facilitar la liquidación local de pagos, Alyto integra interfaces de proveedores de pago y corresponsales financieros independientes. AV Finance SRL no es responsable por demoras o bloqueos ejercidos por estos proveedores. Los tiempos de acreditación dependen de los procesos internos de cada institución financiera local.',
-        },
-        {
-          title: '5. Cumplimiento Normativo y Origen de Fondos',
-          body:  'El Usuario declara que los fondos utilizados provienen de actividades lícitas. AV Finance SRL se reserva el derecho de suspender el acceso a la plataforma — sin retención de fondos, dado el modelo No-Custodia — ante comportamientos anómalos, cooperando con la Autoridad de Supervisión del Sistema Financiero (ASFI) de Bolivia cuando la ley lo requiera.',
-        },
-        {
-          title: '6. Ley Aplicable',
-          body:  'Estos términos se rigen por las leyes del Estado Plurinacional de Bolivia.',
-        },
-        {
-          title: '7. Modificaciones',
-          body:  'AV Finance SRL se reserva el derecho de modificar estos términos con previo aviso de 30 días al email registrado por el Usuario.',
-        },
-      ],
-    }
+    return { entity: 'AV Finance SRL', regulation: 'AV Finance SRL — Bolivia (PSAV)', badge: '🇧🇴 Bolivia',       lang: 'es' }
   }
-
-  // Default: LLC (usuarios internacionales — AR, BR, CO, MX, PE y resto del mundo)
-  return {
-    entity:     'AV Finance LLC',
-    regulation: 'AV Finance LLC — Delaware, USA',
-    badge:      '🌐 International',
-    title:      'Terms and Conditions of Use',
-    sections: [
-      {
-        title: '1. Nature of Service',
-        body:  'AV Finance LLC provides exclusively technological infrastructure services, software interfaces and algorithmic market analysis tools through the Alyto platform. Alyto is NOT a bank, NOT a financial institution, NOT a clearing house and does NOT act as custodian of User funds.',
-      },
-      {
-        title: '2. Non-Custody Technological Architecture',
-        body:  'The User acknowledges that Alyto services operate under a Non-Custody technological architecture over decentralized networks. The User maintains, at all times, exclusive control, ownership and administration of their access credentials and digital assets. AV Finance LLC has no technical or legal access to move, retain, freeze or confiscate the User\'s digital assets or funds.',
-      },
-      {
-        title: '3. Execution of Operations and Liability',
-        body:  'Any suggestion or notification issued by the platform is strictly informational and analytical in nature. The final decision to execute, sign or reject any cross-border value transfer rests solely and exclusively with the User. Any transaction confirmed by the User on their device is final and irreversible. AV Finance LLC is not responsible for typing errors, transfers to incorrect recipients or market fluctuations during execution.',
-      },
-      {
-        title: '4. Interaction with Payment Providers',
-        body:  'To facilitate the connection between fiat money and the technological network, Alyto integrates programming interfaces from independent payment providers. AV Finance LLC is not responsible for delays, regulatory compliance rejections or blocks independently exercised by these external providers over capital flows.',
-      },
-      {
-        title: '5. Regulatory Compliance and Source of Funds',
-        body:  'The User declares that funds used on the Alyto platform originate from lawful and legitimate commercial activities. AV Finance LLC reserves the right to suspend access to the software interface — without implying fund retention, given the Non-Custody model — upon detecting anomalous transactional behavior, cooperating with competent authorities when required by law.',
-      },
-      {
-        title: '6. Intellectual Property',
-        body:  'All intellectual property rights to the Alyto platform, including source code, algorithms and architecture, are owned by AV Finance LLC.',
-      },
-      {
-        title: '7. Governing Law',
-        body:  'These terms are governed by the laws of the State of Delaware, United States.',
-      },
-      {
-        title: '8. Modifications',
-        body:  'AV Finance LLC reserves the right to modify these terms with 30 days prior notice to the User\'s registered email.',
-      },
-    ],
-  }
+  return   { entity: 'AV Finance LLC', regulation: 'AV Finance LLC — Delaware, USA',  badge: '🌐 International',  lang: 'en' }
 }
 
 // ── Indicador de fortaleza de contraseña ─────────────────────────────────────
@@ -206,7 +90,11 @@ const LABEL_CLASS = 'text-[0.75rem] font-semibold text-[#94A3B8] uppercase track
 // ── Modal de Términos de Servicio ─────────────────────────────────────────────
 
 function TermsModal({ country, onAccept, onClose }) {
-  const terms                                       = getTermsContent(country)
+  const meta                                        = getTermsMeta(country)
+  // Contenido canónico viene de LEGAL_DOCS (terms.js) — fuente única de verdad
+  // para T&C v2.1. Fallback a español si el idioma del país no tiene traducción.
+  const doc                                         = LEGAL_DOCS.terms[meta.lang] ?? LEGAL_DOCS.terms.es
+  const terms                                       = { ...meta, title: doc.title, sections: doc.sections }
   const scrollRef                                   = useRef(null)
   const [hasScrolled, setHasScrolled]               = useState(false)
   const [showScrollHint, setShowScrollHint]         = useState(true)
@@ -289,10 +177,10 @@ function TermsModal({ country, onAccept, onClose }) {
             <div key={i} className="flex flex-col gap-2">
               <h3 className="text-[0.875rem] font-bold text-[#0F172A]">{sec.title}</h3>
               <div className="flex flex-col gap-1.5">
-                {sec.body.split('\n').map((line, j) => (
+                {sec.content.split('\n').map((line, j) => (
                   line.trim()
-                    ? <p key={j} className="text-[0.875rem] text-[#0F172A] leading-[1.65]">{line}</p>
-                    : null
+                    ? <p key={j} className="text-[0.875rem] text-[#0F172A] leading-[1.65] whitespace-pre-line">{line}</p>
+                    : <div key={j} className="h-1" />
                 ))}
               </div>
             </div>
