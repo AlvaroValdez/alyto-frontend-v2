@@ -81,8 +81,10 @@ export function useWithdrawalRules(countryCode) {
 
     try {
       const data = await getWithdrawalRules(code, abortRef.current.signal)
-      saveToCache(code, data)
-      setRules(data)
+      // Backend returns { destCountry, payoutMethod, fields } OR a legacy array.
+      const fields = Array.isArray(data) ? data : (data?.fields ?? [])
+      saveToCache(code, fields)
+      setRules(fields)
       setError(null)
     } catch (err) {
       if (err.name === 'AbortError') return  // fetch cancelado — no actualizar estado
