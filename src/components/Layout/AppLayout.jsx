@@ -13,7 +13,7 @@ import { fetchUnreadCount } from '../../services/api'
 import { useInactivityTimeout } from '../../hooks/useInactivityTimeout'
 
 export default function AppLayout() {
-  const { user, logout } = useAuth()
+  const { user, isLoading, logout } = useAuth()
 
   const NAV_ITEMS = [
     { icon: Home,      label: 'Inicio',        to: '/dashboard'    },
@@ -136,7 +136,11 @@ export default function AppLayout() {
             className="w-9 h-9 rounded-full border-2 border-[#233E58] flex items-center justify-center text-white text-xs font-bold tracking-wide no-underline flex-shrink-0"
             style={{ background: 'linear-gradient(135deg, #233E58, #1C3247)' }}
           >
-            {firstName ? firstName.charAt(0).toUpperCase() : '?'}
+            {firstName
+              ? firstName.charAt(0).toUpperCase()
+              : isLoading
+                ? <span className="w-3 h-3 rounded-full bg-white/40 animate-pulse" />
+                : '?'}
           </Link>
         </div>
       </header>

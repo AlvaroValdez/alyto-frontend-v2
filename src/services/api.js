@@ -13,6 +13,20 @@
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1'
 
+// Endpoints donde un 401 NO indica sesión expirada — son credenciales inválidas
+// o checks de sesión inicial. No deben disparar el redirect global.
+const AUTH_PUBLIC_PATHS = [
+  '/auth/me',
+  '/auth/login',
+  '/auth/register',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+]
+
+function isAuthPublicPath(path) {
+  return AUTH_PUBLIC_PATHS.some(p => path.startsWith(p))
+}
+
 // ── Request base ──────────────────────────────────────────────────────────
 
 /**
@@ -31,7 +45,9 @@ export async function requestFormData(path, formData, method = 'POST') {
   const contentType = res.headers.get('Content-Type') ?? ''
   const data = contentType.includes('application/json') ? await res.json() : {}
   if (!res.ok) {
-    if (res.status === 401) window.dispatchEvent(new CustomEvent('alyto:unauthorized'))
+    if (res.status === 401 && !isAuthPublicPath(path)) {
+      window.dispatchEvent(new CustomEvent('alyto:unauthorized'))
+    }
     const err = new Error(data.error || data.message || `Error ${res.status}`)
     err.status = res.status
     err.data   = data
@@ -68,9 +84,9 @@ export async function request(path, options = {}) {
   const data = await res.json()
 
   if (!res.ok) {
-    // 401 → sesión expirada. No disparar para /auth/me (check de sesión inicial,
-    // un 401 ahí sólo significa "no logeado" y AuthContext ya lo maneja).
-    if (res.status === 401 && !path.startsWith('/auth/me')) {
+    // 401 → sesión expirada. No disparar para endpoints de auth públicos
+    // (login/register → credenciales inválidas; /auth/me → check sesión inicial).
+    if (res.status === 401 && !isAuthPublicPath(path)) {
       window.dispatchEvent(new CustomEvent('alyto:unauthorized'))
     }
     const err = new Error(data.error || data.message || `Error ${res.status}`)
