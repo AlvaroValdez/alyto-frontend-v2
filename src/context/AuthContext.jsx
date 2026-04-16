@@ -54,6 +54,8 @@ export function AuthProvider({ children }) {
 
   // ── Validación server-side: al montar, intentar /auth/me con la cookie ──
   useEffect(() => {
+    console.log('[Auth] VITE_AUTH_MODE env:', import.meta.env.VITE_AUTH_MODE)
+    console.log('[Auth] token in storage:', localStorage.getItem('alyto_token')?.substring(0, 20) ?? 'none')
     refreshUser().finally(() => setIsLoading(false))
   }, [refreshUser])
 

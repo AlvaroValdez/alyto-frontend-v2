@@ -14,24 +14,27 @@
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1'
 
 // ── Dual auth mode ──────────────────────────────────────────────────────────
-// VITE_AUTH_MODE=cookie (default, VPS prod) → credentials:'include', HttpOnly cookie
-// VITE_AUTH_MODE=header (Render staging)    → Bearer token from localStorage
-const AUTH_MODE      = import.meta.env.VITE_AUTH_MODE ?? 'cookie'
-const IS_HEADER_MODE = AUTH_MODE === 'header'
-const TOKEN_KEY      = 'alyto_token'
+// VITE_AUTH_MODE=cookie (VPS prod)              → HttpOnly cookie only
+// VITE_AUTH_MODE=header (Render staging, default) → Bearer token from localStorage
+//
+// Belt-and-suspenders: credentials:'include' is ALWAYS set so the browser
+// sends the cookie when it exists. The Authorization header is ALWAYS added
+// when a token is in localStorage. The backend's protect() middleware reads
+// cookie first, then falls back to Bearer — both paths work simultaneously.
+const AUTH_MODE = import.meta.env.VITE_AUTH_MODE ?? 'header'
+const TOKEN_KEY = 'alyto_token'
+
+console.log('[API] AUTH_MODE:', AUTH_MODE,
+  '| VITE_AUTH_MODE env:', import.meta.env.VITE_AUTH_MODE,
+  '| token:', localStorage.getItem(TOKEN_KEY)?.substring(0, 20) ?? 'none')
 
 function getAuthHeaders() {
-  if (!IS_HEADER_MODE) return {}
   const token = localStorage.getItem(TOKEN_KEY)
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
-function credentialsOption() {
-  return IS_HEADER_MODE ? {} : { credentials: 'include' }
-}
-
 export function saveAuthToken(token) {
-  if (IS_HEADER_MODE && token) localStorage.setItem(TOKEN_KEY, token)
+  if (token) localStorage.setItem(TOKEN_KEY, token)
 }
 
 export function clearAuthToken() {
@@ -61,7 +64,7 @@ function isAuthPublicPath(path) {
 export async function requestFormData(path, formData, method = 'POST') {
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
-    ...credentialsOption(),
+    credentials: 'include',
     headers: {
       'ngrok-skip-browser-warning': 'true',
       ...getAuthHeaders(),
@@ -92,7 +95,7 @@ export async function request(path, options = {}) {
 
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
-    ...credentialsOption(),
+    credentials: 'include',
     headers,
   })
 
@@ -190,7 +193,7 @@ export function initiatePayin(amount, userId) {
 export async function processBoliviaPayout(transactionId) {
   const res = await fetch(`${BASE_URL}/payouts/bolivia/manual`, {
     method:      'POST',
-    ...credentialsOption(),
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...getAuthHeaders(),
@@ -417,7 +420,7 @@ export function resetPassword(data) {
 export async function submitKyc(formData) {
   const res = await fetch(`${BASE_URL}/user/kyc`, {
     method:      'POST',
-    ...credentialsOption(),
+    credentials: 'include',
     headers: { ...getAuthHeaders() },
     body: formData,
   })
