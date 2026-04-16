@@ -23,25 +23,53 @@ export function AuthProvider({ children }) {
   const [user,      setUser]      = useState(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  /**
+   * refreshUser() — re-fetch /auth/me con la cookie actual y sincroniza estado.
+   * Devuelve el user actualizado o null si la sesión ya no es válida.
+   * No lanza: atrapa el 401 localmente (no queremos que dispare el redirect
+   * global, el caller decide qué hacer con null).
+   */
+  const refreshUser = useCallback(async () => {
+    console.log('[Auth] Restoring session…')
+    try {
+      const data = await getMe()
+      console.log('[Auth] /auth/me response: 200')
+      setUser(data.user)
+      Sentry.setUser({
+        id:     data.user.id,
+        email:  data.user.email,
+        role:   data.user.role,
+        entity: data.user.legalEntity,
+      })
+      return data.user
+    } catch (err) {
+      console.log('[Auth] /auth/me response:', err?.status ?? 'network-error')
+      setUser(null)
+      Sentry.setUser(null)
+      return null
+    }
+  }, [])
+
   // ── Validación server-side: al montar, intentar /auth/me con la cookie ──
   useEffect(() => {
-    getMe()
-      .then(data => {
-        setUser(data.user)
-        Sentry.setUser({
-          id:     data.user.id,
-          email:  data.user.email,
-          role:   data.user.role,
-          entity: data.user.legalEntity,
-        })
-      })
-      .catch(() => {
-        // 401 o sin sesión → no autenticado
-        setUser(null)
-        Sentry.setUser(null)
-      })
-      .finally(() => setIsLoading(false))
-  }, [])
+    refreshUser().finally(() => setIsLoading(false))
+  }, [refreshUser])
+
+  // ── Re-check de sesión al volver el foco (post-Stripe Identity redirect) ──
+  // Cuando Stripe abre un tab/popup para KYC y el usuario vuelve a la app,
+  // revalidamos la cookie para evitar quedar con un estado obsoleto.
+  useEffect(() => {
+    function onFocus() {
+      if (document.visibilityState !== 'visible') return
+      refreshUser()
+    }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onFocus)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onFocus)
+    }
+  }, [refreshUser])
 
   // ── Listener de sesión expirada (401) disparado desde api.js ─────────────
   useEffect(() => {
@@ -107,6 +135,7 @@ export function AuthProvider({ children }) {
     register,
     logout,
     updateUser,
+    refreshUser,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
