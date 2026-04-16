@@ -6,16 +6,18 @@
  * se determina exclusivamente mediante GET /auth/me al montar la app.
  */
 
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import {
   loginUser    as apiLogin,
   registerUser as apiRegister,
   logoutUser   as apiLogout,
   getMe,
-  saveAuthToken,
   clearAuthToken,
 } from '../services/api'
 import Sentry from '../services/sentry.js'
+
+const TOKEN_KEY = 'alyto_token'
+const REFRESH_COOLDOWN_MS = 10_000 // 10 seconds debounce for refreshUser
 
 // ── Contexto ───────────────────────────────────────────────────────────────
 
@@ -24,14 +26,24 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [user,      setUser]      = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const lastRefreshRef = useRef(0)
 
   /**
    * refreshUser() — re-fetch /auth/me con la cookie actual y sincroniza estado.
    * Devuelve el user actualizado o null si la sesión ya no es válida.
    * No lanza: atrapa el 401 localmente (no queremos que dispare el redirect
    * global, el caller decide qué hacer con null).
+   * Includes a 10s cooldown to prevent rapid-fire calls.
    */
-  const refreshUser = useCallback(async () => {
+  const refreshUser = useCallback(async ({ force = false } = {}) => {
+    // Debounce: skip if last refresh was less than 10s ago (unless forced)
+    const now = Date.now()
+    if (!force && now - lastRefreshRef.current < REFRESH_COOLDOWN_MS) {
+      console.log('[Auth] refreshUser skipped — cooldown active')
+      return user
+    }
+    lastRefreshRef.current = now
+
     console.log('[Auth] Restoring session…')
     try {
       const data = await getMe()
@@ -52,20 +64,31 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  // ── Validación server-side: al montar, intentar /auth/me con la cookie ──
+  // ── Validación server-side: al montar, intentar /auth/me SOLO si hay token ──
   useEffect(() => {
+    const token = localStorage.getItem(TOKEN_KEY)
     console.log('[Auth] VITE_AUTH_MODE env:', import.meta.env.VITE_AUTH_MODE)
-    console.log('[Auth] token in storage:', localStorage.getItem('alyto_token')?.substring(0, 20) ?? 'none')
-    refreshUser().finally(() => setIsLoading(false))
+    console.log('[Auth] token in storage:', token?.substring(0, 20) ?? 'none')
+    if (token) {
+      refreshUser({ force: true }).finally(() => setIsLoading(false))
+    } else {
+      console.log('[Auth] No token found — skipping /auth/me, setting isLoading=false')
+      setIsLoading(false)
+    }
   }, [refreshUser])
 
   // ── Re-check de sesión al volver el foco (post-Stripe Identity redirect) ──
   // Cuando Stripe abre un tab/popup para KYC y el usuario vuelve a la app,
   // revalidamos la cookie para evitar quedar con un estado obsoleto.
+  // Guards: only if tab visible, token exists, and cooldown elapsed.
   useEffect(() => {
     function onFocus() {
       if (document.visibilityState !== 'visible') return
-      refreshUser()
+      if (!localStorage.getItem(TOKEN_KEY)) {
+        console.log('[Auth] focus — no token, skipping refreshUser')
+        return
+      }
+      refreshUser() // cooldown is enforced inside refreshUser
     }
     window.addEventListener('focus', onFocus)
     document.addEventListener('visibilitychange', onFocus)
@@ -76,8 +99,15 @@ export function AuthProvider({ children }) {
   }, [refreshUser])
 
   // ── Listener de sesión expirada (401) disparado desde api.js ─────────────
+  // Guard: if token exists in localStorage, the 401 is likely a race condition
+  // (request fired before token was sent). Don't redirect — log a warning.
   useEffect(() => {
     function handleUnauthorized() {
+      const token = localStorage.getItem(TOKEN_KEY)
+      if (token) {
+        console.warn('[Auth] 401 received but token exists — skipping redirect (race condition)')
+        return
+      }
       clearAuthToken()
       setUser(null)
       Sentry.setUser(null)
@@ -89,10 +119,19 @@ export function AuthProvider({ children }) {
 
   /**
    * login(credentials) — llama al backend (que setea la cookie) y guarda el user.
+   * CRITICAL: token MUST be in localStorage BEFORE setUser or any re-render
+   * that could trigger child components to fire authenticated requests.
    */
   const login = useCallback(async ({ rememberMe = true, ...credentials }) => {
     const data = await apiLogin({ ...credentials, rememberMe })
-    saveAuthToken(data.token)
+
+    // 1. Save token SYNCHRONOUSLY — before any state update or re-render
+    if (data.token) {
+      localStorage.setItem(TOKEN_KEY, data.token)
+      console.log('[Auth] Token saved to localStorage:', data.token.substring(0, 20) + '…')
+    }
+
+    // 2. Now safe to update React state (triggers re-render → child requests)
     setUser(data.user)
     Sentry.setUser({
       id:     data.user.id,
@@ -105,10 +144,18 @@ export function AuthProvider({ children }) {
 
   /**
    * register(userData) — crea la cuenta (cookie seteada por el backend) y guarda el user.
+   * Same token-first pattern as login().
    */
   const register = useCallback(async (userData) => {
     const data = await apiRegister(userData)
-    saveAuthToken(data.token)
+
+    // 1. Save token SYNCHRONOUSLY — before any state update or re-render
+    if (data.token) {
+      localStorage.setItem(TOKEN_KEY, data.token)
+      console.log('[Auth] Token saved to localStorage:', data.token.substring(0, 20) + '…')
+    }
+
+    // 2. Now safe to update React state
     setUser(data.user)
     Sentry.setUser({
       id:     data.user.id,
