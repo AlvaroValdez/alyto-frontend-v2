@@ -13,6 +13,31 @@
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1'
 
+// ── Dual auth mode ──────────────────────────────────────────────────────────
+// VITE_AUTH_MODE=cookie (default, VPS prod) → credentials:'include', HttpOnly cookie
+// VITE_AUTH_MODE=header (Render staging)    → Bearer token from localStorage
+const AUTH_MODE      = import.meta.env.VITE_AUTH_MODE ?? 'cookie'
+const IS_HEADER_MODE = AUTH_MODE === 'header'
+const TOKEN_KEY      = 'alyto_token'
+
+function getAuthHeaders() {
+  if (!IS_HEADER_MODE) return {}
+  const token = localStorage.getItem(TOKEN_KEY)
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+function credentialsOption() {
+  return IS_HEADER_MODE ? {} : { credentials: 'include' }
+}
+
+export function saveAuthToken(token) {
+  if (IS_HEADER_MODE && token) localStorage.setItem(TOKEN_KEY, token)
+}
+
+export function clearAuthToken() {
+  localStorage.removeItem(TOKEN_KEY)
+}
+
 // Endpoints donde un 401 NO indica sesión expirada — son credenciales inválidas
 // o checks de sesión inicial. No deben disparar el redirect global.
 const AUTH_PUBLIC_PATHS = [
@@ -36,9 +61,10 @@ function isAuthPublicPath(path) {
 export async function requestFormData(path, formData, method = 'POST') {
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
-    credentials: 'include',
+    ...credentialsOption(),
     headers: {
       'ngrok-skip-browser-warning': 'true',
+      ...getAuthHeaders(),
     },
     body: formData,
   })
@@ -59,14 +85,14 @@ export async function requestFormData(path, formData, method = 'POST') {
 export async function request(path, options = {}) {
   const headers = {
     'Content-Type': 'application/json',
-    // Bypass del interstitial de ngrok en desarrollo (ignorado en producción)
     'ngrok-skip-browser-warning': 'true',
+    ...getAuthHeaders(),
     ...options.headers,
   }
 
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
-    credentials: 'include',
+    ...credentialsOption(),
     headers,
   })
 
@@ -164,9 +190,10 @@ export function initiatePayin(amount, userId) {
 export async function processBoliviaPayout(transactionId) {
   const res = await fetch(`${BASE_URL}/payouts/bolivia/manual`, {
     method:      'POST',
-    credentials: 'include',
+    ...credentialsOption(),
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeaders(),
     },
     body: JSON.stringify({ transactionId }),
   })
@@ -390,8 +417,8 @@ export function resetPassword(data) {
 export async function submitKyc(formData) {
   const res = await fetch(`${BASE_URL}/user/kyc`, {
     method:      'POST',
-    credentials: 'include',
-    // No incluir Content-Type: el browser lo setea automáticamente con el boundary de multipart
+    ...credentialsOption(),
+    headers: { ...getAuthHeaders() },
     body: formData,
   })
 

@@ -12,6 +12,8 @@ import {
   registerUser as apiRegister,
   logoutUser   as apiLogout,
   getMe,
+  saveAuthToken,
+  clearAuthToken,
 } from '../services/api'
 import Sentry from '../services/sentry.js'
 
@@ -74,6 +76,7 @@ export function AuthProvider({ children }) {
   // ── Listener de sesión expirada (401) disparado desde api.js ─────────────
   useEffect(() => {
     function handleUnauthorized() {
+      clearAuthToken()
       setUser(null)
       Sentry.setUser(null)
       window.location.href = '/login?expired=1'
@@ -87,6 +90,7 @@ export function AuthProvider({ children }) {
    */
   const login = useCallback(async ({ rememberMe = true, ...credentials }) => {
     const data = await apiLogin({ ...credentials, rememberMe })
+    saveAuthToken(data.token)
     setUser(data.user)
     Sentry.setUser({
       id:     data.user.id,
@@ -102,6 +106,7 @@ export function AuthProvider({ children }) {
    */
   const register = useCallback(async (userData) => {
     const data = await apiRegister(userData)
+    saveAuthToken(data.token)
     setUser(data.user)
     Sentry.setUser({
       id:     data.user.id,
@@ -116,6 +121,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     window.Fintoc?.destroy?.()
     try { await apiLogout() } catch { /* silencioso — igual limpiamos el estado */ }
+    clearAuthToken()
     setUser(null)
     Sentry.setUser(null)
   }, [])
