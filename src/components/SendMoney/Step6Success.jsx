@@ -6,7 +6,10 @@
 
 import { useNavigate } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
+import { getDeliveryTime } from '../../utils/deliveryTime'
 
+const ENTITY_ORIGIN_CURRENCY = { SpA: 'CLP', LLC: 'USD', SRL: 'BOB' }
 const COUNTRY_NAMES = { CO: 'Colombia', PE: 'Perú', BO: 'Bolivia' }
 
 function formatTransactionId(id) {
@@ -16,7 +19,9 @@ function formatTransactionId(id) {
 
 export default function Step6Success({ stepData, onReset }) {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { transactionId, originAmount, destinationCountry, beneficiary, quote } = stepData
+  const originCurrency = quote?.originCurrency ?? ENTITY_ORIGIN_CURRENCY[user?.legalEntity] ?? 'USD'
 
   return (
     <div className="flex flex-col items-center gap-6 px-4 pb-6 pt-4">
@@ -69,7 +74,7 @@ export default function Step6Success({ stepData, onReset }) {
             Monto enviado
           </p>
           <p className="text-[1.75rem] font-extrabold text-[#0F172A]">
-            ${Number(originAmount || 0).toLocaleString('es-CL')} CLP
+            ${Number(originAmount || 0).toLocaleString('es-CL')} {originCurrency}
           </p>
           {quote?.destinationAmount && (
             <p className="text-[0.875rem] font-semibold text-[#233E58] mt-0.5">
@@ -84,7 +89,7 @@ export default function Step6Success({ stepData, onReset }) {
             { label: 'Beneficiario',  value: beneficiary?.fullName },
             { label: 'Banco',         value: beneficiary?.bankName },
             { label: 'País destino',  value: COUNTRY_NAMES[destinationCountry] || destinationCountry },
-            { label: 'Tiempo est.',   value: quote?.estimatedDelivery || '1 día hábil' },
+            { label: 'Tiempo est.',   value: quote?.estimatedDelivery || getDeliveryTime(destinationCountry, quote?.payoutMethod) },
           ].map(({ label, value }) => (
             <div key={label} className="flex justify-between items-center py-2.5">
               <span className="text-[0.8125rem] text-[#64748B]">{label}</span>

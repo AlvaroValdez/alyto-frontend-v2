@@ -367,16 +367,6 @@ function ManualPayinScreen({ stepData }) {
         </div>
       )}
 
-      {/* Botón CTA — solo si aún no subió comprobante */}
-      {!uploadDone && (
-        <button
-          onClick={handleDone}
-          className="w-full py-4 rounded-2xl bg-transparent border border-[#E2E8F0] text-[#64748B] text-[0.875rem] font-semibold hover:border-[#233E5833] hover:text-[#0F172A] active:scale-[0.98] transition-all"
-        >
-          Ya realicé el pago, lo verifico después →
-        </button>
-      )}
-
       <p className="text-center text-[0.6875rem] text-[#94A3B8]">
         ID de referencia: <span className="font-mono">{formatTransactionId(transactionId)}</span>
       </p>

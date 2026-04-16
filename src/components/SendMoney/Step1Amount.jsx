@@ -15,6 +15,7 @@ import { ChevronDown, ChevronUp, Clock, AlertCircle, RefreshCw, WifiOff, Loader2
 import { useQuoteSocket } from '../../hooks/useQuoteSocket'
 import { useAuth }        from '../../context/AuthContext'
 import { listUserCorridors, getCurrentExchangeRates } from '../../services/paymentsService'
+import { getDeliveryTime } from '../../utils/deliveryTime'
 
 // ── Flag image usando CDN (compatible con todos los SO/navegadores) ───────────
 
@@ -734,7 +735,7 @@ export default function Step1Amount({ initialData, onNext }) {
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-1.5 text-[#64748B]">
                     <Clock size={13} />
-                    <span className="text-[0.75rem]">{quote.estimatedDelivery || '1 día hábil'}</span>
+                    <span className="text-[0.75rem]">{quote.estimatedDelivery || getDeliveryTime(destCountry?.code, quote.payoutMethod)}</span>
                   </div>
                   {countdown !== null && (
                     <div className="flex items-center gap-1 text-[0.6875rem] text-[#94A3B8]">

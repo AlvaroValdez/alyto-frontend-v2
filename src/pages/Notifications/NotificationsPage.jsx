@@ -32,6 +32,7 @@ const TYPE_CONFIG = {
   kyc:                  { Icon: CheckCircle2,   color: '#F59E0B', bg: '#F59E0B1A' },
   system:               { Icon: Bell,           color: '#64748B', bg: '#64748B1A' },
   // ── Admin-facing ──
+  transfer_initiated:      { Icon: ArrowUpRight,  color: '#233E58', bg: '#233E581A' },
   admin_new_user:          { Icon: UserPlus,      color: '#3B82F6', bg: '#3B82F61A' },
   admin_new_transaction:   { Icon: ArrowUpRight,  color: '#F59E0B', bg: '#F59E0B1A' },
   admin_deposit_request:   { Icon: ArrowDownLeft, color: '#F59E0B', bg: '#F59E0B1A' },
@@ -123,8 +124,15 @@ export default function NotificationsPage() {
       window.dispatchEvent(new CustomEvent('alyto:notifications-read'))
     }
 
-    // Navegar si tiene transactionId o wtxId
-    const txId = notif.data?.transactionId
+    // Navegar según tipo y payload
+    const isAdminNotif = typeof notif.type === 'string' && notif.type.startsWith('admin_')
+    const adminTxId = notif.data?.txId
+    if (isAdminNotif && adminTxId) {
+      navigate(`/admin/ledger?tx=${adminTxId}`)
+      return
+    }
+
+    const txId  = notif.data?.transactionId ?? notif.data?.txId
     const wtxId = notif.data?.wtxId
     if (txId) navigate(`/transactions/${txId}`)
     else if (wtxId) navigate(`/wallet`)

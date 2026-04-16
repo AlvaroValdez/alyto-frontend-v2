@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, Shield, RefreshCw, AlertCircle, BookOpen,
   TrendingUp, CheckCircle2, XCircle, DollarSign,
@@ -174,8 +174,12 @@ function TxIdCell({ id }) {
 
 export default function LedgerPage() {
   const navigate   = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user }   = useAuth()
   const intervalRef = useRef(null)
+  const rowRefs = useRef({})
+  const deepLinkTxId = searchParams.get('tx')
+  const [highlightedTxId, setHighlightedTxId] = useState(null)
 
   // Tab activa: 'transactions' | 'corridors'
   const [tab, setTab] = useState('transactions')
@@ -227,6 +231,36 @@ export default function LedgerPage() {
     intervalRef.current = setInterval(() => load(true), 30_000)
     return () => clearInterval(intervalRef.current)
   }, [load, tab])
+
+  // Deep-link desde notificación: ?tx=ALY-... abre drawer, scroll y highlight
+  useEffect(() => {
+    if (!deepLinkTxId || tab !== 'transactions' || !transactions.length) return
+    const match = transactions.find(
+      t => (t.alytoTransactionId ?? t._id) === deepLinkTxId,
+    )
+    if (!match) return
+
+    const id = match.alytoTransactionId ?? match._id
+    setSelectedTxId(id)
+    setHighlightedTxId(id)
+
+    requestAnimationFrame(() => {
+      rowRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
+
+    const timeout = setTimeout(() => setHighlightedTxId(null), 3000)
+    const clearParams = setTimeout(() => {
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev)
+        next.delete('tx')
+        return next
+      }, { replace: true })
+    }, 100)
+    return () => {
+      clearTimeout(timeout)
+      clearTimeout(clearParams)
+    }
+  }, [deepLinkTxId, tab, transactions, setSearchParams])
 
   const setFilter = (key, value) => {
     setPage(1)
@@ -417,10 +451,18 @@ export default function LedgerPage() {
                 <EmptyState />
               ) : (
                 <div className="divide-y divide-[#1A234060]">
-                  {transactions.map((tx) => (
+                  {transactions.map((tx) => {
+                    const txId = tx.alytoTransactionId ?? tx._id
+                    const isHighlighted = highlightedTxId === txId
+                    return (
                     <div
                       key={tx._id}
-                      className="px-4 py-3 hover:bg-[#1F2B4D30] transition-colors"
+                      ref={el => { if (el) rowRefs.current[txId] = el }}
+                      className={`px-4 py-3 transition-colors ${
+                        isHighlighted
+                          ? 'bg-[#F59E0B26] ring-2 ring-[#F59E0B80]'
+                          : 'hover:bg-[#1F2B4D30]'
+                      }`}
                     >
                       {/* Fila 1: ID · badges · fecha · botón */}
                       <div className="flex items-center gap-2 flex-wrap">
@@ -469,7 +511,7 @@ export default function LedgerPage() {
                         </p>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
 

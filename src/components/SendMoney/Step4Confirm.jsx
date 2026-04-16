@@ -6,10 +6,11 @@
  * Llama POST /payments/crossborder al confirmar.
  */
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Loader2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { initPayment } from '../../services/paymentsService'
 import { useAuth } from '../../context/AuthContext'
+import { getDeliveryTime } from '../../utils/deliveryTime'
 
 const ENTITY_ORIGIN_CURRENCY = { SpA: 'CLP', LLC: 'USD', SRL: 'BOB' }
 
@@ -48,6 +49,9 @@ export default function Step4Confirm({ stepData, onNext }) {
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState(null)
   const [feesExpanded, setFeesExpanded] = useState(false)
+  // Guarda síncrono anti-doble-click: setLoading es asíncrono (re-render), mientras
+  // tanto un segundo click puede pasar; el ref bloquea inmediatamente.
+  const submittingRef = useRef(false)
 
   // Step3 guarda los datos bajo la key "beneficiaryData" (campos dinámicos de Vita)
   const { quote, originAmount, destinationCountry, payinMethod, beneficiaryData } = stepData
@@ -77,6 +81,8 @@ export default function Step4Confirm({ stepData, onNext }) {
 
   async function handleConfirm() {
     if (!confirmed) return
+    if (submittingRef.current) return  // doble-click / Enter rápido
+    submittingRef.current = true
     setLoading(true)
     setError(null)
 
@@ -121,8 +127,10 @@ export default function Step4Confirm({ stepData, onNext }) {
         paymentQRStatic:   res.paymentQRStatic   ?? [],
       })
     } catch (err) {
+      console.error('[Step4] Confirmation failed:', err?.response?.data ?? err?.message ?? err)
       setError(err.message || 'Error al procesar el pago. Intenta nuevamente.')
     } finally {
+      submittingRef.current = false
       setLoading(false)
     }
   }
@@ -165,7 +173,7 @@ export default function Step4Confirm({ stepData, onNext }) {
               }
             </div>
             <span className="text-[0.8125rem] font-semibold text-[#64748B]">
-              {costoEnvio > 0 ? `$${costoEnvio.toLocaleString('es-CL')} CLP` : '—'}
+              {costoEnvio > 0 ? `$${costoEnvio.toLocaleString('es-CL')} ${originCurrency}` : '—'}
             </span>
           </button>
 
@@ -175,7 +183,7 @@ export default function Step4Confirm({ stepData, onNext }) {
                 <div className="flex justify-between">
                   <span className="text-[0.75rem] text-[#94A3B8]">· Comisión de servicio</span>
                   <span className="text-[0.75rem] text-[#94A3B8]">
-                    ${comisionServicio.toLocaleString('es-CL')} CLP
+                    ${comisionServicio.toLocaleString('es-CL')} {originCurrency}
                   </span>
                 </div>
               )}
@@ -183,7 +191,7 @@ export default function Step4Confirm({ stepData, onNext }) {
                 <div className="flex justify-between">
                   <span className="text-[0.75rem] text-[#94A3B8]">· Fee de procesamiento</span>
                   <span className="text-[0.75rem] text-[#94A3B8]">
-                    ${feeProcesamiento.toLocaleString('es-CL')} CLP
+                    ${feeProcesamiento.toLocaleString('es-CL')} {originCurrency}
                   </span>
                 </div>
               )}
@@ -203,7 +211,7 @@ export default function Step4Confirm({ stepData, onNext }) {
           <div className="flex justify-between items-center mt-1">
             <span className="text-[0.75rem] text-[#94A3B8]">Tiempo estimado</span>
             <span className="text-[0.75rem] text-[#64748B]">
-              {quote?.estimatedDelivery || '1 día hábil'}
+              {quote?.estimatedDelivery || getDeliveryTime(destinationCountry, quote?.payoutMethod)}
             </span>
           </div>
         </div>
