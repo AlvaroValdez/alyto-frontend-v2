@@ -7,6 +7,7 @@
  */
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   loginUser    as apiLogin,
   registerUser as apiRegister,
@@ -24,6 +25,7 @@ const REFRESH_COOLDOWN_MS = 10_000 // 10 seconds debounce for refreshUser
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
+  const navigate    = useNavigate()
   const [user,      setUser]      = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const lastRefreshRef = useRef(0)
@@ -152,6 +154,7 @@ export function AuthProvider({ children }) {
     }
 
     // 3. Now safe to update React state (triggers re-render → child requests)
+    console.log('[Auth] User role:', data.user?.role)
     setUser(data.user)
     Sentry.setUser({
       id:     data.user.id,
@@ -189,11 +192,17 @@ export function AuthProvider({ children }) {
   /** logout() — revoca la sesión server-side y limpia el estado local. */
   const logout = useCallback(async () => {
     window.Fintoc?.destroy?.()
-    try { await apiLogout() } catch { /* silencioso — igual limpiamos el estado */ }
-    clearAuthToken()
-    setUser(null)
-    Sentry.setUser(null)
-  }, [])
+    try {
+      await apiLogout()
+    } catch (err) {
+      console.warn('[Auth] Logout API failed:', err.message)
+    } finally {
+      clearAuthToken()
+      setUser(null)
+      Sentry.setUser(null)
+      navigate('/login', { replace: true })
+    }
+  }, [navigate])
 
   /**
    * updateUser(partial) — actualiza campos del usuario en contexto sin re-login.
