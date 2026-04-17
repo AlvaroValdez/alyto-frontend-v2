@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import {
   Bell, CheckCircle2, ArrowDownLeft, ArrowUpRight, ArrowRightLeft,
   AlertCircle, Snowflake, Sun, Wallet, Loader2, CheckCheck,
@@ -66,6 +67,7 @@ function timeAgo(dateStr) {
 
 export default function NotificationsPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const [notifications, setNotifications] = useState([])
   const [page, setPage]         = useState(1)
@@ -76,7 +78,7 @@ export default function NotificationsPage() {
 
   const hasUnread = notifications.some(n => !n.read)
 
-  // ── Fetch notificaciones ───────────────────────────────────────────────────
+  // ── Fetch notificaciones — solo si autenticado ─────────────────────────────
 
   const load = useCallback(async (p = 1, append = false) => {
     try {
@@ -95,7 +97,10 @@ export default function NotificationsPage() {
     }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    if (!user) return
+    load()
+  }, [load, user])
 
   // ── Marcar todas como leidas ───────────────────────────────────────────────
 

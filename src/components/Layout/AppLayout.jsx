@@ -33,16 +33,25 @@ export default function AppLayout() {
 
   const [unreadCount, setUnreadCount] = useState(0)
 
-  // Fetch unread count on navigation + on push received + on mark-as-read
+  // Fetch unread count on navigation — only when authenticated
   useEffect(() => {
+    if (!user) return
     let cancelled = false
     fetchUnreadCount()
-      .then(data => { if (!cancelled) setUnreadCount(data.unreadCount ?? 0) })
-      .catch(() => {})
+      .then(data => {
+        if (!cancelled) {
+          const count = data.unreadCount ?? 0
+          console.log('[Bell] unread count:', count)
+          setUnreadCount(count)
+        }
+      })
+      .catch((err) => console.warn('[Bell] fetchUnreadCount error:', err?.status ?? err?.message))
     return () => { cancelled = true }
-  }, [location.pathname])
+  }, [location.pathname, user])
 
+  // Event listeners + 60s polling — only when authenticated
   useEffect(() => {
+    if (!user) return
     const refresh = () => {
       fetchUnreadCount()
         .then(data => setUnreadCount(data.unreadCount ?? 0))
@@ -50,14 +59,13 @@ export default function AppLayout() {
     }
     window.addEventListener('alyto:notification-received', refresh)
     window.addEventListener('alyto:notifications-read', refresh)
-    // Polling cada 60s para detectar notificaciones nuevas
     const interval = setInterval(refresh, 60_000)
     return () => {
       window.removeEventListener('alyto:notification-received', refresh)
       window.removeEventListener('alyto:notifications-read', refresh)
       clearInterval(interval)
     }
-  }, [])
+  }, [user])
 
   const handleLogout = useCallback(() => {
     logout()

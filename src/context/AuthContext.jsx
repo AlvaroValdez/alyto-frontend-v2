@@ -131,7 +131,18 @@ export function AuthProvider({ children }) {
       console.log('[Auth] Token saved to localStorage:', data.token.substring(0, 20) + '…')
     }
 
-    // 2. Now safe to update React state (triggers re-render → child requests)
+    // 2. Verify the token round-trips correctly before updating React state
+    try {
+      const verifyRes = await fetch(
+        `${import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1'}/auth/me`,
+        { headers: { Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}` } },
+      )
+      console.log('[Auth] Token verify status:', verifyRes.status)
+    } catch (verifyErr) {
+      console.warn('[Auth] Token verify request failed:', verifyErr.message)
+    }
+
+    // 3. Now safe to update React state (triggers re-render → child requests)
     setUser(data.user)
     Sentry.setUser({
       id:     data.user.id,

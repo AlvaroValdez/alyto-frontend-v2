@@ -220,17 +220,18 @@ export default function LedgerPage() {
     }
   }, [filters, page])
 
-  // Cargar al montar, al cambiar filtros o página
+  // Cargar al montar, al cambiar filtros o página — solo si autenticado
   useEffect(() => {
-    if (tab === 'transactions') load()
-  }, [load, tab])
+    if (!user || tab !== 'transactions') return
+    load()
+  }, [load, tab, user])
 
-  // Auto-refresh silencioso cada 30 segundos
+  // Auto-refresh silencioso cada 30 segundos — solo si autenticado
   useEffect(() => {
-    if (tab !== 'transactions') return
+    if (!user || tab !== 'transactions') return
     intervalRef.current = setInterval(() => load(true), 30_000)
     return () => clearInterval(intervalRef.current)
-  }, [load, tab])
+  }, [load, tab, user])
 
   // Deep-link desde notificación: ?tx=ALY-... abre drawer, scroll y highlight
   useEffect(() => {
