@@ -89,14 +89,20 @@ export function useQuoteSocket(originAmount, destinationCountry) {
     setStatus('connecting')
     setError(null)
 
-    const socket = new WebSocket(WS_URL)
+    // Auth: pass token as query param (header mode) + credentials (cookie mode)
+    const token = localStorage.getItem('alyto_token')
+    const wsUrl = token
+      ? `${WS_URL}?token=${encodeURIComponent(token)}`
+      : WS_URL
+    console.log('[WS] Connecting to:', wsUrl.replace(/token=.{20}.*/, 'token=***'))
+
+    const socket = new WebSocket(wsUrl)
     wsRef.current = socket
 
     socket.onopen = () => {
       if (!alive.current || wsRef.current !== socket) return
+      console.log('[WS] Connected')
       retries.current = 0
-      // Autenticación: el browser adjunta automáticamente la cookie HttpOnly
-      // alyto_token en el handshake WS (el backend la verifica en verifyClient).
       socket.send(JSON.stringify({
         type:               'subscribe_quote',
         originAmount:       params.current.originAmount,
@@ -125,9 +131,10 @@ export function useQuoteSocket(originAmount, destinationCountry) {
       }
     }
 
-    socket.onerror = () => { /* onclose se encarga del estado */ }
+    socket.onerror = (e) => { console.error('[WS] Error:', e) }
 
-    socket.onclose = ({ code }) => {
+    socket.onclose = ({ code, reason }) => {
+      console.log('[WS] Closed:', code, reason)
       if (!alive.current || wsRef.current !== socket) return
       clearCountdown()
 
