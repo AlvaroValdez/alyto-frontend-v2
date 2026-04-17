@@ -176,8 +176,6 @@ export default function LedgerPage() {
   const navigate   = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { user }   = useAuth()
-  console.log('[Ledger] user role:', user?.role)
-  console.log('[Ledger] is admin:', user?.role === 'admin')
   const intervalRef = useRef(null)
   const rowRefs = useRef({})
   const deepLinkTxId = searchParams.get('tx')
