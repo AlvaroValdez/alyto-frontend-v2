@@ -108,10 +108,10 @@ export function AuthProvider({ children }) {
         console.warn('[Auth] 401 received but token exists — skipping redirect (race condition)')
         return
       }
-      clearAuthToken()
+      localStorage.removeItem(TOKEN_KEY)
       setUser(null)
       Sentry.setUser(null)
-      window.location.href = '/login?expired=1'
+      window.location.replace('/login?expired=1')
     }
     window.addEventListener('alyto:unauthorized', handleUnauthorized)
     return () => window.removeEventListener('alyto:unauthorized', handleUnauthorized)
@@ -189,10 +189,18 @@ export function AuthProvider({ children }) {
   /** logout() — revoca la sesión server-side y limpia el estado local. */
   const logout = useCallback(async () => {
     window.Fintoc?.destroy?.()
-    try { await apiLogout() } catch { /* silencioso — igual limpiamos el estado */ }
-    clearAuthToken()
-    setUser(null)
-    Sentry.setUser(null)
+    try {
+      await apiLogout()
+    } catch (err) {
+      console.warn('[Auth] Logout API failed:', err.message)
+    } finally {
+      localStorage.removeItem(TOKEN_KEY)
+      setUser(null)
+      Sentry.setUser(null)
+      // window.location.replace — AuthProvider lives outside <BrowserRouter>
+      // so useNavigate is unavailable here. replace() avoids a history entry.
+      window.location.replace('/login')
+    }
   }, [])
 
   /**
