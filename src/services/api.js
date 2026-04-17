@@ -24,9 +24,11 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1'
 const AUTH_MODE = import.meta.env.VITE_AUTH_MODE ?? 'header'
 const TOKEN_KEY = 'alyto_token'
 
+console.log('[API] TOKEN_KEY:', TOKEN_KEY)
 console.log('[API] AUTH_MODE:', AUTH_MODE,
   '| VITE_AUTH_MODE env:', import.meta.env.VITE_AUTH_MODE,
   '| token:', localStorage.getItem(TOKEN_KEY)?.substring(0, 20) ?? 'none')
+console.log('[API] All localStorage keys at load:', Object.keys(localStorage))
 
 function getAuthHeaders() {
   const token = localStorage.getItem(TOKEN_KEY)
@@ -143,11 +145,27 @@ export function getMe() {
  * @param {{ email: string, password: string }} credentials
  * @returns {Promise<{ token: string, user: { id, email, legalEntity, kycStatus } }>}
  */
-export function loginUser(credentials) {
-  return request('/auth/login', {
+export async function loginUser(credentials) {
+  const res = await fetch(`${BASE_URL}/auth/login`, {
     method: 'POST',
-    body:   JSON.stringify(credentials),
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+    },
+    body: JSON.stringify(credentials),
   })
+  console.log('[loginUser] raw response status:', res.status)
+  const data = await res.json()
+  console.log('[loginUser] response data keys:', Object.keys(data))
+  console.log('[loginUser] has token:', !!data.token)
+  if (!res.ok) {
+    const err = new Error(data.error || data.message || `Error ${res.status}`)
+    err.status = res.status
+    err.data   = data
+    throw err
+  }
+  return data
 }
 
 /**

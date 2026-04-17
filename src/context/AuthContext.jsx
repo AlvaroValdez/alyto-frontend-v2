@@ -123,12 +123,21 @@ export function AuthProvider({ children }) {
    * that could trigger child components to fire authenticated requests.
    */
   const login = useCallback(async ({ rememberMe = true, ...credentials }) => {
+    console.log('[Login] Starting login...')
     const data = await apiLogin({ ...credentials, rememberMe })
+    console.log('[Login] Response received:', JSON.stringify(data).substring(0, 150))
+    console.log('[Login] data.token exists:', !!data.token)
 
     // 1. Save token SYNCHRONOUSLY — before any state update or re-render
     if (data.token) {
       localStorage.setItem(TOKEN_KEY, data.token)
       console.log('[Auth] Token saved to localStorage:', data.token.substring(0, 20) + '…')
+      console.log('[Login] After save, localStorage has:',
+        localStorage.getItem(TOKEN_KEY)?.substring(0, 20) ?? 'NOTHING')
+      console.log('[Login] All localStorage keys:', Object.keys(localStorage))
+    } else {
+      console.error('[Login] NO TOKEN IN RESPONSE — backend may still be in cookie-only mode')
+      console.log('[Login] All localStorage keys (no token):', Object.keys(localStorage))
     }
 
     // 2. Verify the token round-trips correctly before updating React state
