@@ -32,6 +32,7 @@ console.log('[API] All localStorage keys at load:', Object.keys(localStorage))
 
 function getAuthHeaders() {
   const token = localStorage.getItem(TOKEN_KEY)
+  console.log('[Headers] token from localStorage:', token ? token.substring(0, 20) : 'NONE')
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
@@ -64,12 +65,14 @@ function isAuthPublicPath(path) {
  * No setea Content-Type — el browser lo inyecta con el boundary correcto.
  */
 export async function requestFormData(path, formData, method = 'POST') {
+  const token = localStorage.getItem(TOKEN_KEY)
+  console.log('[Request]', path, '| auth:', !!token)
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
     credentials: 'include',
     headers: {
       'ngrok-skip-browser-warning': 'true',
-      ...getAuthHeaders(),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: formData,
   })
@@ -88,18 +91,25 @@ export async function requestFormData(path, formData, method = 'POST') {
 }
 
 export async function request(path, options = {}) {
+  // Read token fresh on every request — no closure over stale values
+  const token = localStorage.getItem(TOKEN_KEY)
+
   const headers = {
     'Content-Type': 'application/json',
     'ngrok-skip-browser-warning': 'true',
-    ...getAuthHeaders(),
-    ...options.headers,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers ?? {}),
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...options,
+  const fetchOptions = {
     credentials: 'include',
+    ...options,
     headers,
-  })
+  }
+
+  console.log('[Request]', path, '| auth:', !!token)
+
+  const res = await fetch(`${BASE_URL}${path}`, fetchOptions)
 
   // Respuestas no-JSON (ej. PDF binario) se manejan fuera de este wrapper
   const contentType = res.headers.get('Content-Type') ?? ''
@@ -209,12 +219,14 @@ export function initiatePayin(amount, userId) {
  * @returns {Promise<{ blob: Blob, filename: string }>}
  */
 export async function processBoliviaPayout(transactionId) {
+  const token = localStorage.getItem(TOKEN_KEY)
+  console.log('[Request] /payouts/bolivia/manual | auth:', !!token)
   const res = await fetch(`${BASE_URL}/payouts/bolivia/manual`, {
     method:      'POST',
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...getAuthHeaders(),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify({ transactionId }),
   })
@@ -436,10 +448,12 @@ export function resetPassword(data) {
  * @returns {Promise<{ message: string, user: object }>}
  */
 export async function submitKyc(formData) {
+  const token = localStorage.getItem(TOKEN_KEY)
+  console.log('[Request] /user/kyc | auth:', !!token)
   const res = await fetch(`${BASE_URL}/user/kyc`, {
     method:      'POST',
     credentials: 'include',
-    headers: { ...getAuthHeaders() },
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: formData,
   })
 

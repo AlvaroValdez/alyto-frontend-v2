@@ -58,6 +58,10 @@ export function AuthProvider({ children }) {
       return data.user
     } catch (err) {
       console.log('[Auth] /auth/me response:', err?.status ?? 'network-error')
+      if (err?.status === 401) {
+        console.log('[Auth] Stale token cleared')
+        localStorage.removeItem(TOKEN_KEY)
+      }
       setUser(null)
       Sentry.setUser(null)
       return null
