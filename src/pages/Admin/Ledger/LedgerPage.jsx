@@ -12,7 +12,7 @@ import {
   ArrowLeft, Shield, RefreshCw, AlertCircle, BookOpen,
   TrendingUp, CheckCircle2, XCircle, DollarSign,
   LayoutGrid, SlidersHorizontal, ChevronLeft, ChevronRight,
-  Copy, CheckCheck,
+  Copy, CheckCheck, Inbox, Clock,
 } from 'lucide-react'
 import { useAuth } from '../../../context/AuthContext'
 import { listTransactions } from '../../../services/adminService'
@@ -188,13 +188,15 @@ export default function LedgerPage() {
   const [filters, setFilters] = useState({
     status: '', entity: '', corridorId: '', startDate: '', endDate: '',
   })
+  // Vista: true = incluir payin_pending sin comprobante (todas); false = solo accionables
+  const [showAll, setShowAll] = useState(false)
   const [page, setPage] = useState(1)
   const LIMIT = 20
 
   // Datos
   const [transactions, setTransactions] = useState([])
   const [pagination,   setPagination]   = useState({ total: 0, page: 1, limit: LIMIT, totalPages: 0 })
-  const [summary,      setSummary]      = useState({ totalVolume: 0, totalCompleted: 0, totalFailed: 0, totalFees: 0 })
+  const [summary,      setSummary]      = useState({ totalVolume: 0, totalCompleted: 0, totalFailed: 0, totalFees: 0, pendingNoProofCount: 0 })
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState(null)
 
@@ -207,18 +209,19 @@ export default function LedgerPage() {
     try {
       const data = await listTransactions({
         ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== '')),
+        showAll,
         page,
         limit: LIMIT,
       })
       setTransactions(data.transactions ?? [])
       setPagination(data.pagination ?? { total: 0, page: 1, limit: LIMIT, totalPages: 0 })
-      setSummary(data.summary ?? { totalVolume: 0, totalCompleted: 0, totalFailed: 0, totalFees: 0 })
+      setSummary(data.summary ?? { totalVolume: 0, totalCompleted: 0, totalFailed: 0, totalFees: 0, pendingNoProofCount: 0 })
     } catch (err) {
       if (!silent) setError(err.message || 'Error al cargar transacciones.')
     } finally {
       if (!silent) setLoading(false)
     }
-  }, [filters, page])
+  }, [filters, showAll, page])
 
   // Cargar al montar, al cambiar filtros o página — solo si autenticado
   useEffect(() => {
@@ -384,6 +387,42 @@ export default function LedgerPage() {
               />
             </div>
 
+            {/* Toggle Accionables / Todas */}
+            <div className="flex items-center gap-1 p-1 bg-[#1A2340] rounded-2xl border border-[#263050] mb-4 w-fit">
+              <button
+                onClick={() => { setPage(1); setShowAll(false) }}
+                className={`px-4 py-2 rounded-xl text-[0.8125rem] font-semibold transition-all duration-200 ${
+                  !showAll ? 'bg-[#0F1628] text-white shadow-sm' : 'text-[#4E5A7A] hover:text-[#8A96B8]'
+                }`}
+              >
+                Accionables
+              </button>
+              <button
+                onClick={() => { setPage(1); setShowAll(true) }}
+                className={`px-4 py-2 rounded-xl text-[0.8125rem] font-semibold transition-all duration-200 ${
+                  showAll ? 'bg-[#0F1628] text-white shadow-sm' : 'text-[#4E5A7A] hover:text-[#8A96B8]'
+                }`}
+              >
+                Todas
+              </button>
+            </div>
+
+            {/* Banner informativo: pendientes sin comprobante (solo en vista Accionables) */}
+            {!showAll && summary.pendingNoProofCount > 0 && (
+              <div className="flex items-center gap-3 p-3 bg-[#1D346114] rounded-2xl border border-[#1D346140] mb-4">
+                <Inbox size={16} className="text-[#8AB4F8] flex-shrink-0" />
+                <p className="text-[0.8125rem] text-[#8AB4F8]">
+                  {summary.pendingNoProofCount} {summary.pendingNoProofCount === 1 ? 'transacción pendiente' : 'transacciones pendientes'} de comprobante · ocultas en esta vista
+                </p>
+                <button
+                  onClick={() => { setPage(1); setShowAll(true) }}
+                  className="ml-auto px-3 py-1 rounded-lg text-[0.6875rem] font-semibold text-[#8AB4F8] border border-[#1D346140] hover:border-[#8AB4F880] transition-colors whitespace-nowrap"
+                >
+                  Ver todas
+                </button>
+              </div>
+            )}
+
             {/* Panel de filtros */}
             <div className="bg-[#1A2340] rounded-2xl border border-[#263050] p-4 mb-4">
               <div className="flex flex-wrap gap-3 items-end">
@@ -455,6 +494,7 @@ export default function LedgerPage() {
                   {transactions.map((tx) => {
                     const txId = tx.alytoTransactionId ?? tx._id
                     const isHighlighted = highlightedTxId === txId
+                    const isPendingNoProof = tx.status === 'payin_pending' && !tx.paymentProof
                     return (
                     <div
                       key={tx._id}
@@ -462,7 +502,9 @@ export default function LedgerPage() {
                       className={`px-4 py-3 transition-colors ${
                         isHighlighted
                           ? 'bg-[#F59E0B26] ring-2 ring-[#F59E0B80]'
-                          : 'hover:bg-[#1F2B4D30]'
+                          : isPendingNoProof
+                            ? 'opacity-50 hover:opacity-100 hover:bg-[#1F2B4D30]'
+                            : 'hover:bg-[#1F2B4D30]'
                       }`}
                     >
                       {/* Fila 1: ID · badges · fecha · botón */}
@@ -470,6 +512,15 @@ export default function LedgerPage() {
                         <TxIdCell id={tx.alytoTransactionId ?? tx._id} />
                         <StatusBadge status={tx.status} />
                         <EntityBadge entity={tx.legalEntity} />
+                        {isPendingNoProof && (
+                          <span
+                            className="flex items-center gap-1 text-[0.625rem] font-semibold px-2 py-0.5 rounded-full bg-[#4E5A7A1A] text-[#8A96B8] whitespace-nowrap"
+                            title="Esperando comprobante del usuario"
+                          >
+                            <Clock size={10} />
+                            Sin comprobante
+                          </span>
+                        )}
                         <span className="text-[0.6875rem] text-[#4E5A7A] ml-auto whitespace-nowrap">
                           {tx.createdAt
                             ? new Date(tx.createdAt).toLocaleString('es-CL', {

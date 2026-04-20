@@ -23,6 +23,7 @@ export function listTransactions(params = {}) {
   if (params.endDate)     qs.set('endDate',      params.endDate)
   if (params.page)        qs.set('page',         String(params.page))
   if (params.limit)       qs.set('limit',        String(params.limit))
+  if (params.showAll)     qs.set('showAll',      'true')
   const query = qs.toString()
   return request(`/admin/transactions${query ? `?${query}` : ''}`)
 }
