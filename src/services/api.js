@@ -165,10 +165,7 @@ export async function loginUser(credentials) {
     },
     body: JSON.stringify(credentials),
   })
-  console.log('[loginUser] raw response status:', res.status)
   const data = await res.json()
-  console.log('[loginUser] response data keys:', Object.keys(data))
-  console.log('[loginUser] has token:', !!data.token)
   if (!res.ok) {
     const err = new Error(data.error || data.message || `Error ${res.status}`)
     err.status = res.status

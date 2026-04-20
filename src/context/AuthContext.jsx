@@ -40,15 +40,12 @@ export function AuthProvider({ children }) {
     // Debounce: skip if last refresh was less than 10s ago (unless forced)
     const now = Date.now()
     if (!force && now - lastRefreshRef.current < REFRESH_COOLDOWN_MS) {
-      console.log('[Auth] refreshUser skipped — cooldown active')
       return user
     }
     lastRefreshRef.current = now
 
-    console.log('[Auth] Restoring session…')
     try {
       const data = await getMe()
-      console.log('[Auth] /auth/me response: 200')
       setUser(data.user)
       Sentry.setUser({
         id:     data.user.id,
@@ -58,13 +55,11 @@ export function AuthProvider({ children }) {
       })
       return data.user
     } catch (err) {
-      console.log('[Auth] /auth/me response:', err?.status ?? 'network-error')
       if (err?.status === 401) {
         if (justLoggedInRef.current) {
           console.warn('[Auth] /auth/me failed but just logged in — skipping token clear')
           return null
         }
-        console.log('[Auth] Stale token cleared')
         localStorage.removeItem(TOKEN_KEY)
       }
       setUser(null)
@@ -76,12 +71,9 @@ export function AuthProvider({ children }) {
   // ── Validación server-side: al montar, intentar /auth/me SOLO si hay token ──
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY)
-    console.log('[Auth] VITE_AUTH_MODE env:', import.meta.env.VITE_AUTH_MODE)
-    console.log('[Auth] token in storage:', token?.substring(0, 20) ?? 'none')
     if (token) {
       refreshUser({ force: true }).finally(() => setIsLoading(false))
     } else {
-      console.log('[Auth] No token found — skipping /auth/me, setting isLoading=false')
       setIsLoading(false)
     }
   }, [refreshUser])
@@ -93,14 +85,8 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     function onFocus() {
       if (document.visibilityState !== 'visible') return
-      if (justLoggedInRef.current) {
-        console.log('[Auth] focus — just logged in, skipping refreshUser')
-        return
-      }
-      if (!localStorage.getItem(TOKEN_KEY)) {
-        console.log('[Auth] focus — no token, skipping refreshUser')
-        return
-      }
+      if (justLoggedInRef.current) return
+      if (!localStorage.getItem(TOKEN_KEY)) return
       refreshUser() // cooldown is enforced inside refreshUser
     }
     window.addEventListener('focus', onFocus)
@@ -136,10 +122,7 @@ export function AuthProvider({ children }) {
    * that could trigger child components to fire authenticated requests.
    */
   const login = useCallback(async ({ rememberMe = true, ...credentials }) => {
-    console.log('[Login] Starting login...')
     const data = await apiLogin({ ...credentials, rememberMe })
-    console.log('[Login] Response received:', JSON.stringify(data).substring(0, 150))
-    console.log('[Login] data.token exists:', !!data.token)
 
     // 1. Raise the justLoggedIn guard FIRST — prevents stale-token clear on
     //    any /auth/me that fires in the next 5s (focus, mount, etc.)
@@ -149,18 +132,12 @@ export function AuthProvider({ children }) {
     // 2. Save token SYNCHRONOUSLY — before any state update or re-render
     if (data.token) {
       localStorage.setItem(TOKEN_KEY, data.token)
-      console.log('[Auth] Token saved to localStorage:', data.token.substring(0, 20) + '…')
-      console.log('[Login] After save, localStorage has:',
-        localStorage.getItem(TOKEN_KEY)?.substring(0, 20) ?? 'NOTHING')
-      console.log('[Login] All localStorage keys:', Object.keys(localStorage))
     } else {
-      console.error('[Login] NO TOKEN IN RESPONSE — backend may still be in cookie-only mode')
-      console.log('[Login] All localStorage keys (no token):', Object.keys(localStorage))
+      console.error('[Auth] NO TOKEN IN RESPONSE — backend may still be in cookie-only mode')
     }
 
     // 3. Update React state — login response already contains the full user object
     setUser(data.user)
-    console.log('[Auth] Login complete, user:', data.user?.firstName)
     Sentry.setUser({
       id:     data.user.id,
       email:  data.user.email,
@@ -183,7 +160,6 @@ export function AuthProvider({ children }) {
     // 1. Save token SYNCHRONOUSLY — before any state update or re-render
     if (data.token) {
       localStorage.setItem(TOKEN_KEY, data.token)
-      console.log('[Auth] Token saved to localStorage:', data.token.substring(0, 20) + '…')
     }
 
     // 2. Now safe to update React state
