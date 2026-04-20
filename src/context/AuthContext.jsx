@@ -26,7 +26,8 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [user,      setUser]      = useState(null)
   const [isLoading, setIsLoading] = useState(true)
-  const lastRefreshRef = useRef(0)
+  const lastRefreshRef   = useRef(0)
+  const justLoggedInRef  = useRef(false) // prevents stale-token clear right after fresh login
 
   /**
    * refreshUser() — re-fetch /auth/me con la cookie actual y sincroniza estado.
@@ -59,6 +60,10 @@ export function AuthProvider({ children }) {
     } catch (err) {
       console.log('[Auth] /auth/me response:', err?.status ?? 'network-error')
       if (err?.status === 401) {
+        if (justLoggedInRef.current) {
+          console.warn('[Auth] /auth/me failed but just logged in — skipping token clear')
+          return null
+        }
         console.log('[Auth] Stale token cleared')
         localStorage.removeItem(TOKEN_KEY)
       }
@@ -88,6 +93,10 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     function onFocus() {
       if (document.visibilityState !== 'visible') return
+      if (justLoggedInRef.current) {
+        console.log('[Auth] focus — just logged in, skipping refreshUser')
+        return
+      }
       if (!localStorage.getItem(TOKEN_KEY)) {
         console.log('[Auth] focus — no token, skipping refreshUser')
         return
@@ -132,7 +141,12 @@ export function AuthProvider({ children }) {
     console.log('[Login] Response received:', JSON.stringify(data).substring(0, 150))
     console.log('[Login] data.token exists:', !!data.token)
 
-    // 1. Save token SYNCHRONOUSLY — before any state update or re-render
+    // 1. Raise the justLoggedIn guard FIRST — prevents stale-token clear on
+    //    any /auth/me that fires in the next 5s (focus, mount, etc.)
+    justLoggedInRef.current = true
+    setTimeout(() => { justLoggedInRef.current = false }, 5000)
+
+    // 2. Save token SYNCHRONOUSLY — before any state update or re-render
     if (data.token) {
       localStorage.setItem(TOKEN_KEY, data.token)
       console.log('[Auth] Token saved to localStorage:', data.token.substring(0, 20) + '…')
@@ -144,7 +158,7 @@ export function AuthProvider({ children }) {
       console.log('[Login] All localStorage keys (no token):', Object.keys(localStorage))
     }
 
-    // 2. Update React state — login response already contains the full user object
+    // 3. Update React state — login response already contains the full user object
     setUser(data.user)
     console.log('[Auth] Login complete, user:', data.user?.firstName)
     Sentry.setUser({
@@ -162,6 +176,9 @@ export function AuthProvider({ children }) {
    */
   const register = useCallback(async (userData) => {
     const data = await apiRegister(userData)
+
+    justLoggedInRef.current = true
+    setTimeout(() => { justLoggedInRef.current = false }, 5000)
 
     // 1. Save token SYNCHRONOUSLY — before any state update or re-render
     if (data.token) {
