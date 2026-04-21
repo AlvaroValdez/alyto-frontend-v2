@@ -86,6 +86,23 @@ export default function Step4Confirm({ stepData, onNext }) {
     setLoading(true)
     setError(null)
 
+    // Payin manual SRL: la transacción se crea en Step 5 junto al comprobante
+    // obligatorio. Aquí solo transicionamos pasando los datos hacia adelante.
+    if (payinMethod === 'manual') {
+      onNext({
+        corridorId:        quote.corridorId,
+        originAmount,
+        payinMethod,
+        beneficiaryData:   beneficiary,
+        destinationAmount: quote.destinationAmount ?? null,
+        exchangeRate:      quote.exchangeRate      ?? null,
+        usdcTransitAmount: quote.usdcTransitAmount ?? null,
+      })
+      submittingRef.current = false
+      setLoading(false)
+      return
+    }
+
     try {
       const res = await initPayment({
         corridorId:        quote.corridorId,
@@ -309,7 +326,9 @@ export default function Step4Confirm({ stepData, onNext }) {
         }`}
       >
         {loading && <Loader2 size={18} className="animate-spin" />}
-        {loading ? 'Procesando...' : 'Confirmar y pagar'}
+        {loading
+          ? 'Procesando...'
+          : payinMethod === 'manual' ? 'Continuar a instrucciones de pago' : 'Confirmar y pagar'}
       </button>
     </div>
   )

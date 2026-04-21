@@ -81,6 +81,19 @@ export function getPaymentQR(transactionId) {
 }
 
 /**
+ * Obtiene los datos bancarios y QR estáticos de AV Finance SRL para
+ * mostrar las instrucciones de transferencia antes de crear la transacción.
+ * @returns {Promise<{
+ *   bankName: string, accountHolder: string, accountNumber: string,
+ *   accountType: string, currency: string,
+ *   qrImages: Array<{ label: string, imageBase64: string }>
+ * }>}
+ */
+export function getSRLPayinInstructions() {
+  return request('/payments/srl-payin-instructions')
+}
+
+/**
  * Obtiene los campos de formulario dinámicos para el país destino indicado.
  * La respuesta proviene del backend (cacheada 1h), que a su vez la obtiene de Vita.
  * @param {string} countryCode  ISO alpha-2 mayúsculas (ej. 'CO', 'PE', 'AR')
