@@ -7,5 +7,7 @@ dist/
 .DS_Store
 coverage/
 .claude/
-docs/
+docs/*
+!docs/SEND_MONEY_FLOW.md
+!docs/CHANGELOG_FLOWS.md
 alyto-silver-preview.html
