@@ -11,12 +11,14 @@ import { request, requestFormData } from './api'
 
 /**
  * Lista transacciones con filtros y paginación.
- * @param {{ status?, corridorId?, entity?, startDate?, endDate?, page?, limit? }} params
+ * Si no se pasa `status` ni `tab`, el backend aplica `tab=actionable` por defecto.
+ * @param {{ status?, tab?, corridorId?, entity?, startDate?, endDate?, page?, limit?, showAll? }} params
  * @returns {Promise<{ transactions, pagination, summary }>}
  */
 export function listTransactions(params = {}) {
   const qs = new URLSearchParams()
   if (params.status)      qs.set('status',      params.status)
+  if (params.tab)         qs.set('tab',         params.tab)
   if (params.corridorId)  qs.set('corridorId',  params.corridorId)
   if (params.entity)      qs.set('entity',      params.entity)
   if (params.startDate)   qs.set('startDate',   params.startDate)
@@ -26,6 +28,14 @@ export function listTransactions(params = {}) {
   if (params.showAll)     qs.set('showAll',      'true')
   const query = qs.toString()
   return request(`/admin/transactions${query ? `?${query}` : ''}`)
+}
+
+/**
+ * Conteos por tab del Ledger admin. Se refresca cada ~15 s desde la UI.
+ * @returns {Promise<{ actionable, manual_payout, in_progress, history, unpaid, total, timestamp }>}
+ */
+export function getLedgerCounts() {
+  return request('/admin/ledger/counts')
 }
 
 /**

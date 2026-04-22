@@ -12,24 +12,32 @@ import {
   ArrowLeft, Shield, RefreshCw, AlertCircle, BookOpen,
   TrendingUp, CheckCircle2, XCircle, DollarSign,
   LayoutGrid, SlidersHorizontal, ChevronLeft, ChevronRight,
-  Copy, CheckCheck, Inbox, Clock,
+  Copy, CheckCheck, Inbox, Clock, Bell, Banknote, Hourglass, Archive,
 } from 'lucide-react'
 import { useAuth } from '../../../context/AuthContext'
-import { listTransactions } from '../../../services/adminService'
+import { listTransactions, getLedgerCounts } from '../../../services/adminService'
+import { useAdminSSE } from '../../../hooks/useAdminSSE'
 import TransactionDrawer from './TransactionDrawer'
 import CorridorsPanel   from './CorridorsPanel'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 const STATUS_STYLES = {
-  initiated:        { bg: '#1D346140', text: '#8AB4F8',  label: 'Iniciada'     },
-  payin_pending:    { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'Pay-in pend.' },
-  payin_completed:  { bg: '#22C55E1A', text: '#22C55E',  label: 'Pay-in OK'    },
-  in_transit:       { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'En tránsito'  },
-  payout_pending:   { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'Payout pend.' },
-  completed:        { bg: '#22C55E1A', text: '#22C55E',  label: 'Completada'   },
-  failed:           { bg: '#EF44441A', text: '#F87171',  label: 'Fallida'      },
-  refunded:         { bg: '#EF44441A', text: '#F87171',  label: 'Reembolsada'  },
+  pending:                   { bg: '#4E5A7A1A', text: '#8A96B8',  label: 'Pendiente'     },
+  initiated:                 { bg: '#1D346140', text: '#8AB4F8',  label: 'Iniciada'      },
+  payin_pending:             { bg: '#F59E0B1A', text: '#F59E0B',  label: 'Pay-in pend.'  },
+  payin_confirmed:           { bg: '#22C55E1A', text: '#22C55E',  label: 'Pay-in conf.'  },
+  payin_completed:           { bg: '#22C55E1A', text: '#22C55E',  label: 'Pay-in OK'     },
+  processing:                { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'Procesando'    },
+  in_transit:                { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'En tránsito'   },
+  payout_pending:            { bg: '#F59E0B1A', text: '#F59E0B',  label: 'Payout pend.'  },
+  payout_sent:               { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'Payout enviado'},
+  payout_pending_usdc_send:  { bg: '#F59E0B1A', text: '#F59E0B',  label: 'USDC pend.'    },
+  payout_in_transit:         { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'Payout tránsito'},
+  pending_funding:           { bg: '#EF44441A', text: '#F87171',  label: 'Falta fondeo'  },
+  completed:                 { bg: '#22C55E1A', text: '#22C55E',  label: 'Completada'    },
+  failed:                    { bg: '#EF44441A', text: '#F87171',  label: 'Fallida'       },
+  refunded:                  { bg: '#EF44441A', text: '#F87171',  label: 'Reembolsada'   },
 }
 
 const ENTITY_STYLES = {
@@ -39,15 +47,48 @@ const ENTITY_STYLES = {
 }
 
 const VALID_STATUSES = [
-  'initiated', 'payin_pending', 'payin_completed',
-  'in_transit', 'payout_pending', 'completed', 'failed', 'refunded',
+  'pending', 'initiated', 'payin_pending', 'payin_confirmed', 'payin_completed',
+  'processing', 'in_transit', 'payout_pending', 'payout_sent',
+  'payout_pending_usdc_send', 'payout_in_transit', 'pending_funding',
+  'completed', 'failed', 'refunded',
 ]
 
 const STATUS_LABELS = {
-  initiated: 'Iniciada', payin_pending: 'Pay-in pendiente',
-  payin_completed: 'Pay-in completado', in_transit: 'En tránsito',
-  payout_pending: 'Payout pendiente', completed: 'Completada',
+  pending: 'Pendiente', initiated: 'Iniciada', payin_pending: 'Pay-in pendiente',
+  payin_confirmed: 'Pay-in confirmado', payin_completed: 'Pay-in completado',
+  processing: 'Procesando', in_transit: 'En tránsito',
+  payout_pending: 'Payout pendiente', payout_sent: 'Payout enviado',
+  payout_pending_usdc_send: 'USDC pendiente', payout_in_transit: 'Payout en tránsito',
+  pending_funding: 'Falta fondeo', completed: 'Completada',
   failed: 'Fallida', refunded: 'Reembolsada',
+}
+
+// ── Tabs del Ledger (alineado con TAB_FILTERS del backend) ───────────────────
+const LEDGER_TABS = [
+  { id: 'actionable',    label: 'Accionables',   icon: Bell,      color: '#F59E0B' },
+  { id: 'manual_payout', label: 'Payout manual', icon: Banknote,  color: '#8AB4F8' },
+  { id: 'in_progress',   label: 'En proceso',    icon: Hourglass, color: '#C4CBD8' },
+  { id: 'history',       label: 'Historial',     icon: Archive,   color: '#4E5A7A' },
+]
+
+// ── beep programático (sin asset externo) ────────────────────────────────────
+function playBeep() {
+  try {
+    const Ctx = window.AudioContext ?? window.webkitAudioContext
+    if (!Ctx) return
+    const ctx = new Ctx()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(880, ctx.currentTime)
+    osc.frequency.setValueAtTime(660, ctx.currentTime + 0.12)
+    gain.gain.setValueAtTime(0.18, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35)
+    osc.connect(gain).connect(ctx.destination)
+    osc.start()
+    osc.stop(ctx.currentTime + 0.38)
+    osc.onended = () => ctx.close()
+  } catch { /* audio unavailable */ }
 }
 
 // ── Sub-componentes ───────────────────────────────────────────────────────────
@@ -188,8 +229,8 @@ export default function LedgerPage() {
   const [filters, setFilters] = useState({
     status: '', entity: '', corridorId: '', startDate: '', endDate: '',
   })
-  // Vista: true = incluir payin_pending sin comprobante (todas); false = solo accionables
-  const [showAll, setShowAll] = useState(false)
+  // Tab del Ledger: actionable | manual_payout | in_progress | history
+  const [activeTab, setActiveTab] = useState('actionable')
   const [page, setPage] = useState(1)
   const LIMIT = 20
 
@@ -200,19 +241,35 @@ export default function LedgerPage() {
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState(null)
 
+  // Counts por tab (polling + SSE)
+  const [counts, setCounts] = useState({ actionable: 0, manual_payout: 0, in_progress: 0, history: 0, unpaid: 0 })
+  // Pulse en la pestaña actionable cuando llega una tx nueva
+  const [pulseActionable,   setPulseActionable]   = useState(false)
+  const [pulseManualPayout, setPulseManualPayout] = useState(false)
+
+  // Toast in-page (nuevas tx en tiempo real)
+  const [toast, setToast] = useState(null)
+  const showToast = useCallback((msg) => {
+    setToast(msg)
+    setTimeout(() => setToast(null), 4500)
+  }, [])
+
   // Drawer
   const [selectedTxId, setSelectedTxId] = useState(null)
 
+  // Si el admin pasa un `status` manual, el backend salta el filtro por tab.
+  // En ese caso no incluimos `tab` en los query params.
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     setError(null)
     try {
-      const data = await listTransactions({
+      const params = {
         ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== '')),
-        showAll,
         page,
         limit: LIMIT,
-      })
+      }
+      if (!filters.status) params.tab = activeTab
+      const data = await listTransactions(params)
       setTransactions(data.transactions ?? [])
       setPagination(data.pagination ?? { total: 0, page: 1, limit: LIMIT, totalPages: 0 })
       setSummary(data.summary ?? { totalVolume: 0, totalCompleted: 0, totalFailed: 0, totalFees: 0, pendingNoProofCount: 0 })
@@ -221,9 +278,22 @@ export default function LedgerPage() {
     } finally {
       if (!silent) setLoading(false)
     }
-  }, [filters, showAll, page])
+  }, [filters, activeTab, page])
 
-  // Cargar al montar, al cambiar filtros o página — solo si autenticado
+  const loadCounts = useCallback(async () => {
+    try {
+      const data = await getLedgerCounts()
+      setCounts({
+        actionable:    data.actionable    ?? 0,
+        manual_payout: data.manual_payout ?? 0,
+        in_progress:   data.in_progress   ?? 0,
+        history:       data.history       ?? 0,
+        unpaid:        data.unpaid        ?? 0,
+      })
+    } catch { /* silent */ }
+  }, [])
+
+  // Cargar al montar, al cambiar filtros/tab/página — solo si autenticado
   useEffect(() => {
     if (!user || tab !== 'transactions') return
     load()
@@ -235,6 +305,36 @@ export default function LedgerPage() {
     intervalRef.current = setInterval(() => load(true), 30_000)
     return () => clearInterval(intervalRef.current)
   }, [load, tab, user])
+
+  // Counts polling cada 15 s (refuerzo del SSE — si el stream cae, los badges
+  // siguen actualizándose y el admin no queda ciego)
+  useEffect(() => {
+    if (!user || tab !== 'transactions') return undefined
+    loadCounts()
+    const id = setInterval(loadCounts, 15_000)
+    return () => clearInterval(id)
+  }, [loadCounts, tab, user])
+
+  // SSE: nueva tx accionable → beep + toast + pulse + recargar si estoy en la pestaña
+  useAdminSSE({
+    enabled: !!user && tab === 'transactions',
+    onActionable: (data) => {
+      playBeep()
+      showToast(`Nueva tx accionable · ${data.transactionId}`)
+      setPulseActionable(true)
+      setTimeout(() => setPulseActionable(false), 2500)
+      setCounts(prev => ({ ...prev, actionable: prev.actionable + 1 }))
+      if (activeTab === 'actionable' && page === 1) load(true)
+    },
+    onManualPayout: (data) => {
+      playBeep()
+      showToast(`Payout manual requerido · ${data.transactionId}`)
+      setPulseManualPayout(true)
+      setTimeout(() => setPulseManualPayout(false), 2500)
+      setCounts(prev => ({ ...prev, manual_payout: prev.manual_payout + 1 }))
+      if (activeTab === 'manual_payout' && page === 1) load(true)
+    },
+  })
 
   // Deep-link desde notificación: ?tx=ALY-... abre drawer, scroll y highlight
   useEffect(() => {
@@ -387,38 +487,48 @@ export default function LedgerPage() {
               />
             </div>
 
-            {/* Toggle Accionables / Todas */}
-            <div className="flex items-center gap-1 p-1 bg-[#1A2340] rounded-2xl border border-[#263050] mb-4 w-fit">
-              <button
-                onClick={() => { setPage(1); setShowAll(false) }}
-                className={`px-4 py-2 rounded-xl text-[0.8125rem] font-semibold transition-all duration-200 ${
-                  !showAll ? 'bg-[#0F1628] text-white shadow-sm' : 'text-[#4E5A7A] hover:text-[#8A96B8]'
-                }`}
-              >
-                Accionables
-              </button>
-              <button
-                onClick={() => { setPage(1); setShowAll(true) }}
-                className={`px-4 py-2 rounded-xl text-[0.8125rem] font-semibold transition-all duration-200 ${
-                  showAll ? 'bg-[#0F1628] text-white shadow-sm' : 'text-[#4E5A7A] hover:text-[#8A96B8]'
-                }`}
-              >
-                Todas
-              </button>
+            {/* Tabs del Ledger (Accionables / Payout manual / En proceso / Historial) */}
+            <div className="flex flex-wrap items-center gap-1 p-1 bg-[#1A2340] rounded-2xl border border-[#263050] mb-4">
+              {LEDGER_TABS.map(({ id, label, icon: Icon, color }) => {
+                const active = activeTab === id
+                const count  = counts[id] ?? 0
+                const pulse  = (id === 'actionable' && pulseActionable) || (id === 'manual_payout' && pulseManualPayout)
+                return (
+                  <button
+                    key={id}
+                    onClick={() => { setPage(1); setActiveTab(id) }}
+                    className={`relative flex items-center gap-2 px-3 py-2 rounded-xl text-[0.8125rem] font-semibold transition-all duration-200 ${
+                      active ? 'bg-[#0F1628] text-white shadow-sm' : 'text-[#4E5A7A] hover:text-[#8A96B8]'
+                    } ${pulse ? 'ring-2 ring-[#F59E0B80]' : ''}`}
+                    style={pulse ? { boxShadow: `0 0 0 3px ${color}33` } : undefined}
+                  >
+                    <Icon size={14} style={{ color: active ? color : undefined }} />
+                    <span>{label}</span>
+                    {count > 0 && (
+                      <span
+                        className="text-[0.625rem] font-bold px-1.5 py-0.5 rounded-full tabular-nums"
+                        style={{ background: `${color}26`, color }}
+                      >
+                        {count > 99 ? '99+' : count}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
 
-            {/* Banner informativo: pendientes sin comprobante (solo en vista Accionables) */}
-            {!showAll && summary.pendingNoProofCount > 0 && (
+            {/* Banner: payins sin comprobante (sólo visible en Accionables) */}
+            {activeTab === 'actionable' && counts.unpaid > 0 && (
               <div className="flex items-center gap-3 p-3 bg-[#1D346114] rounded-2xl border border-[#1D346140] mb-4">
                 <Inbox size={16} className="text-[#8AB4F8] flex-shrink-0" />
                 <p className="text-[0.8125rem] text-[#8AB4F8]">
-                  {summary.pendingNoProofCount} {summary.pendingNoProofCount === 1 ? 'transacción pendiente' : 'transacciones pendientes'} de comprobante · ocultas en esta vista
+                  {counts.unpaid} {counts.unpaid === 1 ? 'transacción' : 'transacciones'} en pay-in sin comprobante · el usuario aún no subió el recibo
                 </p>
                 <button
-                  onClick={() => { setPage(1); setShowAll(true) }}
+                  onClick={() => { setPage(1); setFilters(f => ({ ...f, status: 'payin_pending' })) }}
                   className="ml-auto px-3 py-1 rounded-lg text-[0.6875rem] font-semibold text-[#8AB4F8] border border-[#1D346140] hover:border-[#8AB4F880] transition-colors whitespace-nowrap"
                 >
-                  Ver todas
+                  Ver pay-in pendientes
                 </button>
               </div>
             )}
@@ -640,6 +750,18 @@ export default function LedgerPage() {
         onClose={() => setSelectedTxId(null)}
         onStatusUpdated={() => load(true)}
       />
+
+      {/* ── TOAST (SSE real-time) ─────────────────────────────────────────── */}
+      {toast && (
+        <div
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-2xl bg-[#1A2340] border border-[#F59E0B80] shadow-lg"
+          role="status"
+          aria-live="polite"
+        >
+          <Bell size={14} className="text-[#F59E0B]" />
+          <span className="text-[0.8125rem] text-white">{toast}</span>
+        </div>
+      )}
     </div>
   )
 }
