@@ -37,7 +37,7 @@ import ResetPasswordPage  from '../pages/Auth/ResetPasswordPage'
 
 // ── Páginas privadas ─────────────────────────────────────────────────────────
 import DashboardPage     from '../pages/Dashboard/DashboardPage'
-import SendMoneyPage     from '../pages/SendMoney/SendMoneyPage'
+import SendMoneyFlow     from '../pages/send-money/SendMoneyFlow'
 import TransactionsPage  from '../pages/Transactions/TransactionsPage'
 import TransactionDetail from '../pages/Transactions/TransactionDetail'
 import ProfilePage       from '../pages/Profile/ProfilePage'
@@ -114,8 +114,9 @@ export default function AppRouter() {
         <Route path="/kyc"        element={<KycPage />} />
         <Route path="/kyc/return" element={<KycReturnPage />} />
 
-        {/* Enviar dinero (requiere KYC aprobado) */}
-        <Route path="/send" element={<KycRoute><SendMoneyPage /></KycRoute>} />
+        {/* Enviar dinero — flujo 3 pasos v1.0 (docs/SEND_MONEY_FLOW.md §2) */}
+        <Route path="/send/*" element={<KycRoute><SendMoneyFlow /></KycRoute>} />
+        <Route path="/send"   element={<Navigate to="/send/details" replace />} />
 
         {/* Historial */}
         <Route path="/transactions"                element={<TransactionsPage />} />
