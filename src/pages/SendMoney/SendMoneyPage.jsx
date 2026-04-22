@@ -1,4 +1,12 @@
 /**
+ * @deprecated Send Money Flow v1.0 (docs/SEND_MONEY_FLOW.md §2).
+ *
+ * This 6-step orchestrator is superseded by the 3-step flow container at
+ * src/pages/send-money/SendMoneyFlow.jsx. The router now points /send/* at
+ * the new flow; this file is retained only to avoid breaking any lingering
+ * deep-link imports until a cleanup pass removes it.
+ *
+ * --- Original documentation below ---
  * SendMoneyPage.jsx — Página principal del flujo de pago cross-border.
  *
  * Orquesta los 6 pasos:

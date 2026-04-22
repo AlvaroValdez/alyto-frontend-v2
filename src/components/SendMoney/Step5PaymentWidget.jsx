@@ -1,4 +1,12 @@
 /**
+ * @deprecated Send Money Flow v1.0 (docs/SEND_MONEY_FLOW.md §2.3).
+ *
+ * Replaced by: src/pages/send-money/StepPayment.jsx. The new component
+ * merges ManualPayinScreen + PollingPayinScreen into a single route at
+ * /send/payment/:txId and removes the intermediate Step6Success screen
+ * (redirects directly to /transactions/:txId on completion).
+ *
+ * --- Original documentation below ---
  * Step5PaymentWidget.jsx — Widget de pago del proveedor.
  *
  * Tres modos según payinMethod:

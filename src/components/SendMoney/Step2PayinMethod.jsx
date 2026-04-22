@@ -1,4 +1,13 @@
 /**
+ * @deprecated Send Money Flow v1.0 (docs/SEND_MONEY_FLOW.md §2).
+ *
+ * No longer used in the 3-step flow — payin method selection is inferred
+ * from the corridor (manual for SRL Bolivia, fintoc/vita otherwise) and
+ * the QR + bank-transfer options are presented together in StepPayment.
+ *
+ * Replaced by: src/pages/send-money/StepPayment.jsx
+ *
+ * --- Original documentation below ---
  * Step2PayinMethod.jsx — "¿Cómo pagas?"
  *
  * Para V2.0 inicial: solo Fintoc activo para CL.

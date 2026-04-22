@@ -1,4 +1,10 @@
 /**
+ * @deprecated Send Money Flow v1.0 (docs/SEND_MONEY_FLOW.md §2.2).
+ *
+ * Replaced by: src/pages/send-money/StepReview.jsx, which implements the
+ * spec-mandated collapsed/expandable detail view with "Ver detalles".
+ *
+ * --- Original documentation below ---
  * Step4Confirm.jsx — Resumen de confirmación antes de iniciar el pago.
  *
  * Muestra fees visibles (alytoCSpread + fixedFee + payinFee).

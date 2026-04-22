@@ -1,10 +1,13 @@
 /**
+ * @deprecated Send Money Flow v1.0 (docs/SEND_MONEY_FLOW.md §2).
+ *
+ * Replaced by the 3-dot StepDots indicator embedded in
+ * src/pages/send-money/SendMoneyFlow.jsx. The new flow has exactly 3
+ * steps (details / review / payment) with no branching on payin method.
+ *
+ * --- Original documentation below ---
  * StepIndicator.jsx — Barra de progreso visual para el flujo de pasos.
  * El paso 6 (éxito) no necesita indicador.
- *
- * skipStep2=false (default) → 5 pasos: Monto · Pago · Destinatario · Confirmar · Transferencia
- * skipStep2=true            → 4 pasos: Monto · Destinatario · Confirmar · Transferencia
- *   (el número visual es 1-4; el `number` interno sigue siendo el step real del hook)
  */
 
 import { Check } from 'lucide-react'

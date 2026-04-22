@@ -1,4 +1,11 @@
 /**
+ * @deprecated Send Money Flow v1.0 (docs/SEND_MONEY_FLOW.md §2).
+ *
+ * No longer part of the flow — StepPayment now redirects directly to
+ * /transactions/:txId on completion. The transaction detail page is the
+ * canonical post-submit surface.
+ *
+ * --- Original documentation below ---
  * Step6Success.jsx — "¡Tu dinero está en camino!" ✅
  *
  * Pantalla de confirmación con ícono animado, resumen y acciones.
