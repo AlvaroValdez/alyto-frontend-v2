@@ -25,3 +25,12 @@ Consolidates the legacy 6-step journey into a **3-step flow** (details → revie
 - Compliance guardrails (§1.5, §6.1, §6.9, §6.10): the new step pages contain no user-facing references to `USDC`, `Stellar`, `Vita`, `vitaRateMarkup`, `pivot currency`, or `remesa/remittance`. Guarded by `tests/send-money-spec.test.mjs` (run with `node tests/send-money-spec.test.mjs`).
 
 **Backend counterpart:** the matching calculator + refactor + tests ship in `alyto-backend-v2` commits `df0b216`, `3b191f3`, `1059997`, `ef066c2`.
+
+### Amendment — 2026-04-22 · Step 2 creates tx without proof
+
+| Commit    | Scope | Summary                                                           |
+|-----------|-------|-------------------------------------------------------------------|
+| `d5cf312` | fix   | Step 2 always calls `initPayment` (no proof); Step 3 uploads proof via `uploadComprobante`. Beneficiary name promoted to the card headline. |
+| `737223d` | test  | Contract test flipped: assert `uploadComprobante`, forbid `initPayment` in Step 3 and `paymentProofBase64` in Step 2. |
+
+Under the original draft, the manual (SRL Bolivia) branch of `StepReview` skipped `initPayment` and re-created the transaction from `StepPayment` with `paymentProofBase64` inline. That conflated tx-creation with proof-upload and meant we could not register a `payin_pending` record until after the user had already transferred. Per §2.2 (Review) / §2.3 (Payment) the two must be split: Step 2 creates the tx with no proof, Step 3 receives the real `txId` via URL, displays it as the bank-transfer reference, and uploads the comprobante through the dedicated `POST /payments/:txId/comprobante` endpoint. **Backend counterpart:** `alyto-backend-v2` commit `336f9fe` removes the `PAYMENT_PROOF_REQUIRED` guard from `initCrossBorderPayment`.
