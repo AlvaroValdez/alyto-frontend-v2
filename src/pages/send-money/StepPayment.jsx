@@ -1,17 +1,19 @@
 /**
  * StepPayment.jsx — Paso 3 del flujo v1.0 (spec §2.3).
  *
- * Dos modos según payinMethod:
+ * En Step 2 (Review) se crea la transacción en status payin_pending sin
+ * comprobante. Step 3 recibe el txId por URL y:
  *
  *   manual (SRL Bolivia)
- *     - Muestra datos bancarios de AV Finance SRL + QRs estáticos.
+ *     - Muestra datos bancarios de AV Finance SRL + QRs estáticos +
+ *       el txId como referencia de transferencia.
  *     - Comprobante OBLIGATORIO (spec §2.3). El botón "Confirmar envío"
  *       queda disabled hasta cargar archivo.
- *     - Al confirmar se crea la transacción vía POST /payments/crossborder
- *       con paymentProofBase64 adjunto.
+ *     - Al confirmar se sube el archivo vía
+ *       POST /payments/:txId/comprobante (uploadComprobante).
+ *       Ese endpoint dispara broadcastToAdmins para el tab Accionables.
  *
  *   fintoc / vita / url
- *     - La transacción ya fue creada en StepReview.
  *     - Se abre payinUrl en ventana nueva + polling cada 5s hasta
  *       status final.
  *
@@ -22,12 +24,12 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Loader2, AlertCircle, Paperclip, Upload, Clock,
-  ExternalLink, MessageCircle, AlertTriangle, FileCheck2,
+  ExternalLink, MessageCircle, AlertTriangle, FileCheck2, Copy,
 } from 'lucide-react'
 
 import {
   getSRLPayinInstructions,
-  initPayment,
+  uploadComprobante,
   getTransactionStatus,
 } from '../../services/paymentsService'
 import Sentry from '../../services/sentry.js'
@@ -35,18 +37,6 @@ import Sentry from '../../services/sentry.js'
 const POLL_INTERVAL_MS = 5_000
 const TIMEOUT_MS       = 15 * 60 * 1000
 const FINAL_STATUSES   = new Set(['payin_confirmed', 'payin_completed', 'completed', 'in_transit'])
-
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload  = () => {
-      const result = reader.result
-      resolve(typeof result === 'string' ? (result.split(',')[1] ?? '') : '')
-    }
-    reader.onerror = () => reject(new Error('No se pudo leer el archivo.'))
-    reader.readAsDataURL(file)
-  })
-}
 
 function showToast({ title, body }) {
   window.dispatchEvent(new CustomEvent('alyto:show-toast', {
@@ -70,20 +60,17 @@ function InfoRow({ label, value, mono = false, highlight = false }) {
 }
 
 export default function StepPayment({ flowData, txId }) {
-  const isManual = flowData.payinMethod === 'manual' || txId === 'manual'
-  if (isManual) return <ManualPayment flowData={flowData} />
+  if (flowData.payinMethod === 'manual') {
+    return <ManualPayment flowData={flowData} txId={txId} />
+  }
   return <WidgetPayment flowData={flowData} txId={txId} />
 }
 
 // ─── Manual (SRL Bolivia) ─────────────────────────────────────────────────────
 
-function ManualPayment({ flowData }) {
+function ManualPayment({ flowData, txId }) {
   const navigate = useNavigate()
-  const {
-    quote, originAmount, beneficiaryData,
-    destinationAmount, exchangeRate, usdcTransitAmount,
-    corridorId,
-  } = flowData
+  const { quote, originAmount, beneficiaryData } = flowData
 
   const currency = quote?.originCurrency ?? 'BOB'
 
@@ -144,43 +131,40 @@ function ManualPayment({ flowData }) {
       proofSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
+    if (!txId) {
+      setSubmitError('No se pudo identificar la transacción. Vuelve atrás y reintenta.')
+      return
+    }
     if (submitting) return
     setSubmitting(true)
     setSubmitError(null)
     try {
-      const paymentProofBase64 = await fileToBase64(proofFile)
-      const res = await initPayment({
-        corridorId:        corridorId ?? quote.corridorId,
-        originAmount,
-        payinMethod:       'manual',
-        beneficiaryData,
-        destinationAmount: destinationAmount ?? quote.destinationAmount ?? null,
-        exchangeRate:      exchangeRate      ?? quote.exchangeRate      ?? null,
-        usdcTransitAmount: usdcTransitAmount ?? quote.usdcTransitAmount ?? null,
-        paymentProofBase64,
-        paymentProofMimetype: proofFile.type ?? 'image/jpeg',
-      })
+      await uploadComprobante(txId, proofFile)
 
       showToast({
-        title: '¡Transferencia registrada!',
-        body:  'Recibimos tu comprobante. Verificaremos tu pago en pocas horas.',
+        title: '¡Comprobante recibido!',
+        body:  'Verificaremos tu transferencia en pocas horas.',
       })
 
-      if (res?.transactionId) navigate(`/transactions/${res.transactionId}`)
-      else                    navigate('/transactions')
+      navigate(`/transactions/${txId}`)
     } catch (err) {
-      const code = err?.response?.data?.code
-      setSubmitError(
-        code === 'PAYMENT_PROOF_REQUIRED'
-          ? 'El comprobante es obligatorio. Adjúntalo e intenta nuevamente.'
-          : (err?.message || 'No se pudo confirmar la transferencia.'),
-      )
+      setSubmitError(err?.message || 'No se pudo subir el comprobante. Intenta nuevamente.')
       Sentry.captureException?.(err, {
         tags:  { component: 'StepPayment.ManualPayment' },
-        extra: { corridorId },
+        extra: { txId },
       })
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  function copyToClipboard(value) {
+    if (!value) return
+    try {
+      navigator.clipboard?.writeText(String(value))
+      showToast({ title: 'Copiado', body: String(value) })
+    } catch {
+      /* clipboard not available — silent */
     }
   }
 
@@ -257,14 +241,54 @@ function ManualPayment({ flowData }) {
         <div className="px-5 py-1">
           <InfoRow label="Banco"   value={bank.bankName      ?? 'Banco Bisa'} />
           <InfoRow label="Titular" value={bank.accountHolder ?? 'AV Finance SRL'} />
-          <InfoRow label="Cuenta"  value={bank.accountNumber ?? '—'} mono />
+          <InfoRow
+            label="Cuenta"
+            value={
+              <span className="inline-flex items-center gap-1.5">
+                <span className="font-mono">{bank.accountNumber ?? '—'}</span>
+                {bank.accountNumber && (
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(bank.accountNumber)}
+                    className="text-[#233E58] hover:text-[#0F172A]"
+                    aria-label="Copiar cuenta"
+                  >
+                    <Copy size={12} />
+                  </button>
+                )}
+              </span>
+            }
+          />
           <InfoRow label="Tipo"    value={bank.accountType   ?? 'Cuenta Corriente'} />
           <InfoRow
             label="Monto"
-            value={`Bs ${Number(originAmount ?? 0).toLocaleString('es-CL')} ${currency}`}
+            value={`${Number(originAmount ?? 0).toLocaleString('es-CL')} ${currency}`}
             highlight
           />
+          {txId && (
+            <InfoRow
+              label="Referencia"
+              value={
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="font-mono">{txId}</span>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(txId)}
+                    className="text-[#233E58] hover:text-[#0F172A]"
+                    aria-label="Copiar referencia"
+                  >
+                    <Copy size={12} />
+                  </button>
+                </span>
+              }
+            />
+          )}
         </div>
+        {txId && (
+          <p className="px-5 pb-3 text-[0.75rem] text-[#64748B]">
+            Usa la referencia en la descripción de tu transferencia bancaria.
+          </p>
+        )}
       </div>
 
       <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">

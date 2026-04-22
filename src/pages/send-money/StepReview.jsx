@@ -9,10 +9,13 @@
  *   - Botones: [Editar] vuelve a /send/details, [Confirmar] crea la tx
  *     y avanza a /send/payment/:txId.
  *
- * Confirmar llama a POST /payments/crossborder en dos modos:
- *   - manual (SRL Bolivia)  → backend crea tx con status: payin_pending;
- *     proof upload ocurre en Step 3.
- *   - fintoc / vita / …     → backend retorna payinUrl para widget externo.
+ * Confirmar SIEMPRE llama a POST /payments/crossborder. El backend crea la
+ * transacción en status: payin_pending sin comprobante; el comprobante se
+ * sube en Step 3 vía POST /payments/:txId/comprobante (spec §2.3).
+ *
+ * El proveedor de payin determina solo qué renderiza Step 3:
+ *   - manual (SRL Bolivia)  → instrucciones bancarias + upload comprobante.
+ *   - fintoc / vita / …     → widget externo + polling de estado.
  */
 
 import { useEffect, useState, useRef } from 'react'
@@ -122,19 +125,6 @@ export default function StepReview({ flowData, updateFlow }) {
     setSubmitting(true)
     setError(null)
 
-    if (payinMethod === 'manual') {
-      updateFlow({
-        corridorId:        quote.corridorId,
-        destinationAmount: quote.destinationAmount,
-        exchangeRate:      quote.exchangeRate,
-        usdcTransitAmount: quote.usdcTransitAmount,
-      })
-      submittingRef.current = false
-      setSubmitting(false)
-      navigate('/send/payment/manual')
-      return
-    }
-
     try {
       const res = await initPayment({
         corridorId:        quote.corridorId,
@@ -145,14 +135,17 @@ export default function StepReview({ flowData, updateFlow }) {
         exchangeRate:      quote.exchangeRate      ?? null,
         usdcTransitAmount: quote.usdcTransitAmount ?? null,
       })
-      if (res.transactionId) {
-        sessionStorage.setItem('lastTransactionId', res.transactionId)
+      const newTxId = res.transactionId ?? res.alytoTransactionId
+      if (!newTxId) {
+        throw new Error('El servidor no devolvió el ID de transacción.')
       }
+      sessionStorage.setItem('lastTransactionId', newTxId)
       updateFlow({
-        transactionId: res.transactionId,
-        payinUrl:      res.payinUrl || res.widgetUrl || res.widgetToken || null,
+        transactionId:       newTxId,
+        payinUrl:            res.payinUrl || res.widgetUrl || res.widgetToken || null,
+        paymentInstructions: res.paymentInstructions || null,
       })
-      navigate(`/send/payment/${res.transactionId}`)
+      navigate(`/send/payment/${newTxId}`)
     } catch (err) {
       setError(err.message || 'Error al procesar el pago. Intenta nuevamente.')
     } finally {
@@ -185,12 +178,15 @@ export default function StepReview({ flowData, updateFlow }) {
         </p>
       </section>
 
-      {/* Para beneficiario */}
+      {/* Para beneficiario — nombre destacado (spec §2.2 prominencia) */}
       <section className="bg-white border border-[#E2E8F0] rounded-2xl p-4">
-        <p className="text-[0.6875rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
-          Para {beneficiaryName}
+        <p className="text-[0.6875rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-1.5">
+          Beneficiario
         </p>
-        <p className="text-[0.9375rem] font-semibold text-[#0F172A] flex items-center gap-1.5">
+        <h3 className="text-[1.125rem] font-extrabold text-[#0F172A] leading-tight break-words">
+          {beneficiaryName}
+        </h3>
+        <p className="text-[0.8125rem] font-medium text-[#0F172A] mt-2 flex items-center gap-1.5">
           <span>{COUNTRY_FLAGS[destinationCountry] ?? '🌎'}</span>
           <span>{COUNTRY_NAMES[destinationCountry] ?? destinationCountry}</span>
         </p>
@@ -199,7 +195,7 @@ export default function StepReview({ flowData, updateFlow }) {
             {bankLabel}{accountMasked !== '—' ? ` · ${accountMasked}` : ''}
           </p>
         )}
-        <p className="text-[0.8125rem] text-[#64748B] mt-1">
+        <p className="text-[0.8125rem] text-[#64748B] mt-2">
           Recibe: <span className="font-extrabold text-[#233E58] text-[1rem]">
             {fmtMoney(quote.destinationAmount, quote.destinationCurrency)}
           </span>
