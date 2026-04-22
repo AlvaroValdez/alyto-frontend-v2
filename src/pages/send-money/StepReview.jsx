@@ -143,7 +143,10 @@ export default function StepReview({ flowData, updateFlow }) {
       updateFlow({
         transactionId:       newTxId,
         payinUrl:            res.payinUrl || res.widgetUrl || res.widgetToken || null,
-        paymentInstructions: res.paymentInstructions || null,
+        paymentInstructions: res.paymentInstructions || res.payinInstructions || null,
+        // Backend is authoritative — sync payinMethod from response so Step 3
+        // dispatches correctly even if the WS quote omitted the field.
+        ...(res.payinMethod ? { payinMethod: res.payinMethod } : {}),
       })
       navigate(`/send/payment/${newTxId}`)
     } catch (err) {

@@ -60,9 +60,14 @@ function InfoRow({ label, value, mono = false, highlight = false }) {
 }
 
 export default function StepPayment({ flowData, txId }) {
-  if (flowData.payinMethod === 'manual') {
-    return <ManualPayment flowData={flowData} txId={txId} />
-  }
+  // Primary signal: payinMethod (set from quote + synced from create response).
+  // Defensive fallback: if the backend returned paymentInstructions but no
+  // payinUrl, this is a manual payin regardless of what the quote said.
+  const isManual =
+    flowData.payinMethod === 'manual' ||
+    (!flowData.payinUrl && !!flowData.paymentInstructions)
+
+  if (isManual) return <ManualPayment flowData={flowData} txId={txId} />
   return <WidgetPayment flowData={flowData} txId={txId} />
 }
 

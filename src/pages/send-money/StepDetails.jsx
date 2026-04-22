@@ -23,14 +23,16 @@ export default function StepDetails({ flowData, updateFlow }) {
 
   function handleAmountDone(data) {
     const quote = data.quote
-    const isManual =
-      quote?.isManualCorridor === true ||
-      quote?.payinMethod       === 'manual'
+    // Prefer the explicit payinMethod from the quote (now included in all WS
+    // branches). Fall back to isManualCorridor flag, then default to 'fintoc'.
+    const payinMethod =
+      quote?.payinMethod ||
+      (quote?.isManualCorridor === true ? 'manual' : 'fintoc')
     updateFlow({
       originAmount:       data.originAmount,
       destinationCountry: data.destinationCountry,
       quote,
-      payinMethod:        isManual ? 'manual' : (data.payinMethod ?? 'fintoc'),
+      payinMethod,
     })
   }
 
