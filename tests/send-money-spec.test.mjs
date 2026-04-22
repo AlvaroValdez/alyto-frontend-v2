@@ -118,17 +118,35 @@ for (const page of NEW_PAGES) {
   }
 }
 
-// ── §2.3: StepPayment enforces mandatory proof upload ────────────────────────
+// ── §2.3: StepPayment enforces mandatory proof upload via uploadComprobante ──
+//
+// Per SEND_MONEY_FLOW.md §2.3 the tx is created in Step 2 without proof;
+// Step 3 uploads the comprobante through the dedicated
+// POST /payments/:txId/comprobante endpoint (uploadComprobante helper).
 
 section('§2.3 — StepPayment enforces mandatory proof upload')
 const stepPayment = read('src/pages/send-money/StepPayment.jsx') ?? ''
 ;[
-  ['Obligatorio',       'comprobante labeled "Obligatorio"'],
-  ['paymentProofBase64','proof attached to initPayment call'],
-  ['proofFile',         'proof file state exists'],
+  ['Obligatorio',        'comprobante labeled "Obligatorio"'],
+  ['uploadComprobante',  'proof attached via uploadComprobante helper'],
+  ['proofFile',          'proof file state exists'],
 ].forEach(([needle, label]) => {
   stepPayment.includes(needle) ? pass(label) : fail(`StepPayment missing: ${label}`)
 })
+
+// Guardrail: proof must NOT be attached to initPayment anymore.
+const stepPaymentSrc = stripComments(stepPayment)
+if (/initPayment\s*\(/.test(stepPaymentSrc)) {
+  fail('StepPayment still calls initPayment — should be uploadComprobante (spec §2.3)')
+} else {
+  pass('StepPayment does not call initPayment (proof is a separate upload)')
+}
+const stepReviewRaw = read('src/pages/send-money/StepReview.jsx') ?? ''
+if (/paymentProofBase64/.test(stripComments(stepReviewRaw))) {
+  fail('StepReview still ships paymentProofBase64 — Step 2 must create tx without proof')
+} else {
+  pass('StepReview does not attach paymentProofBase64 to create request')
+}
 
 // ── §2.2: StepReview has "Ver detalles" expand/collapse ──────────────────────
 
