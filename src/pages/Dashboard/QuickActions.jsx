@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router-dom'
-import { Send, PlusCircle, MinusCircle } from 'lucide-react'
+import { Send, UserPlus, PlusCircle } from 'lucide-react'
 
 const ACTIONS = [
-  { id: 'send',     icon: Send,        label: 'Enviar',  teal: true,  requiresKyc: true,  route: '/send'         },
-  { id: 'load',     icon: PlusCircle,  label: 'Cargar',  teal: false, requiresKyc: false, route: '/wallet'       },
-  { id: 'withdraw', icon: MinusCircle, label: 'Retirar', teal: false, requiresKyc: true,  route: '/transactions' },
+  { id: 'send',    icon: Send,      label: 'Enviar',    teal: true,  requiresKyc: true,  route: '/send'     },
+  { id: 'contact', icon: UserPlus,  label: '+Contacto', teal: false, requiresKyc: false, route: '/contacts' },
+  { id: 'load',    icon: PlusCircle, label: 'Cargar',   teal: false, requiresKyc: false, route: '/wallet'   },
 ]
 
 export default function QuickActions({ kycStatus }) {
