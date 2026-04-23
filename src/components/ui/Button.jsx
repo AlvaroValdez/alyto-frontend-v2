@@ -8,18 +8,18 @@ const SIZE = {
 
 const VARIANT = {
   primary: {
-    background: '#1D3461',
+    background: '#0D1F3C',
     color:      '#FFFFFF',
     border:     'none',
-    boxShadow:  '0 4px 16px rgba(29,52,97,0.25)',
-    hoverBg:    '#162852',
+    boxShadow:  '0 4px 16px rgba(13,31,60,0.25)',
+    hoverBg:    '#1A2F52',
   },
   teal: {
-    background: '#1D3461',
+    background: '#1D9E75',
     color:      '#FFFFFF',
     border:     'none',
-    boxShadow:  '0 4px 16px rgba(29,52,97,0.25)',
-    hoverBg:    '#162852',
+    boxShadow:  '0 4px 16px rgba(29,158,117,0.25)',
+    hoverBg:    '#178A65',
   },
   secondary: {
     background: '#FFFFFF',

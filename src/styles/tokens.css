@@ -19,7 +19,20 @@
   --color-text-secondary: #5A6A8A;  /* Medium gray — descriptions    */
   --color-text-muted:     #9AA5C0;  /* Light gray — timestamps       */
 
-  /* ── ACCENT / ALYTO TEAL ───────────────────────────────────── */
+  /* ── COLOR ROLES (canonical — see §4 rules) ────────────────── */
+  /* Primary: NAVY — buttons, nav active, focus, highlights       */
+  --color-primary:        #0D1F3C;
+  --color-primary-hover:  #1A2F52;
+  --color-primary-text:   #FFFFFF;
+  --color-primary-bg:     #EEF2F8;  /* navy tint for active states */
+
+  /* Secondary accent: TEAL — quote amounts, confirmations        */
+  --color-accent:         #1D9E75;
+  --color-accent-hover:   #22B88A;
+  --color-accent-bg:      #E6F7F2;
+  --color-accent-text:    #FFFFFF;
+
+  /* ── ACCENT / ALYTO TEAL (legacy — prefer semantic above) ──── */
   --color-accent-teal:        #1D9E75;
   --color-accent-teal-hover:  #178A64;
   --color-accent-teal-dim:    rgba(29, 158, 117, 0.08);
@@ -49,6 +62,7 @@
   /* ── BORDER ────────────────────────────────────────────────── */
   --color-border:       #E2E8F0;
   --color-border-light: rgba(226, 232, 240, 0.60);
+  --color-border-focus: #0D1F3C;  /* navy — inputs, focused elements */
 
   /* ── GRADIENTS ─────────────────────────────────────────────── */
   /* Balance card gradient STAYS dark — only dark element */

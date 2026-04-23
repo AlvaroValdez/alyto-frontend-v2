@@ -3,7 +3,7 @@ const CONFIG = {
   pending: { bg: 'var(--color-pending-bg)',      text: 'var(--color-pending)',     icon: '⏳' },
   warning: { bg: 'var(--color-warning-bg)',      text: 'var(--color-warning)',     icon: '⚠' },
   error:   { bg: 'var(--color-error-bg)',        text: 'var(--color-error)',       icon: '✕' },
-  teal:    { bg: 'var(--color-teal-status-bg)',  text: 'var(--color-teal-status)', icon: '↗' },
+  teal:    { bg: 'var(--color-accent-bg)',        text: 'var(--color-accent)',      icon: '↗' },
   transit: { bg: 'var(--color-transit-bg)',      text: 'var(--color-transit)',     icon: '↗' },
 }
 

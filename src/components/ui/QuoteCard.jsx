@@ -50,8 +50,8 @@ export default function QuoteCard({
     <div
       className={flashing ? 'flash-teal' : ''}
       style={{
-        background:   'var(--color-accent-teal-dim)',
-        border:       '1px solid var(--color-accent-teal-border)',
+        background:   'var(--color-accent-bg)',
+        border:       '1px solid rgba(29,158,117,0.20)',
         borderRadius: 'var(--radius-xl)',
         padding:      'var(--space-lg)',
         transition:   'var(--transition-fast)',
@@ -60,7 +60,7 @@ export default function QuoteCard({
       {loading ? (
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 text-[var(--color-text-muted)]">
-            <Loader2 size={14} className="animate-spin" style={{ color: 'var(--color-accent-teal)' }} />
+            <Loader2 size={14} className="animate-spin" style={{ color: 'var(--color-accent)' }} />
             <span style={{ fontSize: 'var(--font-sm)', fontWeight: 600 }}>Calculando…</span>
           </div>
           {[1,2,3].map(i => (
@@ -76,7 +76,7 @@ export default function QuoteCard({
           {/* Destination amount */}
           <div className="flex justify-between items-center">
             <span style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)' }}>Recibe</span>
-            <span style={{ fontSize: 'var(--font-xl)', fontWeight: 700, color: 'var(--color-success)' }}>
+            <span style={{ fontSize: 'var(--font-xl)', fontWeight: 700, color: 'var(--color-accent)' }}>
               {destinationAmount
                 ? `${Number(destinationAmount).toLocaleString('es-CL')} ${destinationCurrency}`
                 : '—'
@@ -88,7 +88,7 @@ export default function QuoteCard({
           {effectiveRate && (
             <div className="flex justify-between items-center">
               <span style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)' }}>Tasa efectiva</span>
-              <span style={{ fontSize: 'var(--font-sm)', fontWeight: 600, color: 'var(--color-accent-teal)' }}>
+              <span style={{ fontSize: 'var(--font-sm)', fontWeight: 600, color: 'var(--color-accent)' }}>
                 1 {originCurrency} = {Number(effectiveRate).toFixed(4)} {destinationCurrency}
               </span>
             </div>
@@ -104,7 +104,7 @@ export default function QuoteCard({
             </div>
           )}
 
-          <div style={{ borderTop: '1px solid var(--color-accent-teal-border)', margin: '4px 0' }} />
+          <div style={{ borderTop: '1px solid rgba(29,158,117,0.20)', margin: '4px 0' }} />
 
           {/* Footer: delivery + countdown */}
           <div className="flex justify-between items-center">
