@@ -7,9 +7,26 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Mail, Bell, BellOff } from 'lucide-react'
+import { Mail, Bell, BellOff, RefreshCw } from 'lucide-react'
 import Toggle from '../../components/ui/Toggle'
 import { usePushNotifications } from '../../hooks/usePushNotifications'
+
+// ── Browser-specific unblock instructions ─────────────────────────────────────
+
+function getBrowserInstructions() {
+  const ua = navigator.userAgent
+  if (/Firefox/i.test(ua)) {
+    return 'Haz clic en el candado 🔒 en la barra de dirección → Permisos → Notificaciones → Permitir siempre'
+  }
+  if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) {
+    return 'Ve a Configuración → Safari → Notificaciones → Alyto → Permitir'
+  }
+  if (/Edg/i.test(ua)) {
+    return 'Haz clic en el candado 🔒 en la barra de dirección → Permisos para este sitio → Notificaciones → Permitir'
+  }
+  // Chrome y derivados (por defecto)
+  return 'Haz clic en el candado 🔒 en la barra de dirección → Notificaciones → Permitir'
+}
 
 // ── Notification row ──────────────────────────────────────────────────────────
 
@@ -146,14 +163,34 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
         />
       </div>
 
-      {/* Aviso: bloqueadas en el navegador */}
+      {/* Aviso: bloqueadas en el navegador — instrucciones accionables */}
       {pushBlocked && (
-        <div className="mx-4 mt-3 bg-[#F0F2F7] border border-[#E2E8F0] rounded-2xl px-4 py-3.5 flex items-start gap-3">
-          <BellOff size={16} className="text-[#4A5568] flex-shrink-0 mt-0.5" />
-          <p className="text-[0.8125rem] text-[#4A5568] leading-snug">
-            Las notificaciones están <strong className="text-[#0D1F3C]">bloqueadas</strong> en tu navegador.
-            Actívalas en la configuración de tu navegador para recibir alertas.
-          </p>
+        <div
+          className="mx-4 mt-3 rounded-xl overflow-hidden"
+          style={{ border: '1px solid #F59E0B', background: '#FEF3C7' }}
+        >
+          <div className="px-4 py-3.5">
+            <div className="flex items-start gap-2.5 mb-2">
+              <BellOff size={15} className="flex-shrink-0 mt-0.5" style={{ color: '#92400E' }} />
+              <p className="text-[0.8125rem] font-bold leading-tight" style={{ color: '#92400E' }}>
+                Notificaciones bloqueadas por el navegador
+              </p>
+            </div>
+            <p className="text-[0.75rem] leading-relaxed mb-3" style={{ color: '#92400E' }}>
+              {getBrowserInstructions()}
+            </p>
+            <p className="text-[0.75rem] leading-relaxed mb-3" style={{ color: '#B45309' }}>
+              Después de permitir, recarga la página para activar las notificaciones.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="flex items-center gap-1.5 text-[0.75rem] font-semibold px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
+              style={{ background: '#F59E0B', color: '#FFFFFF' }}
+            >
+              <RefreshCw size={12} />
+              Recargar página
+            </button>
+          </div>
         </div>
       )}
 

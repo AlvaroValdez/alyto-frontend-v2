@@ -214,7 +214,7 @@ export default function ProfilePage() {
 
               {/* Nombre completo */}
               <div className="mt-1">
-                <h1 className="text-[1.25rem] font-bold text-white leading-tight">
+                <h1 className="text-[1.25rem] font-bold text-[#0D1F3C] leading-tight">
                   {displayName || 'Usuario Alyto'}
                 </h1>
               </div>

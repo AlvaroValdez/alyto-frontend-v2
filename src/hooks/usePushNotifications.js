@@ -42,6 +42,9 @@ export function usePushNotifications() {
   const unsubRef = useRef(null)
 
   // ── Hydrate token from localStorage on mount ───────────────────────────
+  // Also handles the "denied → granted after reload" case: getInitialPermission()
+  // already reads Notification.permission at init time, so after the user unlocks
+  // in browser settings and reloads, permission state is correct without extra logic.
   useEffect(() => {
     try {
       const saved = localStorage.getItem(FCM_TOKEN_KEY)
