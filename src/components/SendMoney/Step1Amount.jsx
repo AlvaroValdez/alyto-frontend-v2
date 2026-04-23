@@ -27,32 +27,37 @@ const ENTITY_ORIGIN = {
 
 const COUNTRY_INFO = {
   // LatAm — Vita
-  CO: { name: 'Colombia',          currency: 'COP', flag: '🇨🇴' },
-  PE: { name: 'Perú',              currency: 'PEN', flag: '🇵🇪' },
-  BO: { name: 'Bolivia',           currency: 'BOB', flag: '🇧🇴' },
-  AR: { name: 'Argentina',         currency: 'ARS', flag: '🇦🇷' },
-  MX: { name: 'México',            currency: 'MXN', flag: '🇲🇽' },
-  BR: { name: 'Brasil',            currency: 'BRL', flag: '🇧🇷' },
-  CL: { name: 'Chile',             currency: 'CLP', flag: '🇨🇱' },
-  EC: { name: 'Ecuador',           currency: 'USD', flag: '🇪🇨' },
-  VE: { name: 'Venezuela',         currency: 'USD', flag: '🇻🇪' },
-  PY: { name: 'Paraguay',          currency: 'PYG', flag: '🇵🇾' },
-  UY: { name: 'Uruguay',           currency: 'UYU', flag: '🇺🇾' },
-  CR: { name: 'Costa Rica',        currency: 'CRC', flag: '🇨🇷' },
-  PA: { name: 'Panamá',            currency: 'USD', flag: '🇵🇦' },
-  DO: { name: 'Rep. Dominicana',   currency: 'DOP', flag: '🇩🇴' },
-  GT: { name: 'Guatemala',         currency: 'GTQ', flag: '🇬🇹' },
+  CO: { name: 'Colombia',          currency: 'COP', currencyName: 'Peso Colombiano',    flagCode: 'co' },
+  PE: { name: 'Perú',              currency: 'PEN', currencyName: 'Sol Peruano',         flagCode: 'pe' },
+  BO: { name: 'Bolivia',           currency: 'BOB', currencyName: 'Boliviano',           flagCode: 'bo' },
+  AR: { name: 'Argentina',         currency: 'ARS', currencyName: 'Peso Argentino',      flagCode: 'ar' },
+  MX: { name: 'México',            currency: 'MXN', currencyName: 'Peso Mexicano',       flagCode: 'mx' },
+  BR: { name: 'Brasil',            currency: 'BRL', currencyName: 'Real Brasileño',      flagCode: 'br' },
+  CL: { name: 'Chile',             currency: 'CLP', currencyName: 'Peso Chileno',        flagCode: 'cl' },
+  EC: { name: 'Ecuador',           currency: 'USD', currencyName: 'Dólar Americano',     flagCode: 'ec' },
+  VE: { name: 'Venezuela',         currency: 'USD', currencyName: 'Dólar Americano',     flagCode: 've' },
+  PY: { name: 'Paraguay',          currency: 'PYG', currencyName: 'Guaraní',             flagCode: 'py' },
+  UY: { name: 'Uruguay',           currency: 'UYU', currencyName: 'Peso Uruguayo',       flagCode: 'uy' },
+  CR: { name: 'Costa Rica',        currency: 'CRC', currencyName: 'Colón Costarricense', flagCode: 'cr' },
+  PA: { name: 'Panamá',            currency: 'USD', currencyName: 'Dólar Americano',     flagCode: 'pa' },
+  DO: { name: 'Rep. Dominicana',   currency: 'DOP', currencyName: 'Peso Dominicano',     flagCode: 'do' },
+  GT: { name: 'Guatemala',         currency: 'GTQ', currencyName: 'Quetzal',             flagCode: 'gt' },
   // Global — OwlPay
-  US: { name: 'Estados Unidos',    currency: 'USD', flag: '🇺🇸' },
-  EU: { name: 'Europa (EUR)',       currency: 'EUR', flag: '🇪🇺' },
-  CN: { name: 'China',             currency: 'CNY', flag: '🇨🇳' },
-  AE: { name: 'Emiratos Árabes',   currency: 'AED', flag: '🇦🇪' },
-  GB: { name: 'Reino Unido',       currency: 'GBP', flag: '🇬🇧' },
-  CA: { name: 'Canadá',            currency: 'CAD', flag: '🇨🇦' },
-  AU: { name: 'Australia',         currency: 'AUD', flag: '🇦🇺' },
-  JP: { name: 'Japón',             currency: 'JPY', flag: '🇯🇵' },
-  IN: { name: 'India',             currency: 'INR', flag: '🇮🇳' },
-  SG: { name: 'Singapur',          currency: 'SGD', flag: '🇸🇬' },
+  US: { name: 'Estados Unidos',    currency: 'USD', currencyName: 'Dólar Americano',     flagCode: 'us' },
+  EU: { name: 'Europa',            currency: 'EUR', currencyName: 'Euro',                flagCode: 'eu' },
+  CN: { name: 'China',             currency: 'CNY', currencyName: 'Yuan Chino',          flagCode: 'cn' },
+  AE: { name: 'Emiratos Árabes',   currency: 'AED', currencyName: 'Dírham Emiratí',      flagCode: 'ae' },
+  GB: { name: 'Reino Unido',       currency: 'GBP', currencyName: 'Libra Esterlina',     flagCode: 'gb' },
+  CA: { name: 'Canadá',            currency: 'CAD', currencyName: 'Dólar Canadiense',    flagCode: 'ca' },
+  AU: { name: 'Australia',         currency: 'AUD', currencyName: 'Dólar Australiano',   flagCode: 'au' },
+  JP: { name: 'Japón',             currency: 'JPY', currencyName: 'Yen Japonés',         flagCode: 'jp' },
+  IN: { name: 'India',             currency: 'INR', currencyName: 'Rupia India',         flagCode: 'in' },
+  SG: { name: 'Singapur',          currency: 'SGD', currencyName: 'Dólar de Singapur',   flagCode: 'sg' },
+}
+
+/** URL de bandera desde flagcdn.com (imágenes reales circulares) */
+function flagUrl(code) {
+  return `https://flagcdn.com/w80/${code}.png`
 }
 
 /** Convierte la lista de corredores en opciones de país destino únicas */
@@ -66,9 +71,10 @@ function corridorsToCountries(corridors) {
     const info = COUNTRY_INFO[code] ?? {}
     result.push({
       code,
-      name:     info.name     ?? code,
-      currency: c.destinationCurrency ?? info.currency ?? '—',
-      flag:     info.flag     ?? '🌍',
+      name:         info.name         ?? code,
+      currency:     c.destinationCurrency ?? info.currency ?? '—',
+      currencyName: info.currencyName  ?? '',
+      flagCode:     info.flagCode      ?? code.toLowerCase(),
     })
   }
   return result
@@ -156,13 +162,14 @@ function StatusBadge({ status }) {
 
 // ── CountryPickerModal ────────────────────────────────────────────────────────
 
+const SELECTED_BG = '#F5C518'   // amarillo dorado Alyto — igual que la imagen de referencia
+
 function CountryPickerModal({ countries, selected, onSelect, onClose }) {
-  const [query, setQuery]   = useState('')
-  const inputRef            = useRef(null)
+  const [query, setQuery] = useState('')
+  const inputRef          = useRef(null)
 
   useEffect(() => {
     inputRef.current?.focus()
-    // Bloquear scroll del body mientras el modal está abierto
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
   }, [])
@@ -171,48 +178,47 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
     ? countries.filter(c =>
         c.name.toLowerCase().includes(query.toLowerCase()) ||
         c.currency.toLowerCase().includes(query.toLowerCase()) ||
+        c.currencyName.toLowerCase().includes(query.toLowerCase()) ||
         c.code.toLowerCase().includes(query.toLowerCase())
       )
     : countries
 
   return (
-    /* Overlay */
     <div
-      style={{
-        position:        'fixed',
-        inset:           0,
-        zIndex:          200,
-        background:      'rgba(13,31,60,0.45)',
-        backdropFilter:  'blur(4px)',
-        display:         'flex',
-        alignItems:      'flex-end',
-        justifyContent:  'center',
-      }}
       onClick={onClose}
+      style={{
+        position:   'fixed',
+        inset:      0,
+        zIndex:     200,
+        background: 'rgba(0,0,0,0.55)',
+        display:    'flex',
+        alignItems: 'flex-end',
+      }}
     >
       {/* Panel */}
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width:           '100%',
-          maxWidth:        480,
-          background:      '#FFFFFF',
-          borderRadius:    '24px 24px 0 0',
-          maxHeight:       '80dvh',
-          display:         'flex',
-          flexDirection:   'column',
-          boxShadow:       '0 -8px 40px rgba(13,31,60,0.18)',
+          width:         '100%',
+          background:    '#FFFFFF',
+          borderRadius:  '24px 24px 0 0',
+          maxHeight:     '85dvh',
+          display:       'flex',
+          flexDirection: 'column',
+          boxShadow:     '0 -4px 32px rgba(0,0,0,0.20)',
         }}
       >
-        {/* Handle */}
-        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 4 }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E2E8F0' }} />
-        </div>
-
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px 12px' }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0D1F3C', margin: 0 }}>
-            País de destino
+        <div
+          style={{
+            display:        'flex',
+            alignItems:     'center',
+            justifyContent: 'space-between',
+            padding:        '20px 20px 0',
+          }}
+        >
+          <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#0D1F3C' }}>
+            Selecciona país destino
           </h3>
           <button
             onClick={onClose}
@@ -227,12 +233,12 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
         </div>
 
         {/* Buscador */}
-        <div style={{ padding: '0 16px 12px' }}>
+        <div style={{ padding: '14px 16px 0' }}>
           <div style={{ position: 'relative' }}>
             <Search
-              size={16}
+              size={15}
               color="#94A3B8"
-              style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+              style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
             />
             <input
               ref={inputRef}
@@ -243,14 +249,14 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
               style={{
                 width:        '100%',
                 boxSizing:    'border-box',
-                paddingLeft:  40,
-                paddingRight: 14,
+                paddingLeft:  38,
+                paddingRight: 12,
                 paddingTop:   10,
                 paddingBottom:10,
                 borderRadius: 12,
                 border:       '1px solid #E2E8F0',
                 background:   '#F4F6FA',
-                fontSize:     '0.9375rem',
+                fontSize:     '0.875rem',
                 color:        '#0D1F3C',
                 outline:      'none',
                 fontFamily:   "'Manrope', sans-serif",
@@ -259,86 +265,69 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
           </div>
         </div>
 
-        {/* Lista de países */}
-        <div style={{ overflowY: 'auto', padding: '0 16px', paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+        {/* Lista */}
+        <div style={{ overflowY: 'auto', flex: 1, paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
           {filtered.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '32px 0', color: '#94A3B8', fontSize: '0.875rem' }}>
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94A3B8', fontSize: '0.875rem' }}>
               Sin resultados para "{query}"
             </div>
-          ) : (
-            filtered.map(c => {
-              const isActive = selected?.code === c.code
-              return (
-                <button
-                  key={c.code}
-                  onClick={() => { onSelect(c); onClose() }}
+          ) : filtered.map(c => {
+            const isActive = selected?.code === c.code
+            return (
+              <button
+                key={c.code}
+                onClick={() => { onSelect(c); onClose() }}
+                style={{
+                  display:      'flex',
+                  alignItems:   'center',
+                  gap:          14,
+                  width:        '100%',
+                  padding:      '12px 20px',
+                  background:   isActive ? SELECTED_BG : 'transparent',
+                  border:       'none',
+                  borderBottom: '1px solid #F0F2F7',
+                  cursor:       'pointer',
+                  textAlign:    'left',
+                  fontFamily:   "'Manrope', sans-serif",
+                  transition:   'background 0.1s',
+                }}
+              >
+                {/* Bandera real en círculo */}
+                <img
+                  src={flagUrl(c.flagCode)}
+                  alt={c.name}
+                  width={48}
+                  height={48}
                   style={{
-                    display:       'flex',
-                    alignItems:    'center',
-                    gap:           14,
-                    width:         '100%',
-                    padding:       '12px 14px',
-                    borderRadius:  14,
-                    background:    isActive ? 'rgba(29,52,97,0.06)' : 'transparent',
-                    border:        isActive ? '1.5px solid rgba(29,52,97,0.20)' : '1.5px solid transparent',
-                    cursor:        'pointer',
-                    marginBottom:  4,
-                    textAlign:     'left',
-                    fontFamily:    "'Manrope', sans-serif",
-                    transition:    'background 0.12s',
+                    width:        48,
+                    height:       48,
+                    borderRadius: '50%',
+                    objectFit:    'cover',
+                    flexShrink:   0,
+                    border:       '1px solid rgba(0,0,0,0.08)',
+                    background:   '#F4F6FA',
                   }}
-                >
-                  {/* Bandera en círculo */}
-                  <div
-                    style={{
-                      width:          48,
-                      height:         48,
-                      borderRadius:   '50%',
-                      background:     '#F4F6FA',
-                      border:         '1px solid #E2E8F0',
-                      display:        'flex',
-                      alignItems:     'center',
-                      justifyContent: 'center',
-                      fontSize:       '1.625rem',
-                      flexShrink:     0,
-                    }}
-                  >
-                    {c.flag}
-                  </div>
+                  onError={e => {
+                    e.currentTarget.style.display = 'none'
+                    const span = document.createElement('span')
+                    span.textContent = c.code
+                    span.style.cssText = 'width:48px;height:48px;border-radius:50%;background:#E2E8F0;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#4A5568;flex-shrink:0'
+                    e.currentTarget.parentNode.insertBefore(span, e.currentTarget)
+                  }}
+                />
 
-                  {/* Nombre y moneda */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 600, color: '#0D1F3C', lineHeight: 1.2 }}>
-                      {c.name}
-                    </p>
-                    <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#4A5568' }}>
-                      {c.currency} · {c.code}
-                    </p>
-                  </div>
-
-                  {/* Check activo */}
-                  {isActive && (
-                    <div
-                      style={{
-                        width:          22,
-                        height:         22,
-                        borderRadius:   '50%',
-                        background:     '#1D3461',
-                        display:        'flex',
-                        alignItems:     'center',
-                        justifyContent: 'center',
-                        flexShrink:     0,
-                      }}
-                    >
-                      <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
-                        <path d="M1 4.5L4 7.5L10 1.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                  )}
-                </button>
-              )
-            })
-          )}
+                {/* Texto */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: 0, fontSize: '1rem', fontWeight: isActive ? 700 : 600, color: '#0D1F3C', lineHeight: 1.25 }}>
+                    {c.name}
+                  </p>
+                  <p style={{ margin: '3px 0 0', fontSize: '0.8125rem', color: isActive ? '#5A4000' : '#4A5568' }}>
+                    {c.currency}{c.currencyName ? ` · ${c.currencyName}` : ''}
+                  </p>
+                </div>
+              </button>
+            )
+          })}
         </div>
       </div>
     </div>
@@ -506,23 +495,27 @@ export default function Step1Amount({ initialData, onNext }) {
               textAlign:      'left',
             }}
           >
-            {/* Bandera en círculo */}
-            <div
-              style={{
-                width:          44,
-                height:         44,
-                borderRadius:   '50%',
-                background:     selectedCountry ? '#F4F6FA' : '#F4F6FA',
-                border:         '1px solid #E2E8F0',
-                display:        'flex',
-                alignItems:     'center',
-                justifyContent: 'center',
-                fontSize:       '1.5rem',
-                flexShrink:     0,
-              }}
-            >
-              {selectedCountry?.flag || '🌎'}
-            </div>
+            {/* Bandera real en círculo */}
+            {selectedCountry ? (
+              <img
+                src={flagUrl(selectedCountry.flagCode)}
+                alt={selectedCountry.name}
+                width={44}
+                height={44}
+                style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(0,0,0,0.08)' }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: 44, height: 44, borderRadius: '50%',
+                  background: '#F4F6FA', border: '1px solid #E2E8F0',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.5rem', flexShrink: 0,
+                }}
+              >
+                🌎
+              </div>
+            )}
 
             {/* Texto */}
             <div style={{ flex: 1, minWidth: 0 }}>
