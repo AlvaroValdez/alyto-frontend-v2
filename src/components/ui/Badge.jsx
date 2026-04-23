@@ -4,6 +4,7 @@ const CONFIG = {
   warning: { bg: 'var(--color-warning-bg)',      text: 'var(--color-warning)',     icon: '⚠' },
   error:   { bg: 'var(--color-error-bg)',        text: 'var(--color-error)',       icon: '✕' },
   teal:    { bg: 'var(--color-teal-status-bg)',  text: 'var(--color-teal-status)', icon: '↗' },
+  transit: { bg: 'var(--color-transit-bg)',      text: 'var(--color-transit)',     icon: '↗' },
 }
 
 export default function Badge({ variant = 'pending', showIcon = true, children }) {

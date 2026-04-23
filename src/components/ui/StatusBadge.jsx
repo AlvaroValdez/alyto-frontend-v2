@@ -1,14 +1,18 @@
 import Badge from './Badge'
 
 const STATUS_MAP = {
-  completed:       { variant: 'success', label: 'Completada'    },
-  payout_sent:     { variant: 'teal',    label: 'En tránsito'   },
-  processing:      { variant: 'teal',    label: 'Procesando'    },
-  in_transit:      { variant: 'teal',    label: 'En tránsito'   },
-  payin_confirmed: { variant: 'pending', label: 'Verificando'   },
-  payin_pending:   { variant: 'pending', label: 'Pago pendiente' },
-  failed:          { variant: 'error',   label: 'Fallida'       },
-  refunded:        { variant: 'warning', label: 'Reembolsada'   },
+  completed:        { variant: 'success', label: 'Completada'        },
+  payout_sent:      { variant: 'transit', label: 'En tránsito'       },
+  payout_in_transit:{ variant: 'transit', label: 'En tránsito'       },
+  processing:       { variant: 'transit', label: 'Procesando'        },
+  in_transit:       { variant: 'transit', label: 'En tránsito'       },
+  payin_confirmed:  { variant: 'pending', label: 'Verificando pago'  },
+  payin_pending:    { variant: 'pending', label: 'Pago pendiente'    },
+  payout_pending:   { variant: 'warning', label: 'Pago manual'       },
+  pending_funding:  { variant: 'warning', label: 'Fondos pendientes' },
+  failed:           { variant: 'error',   label: 'Fallida'           },
+  refunded:         { variant: 'warning', label: 'Reembolsada'       },
+  initiated:        { variant: 'pending', label: 'Iniciada'          },
 }
 
 export default function StatusBadge({ status }) {
