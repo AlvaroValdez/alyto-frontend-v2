@@ -18,8 +18,8 @@ const NAV_DEFAULT = [
   { icon: User,            label: 'Perfil',         to: '/profile'      },
 ]
 
-const ALYTO_BLUE     = '#1D3461'
-const ALYTO_BLUE_DIM = 'rgba(29,52,97,0.08)'
+const ALYTO_BLUE     = '#0D1F3C'
+const ALYTO_BLUE_DIM = 'rgba(13,31,60,0.08)'
 
 export default function BottomNavBar({ user }) {
   const items = user?.legalEntity === 'SRL' ? NAV_SRL : NAV_DEFAULT

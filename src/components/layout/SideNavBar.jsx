@@ -75,21 +75,21 @@ export default function SideNavBar({ user, onLogout }) {
                   gap:          12,
                   padding:      '10px 14px',
                   borderRadius: 'var(--radius-lg)',
-                  background:   isActive ? 'var(--color-accent-teal-dim)' : 'transparent',
-                  borderLeft:   isActive ? '3px solid var(--color-accent-teal)' : '3px solid transparent',
+                  background:   isActive ? 'var(--color-primary-bg)' : 'transparent',
+                  borderLeft:   isActive ? '3px solid var(--color-primary)' : '3px solid transparent',
                   transition:   'var(--transition-fast)',
                   cursor:       'pointer',
                 }}
               >
                 <Icon
                   size={18}
-                  style={{ color: isActive ? 'var(--color-accent-teal)' : 'var(--color-text-muted)', flexShrink: 0 }}
+                  style={{ color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)', flexShrink: 0 }}
                 />
                 <span
                   style={{
                     fontSize:   '0.9375rem',
                     fontWeight: isActive ? 700 : 500,
-                    color:      isActive ? 'var(--color-accent-teal)' : 'var(--color-text-secondary)',
+                    color:      isActive ? 'var(--color-primary)' : 'var(--color-text-secondary)',
                     transition: 'var(--transition-fast)',
                   }}
                 >
