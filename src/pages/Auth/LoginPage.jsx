@@ -116,7 +116,7 @@ export default function LoginPage() {
             type="email" name="email" value={form.email} onChange={handleChange}
             placeholder="tu@email.com" autoComplete="email"
             style={INPUT_STYLE}
-            onFocus={e => { e.target.style.borderColor = 'var(--color-accent-teal)'; e.target.style.boxShadow = '0 0 0 2px var(--color-accent-teal-dim)' }}
+            onFocus={e => { e.target.style.borderColor = 'var(--color-border-focus)'; e.target.style.boxShadow = '0 0 0 3px rgba(13,31,60,0.12)' }}
             onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
           />
         </div>
@@ -128,7 +128,7 @@ export default function LoginPage() {
             <Link
               to="/forgot-password"
               className="no-underline"
-              style={{ fontSize: 'var(--font-sm)', color: 'var(--color-accent-teal)', fontWeight: 500 }}
+              style={{ fontSize: 'var(--font-sm)', color: 'var(--color-primary)', fontWeight: 500 }}
             >
               ¿Olvidaste tu contraseña?
             </Link>
@@ -139,7 +139,7 @@ export default function LoginPage() {
               value={form.password} onChange={handleChange}
               placeholder="••••••••" autoComplete="current-password"
               style={{ ...INPUT_STYLE, paddingRight: 44 }}
-              onFocus={e => { e.target.style.borderColor = 'var(--color-accent-teal)'; e.target.style.boxShadow = '0 0 0 2px var(--color-accent-teal-dim)' }}
+              onFocus={e => { e.target.style.borderColor = 'var(--color-border-focus)'; e.target.style.boxShadow = '0 0 0 3px rgba(13,31,60,0.12)' }}
               onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
             />
             <button
@@ -161,8 +161,8 @@ export default function LoginPage() {
             style={{
               width: 20, height: 20, borderRadius: 6, flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background:  form.rememberMe ? 'var(--color-accent-teal)' : 'transparent',
-              border:      `2px solid ${form.rememberMe ? 'var(--color-accent-teal)' : 'var(--color-border)'}`,
+              background:  form.rememberMe ? 'var(--color-primary)' : 'transparent',
+              border:      `2px solid ${form.rememberMe ? 'var(--color-primary)' : 'var(--color-border)'}`,
               transition:  'var(--transition-fast)',
             }}
             onClick={() => setForm(prev => ({ ...prev, rememberMe: !prev.rememberMe }))}
@@ -188,10 +188,10 @@ export default function LoginPage() {
             fontSize:     'var(--font-md)',
             fontWeight:   700,
             color:        loading ? 'var(--color-text-muted)' : '#FFFFFF',
-            background:   loading ? 'var(--color-bg-elevated)' : 'var(--color-accent-teal)',
+            background:   loading ? 'var(--color-bg-elevated)' : 'var(--color-primary)',
             border:       'none',
             cursor:       loading ? 'not-allowed' : 'pointer',
-            boxShadow:    loading ? 'none' : 'var(--shadow-teal)',
+            boxShadow:    loading ? 'none' : 'var(--shadow-primary)',
             transition:   'var(--transition-fast)',
             fontFamily:   "'Manrope', sans-serif",
           }}
@@ -202,7 +202,7 @@ export default function LoginPage() {
 
       <p style={{ textAlign: 'center', fontSize: 'var(--font-sm)', color: 'var(--color-text-muted)', marginTop: 24 }}>
         ¿No tienes cuenta?{' '}
-        <Link to="/register" className="no-underline" style={{ color: 'var(--color-accent-teal)', fontWeight: 600 }}>
+        <Link to="/register" className="no-underline" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>
           Regístrate
         </Link>
       </p>
