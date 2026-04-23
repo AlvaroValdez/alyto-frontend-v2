@@ -56,12 +56,12 @@ function NotStartedCard({ navigate, isSRL }) {
     ? [
         'Hasta Bs 49.999 por transacción (límite regulatorio BOB)',
         'Corredores: CO, PE, AR, CL, MX, BR',
-        'FX transparente · Soporte prioritario',
+        'FX transparente · Atención Business prioritaria',
       ]
     : [
         'Tickets hasta $50.000 USD por transacción',
         'Corredores globales: USD, EUR, CNY, BRL',
-        'FX transparente · Soporte prioritario',
+        'FX transparente · Atención Business prioritaria',
       ]
 
   return (

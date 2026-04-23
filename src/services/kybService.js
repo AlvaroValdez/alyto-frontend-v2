@@ -4,7 +4,7 @@
  * Endpoints de usuario:
  *   applyKyb(formData)         → POST /kyb/apply          (multipart)
  *   getKybStatus()             → GET  /kyb/status
- *   uploadMoreInfo(formData)   → POST /kyb/more-info       (multipart)
+ *   uploadMoreInfo(formData)   → POST /kyb/documents       (multipart)
  *
  * Endpoints de admin:
  *   listKybApplications(params) → GET  /admin/kyb
@@ -28,7 +28,7 @@ export function getKybStatus() {
 
 /** Sube documentos adicionales cuando el admin solicita más información. */
 export function uploadMoreInfo(formData) {
-  return requestFormData('/kyb/more-info', formData)
+  return requestFormData('/kyb/documents', formData)
 }
 
 // ── Admin ──────────────────────────────────────────────────────────────────
