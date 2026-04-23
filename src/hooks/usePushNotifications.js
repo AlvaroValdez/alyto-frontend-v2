@@ -12,17 +12,13 @@
  *   dismissBanner()               — Oculta el banner por la sesión actual
  */
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { messaging, getToken, onMessage, registerFirebaseSW } from '../services/firebase'
 import { registerFcmToken } from '../services/api'
 
 // ── Claves de storage ──────────────────────────────────────────────────────
-// ⚠️ No persistimos el token FCM en localStorage — solo un flag booleano que
-// indica si este dispositivo ya se registró en el backend. El token se
-// obtiene de Firebase en cada carga y se envía al servidor fire-and-forget.
-// Almacenar el token en localStorage habilitaría phishing push dirigido si un
-// script malicioso lo lee + abusa de la API de FCM.
 const FCM_REGISTERED_KEY  = 'alyto_fcm_registered'
+const FCM_TOKEN_KEY        = 'alyto_fcm_token'
 const ASKED_AT_KEY        = 'alyto_notif_asked_at'
 const BANNER_SHOWN_KEY    = 'alyto_notif_banner_shown'   // sessionStorage
 const BANNER_DENIED_KEY   = 'alyto_notif_banner_denied'  // localStorage (permanente)
@@ -45,6 +41,17 @@ export function usePushNotifications() {
   const [showBanner, setShowBanner] = useState(false)
   const unsubRef = useRef(null)
 
+  // ── Hydrate token from localStorage on mount ───────────────────────────
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(FCM_TOKEN_KEY)
+      if (saved && Notification.permission === 'granted') {
+        setToken(saved)
+        setPermission('granted')
+      }
+    } catch {}
+  }, [])
+
   // ── requestPermission ──────────────────────────────────────────────────
   const requestPermission = useCallback(async () => {
     if (!('Notification' in window) || !messaging) return
@@ -56,6 +63,7 @@ export function usePushNotifications() {
         setPermission(result)
         if (result !== 'granted') {
           setShowBanner(false)
+          localStorage.removeItem(FCM_TOKEN_KEY)
           return
         }
       }
@@ -82,8 +90,16 @@ export function usePushNotifications() {
       // están vigentes vive en el servidor (fcmTokens array en User). El
       // backend usa $addToSet para evitar duplicados, así que reenviar el
       // mismo token es idempotente.
-      await registerFcmToken(fcmToken)
+      try {
+        await registerFcmToken(fcmToken)
+      } catch (err) {
+        console.error('[FCM] Token registration failed:', err.message)
+        setError('No se pudo habilitar las notificaciones. Intenta de nuevo.')
+        return
+      }
+
       localStorage.setItem(FCM_REGISTERED_KEY, '1')
+      localStorage.setItem(FCM_TOKEN_KEY, fcmToken)
 
       setToken(fcmToken)
       setShowBanner(false)
@@ -158,6 +174,7 @@ export function usePushNotifications() {
     setToken(null)
     try {
       localStorage.removeItem(FCM_REGISTERED_KEY)
+      localStorage.removeItem(FCM_TOKEN_KEY)
     } catch {}
   }, [])
 

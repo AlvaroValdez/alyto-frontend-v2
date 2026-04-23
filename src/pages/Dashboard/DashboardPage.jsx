@@ -5,6 +5,7 @@ import { listUserCorridors }  from '../../services/paymentsService'
 import WelcomeBanner          from './WelcomeBanner'
 import QuickActions           from './QuickActions'
 import RecentTransactions     from './RecentTransactions'
+import WalletCard             from '../../components/WalletCard/WalletCard'
 
 // ── Stat Card ─────────────────────────────────────────────────────────────────
 
@@ -212,6 +213,16 @@ export default function DashboardPage() {
     <div style={{ paddingTop: 16 }}>
 
       <WelcomeBanner firstName={firstName} kycStatus={kycStatus} activeTransactions={activeTransactions} />
+
+      {/* Wallet card — solo usuarios SRL (Bolivia) */}
+      {legalEntity === 'SRL' && data?.wallet && (
+        <WalletCard
+          bobBalance={data.wallet.bob.balanceAvailable}
+          usdcBalance={data.wallet.usdc.balanceAvailable}
+          stellarAddress={data.wallet.usdc.stellarAddress}
+          status={data.wallet.bob.status}
+        />
+      )}
 
       {/* Stats */}
       {loading ? (

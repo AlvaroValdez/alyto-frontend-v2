@@ -116,7 +116,7 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
 
   return (
     <div className="py-4">
-      <p className="text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-wider px-4 mb-3">
+      <p className="text-[0.75rem] font-semibold text-[#374151] uppercase tracking-wider px-4 mb-3">
         Preferencias
       </p>
 
