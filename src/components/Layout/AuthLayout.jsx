@@ -1,36 +1,53 @@
-/**
- * AuthLayout.jsx — Layout para páginas públicas de autenticación
- *
- * Tema: Alyto Arctic Light
- * Usado en: /login, /register, /forgot-password, /reset-password
- */
-
 import { Outlet } from 'react-router-dom'
 
 export default function AuthLayout() {
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-5 py-10 font-sans"
-      style={{ background: 'linear-gradient(160deg, #F8FAFC 0%, #EEF2F7 100%)' }}
+      style={{
+        minHeight:      '100vh',
+        display:        'flex',
+        flexDirection:  'column',
+        alignItems:     'center',
+        justifyContent: 'center',
+        padding:        '40px 20px',
+        background:     'var(--color-bg-primary)',
+        fontFamily:     "'Manrope', sans-serif",
+      }}
     >
       {/* Logo */}
-      <div className="mb-8 flex flex-col items-center gap-2">
+      <div style={{ marginBottom: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
         <img
-          src="/assets/LogoAlyto.png"
+          src="/assets/LogoAlytoWB.png"
           alt="Alyto"
-          className="h-10 w-auto object-contain"
-          style={{ filter: 'drop-shadow(0 2px 8px rgba(35,62,88,0.08))' }}
+          style={{ height: 40, width: 'auto', objectFit: 'contain' }}
         />
-        <p className="text-[0.75rem] font-medium text-[#94A3B8] tracking-widest uppercase">
+        <p
+          style={{
+            fontSize:      '0.6875rem',
+            fontWeight:    600,
+            color:         'var(--color-text-muted)',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+          }}
+        >
           Plataforma Financiera
         </p>
       </div>
 
-      {/* Contenido de la ruta (LoginPage, RegisterPage, etc.) */}
+      {/* Page content (LoginPage, RegisterPage, etc.) */}
       <Outlet />
 
-      {/* Footer legal */}
-      <p className="mt-6 text-center text-[0.6875rem] text-[#94A3B8] max-w-[320px] leading-relaxed">
+      {/* Legal footer */}
+      <p
+        style={{
+          marginTop:  24,
+          textAlign:  'center',
+          fontSize:   '0.6875rem',
+          color:      'var(--color-text-muted)',
+          maxWidth:   320,
+          lineHeight: 1.6,
+        }}
+      >
         Al acceder aceptas los Términos de Servicio de AV Finance LLC, SpA y SRL
         según la jurisdicción correspondiente a tu cuenta.
       </p>
