@@ -1,15 +1,3 @@
-/**
- * LoginPage.jsx — Pantalla de inicio de sesión
- *
- * - rememberMe (sessionStorage vs localStorage)
- * - Link "¿Olvidaste tu contraseña?" → /forgot-password
- * - Redirect a location.state.from tras login exitoso
- * - Redirect a /kyc si kycStatus !== 'approved'
- * - Banner de sesión expirada si ?expired=1 en URL
- *
- * Tema: Alyto Arctic Light
- */
-
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Eye, EyeOff, AlertCircle, Clock, CheckCircle } from 'lucide-react'
@@ -23,6 +11,20 @@ function normalizeError(err) {
   return 'Email o contraseña incorrectos.'
 }
 
+const INPUT_STYLE = {
+  width:        '100%',
+  borderRadius: 'var(--radius-md)',
+  padding:      '14px 16px',
+  fontSize:     'var(--font-md)',
+  color:        'var(--color-text-primary)',
+  background:   'var(--color-bg-elevated)',
+  border:       '1px solid var(--color-border)',
+  outline:      'none',
+  fontFamily:   "'Manrope', sans-serif",
+  fontWeight:   500,
+  transition:   'var(--transition-fast)',
+}
+
 export default function LoginPage() {
   const navigate  = useNavigate()
   const location  = useLocation()
@@ -32,7 +34,7 @@ export default function LoginPage() {
   const loggedOut    = new URLSearchParams(location.search).get('logout') === '1'
   const stateMessage = location.state?.message ?? null
 
-  const [form, setForm] = useState({ email: '', password: '', rememberMe: true })
+  const [form, setForm]     = useState({ email: '', password: '', rememberMe: true })
   const [showPwd, setShowPwd] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
@@ -45,21 +47,11 @@ export default function LoginPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!form.email || !form.password) {
-      setError('Completa todos los campos.')
-      return
-    }
+    if (!form.email || !form.password) { setError('Completa todos los campos.'); return }
     setLoading(true)
     try {
-      const { user } = await login({
-        email:      form.email.trim(),
-        password:   form.password,
-        rememberMe: form.rememberMe,
-      })
-      if (user.kycStatus !== 'approved') {
-        navigate('/kyc', { replace: true })
-        return
-      }
+      const { user } = await login({ email: form.email.trim(), password: form.password, rememberMe: form.rememberMe })
+      if (user.kycStatus !== 'approved') { navigate('/kyc', { replace: true }); return }
       const from = location.state?.from?.pathname ?? '/dashboard'
       navigate(from, { replace: true })
     } catch (err) {
@@ -69,96 +61,94 @@ export default function LoginPage() {
     }
   }
 
+  const bannerBase = { display: 'flex', alignItems: 'center', gap: 10, borderRadius: 'var(--radius-xl)', padding: '12px 16px', marginBottom: 20 }
+
   return (
     <div
-      className="w-full max-w-[400px] rounded-3xl p-7"
       style={{
-        background: '#FFFFFF',
-        border:     '1px solid #E2E8F0',
-        boxShadow:  '0 8px 40px rgba(15,23,42,0.08), 0 2px 8px rgba(15,23,42,0.04)',
+        width:        '100%', maxWidth: 420,
+        background:   'var(--color-bg-secondary)',
+        border:       '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-2xl)',
+        padding:      28,
+        boxShadow:    'var(--shadow-modal)',
       }}
     >
-      <h1 className="text-[1.375rem] font-bold text-[#0F172A] mb-1">Bienvenido de nuevo</h1>
-      <p className="text-[0.8125rem] text-[#64748B] mb-6">Accede a tu cuenta Alyto</p>
+      <h1 style={{ fontSize: 'var(--font-2xl)', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 4 }}>
+        Bienvenido de nuevo
+      </h1>
+      <p style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)', marginBottom: 24 }}>
+        Accede a tu cuenta Alyto
+      </p>
 
-      {/* Banner sesión cerrada */}
+      {/* Banners */}
       {loggedOut && !error && (
-        <div className="flex items-center gap-2.5 bg-[#233E581A] border border-[#233E5833] rounded-2xl px-4 py-3 mb-5">
-          <CheckCircle size={15} className="text-[#233E58] flex-shrink-0" />
-          <p className="text-[0.8125rem] text-[#233E58]">Sesión cerrada correctamente.</p>
+        <div style={{ ...bannerBase, background: 'var(--color-accent-teal-dim)', border: '1px solid var(--color-accent-teal-border)' }}>
+          <CheckCircle size={15} style={{ color: 'var(--color-accent-teal)', flexShrink: 0 }} />
+          <p style={{ fontSize: 'var(--font-sm)', color: 'var(--color-accent-teal)' }}>Sesión cerrada correctamente.</p>
         </div>
       )}
-
-      {/* Banner mensaje desde redirect */}
       {stateMessage && !expired && !error && (
-        <div className="flex items-center gap-2.5 bg-[#F1F5F9] border border-[#E2E8F0] rounded-2xl px-4 py-3 mb-5">
-          <Clock size={15} className="text-[#64748B] flex-shrink-0" />
-          <p className="text-[0.8125rem] text-[#64748B]">{stateMessage}</p>
+        <div style={{ ...bannerBase, background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}>
+          <Clock size={15} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+          <p style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)' }}>{stateMessage}</p>
         </div>
       )}
-
-      {/* Banner sesión expirada */}
       {expired && !error && (
-        <div className="flex items-center gap-2.5 bg-[#F1F5F9] border border-[#E2E8F0] rounded-2xl px-4 py-3 mb-5">
-          <Clock size={15} className="text-[#64748B] flex-shrink-0" />
-          <p className="text-[0.8125rem] text-[#64748B]">Tu sesión expiró. Vuelve a iniciar sesión.</p>
+        <div style={{ ...bannerBase, background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}>
+          <Clock size={15} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+          <p style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)' }}>Tu sesión expiró. Vuelve a iniciar sesión.</p>
         </div>
       )}
-
-      {/* Error banner */}
       {error && (
-        <div className="flex items-center gap-2.5 bg-[#EF44441A] border border-[#EF444433] rounded-2xl px-4 py-3 mb-5">
-          <AlertCircle size={15} className="text-[#EF4444] flex-shrink-0" />
-          <p className="text-[0.8125rem] text-[#EF4444]">{error}</p>
+        <div style={{ ...bannerBase, background: 'var(--color-error-bg)', border: '1px solid rgba(239,68,68,0.25)' }}>
+          <AlertCircle size={15} style={{ color: 'var(--color-error)', flexShrink: 0 }} />
+          <p style={{ fontSize: 'var(--font-sm)', color: 'var(--color-error)' }}>{error}</p>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
         {/* Email */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-[0.08em]">
-            Email
-          </label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <label className="label-uppercase">Email</label>
           <input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            placeholder="tu@email.com"
-            autoComplete="email"
-            className="w-full rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0F172A] bg-white border border-[#E2E8F0] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all duration-150"
+            type="email" name="email" value={form.email} onChange={handleChange}
+            placeholder="tu@email.com" autoComplete="email"
+            style={INPUT_STYLE}
+            onFocus={e => { e.target.style.borderColor = 'var(--color-accent-teal)'; e.target.style.boxShadow = '0 0 0 2px var(--color-accent-teal-dim)' }}
+            onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
           />
         </div>
 
-        {/* Contraseña */}
-        <div className="flex flex-col gap-1.5">
-          <div className="flex justify-between items-center">
-            <label className="text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-[0.08em]">
-              Contraseña
-            </label>
+        {/* Password */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label className="label-uppercase">Contraseña</label>
             <Link
               to="/forgot-password"
-              className="text-[0.75rem] text-[#233E58] hover:text-[#1C3247] font-medium transition-colors"
+              className="no-underline"
+              style={{ fontSize: 'var(--font-sm)', color: 'var(--color-accent-teal)', fontWeight: 500 }}
             >
               ¿Olvidaste tu contraseña?
             </Link>
           </div>
-          <div className="relative">
+          <div style={{ position: 'relative' }}>
             <input
-              type={showPwd ? 'text' : 'password'}
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              placeholder="••••••••"
-              autoComplete="current-password"
-              className="w-full rounded-xl px-4 py-3.5 pr-12 text-[0.9375rem] text-[#0F172A] bg-white border border-[#E2E8F0] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all duration-150"
+              type={showPwd ? 'text' : 'password'} name="password"
+              value={form.password} onChange={handleChange}
+              placeholder="••••••••" autoComplete="current-password"
+              style={{ ...INPUT_STYLE, paddingRight: 44 }}
+              onFocus={e => { e.target.style.borderColor = 'var(--color-accent-teal)'; e.target.style.boxShadow = '0 0 0 2px var(--color-accent-teal-dim)' }}
+              onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
             />
             <button
-              type="button"
-              onClick={() => setShowPwd(v => !v)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#64748B] transition-colors"
-              tabIndex={-1}
+              type="button" onClick={() => setShowPwd(v => !v)} tabIndex={-1}
+              style={{
+                position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'var(--color-text-muted)',
+              }}
             >
               {showPwd ? <EyeOff size={17} /> : <Eye size={17} />}
             </button>
@@ -166,37 +156,53 @@ export default function LoginPage() {
         </div>
 
         {/* Recordarme */}
-        <label className="flex items-center gap-3 cursor-pointer select-none">
+        <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
           <div
-            className={`w-5 h-5 rounded-md flex items-center justify-center border-2 flex-shrink-0 transition-all duration-150
-              ${form.rememberMe ? 'bg-[#233E58] border-[#233E58]' : 'bg-transparent border-[#E2E8F0]'}`}
+            style={{
+              width: 20, height: 20, borderRadius: 6, flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background:  form.rememberMe ? 'var(--color-accent-teal)' : 'transparent',
+              border:      `2px solid ${form.rememberMe ? 'var(--color-accent-teal)' : 'var(--color-border)'}`,
+              transition:  'var(--transition-fast)',
+            }}
             onClick={() => setForm(prev => ({ ...prev, rememberMe: !prev.rememberMe }))}
           >
             {form.rememberMe && (
               <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                <path d="M1 4L3.5 6.5L9 1" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M1 4L3.5 6.5L9 1" stroke="#0F1628" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             )}
           </div>
           <input type="checkbox" name="rememberMe" className="hidden" checked={form.rememberMe} onChange={handleChange} />
-          <span className="text-[0.8125rem] text-[#64748B]">Recordarme</span>
+          <span style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)' }}>Recordarme</span>
         </label>
 
         {/* CTA */}
         <button
-          type="submit"
-          disabled={loading}
-          className="w-full mt-1 rounded-2xl py-4 text-[0.9375rem] font-bold text-white bg-[#233E58] hover:bg-[#1C3247] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
-          style={{ boxShadow: '0 4px 20px rgba(35,62,88,0.25)' }}
+          type="submit" disabled={loading}
+          style={{
+            width:        '100%',
+            marginTop:    4,
+            borderRadius: 'var(--radius-xl)',
+            padding:      '14px 0',
+            fontSize:     'var(--font-md)',
+            fontWeight:   700,
+            color:        '#0F1628',
+            background:   loading ? 'var(--color-bg-elevated)' : 'var(--color-accent-teal)',
+            border:       'none',
+            cursor:       loading ? 'not-allowed' : 'pointer',
+            boxShadow:    loading ? 'none' : 'var(--shadow-teal)',
+            transition:   'var(--transition-fast)',
+            fontFamily:   "'Manrope', sans-serif",
+          }}
         >
           {loading ? 'Iniciando sesión…' : 'Iniciar sesión'}
         </button>
       </form>
 
-      {/* Footer */}
-      <p className="text-center text-[0.8125rem] text-[#94A3B8] mt-6">
+      <p style={{ textAlign: 'center', fontSize: 'var(--font-sm)', color: 'var(--color-text-muted)', marginTop: 24 }}>
         ¿No tienes cuenta?{' '}
-        <Link to="/register" className="text-[#233E58] font-semibold hover:text-[#1C3247] transition-colors">
+        <Link to="/register" className="no-underline" style={{ color: 'var(--color-accent-teal)', fontWeight: 600 }}>
           Regístrate
         </Link>
       </p>
