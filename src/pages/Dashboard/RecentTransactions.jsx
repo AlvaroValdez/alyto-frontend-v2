@@ -43,7 +43,7 @@ function SkeletonCard() {
       style={{
         display: 'flex', alignItems: 'center', gap: 12, padding: 16,
         background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-xl)',
+        borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-card)',
       }}
     >
       <div className="skeleton-line" style={{ width: 44, height: 44, borderRadius: 12, flexShrink: 0 }} />
@@ -77,6 +77,7 @@ function TransactionCard({ tx }) {
         display: 'flex', alignItems: 'center', gap: 12, padding: 16,
         background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)',
         borderRadius: 'var(--radius-xl)', transition: 'var(--transition-fast)',
+        boxShadow: 'var(--shadow-card)',
       }}
       onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-bg-elevated)' }}
       onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-bg-secondary)' }}

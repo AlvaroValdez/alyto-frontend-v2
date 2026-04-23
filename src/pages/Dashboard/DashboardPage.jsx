@@ -1,6 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { ChevronRight, Wallet, AlertCircle, Shield } from 'lucide-react'
 import { useAuth }            from '../../context/AuthContext'
 import { useDashboard }       from '../../hooks/useDashboard'
 import { listUserCorridors }  from '../../services/paymentsService'
@@ -20,6 +18,7 @@ function StatCard({ label, value, accent }) {
         borderRadius: 'var(--radius-xl)',
         padding:      16,
         border:       '1px solid var(--color-border)',
+        boxShadow:    'var(--shadow-card)',
       }}
     >
       <p className="label-uppercase" style={{ marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -112,6 +111,7 @@ function DestinationCountryCard({ country }) {
         borderRadius: 'var(--radius-xl)',
         padding:      14,
         border:       '1px solid var(--color-border)',
+        boxShadow:    'var(--shadow-card)',
         minWidth:     108,
         display:      'flex',
         flexDirection:'column',
@@ -157,51 +157,6 @@ function DestinationCountryCard({ country }) {
           </span>
         )}
       </div>
-    </div>
-  )
-}
-
-// ── Shortcut card (Wallet BOB / Institutional / Reclamos) ─────────────────────
-
-function ShortcutCard({ to, iconBg, icon: Icon, iconColor, title, subtitle }) {
-  return (
-    <div style={{ margin: '0 16px', marginBottom: 12 }}>
-      <Link
-        to={to}
-        className="no-underline block"
-        style={{
-          display:       'flex',
-          alignItems:    'center',
-          justifyContent:'space-between',
-          padding:       '14px 16px',
-          borderRadius:  'var(--radius-xl)',
-          background:    'var(--color-bg-secondary)',
-          border:        '1px solid var(--color-border)',
-          transition:    'var(--transition-fast)',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-bg-elevated)' }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-bg-secondary)' }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            style={{
-              width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-              background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <Icon size={18} style={{ color: iconColor }} />
-          </div>
-          <div>
-            <p style={{ fontSize: 'var(--font-md)', fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1.2 }}>
-              {title}
-            </p>
-            <p style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-muted)', marginTop: 2 }}>
-              {subtitle}
-            </p>
-          </div>
-        </div>
-        <ChevronRight size={18} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
-      </Link>
     </div>
   )
 }
@@ -256,18 +211,6 @@ export default function DashboardPage() {
   return (
     <div style={{ paddingTop: 16 }}>
 
-      {/* Wallet BOB — SRL only */}
-      {legalEntity === 'SRL' && (
-        <ShortcutCard
-          to="/wallet"
-          iconBg="var(--color-success-bg)"
-          icon={Wallet}
-          iconColor="var(--color-success)"
-          title="Mi Wallet BOB"
-          subtitle="Saldo en bolivianos · AV Finance SRL"
-        />
-      )}
-
       <WelcomeBanner firstName={firstName} kycStatus={kycStatus} activeTransactions={activeTransactions} />
 
       {/* Stats */}
@@ -302,28 +245,6 @@ export default function DashboardPage() {
       )}
 
       <QuickActions kycStatus={kycStatus} />
-
-      {/* LLC institutional access */}
-      {legalEntity === 'LLC' && (
-        <ShortcutCard
-          to="/institutional"
-          iconBg="var(--color-accent-teal-dim)"
-          icon={Shield}
-          iconColor="var(--color-accent-teal)"
-          title="Plataforma Institucional"
-          subtitle="On-ramp B2B · OwlPay Harbor · AV Finance LLC"
-        />
-      )}
-
-      {/* Reclamos */}
-      <ShortcutCard
-        to="/reclamos"
-        iconBg="rgba(59,130,246,0.12)"
-        icon={AlertCircle}
-        iconColor="#3B82F6"
-        title="Mis Reclamos"
-        subtitle="Punto de Reclamo PRILI · ASFI"
-      />
 
       <RecentTransactions transactions={recentTxs} loading={loading} />
 
