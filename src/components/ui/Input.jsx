@@ -20,13 +20,13 @@ export default function Input({
   const borderColor = error
     ? 'var(--color-error)'
     : focused
-      ? 'var(--color-accent-teal)'
+      ? 'var(--color-border-focus)'
       : 'var(--color-border)'
 
   const boxShadow = error
     ? '0 0 0 2px rgba(239,68,68,0.12)'
     : focused
-      ? '0 0 0 2px var(--color-accent-teal-dim)'
+      ? '0 0 0 3px rgba(13,31,60,0.12)'
       : 'none'
 
   return (
