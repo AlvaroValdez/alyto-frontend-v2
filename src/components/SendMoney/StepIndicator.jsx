@@ -44,7 +44,7 @@ export default function StepIndicator({ currentStep, skipStep2 = false }) {
                   isDone
                     ? 'bg-[#22C55E] text-[#0D1F3C]'
                     : isActive
-                      ? 'bg-[#1D3461] text-white'
+                      ? 'bg-[#0D1F3C] text-white'
                       : 'bg-white border border-[#E2E8F0] text-[#94A3B8]'
                 }`}
               >
@@ -52,7 +52,7 @@ export default function StepIndicator({ currentStep, skipStep2 = false }) {
               </div>
               <span
                 className={`text-[0.5625rem] font-medium mt-1 whitespace-nowrap ${
-                  isActive ? 'text-[#1D3461]' : isDone ? 'text-[#22C55E]' : 'text-[#94A3B8]'
+                  isActive ? 'text-[#0D1F3C]' : isDone ? 'text-[#22C55E]' : 'text-[#94A3B8]'
                 }`}
               >
                 {s.label}
