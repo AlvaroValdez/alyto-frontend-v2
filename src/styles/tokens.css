@@ -16,26 +16,35 @@
 
   /* ── TEXT ──────────────────────────────────────────────────── */
   --color-text-primary:   #0D1F3C;  /* Navy — headings, main content */
-  --color-text-secondary: #4A5568;  /* Medium gray — descriptions    */
-  --color-text-muted:     #94A3B8;  /* Light gray — timestamps       */
+  --color-text-secondary: #5A6A8A;  /* Medium gray — descriptions    */
+  --color-text-muted:     #9AA5C0;  /* Light gray — timestamps       */
 
-  /* ── ACCENT / ALYTO BLUE ───────────────────────────────────── */
-  --color-accent-teal:        #1D3461;
-  --color-accent-teal-hover:  #162852;
-  --color-accent-teal-dim:    rgba(29, 52, 97, 0.08);
-  --color-accent-teal-border: rgba(29, 52, 97, 0.20);
+  /* ── ACCENT / ALYTO TEAL ───────────────────────────────────── */
+  --color-accent-teal:        #1D9E75;
+  --color-accent-teal-hover:  #178A64;
+  --color-accent-teal-dim:    rgba(29, 158, 117, 0.08);
+  --color-accent-teal-border: rgba(29, 158, 117, 0.20);
+
+  /* ── CANONICAL PALETTE NAMES (spec §1) ─────────────────────── */
+  --color-navy-900: #0D1F3C;
+  --color-navy-100: #EEF2F8;
+  --color-teal-600: #1D9E75;
+  --color-teal-500: #22B88A;
+  --color-teal-100: #E6F7F2;
 
   /* ── STATUS ────────────────────────────────────────────────── */
-  --color-success:        #22C55E;
-  --color-success-bg:     rgba(34, 197, 94, 0.10);
+  --color-success:        #16A34A;
+  --color-success-bg:     #DCFCE7;
   --color-warning:        #F59E0B;
   --color-warning-bg:     rgba(245, 158, 11, 0.10);
-  --color-error:          #EF4444;
-  --color-error-bg:       rgba(239, 68, 68, 0.10);
-  --color-teal-status:    #1D3461;
-  --color-teal-status-bg: rgba(29, 52, 97, 0.08);
-  --color-pending:        #64748B;
-  --color-pending-bg:     rgba(100, 116, 139, 0.10);
+  --color-error:          #DC2626;
+  --color-error-bg:       #FEE2E2;
+  --color-teal-status:    #0891B2;
+  --color-teal-status-bg: #E0F2FE;
+  --color-pending:        #6366F1;
+  --color-pending-bg:     #EEF2FF;
+  --color-transit:        #0891B2;
+  --color-transit-bg:     #E0F2FE;
 
   /* ── BORDER ────────────────────────────────────────────────── */
   --color-border:       #E2E8F0;
