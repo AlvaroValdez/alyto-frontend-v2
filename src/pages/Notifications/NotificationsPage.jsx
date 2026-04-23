@@ -147,70 +147,109 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 size={24} className="animate-spin text-[#233E58]" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
+        <Loader2 size={24} style={{ color: 'var(--color-accent-teal)', animation: 'spin 1s linear infinite' }} />
       </div>
     )
   }
 
   return (
-    <div className="py-4">
+    <div style={{ paddingTop: 16 }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-5 mb-4">
-        <h1 className="text-[1.125rem] font-bold text-[#0F172A]">Notificaciones</h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', marginBottom: 16 }}>
+        <h1 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>Notificaciones</h1>
         {hasUnread && (
           <button
             onClick={handleMarkAll}
             disabled={markingAll}
-            className="flex items-center gap-1.5 text-[#233E58] text-[0.8125rem] font-semibold disabled:opacity-50"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              color: 'var(--color-accent-teal)', fontSize: 'var(--font-sm)', fontWeight: 600,
+              background: 'none', border: 'none', cursor: 'pointer', opacity: markingAll ? 0.5 : 1,
+              fontFamily: "'Manrope', sans-serif",
+            }}
           >
-            {markingAll ? <Loader2 size={13} className="animate-spin" /> : <CheckCheck size={13} />}
+            {markingAll ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <CheckCheck size={13} />}
             Marcar todas
           </button>
         )}
       </div>
 
-      {/* Lista */}
       {notifications.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center px-5">
-          <div className="w-14 h-14 rounded-2xl bg-[#F1F5F9] flex items-center justify-center mb-4">
-            <Bell size={24} className="text-[#94A3B8]" />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 20px', textAlign: 'center' }}>
+          <div
+            style={{
+              width: 56, height: 56, borderRadius: 'var(--radius-xl)',
+              background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+            }}
+          >
+            <Bell size={24} style={{ color: 'var(--color-text-muted)' }} />
           </div>
-          <p className="text-[0.9375rem] font-semibold text-[#0F172A] mb-1">No tienes notificaciones</p>
-          <p className="text-[0.8125rem] text-[#64748B]">Las notificaciones de tus transacciones y wallet apareceran aqui.</p>
+          <p style={{ fontSize: 'var(--font-md)', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: 4 }}>
+            No tienes notificaciones
+          </p>
+          <p style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)' }}>
+            Las notificaciones de tus transacciones aparecerán aquí.
+          </p>
         </div>
       ) : (
-        <div className="mx-4 bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden divide-y divide-[#E2E8F0]">
-          {notifications.map(notif => {
+        <div
+          style={{
+            margin: '0 16px',
+            background: 'var(--color-bg-secondary)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-2xl)',
+            overflow: 'hidden',
+          }}
+        >
+          {notifications.map((notif, idx) => {
             const { Icon, color, bg } = getConfig(notif.type)
             return (
               <button
                 key={notif._id}
                 onClick={() => handleTap(notif)}
-                className="w-full flex items-start gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[#F8FAFC] active:bg-[#F1F5F9]"
+                style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 12,
+                  padding: '14px 16px', width: '100%', textAlign: 'left',
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  borderBottom: idx < notifications.length - 1 ? '1px solid var(--color-border)' : 'none',
+                  borderLeft: !notif.read ? '3px solid var(--color-accent-teal)' : '3px solid transparent',
+                  transition: 'var(--transition-fast)', fontFamily: "'Manrope', sans-serif",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-bg-elevated)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
               >
-                {/* Icono */}
                 <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
-                  style={{ background: bg }}
+                  style={{
+                    width: 36, height: 36, borderRadius: 12, flexShrink: 0, marginTop: 2,
+                    background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
                 >
                   <Icon size={16} style={{ color }} />
                 </div>
 
-                {/* Contenido */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p className={`text-[0.875rem] font-semibold truncate ${notif.read ? 'text-[#64748B]' : 'text-[#0F172A]'}`}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                    <p
+                      style={{
+                        fontSize: 'var(--font-base)', fontWeight: notif.read ? 500 : 700,
+                        color: notif.read ? 'var(--color-text-secondary)' : 'var(--color-text-primary)',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}
+                    >
                       {notif.title}
                     </p>
                     {!notif.read && (
-                      <span className="w-2 h-2 rounded-full bg-[#1D9E75] flex-shrink-0" />
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-accent-teal)', flexShrink: 0 }} />
                     )}
                   </div>
-                  <p className={`text-[0.8125rem] leading-snug ${notif.read ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>
+                  <p style={{ fontSize: 'var(--font-sm)', lineHeight: 1.5, color: notif.read ? 'var(--color-text-muted)' : 'var(--color-text-secondary)' }}>
                     {notif.body}
                   </p>
-                  <p className="text-[0.6875rem] text-[#94A3B8] mt-1">{timeAgo(notif.createdAt)}</p>
+                  <p style={{ fontSize: 'var(--font-xs)', color: 'var(--color-text-muted)', marginTop: 4 }}>
+                    {timeAgo(notif.createdAt)}
+                  </p>
                 </div>
               </button>
             )
@@ -218,16 +257,21 @@ export default function NotificationsPage() {
         </div>
       )}
 
-      {/* Cargar mas */}
       {page < pages && (
-        <div className="flex justify-center mt-4">
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
           <button
             onClick={() => load(page + 1, true)}
             disabled={loadingMore}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#233E581A] text-[#233E58] text-[0.8125rem] font-semibold disabled:opacity-50"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '8px 20px', borderRadius: 'var(--radius-lg)',
+              background: 'var(--color-accent-teal-dim)', border: '1px solid var(--color-accent-teal-border)',
+              color: 'var(--color-accent-teal)', fontSize: 'var(--font-sm)', fontWeight: 600,
+              cursor: 'pointer', opacity: loadingMore ? 0.5 : 1, fontFamily: "'Manrope', sans-serif",
+            }}
           >
-            {loadingMore ? <Loader2 size={14} className="animate-spin" /> : null}
-            Cargar mas
+            {loadingMore ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : null}
+            Cargar más
           </button>
         </div>
       )}

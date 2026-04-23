@@ -22,8 +22,8 @@ import LegalModal              from '../../components/Legal/LegalModal'
 // ── Entity badge ──────────────────────────────────────────────────────────────
 
 const ENTITY_COLORS = {
-  LLC: { bg: '#233E581A', border: '#233E5833', text: '#233E58' },
-  SpA: { bg: '#233E581A', border: '#233E5833', text: '#233E58' },
+  LLC: { bg: '#233E581A', border: '#233E5833', text: '#14B8A6' },
+  SpA: { bg: '#233E581A', border: '#233E5833', text: '#14B8A6' },
   SRL: { bg: '#22C55E1A', border: '#22C55E33', text: '#22C55E' },
 }
 
@@ -70,12 +70,12 @@ function Avatar({ firstName, lastName, avatarUrl, size = 72, onUpload, uploading
         <img
           src={avatarUrl}
           alt="Foto de perfil"
-          className="rounded-full border-4 border-[#233E58] object-cover shadow-[0_0_0_3px_#F8FAFC]"
+          className="rounded-full border-4 border-[#14B8A6] object-cover shadow-[0_0_0_3px_#0F1628]"
           style={{ width: size, height: size }}
         />
       ) : (
         <div
-          className="rounded-full border-4 border-[#233E58] bg-gradient-to-br from-[#233E58] to-[#1C3247] flex items-center justify-center font-bold text-white tracking-wide shadow-[0_0_0_3px_#F8FAFC]"
+          className="rounded-full border-4 border-[#14B8A6] bg-gradient-to-br from-[#1D3461] to-[#0F1628] flex items-center justify-center font-bold text-white tracking-wide shadow-[0_0_0_3px_#0F1628]"
           style={{ width: size, height: size, fontSize: size * 0.3 }}
         >
           {initials}
@@ -87,7 +87,7 @@ function Avatar({ firstName, lastName, avatarUrl, size = 72, onUpload, uploading
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
         aria-label="Cambiar foto de perfil"
-        className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#233E58] border-2 border-white flex items-center justify-center shadow-md transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#14B8A6] border-2 border-white flex items-center justify-center shadow-md transition-opacity hover:opacity-90 disabled:opacity-50"
       >
         {uploading
           ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -144,9 +144,9 @@ function ProfileSkeleton() {
   return (
     <div className="animate-pulse">
       <div className="flex flex-col items-center gap-3 px-5 pb-5">
-        <div className="w-[72px] h-[72px] rounded-full bg-[#E2E8F0]" />
-        <div className="h-5 w-36 bg-[#E2E8F0] rounded-full" />
-        <div className="h-3.5 w-44 bg-[#E2E8F0] rounded-full" />
+        <div className="w-[72px] h-[72px] rounded-full bg-[#263050]" />
+        <div className="h-5 w-36 bg-[#263050] rounded-full" />
+        <div className="h-3.5 w-44 bg-[#263050] rounded-full" />
       </div>
     </div>
   )
@@ -191,7 +191,7 @@ export default function ProfilePage() {
         {/* ── HEADER SECTION ──────────────────────────────────────── */}
         <div className="px-5 pt-4 pb-6">
           {/* Page title */}
-          <p className="text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wider mb-5">
+          <p className="text-[0.75rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-5">
             Mi perfil
           </p>
 
@@ -214,14 +214,14 @@ export default function ProfilePage() {
 
               {/* Nombre completo */}
               <div className="mt-1">
-                <h1 className="text-[1.25rem] font-bold text-[#0F172A] leading-tight">
+                <h1 className="text-[1.25rem] font-bold text-white leading-tight">
                   {displayName || 'Usuario Alyto'}
                 </h1>
               </div>
 
               {/* Email — no editable */}
               <div className="flex items-center gap-1.5">
-                <span className="text-[0.875rem] text-[#64748B]">{email}</span>
+                <span className="text-[0.875rem] text-[#8A96B8]">{email}</span>
               </div>
 
               {/* Entity badge */}
@@ -235,15 +235,15 @@ export default function ProfilePage() {
 
         {/* ── TABS ────────────────────────────────────────────────── */}
         <div className="px-4 mb-1">
-          <div className="flex gap-2 bg-[#F1F5F9] rounded-2xl p-1.5 border border-[#E2E8F0]">
+          <div className="flex gap-2 bg-[#1F2B4D] rounded-2xl p-1.5 border border-[#263050]">
             {TABS.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex-1 py-2 text-[0.75rem] font-semibold rounded-xl transition-all ${
                   activeTab === tab.key
-                    ? 'bg-[#233E58] text-white shadow-sm'
-                    : 'text-[#94A3B8] hover:text-[#64748B]'
+                    ? 'bg-[#14B8A6] text-white shadow-sm'
+                    : 'text-[#4E5A7A] hover:text-[#8A96B8]'
                 }`}
               >
                 {tab.label}
@@ -282,33 +282,33 @@ export default function ProfilePage() {
 
         {/* ── LEGAL SECTION ───────────────────────────────────────── */}
         <div className="px-4 mt-6 mb-4">
-          <p className="text-[0.6875rem] font-semibold text-[#94A3B8] uppercase tracking-wider mb-2 px-1">
+          <p className="text-[0.6875rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-2 px-1">
             Legal
           </p>
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
+          <div className="bg-[#1A2340] rounded-2xl border border-[#263050] overflow-hidden">
             <button
               onClick={() => setLegalDoc('terms')}
-              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#F8FAFC] transition-colors border-b border-[#E2E8F0]"
+              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#1F2B4D] transition-colors border-b border-[#263050]"
             >
-              <div className="w-8 h-8 rounded-lg bg-[#233E581A] flex items-center justify-center flex-shrink-0">
-                <FileText size={15} className="text-[#233E58]" />
+              <div className="w-8 h-8 rounded-lg bg-[#14B8A61A] flex items-center justify-center flex-shrink-0">
+                <FileText size={15} className="text-[#14B8A6]" />
               </div>
-              <span className="flex-1 text-left text-[0.875rem] font-semibold text-[#0F172A]">
+              <span className="flex-1 text-left text-[0.875rem] font-semibold text-white">
                 Términos y Condiciones
               </span>
-              <ChevronRight size={16} className="text-[#94A3B8] flex-shrink-0" />
+              <ChevronRight size={16} className="text-[#4E5A7A] flex-shrink-0" />
             </button>
             <button
               onClick={() => setLegalDoc('privacy')}
-              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#F8FAFC] transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#1F2B4D] transition-colors"
             >
-              <div className="w-8 h-8 rounded-lg bg-[#233E581A] flex items-center justify-center flex-shrink-0">
-                <Shield size={15} className="text-[#233E58]" />
+              <div className="w-8 h-8 rounded-lg bg-[#14B8A61A] flex items-center justify-center flex-shrink-0">
+                <Shield size={15} className="text-[#14B8A6]" />
               </div>
-              <span className="flex-1 text-left text-[0.875rem] font-semibold text-[#0F172A]">
+              <span className="flex-1 text-left text-[0.875rem] font-semibold text-white">
                 Política de Privacidad
               </span>
-              <ChevronRight size={16} className="text-[#94A3B8] flex-shrink-0" />
+              <ChevronRight size={16} className="text-[#4E5A7A] flex-shrink-0" />
             </button>
           </div>
         </div>

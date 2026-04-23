@@ -16,12 +16,12 @@ import { usePushNotifications } from '../../hooks/usePushNotifications'
 function NotifRow({ icon: Icon, title, description, checked, loading, onChange, disabled }) {
   return (
     <div className="flex items-center gap-3 px-4 py-4">
-      <div className="w-9 h-9 rounded-xl bg-[#F8FAFC] flex items-center justify-center flex-shrink-0">
-        <Icon size={15} className="text-[#64748B]" />
+      <div className="w-9 h-9 rounded-xl bg-[#1F2B4D] flex items-center justify-center flex-shrink-0">
+        <Icon size={15} className="text-[#8A96B8]" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[0.9375rem] font-semibold text-[#0F172A] leading-tight">{title}</p>
-        <p className="text-[0.75rem] text-[#64748B] mt-0.5 leading-snug">{description}</p>
+        <p className="text-[0.9375rem] font-semibold text-white leading-tight">{title}</p>
+        <p className="text-[0.75rem] text-[#8A96B8] mt-0.5 leading-snug">{description}</p>
       </div>
       <Toggle checked={checked} onChange={onChange} disabled={disabled || loading} loading={loading} />
     </div>
@@ -116,11 +116,11 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
 
   return (
     <div className="py-4">
-      <p className="text-[0.75rem] font-semibold text-[#64748B] uppercase tracking-wider px-4 mb-3">
+      <p className="text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wider px-4 mb-3">
         Preferencias
       </p>
 
-      <div className="mx-4 bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden divide-y divide-[#E2E8F0]">
+      <div className="mx-4 bg-[#1A2340] rounded-2xl border border-[#263050] overflow-hidden divide-y divide-[#E2E8F0]">
         <NotifRow
           icon={Mail}
           title="Notificaciones por email"
@@ -148,10 +148,10 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
 
       {/* Aviso: bloqueadas en el navegador */}
       {pushBlocked && (
-        <div className="mx-4 mt-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl px-4 py-3.5 flex items-start gap-3">
-          <BellOff size={16} className="text-[#64748B] flex-shrink-0 mt-0.5" />
-          <p className="text-[0.8125rem] text-[#64748B] leading-snug">
-            Las notificaciones están <strong className="text-[#0F172A]">bloqueadas</strong> en tu navegador.
+        <div className="mx-4 mt-3 bg-[#1F2B4D] border border-[#263050] rounded-2xl px-4 py-3.5 flex items-start gap-3">
+          <BellOff size={16} className="text-[#8A96B8] flex-shrink-0 mt-0.5" />
+          <p className="text-[0.8125rem] text-[#8A96B8] leading-snug">
+            Las notificaciones están <strong className="text-white">bloqueadas</strong> en tu navegador.
             Actívalas en la configuración de tu navegador para recibir alertas.
           </p>
         </div>

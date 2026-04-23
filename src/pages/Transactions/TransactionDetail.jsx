@@ -100,9 +100,9 @@ function PaymentInstructionsModal({ tx, onClose }) {
         style={{ background: 'white', maxHeight: '90vh' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0] flex-shrink-0">
-          <h3 className="text-[1rem] font-bold text-[#0F172A]">Instrucciones de pago</h3>
-          <button onClick={onClose} className="text-[#94A3B8] hover:text-[#0F172A] transition-colors">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#263050] flex-shrink-0">
+          <h3 className="text-[1rem] font-bold text-white">Instrucciones de pago</h3>
+          <button onClick={onClose} className="text-[#4E5A7A] hover:text-white transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -112,21 +112,21 @@ function PaymentInstructionsModal({ tx, onClose }) {
 
           {/* QR */}
           {(qrLoading || qrSrc) && (
-            <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl p-5 flex flex-col items-center gap-3">
+            <div className="bg-[#1F2B4D] border border-[#263050] rounded-2xl p-5 flex flex-col items-center gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-xl">📱</span>
-                <p className="text-[0.875rem] font-bold text-[#0F172A]">Paga con QR</p>
+                <p className="text-[0.875rem] font-bold text-white">Paga con QR</p>
               </div>
               {qrLoading ? (
-                <div className="w-[180px] h-[180px] rounded-2xl bg-[#E2E8F0] animate-pulse" />
+                <div className="w-[180px] h-[180px] rounded-2xl bg-[#263050] animate-pulse" />
               ) : (
-                <img src={qrSrc} alt="QR de pago" className="w-[180px] h-[180px] rounded-2xl bg-white p-2 object-contain border border-[#E2E8F0]" />
+                <img src={qrSrc} alt="QR de pago" className="w-[180px] h-[180px] rounded-2xl bg-[#1A2340] p-2 object-contain border border-[#263050]" />
               )}
-              <p className="text-[0.75rem] text-[#64748B] text-center">Escanea desde tu app bancaria</p>
+              <p className="text-[0.75rem] text-[#8A96B8] text-center">Escanea desde tu app bancaria</p>
               {qrSrc && (
                 <button
                   onClick={downloadQR}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#E2E8F0] text-[0.8125rem] text-[#64748B] hover:text-[#0F172A] hover:border-[#233E5833] transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#263050] text-[0.8125rem] text-[#8A96B8] hover:text-white hover:border-[#14B8A633] transition-colors"
                 >
                   <Download size={13} /> Descargar QR
                 </button>
@@ -137,19 +137,19 @@ function PaymentInstructionsModal({ tx, onClose }) {
           {/* Separador */}
           {qrSrc && (
             <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-[#E2E8F0]" />
-              <span className="text-[0.75rem] text-[#94A3B8] flex-shrink-0">O transfiere manualmente</span>
-              <div className="h-px flex-1 bg-[#E2E8F0]" />
+              <div className="h-px flex-1 bg-[#263050]" />
+              <span className="text-[0.75rem] text-[#4E5A7A] flex-shrink-0">O transfiere manualmente</span>
+              <div className="h-px flex-1 bg-[#263050]" />
             </div>
           )}
 
           {/* Datos bancarios */}
-          <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3.5 border-b border-[#E2E8F0]">
+          <div className="bg-[#1A2340] border border-[#263050] rounded-2xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3.5 border-b border-[#263050]">
               <span className="text-xl">🏦</span>
-              <p className="text-[0.875rem] font-bold text-[#0F172A]">Transferencia bancaria</p>
+              <p className="text-[0.875rem] font-bold text-white">Transferencia bancaria</p>
             </div>
-            <div className="px-4 divide-y divide-[#E2E8F0]">
+            <div className="px-4 divide-y divide-[#263050]">
               {[
                 ['Banco',   bank.bankName     ?? 'Banco Bisa'],
                 ['Titular', bank.accountHolder ?? bank.holder ?? 'AV Finance SRL'],
@@ -158,22 +158,22 @@ function PaymentInstructionsModal({ tx, onClose }) {
                 ['Monto',   `Bs ${Number(tx.originAmount ?? 0).toLocaleString('es-CL')} BOB`],
               ].map(([label, value]) => (
                 <div key={label} className="flex items-center justify-between py-2.5">
-                  <span className="text-[0.75rem] text-[#94A3B8]">{label}</span>
-                  <span className={`text-[0.875rem] font-semibold ${label === 'Monto' ? 'text-[#233E58]' : 'text-[#0F172A]'}`}>{value}</span>
+                  <span className="text-[0.75rem] text-[#4E5A7A]">{label}</span>
+                  <span className={`text-[0.875rem] font-semibold ${label === 'Monto' ? 'text-[#14B8A6]' : 'text-white'}`}>{value}</span>
                 </div>
               ))}
             </div>
-            <div className="flex items-center justify-between px-4 py-3 border-t border-[#E2E8F0]">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-[#263050]">
               <div className="min-w-0">
-                <p className="text-[0.625rem] text-[#94A3B8] uppercase tracking-wider mb-0.5">Referencia (copiar en el concepto)</p>
-                <p className="text-[0.75rem] font-mono font-semibold text-[#0F172A] truncate">{tx.transactionId}</p>
+                <p className="text-[0.625rem] text-[#4E5A7A] uppercase tracking-wider mb-0.5">Referencia (copiar en el concepto)</p>
+                <p className="text-[0.75rem] font-mono font-semibold text-white truncate">{tx.transactionId}</p>
               </div>
               <button
                 onClick={copyRef}
-                className="ml-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] text-[0.75rem] text-[#64748B] hover:text-[#0F172A] transition-colors flex-shrink-0"
+                className="ml-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#263050] text-[0.75rem] text-[#8A96B8] hover:text-white transition-colors flex-shrink-0"
               >
                 {copiedRef
-                  ? <><CheckCheck size={12} className="text-[#233E58]" /> Copiado</>
+                  ? <><CheckCheck size={12} className="text-[#14B8A6]" /> Copiado</>
                   : <><Copy size={12} /> Copiar</>
                 }
               </button>
@@ -190,7 +190,7 @@ function PaymentInstructionsModal({ tx, onClose }) {
 
           <button
             onClick={onClose}
-            className="w-full py-3 rounded-2xl border border-[#E2E8F0] text-[#64748B] text-[0.875rem] font-semibold hover:text-[#0F172A] transition-colors"
+            className="w-full py-3 rounded-2xl border border-[#263050] text-[#8A96B8] text-[0.875rem] font-semibold hover:text-white transition-colors"
           >
             Cerrar
           </button>
@@ -353,7 +353,7 @@ function resolveBankName(code) {
 function Row({ label, value, bold, valueColor }) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <span className="text-[0.8125rem] text-[#64748B] flex-shrink-0">{label}</span>
+      <span className="text-[0.8125rem] text-[#8A96B8] flex-shrink-0">{label}</span>
       <span
         className={`text-[0.8125rem] text-right ${bold ? 'font-bold' : 'font-medium'}`}
         style={{ color: valueColor ?? '#0F172A' }}
@@ -366,8 +366,8 @@ function Row({ label, value, bold, valueColor }) {
 
 function Section({ title, children }) {
   return (
-    <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
-      <p className="text-[0.6875rem] font-semibold text-[#94A3B8] uppercase tracking-wider mb-4">
+    <div className="bg-[#1A2340] rounded-2xl p-5 border border-[#263050]">
+      <p className="text-[0.6875rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-4">
         {title}
       </p>
       {children}
@@ -497,14 +497,14 @@ export default function TransactionDetail() {
     return (
       <div className="pt-4">
         <div className="flex items-center gap-3 px-4 pb-4">
-          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center">
-            <ArrowLeft size={18} className="text-[#64748B]" />
+          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#1F2B4D] border border-[#263050] flex items-center justify-center">
+            <ArrowLeft size={18} className="text-[#8A96B8]" />
           </button>
-          <div className="h-5 w-36 bg-[#F8FAFC] rounded animate-pulse" />
+          <div className="h-5 w-36 bg-[#1F2B4D] rounded animate-pulse" />
         </div>
         <div className="px-4 flex flex-col gap-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-24 bg-[#F8FAFC] rounded-2xl animate-pulse border border-[#E2E8F0]" />
+            <div key={i} className="h-24 bg-[#1F2B4D] rounded-2xl animate-pulse border border-[#263050]" />
           ))}
         </div>
       </div>
@@ -516,17 +516,17 @@ export default function TransactionDetail() {
     return (
       <div className="pt-4">
         <div className="flex items-center gap-3 px-4 pb-4">
-          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center">
-            <ArrowLeft size={18} className="text-[#64748B]" />
+          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#1F2B4D] border border-[#263050] flex items-center justify-center">
+            <ArrowLeft size={18} className="text-[#8A96B8]" />
           </button>
-          <h1 className="text-lg font-bold text-[#0F172A]">Detalle</h1>
+          <h1 className="text-lg font-bold text-white">Detalle</h1>
         </div>
         <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
           <div className="w-12 h-12 rounded-2xl bg-[#EF44441A] flex items-center justify-center mb-4">
             <XCircle size={24} className="text-[#EF4444]" />
           </div>
-          <p className="text-[#0F172A] font-semibold mb-1">No se pudo cargar</p>
-          <p className="text-[#64748B] text-sm mb-4">{error}</p>
+          <p className="text-white font-semibold mb-1">No se pudo cargar</p>
+          <p className="text-[#8A96B8] text-sm mb-4">{error}</p>
           <button onClick={loadDetail} className="px-4 py-2 rounded-xl font-semibold text-sm text-white" style={{ background: '#233E58' }}>
             Reintentar
           </button>
@@ -572,16 +572,16 @@ export default function TransactionDetail() {
 
         {/* Back + title */}
         <div className="flex items-center gap-3 px-4 pb-4">
-          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center flex-shrink-0">
-            <ArrowLeft size={18} className="text-[#64748B]" />
+          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#1F2B4D] border border-[#263050] flex items-center justify-center flex-shrink-0">
+            <ArrowLeft size={18} className="text-[#8A96B8]" />
           </button>
-          <h1 className="text-lg font-bold text-[#0F172A] flex-1">Detalle</h1>
+          <h1 className="text-lg font-bold text-white flex-1">Detalle</h1>
         </div>
 
         <div className="flex flex-col gap-3 px-4">
 
           {/* ── 1. ESTADO ACTUAL ─────────────────────────────────────────── */}
-          <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
+          <div className="bg-[#1A2340] rounded-2xl p-5 border border-[#263050]">
 
             {/* Badge de status */}
             <div className="flex justify-center mb-5">
@@ -601,8 +601,8 @@ export default function TransactionDetail() {
                   const active = step.activeWhen(tx.status)
                   const isLast = i === TIMELINE_STEPS.length - 1
 
-                  const nodeColor  = done ? '#233E58' : active ? cfg.color : '#E2E8F0'
-                  const nodeBorder = done ? '#233E58' : active ? cfg.color : '#E2E8F0'
+                  const nodeColor  = done ? '#233E58' : active ? cfg.color : 'var(--color-border)'
+                  const nodeBorder = done ? '#233E58' : active ? cfg.color : 'var(--color-border)'
 
                   return (
                     <div key={step.label} className="flex items-center flex-1">
@@ -611,7 +611,7 @@ export default function TransactionDetail() {
                         <div
                           className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
                           style={{
-                            background: done ? '#233E581A' : active ? cfg.bg : '#F8FAFC',
+                            background: done ? '#233E581A' : active ? cfg.bg : 'var(--color-bg-elevated)',
                             border:     `2px solid ${nodeBorder}`,
                           }}
                         >
@@ -634,7 +634,7 @@ export default function TransactionDetail() {
                       {!isLast && (
                         <div
                           className="h-0.5 flex-1 mx-1 mb-5"
-                          style={{ background: done ? '#233E5840' : '#E2E8F0' }}
+                          style={{ background: done ? '#233E5840' : 'var(--color-border)' }}
                         />
                       )}
                     </div>
@@ -646,12 +646,12 @@ export default function TransactionDetail() {
 
           {/* ── 1b. INSTRUCCIONES PAYIN MANUAL (Bolivia) ─────────────────── */}
           {isManualPending && (
-            <div className="bg-white rounded-2xl p-5 border border-[#FBBF2430]">
+            <div className="bg-[#1A2340] rounded-2xl p-5 border border-[#FBBF2430]">
               <div className="flex items-start gap-3 mb-4">
                 <span className="text-xl flex-shrink-0">⏳</span>
                 <div>
                   <p className="text-[0.875rem] font-bold text-[#FBBF24]">Verificando tu pago</p>
-                  <p className="text-[0.8125rem] text-[#64748B] mt-0.5">
+                  <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
                     Estamos verificando tu transferencia. Te notificaremos cuando sea confirmada.
                   </p>
                 </div>
@@ -687,7 +687,7 @@ export default function TransactionDetail() {
                   valueColor="#EF4444"
                 />
               )}
-              <div className="h-px bg-[#E2E8F0]" />
+              <div className="h-px bg-[#263050]" />
               <Row
                 label="Beneficiario recibe"
                 value={effectiveDestAmount
@@ -727,7 +727,7 @@ export default function TransactionDetail() {
           {/* ── 4. COMPROBANTE ───────────────────────────────────────────── */}
           <div>
             {/* Comprobante card — solo esta parte es capturada por html2canvas */}
-            <div ref={comprobanteRef} className="bg-white rounded-2xl border border-[#E2E8F0]">
+            <div ref={comprobanteRef} className="bg-[#1A2340] rounded-2xl border border-[#263050]">
 
               {/* Header branding */}
               <div className="flex flex-col items-center py-5 px-5" style={{ background: 'linear-gradient(180deg, #233E580D 0%, #ffffff 100%)' }}>
@@ -873,7 +873,7 @@ export default function TransactionDetail() {
                 onClick={handleDownloadImage}
                 disabled={sharing}
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all active:scale-95 disabled:opacity-60"
-                style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', color: '#64748B' }}
+                style={{ background: 'var(--color-bg-elevated)', border: '1px solid #E2E8F0', color: '#64748B' }}
               >
                 <Download size={15} />
                 Guardar
@@ -881,7 +881,7 @@ export default function TransactionDetail() {
               <button
                 onClick={handlePrint}
                 className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all active:scale-95"
-                style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', color: '#64748B' }}
+                style={{ background: 'var(--color-bg-elevated)', border: '1px solid #E2E8F0', color: '#64748B' }}
                 title="Imprimir / PDF"
               >
                 <Printer size={15} />
@@ -891,12 +891,12 @@ export default function TransactionDetail() {
 
           {/* ── 5. COMPROBANTE BLOCKCHAIN — solo si completada ────────────── */}
           {tx.status === 'completed' && (
-            <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
+            <div className="bg-[#1A2340] rounded-2xl p-5 border border-[#263050]">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-7 h-7 rounded-lg bg-[#233E581A] flex items-center justify-center flex-shrink-0">
-                  <Link2 size={14} className="text-[#233E58]" />
+                  <Link2 size={14} className="text-[#14B8A6]" />
                 </div>
-                <p className="text-[0.6875rem] font-semibold text-[#94A3B8] uppercase tracking-wider">
+                <p className="text-[0.6875rem] font-semibold text-[#4E5A7A] uppercase tracking-wider">
                   Verificado en blockchain
                 </p>
               </div>
@@ -904,8 +904,8 @@ export default function TransactionDetail() {
               {tx.stellarTxId ? (
                 <div className="flex flex-col gap-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-[0.8125rem] text-[#64748B]">Red</span>
-                    <span className="text-[0.8125rem] font-medium text-[#0F172A]">
+                    <span className="text-[0.8125rem] text-[#8A96B8]">Red</span>
+                    <span className="text-[0.8125rem] font-medium text-white">
                       {import.meta.env.VITE_STELLAR_NETWORK === 'mainnet'
                         ? 'Stellar Mainnet'
                         : 'Stellar Testnet'}
@@ -913,9 +913,9 @@ export default function TransactionDetail() {
                   </div>
 
                   <div className="flex justify-between items-center gap-3">
-                    <span className="text-[0.8125rem] text-[#64748B] flex-shrink-0">TXID</span>
+                    <span className="text-[0.8125rem] text-[#8A96B8] flex-shrink-0">TXID</span>
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-[0.8125rem] font-mono text-[#0F172A] truncate">
+                      <span className="text-[0.8125rem] font-mono text-white truncate">
                         {truncateTxId(tx.stellarTxId)}
                       </span>
                       <button
@@ -925,11 +925,11 @@ export default function TransactionDetail() {
                             setTimeout(() => setCopiedTxid(false), 2000)
                           })
                         }}
-                        className="flex-shrink-0 text-[#94A3B8] hover:text-[#233E58] transition-colors"
+                        className="flex-shrink-0 text-[#4E5A7A] hover:text-[#14B8A6] transition-colors"
                         title="Copiar TXID completo"
                       >
                         {copiedTxid
-                          ? <CheckCircle size={14} className="text-[#233E58]" />
+                          ? <CheckCircle size={14} className="text-[#14B8A6]" />
                           : <Copy size={14} />
                         }
                       </button>
@@ -937,7 +937,7 @@ export default function TransactionDetail() {
                   </div>
 
                   {copiedTxid && (
-                    <p className="text-[0.6875rem] text-[#233E58] text-right -mt-1">¡TXID copiado!</p>
+                    <p className="text-[0.6875rem] text-[#14B8A6] text-right -mt-1">¡TXID copiado!</p>
                   )}
 
                   <a
@@ -946,7 +946,7 @@ export default function TransactionDetail() {
                     }/tx/${tx.stellarTxId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#233E5833] text-[#233E58] text-sm font-medium transition-colors hover:bg-[#233E581A]"
+                    className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#14B8A633] text-[#14B8A6] text-sm font-medium transition-colors hover:bg-[#233E581A]"
                   >
                     Ver en Stellar Explorer
                     <ExternalLink size={14} />
@@ -955,7 +955,7 @@ export default function TransactionDetail() {
               ) : (
                 <div className="flex items-center gap-2 py-1">
                   <RefreshCw size={13} className="text-[#CBD5E1] animate-spin" style={{ animationDuration: '3s' }} />
-                  <span className="text-[0.8125rem] text-[#94A3B8]">
+                  <span className="text-[0.8125rem] text-[#4E5A7A]">
                     Registro blockchain en proceso…
                   </span>
                 </div>
@@ -965,12 +965,12 @@ export default function TransactionDetail() {
 
           {/* ── 6. FACTURA B2B — solo para business + completed ────────── */}
           {tx.status === 'completed' && user?.accountType === 'business' && (
-            <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
+            <div className="bg-[#1A2340] rounded-2xl p-5 border border-[#263050]">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-7 h-7 rounded-lg bg-[#233E581A] flex items-center justify-center flex-shrink-0">
-                  <Download size={14} className="text-[#233E58]" />
+                  <Download size={14} className="text-[#14B8A6]" />
                 </div>
-                <p className="text-[0.6875rem] font-semibold text-[#94A3B8] uppercase tracking-wider">
+                <p className="text-[0.6875rem] font-semibold text-[#4E5A7A] uppercase tracking-wider">
                   Comprobante de Servicio B2B
                 </p>
               </div>
@@ -1000,8 +1000,8 @@ export default function TransactionDetail() {
           {/* ── 7. SOPORTE — solo si falló ────────────────────────────────── */}
           {isFailed && (
             <div className="rounded-2xl p-5 border border-[#EF444433]" style={{ background: '#EF44441A' }}>
-              <p className="text-[#0F172A] font-semibold mb-1">¿Necesitas ayuda?</p>
-              <p className="text-[#64748B] text-sm mb-4">
+              <p className="text-white font-semibold mb-1">¿Necesitas ayuda?</p>
+              <p className="text-[#8A96B8] text-sm mb-4">
                 Contáctanos y resolveremos tu caso a la brevedad.
               </p>
               <div className="flex gap-3">
@@ -1025,8 +1025,8 @@ export default function TransactionDetail() {
                   href={`mailto:${supportEmail}`}
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border transition-colors"
                   style={{
-                    background:  '#F8FAFC',
-                    borderColor: '#E2E8F0',
+                    background:  'var(--color-bg-elevated)',
+                    borderColor: 'var(--color-border)',
                     color:       '#64748B',
                   }}
                 >

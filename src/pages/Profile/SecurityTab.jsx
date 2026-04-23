@@ -41,7 +41,7 @@ function strengthLabel(checks) {
   const passed = Object.values(checks).filter(Boolean).length
   if (passed <= 1) return { label: 'Débil',   color: '#EF4444' }
   if (passed <= 3) return { label: 'Media',   color: '#64748B' }
-  return               { label: 'Fuerte',  color: '#233E58' }
+  return               { label: 'Fuerte',  color: '#14B8A6' }
 }
 
 function formatUserAgent(ua) {
@@ -70,10 +70,10 @@ function Req({ ok, label }) {
   return (
     <div className="flex items-center gap-2">
       {ok
-        ? <Check size={12} className="text-[#233E58] flex-shrink-0" />
-        : <X     size={12} className="text-[#94A3B8] flex-shrink-0" />
+        ? <Check size={12} className="text-[#14B8A6] flex-shrink-0" />
+        : <X     size={12} className="text-[#4E5A7A] flex-shrink-0" />
       }
-      <span className={`text-[0.75rem] ${ok ? 'text-[#233E58]' : 'text-[#94A3B8]'}`}>{label}</span>
+      <span className={`text-[0.75rem] ${ok ? 'text-[#14B8A6]' : 'text-[#4E5A7A]'}`}>{label}</span>
     </div>
   )
 }
@@ -83,10 +83,10 @@ function Req({ ok, label }) {
 function Section({ title, children }) {
   return (
     <div className="mb-5">
-      <p className="text-[0.75rem] font-semibold text-[#64748B] uppercase tracking-wider px-4 mb-3">
+      <p className="text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wider px-4 mb-3">
         {title}
       </p>
-      <div className="mx-4 bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
+      <div className="mx-4 bg-[#1A2340] rounded-2xl border border-[#263050] overflow-hidden">
         {children}
       </div>
     </div>
@@ -180,7 +180,7 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
 
           {/* Contraseña actual */}
           <div className="px-4 py-3">
-            <label className="text-[0.6875rem] font-medium text-[#64748B] uppercase tracking-wide block mb-1.5">
+            <label className="text-[0.6875rem] font-medium text-[#8A96B8] uppercase tracking-wide block mb-1.5">
               Contraseña actual
             </label>
             <div className="relative">
@@ -189,12 +189,12 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
                 value={current}
                 onChange={e => setCurrent(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 pr-10 py-2.5 text-[0.9375rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:border-[#233E58] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
+                className="w-full bg-[#1A2340] border border-[#263050] rounded-xl px-3 pr-10 py-2.5 text-[0.9375rem] text-white placeholder:text-[#CBD5E1] focus:border-[#14B8A6] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowCur(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4E5A7A]"
               >
                 {showCur ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
@@ -203,7 +203,7 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
 
           {/* Nueva contraseña */}
           <div className="px-4 py-3">
-            <label className="text-[0.6875rem] font-medium text-[#64748B] uppercase tracking-wide block mb-1.5">
+            <label className="text-[0.6875rem] font-medium text-[#8A96B8] uppercase tracking-wide block mb-1.5">
               Nueva contraseña
             </label>
             <div className="relative mb-2">
@@ -212,12 +212,12 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
                 value={newPw}
                 onChange={e => setNewPw(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 pr-10 py-2.5 text-[0.9375rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:border-[#233E58] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
+                className="w-full bg-[#1A2340] border border-[#263050] rounded-xl px-3 pr-10 py-2.5 text-[0.9375rem] text-white placeholder:text-[#CBD5E1] focus:border-[#14B8A6] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowNew(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4E5A7A]"
               >
                 {showNew ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
@@ -227,7 +227,7 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
             {newPw.length > 0 && (
               <div className="mb-2">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[0.6875rem] text-[#64748B]">Fortaleza</span>
+                  <span className="text-[0.6875rem] text-[#8A96B8]">Fortaleza</span>
                   <span className="text-[0.6875rem] font-semibold" style={{ color: strength.color }}>
                     {strength.label}
                   </span>
@@ -239,7 +239,7 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
                       <div
                         key={i}
                         className="flex-1 h-1 rounded-full transition-all"
-                        style={{ background: filled ? strength.color : '#E2E8F0' }}
+                        style={{ background: filled ? strength.color : 'var(--color-border)' }}
                       />
                     )
                   })}
@@ -258,7 +258,7 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
 
           {/* Confirmar contraseña */}
           <div className="px-4 py-3">
-            <label className="text-[0.6875rem] font-medium text-[#64748B] uppercase tracking-wide block mb-1.5">
+            <label className="text-[0.6875rem] font-medium text-[#8A96B8] uppercase tracking-wide block mb-1.5">
               Confirmar nueva contraseña
             </label>
             <div className="relative">
@@ -267,16 +267,16 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
                 value={confirm}
                 onChange={e => setConfirm(e.target.value)}
                 placeholder="••••••••"
-                className={`w-full bg-white border rounded-xl px-3 pr-10 py-2.5 text-[0.9375rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all ${
+                className={`w-full bg-[#1A2340] border rounded-xl px-3 pr-10 py-2.5 text-[0.9375rem] text-white placeholder:text-[#CBD5E1] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all ${
                   confirm.length > 0 && !match
                     ? 'border-[#EF4444] focus:border-[#EF4444]'
-                    : 'border-[#E2E8F0] focus:border-[#233E58]'
+                    : 'border-[#263050] focus:border-[#14B8A6]'
                 }`}
               />
               <button
                 type="button"
                 onClick={() => setShowCon(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4E5A7A]"
               >
                 {showCon ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
@@ -295,15 +295,15 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
               </div>
             )}
             {pwOk && (
-              <div className="mb-3 bg-[#233E581A] border border-[#233E5833] rounded-xl px-3 py-2.5 flex items-center gap-2">
-                <Check size={13} className="text-[#233E58] flex-shrink-0" />
-                <span className="text-[0.8125rem] text-[#233E58]">Contraseña actualizada correctamente</span>
+              <div className="mb-3 bg-[#14B8A61A] border border-[#14B8A633] rounded-xl px-3 py-2.5 flex items-center gap-2">
+                <Check size={13} className="text-[#14B8A6] flex-shrink-0" />
+                <span className="text-[0.8125rem] text-[#14B8A6]">Contraseña actualizada correctamente</span>
               </div>
             )}
             <button
               type="submit"
               disabled={saving || !current || !allOk || !match}
-              className="w-full flex items-center justify-center gap-2 bg-[#233E58] text-white font-bold text-[0.9375rem] rounded-xl py-3 disabled:opacity-40 transition-all hover:bg-[#1C3247] shadow-[0_4px_20px_rgba(35,62,88,0.3)]"
+              className="w-full flex items-center justify-center gap-2 bg-[#14B8A6] text-white font-bold text-[0.9375rem] rounded-xl py-3 disabled:opacity-40 transition-all hover:bg-[#1C3247] shadow-[0_4px_20px_rgba(35,62,88,0.3)]"
             >
               {saving ? <Loader2 size={16} className="animate-spin" /> : <Lock size={15} />}
               Cambiar contraseña
@@ -316,21 +316,21 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
       <Section title="Dispositivos vinculados">
         <div className="px-4 py-4">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#F8FAFC] flex items-center justify-center flex-shrink-0">
-              <Smartphone size={18} className="text-[#64748B]" />
+            <div className="w-10 h-10 rounded-xl bg-[#1F2B4D] flex items-center justify-center flex-shrink-0">
+              <Smartphone size={18} className="text-[#8A96B8]" />
             </div>
             <div>
-              <p className="text-[0.9375rem] font-semibold text-[#0F172A]">
+              <p className="text-[0.9375rem] font-semibold text-white">
                 {formatUserAgent(profile?.sessions?.[0]?.userAgent ?? navigator.userAgent)}
               </p>
-              <p className="text-[0.75rem] text-[#64748B]">Dispositivo actual</p>
+              <p className="text-[0.75rem] text-[#8A96B8]">Dispositivo actual</p>
             </div>
           </div>
 
           {devOk ? (
-            <div className="bg-[#233E581A] border border-[#233E5833] rounded-xl px-3 py-2.5 flex items-center gap-2">
-              <Check size={13} className="text-[#233E58]" />
-              <span className="text-[0.8125rem] text-[#233E58]">Dispositivo desvinculado</span>
+            <div className="bg-[#14B8A61A] border border-[#14B8A633] rounded-xl px-3 py-2.5 flex items-center gap-2">
+              <Check size={13} className="text-[#14B8A6]" />
+              <span className="text-[0.8125rem] text-[#14B8A6]">Dispositivo desvinculado</span>
             </div>
           ) : (
             <button
@@ -349,15 +349,15 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
       <Section title="Sesión actual">
         <div className="px-4 py-4">
           <div className="flex items-start gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#F8FAFC] flex items-center justify-center flex-shrink-0">
-              <Shield size={18} className="text-[#64748B]" />
+            <div className="w-10 h-10 rounded-xl bg-[#1F2B4D] flex items-center justify-center flex-shrink-0">
+              <Shield size={18} className="text-[#8A96B8]" />
             </div>
             <div>
-              <p className="text-[0.9375rem] font-semibold text-[#0F172A]">
+              <p className="text-[0.9375rem] font-semibold text-white">
                 {formatUserAgent(navigator.userAgent)}
               </p>
               {profile?.sessions?.[0]?.ip && (
-                <p className="text-[0.75rem] text-[#94A3B8] mt-0.5 font-mono">
+                <p className="text-[0.75rem] text-[#4E5A7A] mt-0.5 font-mono">
                   {profile.sessions[0].ip}
                 </p>
               )}
@@ -366,7 +366,7 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 border border-[#E2E8F0] bg-transparent text-[#64748B] rounded-xl py-2.5 text-[0.875rem] font-semibold transition-all hover:border-[#EF444433] hover:text-[#EF4444] hover:bg-[#EF44441A]"
+            className="w-full flex items-center justify-center gap-2 border border-[#263050] bg-transparent text-[#8A96B8] rounded-xl py-2.5 text-[0.875rem] font-semibold transition-all hover:border-[#EF444433] hover:text-[#EF4444] hover:bg-[#EF44441A]"
           >
             <LogOut size={14} />
             Cerrar sesión
