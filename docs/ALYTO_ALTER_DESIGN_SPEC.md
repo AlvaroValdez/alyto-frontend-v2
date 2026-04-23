@@ -1,4 +1,4 @@
-# Alyto-Alter — Design System Specification v2.0
+# Alyto-Alter — Design System Specification v2.1
 
 > **Status:** Canonical design contract — DO NOT implement without following this spec.
 > **Last updated:** April 2026
@@ -6,6 +6,39 @@
 > **Reference:** FinWallet UI + Alyto navy/teal brand colors
 > **Stack:** React + Vite
 > **Breakpoints:** Mobile-first: 390px (primary) / 1440px (desktop)
+
+---
+
+## §1a. Color Role Rules (CANONICAL — v2.1)
+
+Two brand colors. Each has a single role. Never swap them.
+
+| Role | Color | Hex | Used for |
+|---|---|---|---|
+| Primary brand | Navy | `#0D1F3C` | Buttons, nav active, highlights, focus rings |
+| Secondary accent | Teal | `#1D9E75` | Quote amounts, success badges, confirmations |
+| Background app | Light gray | `#F4F6FA` | App shell |
+| Background card | White | `#FFFFFF` | Cards, inputs, nav bars |
+| Text primary | Navy | `#0D1F3C` | All body text on light backgrounds |
+| Text secondary | Blue gray | `#5A6A8A` | Labels, metadata |
+
+### Anti-patterns (enforced)
+
+| ❌ Wrong | ✅ Correct |
+|---|---|
+| Teal as nav active color | Navy (`var(--color-primary)`) |
+| Teal on primary CTA buttons | Navy (`var(--color-primary)`) |
+| Teal on input focus rings | Navy (`var(--color-border-focus)`) |
+| Navy on quote recipient amounts | Teal (`var(--color-accent)`) |
+| Navy on success/completion badges | Teal or green (`var(--color-accent)` / `--color-success`) |
+
+### Correct teal usages (do NOT change)
+- QuoteCard "Recibe" amount
+- QuoteCard card background tint
+- Badge `teal` variant
+- StatusBadge `completed` state
+- WalletCard "Activa" status dot
+- "Sesión cerrada" confirmation banner
 
 ---
 
