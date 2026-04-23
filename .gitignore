@@ -10,4 +10,5 @@ coverage/
 docs/*
 !docs/SEND_MONEY_FLOW.md
 !docs/CHANGELOG_FLOWS.md
+!docs/ALYTO_ALTER_DESIGN_SPEC.md
 alyto-silver-preview.html
