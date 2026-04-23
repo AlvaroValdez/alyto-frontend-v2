@@ -98,7 +98,7 @@ export default function AppLayout() {
             minHeight:     '100vh',
             minWidth:      0,
           }}
-          className="lg:ml-[260px]"
+          className="lg:ml-[240px]"
         >
           {/* ── HEADER ───────────────────────────────────────────────── */}
           <header

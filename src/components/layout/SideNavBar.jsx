@@ -1,12 +1,11 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Wallet, ArrowUpRight, Users, User, ArrowLeftRight, FileText, LogOut } from 'lucide-react'
+import { Home, Wallet, ArrowUpRight, Users, User, ArrowLeftRight, LogOut } from 'lucide-react'
 
 const NAV_COMMON = [
   { icon: Home,           label: 'Dashboard',      to: '/dashboard'    },
   { icon: ArrowUpRight,   label: 'Enviar',          to: '/send'         },
   { icon: ArrowLeftRight, label: 'Transferencias',  to: '/transactions' },
   { icon: Users,          label: 'Contactos',       to: '/contacts'     },
-  { icon: FileText,       label: 'Reclamos',        to: '/reclamos'     },
   { icon: User,           label: 'Perfil',          to: '/profile'      },
 ]
 
@@ -15,7 +14,6 @@ const NAV_SRL = [
   { icon: Wallet,         label: 'Activos BOB',    to: '/wallet'       },
   { icon: ArrowUpRight,   label: 'Enviar',          to: '/send'         },
   { icon: ArrowLeftRight, label: 'Transferencias',  to: '/transactions' },
-  { icon: FileText,       label: 'Reclamos',        to: '/reclamos'     },
   { icon: User,           label: 'Perfil',          to: '/profile'      },
 ]
 
@@ -34,8 +32,8 @@ export default function SideNavBar({ user, onLogout }) {
   return (
     <aside
       style={{
-        width:         260,
-        minWidth:      260,
+        width:         240,
+        minWidth:      240,
         height:        '100vh',
         position:      'fixed',
         left:          0,
