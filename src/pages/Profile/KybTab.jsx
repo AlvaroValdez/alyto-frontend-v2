@@ -51,18 +51,14 @@ const GOLD_GLOW   = 'rgba(232,184,75,0.32)'
 
 // ── Estado: not_started ────────────────────────────────────────────────────
 
-function NotStartedCard({ navigate, isSRL }) {
-  const benefits = isSRL
-    ? [
-        'Hasta Bs 49.999 por transacción (límite regulatorio BOB)',
-        'Corredores: CO, PE, AR, CL, MX, BR',
-        'FX transparente · Atención Business prioritaria',
-      ]
-    : [
-        'Tickets hasta $50.000 USD por transacción',
-        'Corredores globales: USD, EUR, CNY, BRL',
-        'FX transparente · Atención Business prioritaria',
-      ]
+function NotStartedCard({ navigate }) {
+  const benefits = [
+    'Spread desde 0.5% — vs 2% en cuenta personal',
+    'Factura B2B formal en cada transferencia',
+    'Atención Business prioritaria — tus transferencias se procesan primero',
+    'Acceso a todos los corredores disponibles',
+    'FX transparente — sin costos ocultos',
+  ]
 
   return (
     <div className="space-y-4">
@@ -119,7 +115,7 @@ function NotStartedCard({ navigate, isSRL }) {
                 Cuenta Business
               </h3>
               <p className="text-[0.75rem]" style={{ color: 'rgba(232,184,75,0.60)' }}>
-                Comisiones desde 0.5%
+                Spread desde 0.5% · Factura B2B · Atención prioritaria
               </p>
             </div>
           </div>
@@ -356,7 +352,7 @@ export default function KybTab({ kycStatus, legalEntity }) {
 
   return (
     <div className="px-4 py-2">
-      {kybStatus === 'not_started' && <NotStartedCard navigate={navigate} isSRL={isSRL} />}
+      {kybStatus === 'not_started' && <NotStartedCard navigate={navigate} />}
       {isPending                   && <PendingCard   kybData={kybData} navigate={navigate} />}
       {kybStatus === 'more_info'   && <MoreInfoCard  navigate={navigate} />}
       {kybStatus === 'approved'    && <ApprovedCard  kybData={kybData} navigate={navigate} isSRL={isSRL} />}
