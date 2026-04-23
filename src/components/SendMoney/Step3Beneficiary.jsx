@@ -78,7 +78,7 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
 
   const baseInput = `w-full bg-white border rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0D1F3C]
     placeholder:text-[#94A3B8] focus:outline-none transition-all`
-  const borderOk  = 'border-[#E2E8F0] focus:border-[#1D9E75] focus:shadow-[0_0_0_2px_#1D9E7520]'
+  const borderOk  = 'border-[#E2E8F0] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#1D346120]'
   const borderErr = 'border-[#EF4444] shadow-[0_0_0_2px_#EF44441A]'
 
   return (
@@ -220,8 +220,8 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
           <p className="text-[0.75rem] text-[#4A5568]">{loadError}</p>
           <button
             onClick={refetch}
-            className="self-start px-4 py-2 rounded-xl border border-[#1D9E7533] text-[0.875rem]
-              font-semibold text-[#1D9E75] hover:bg-[#1D9E751A] transition-colors"
+            className="self-start px-4 py-2 rounded-xl border border-[#1D346133] text-[0.875rem]
+              font-semibold text-[#1D3461] hover:bg-[#1D34611A] transition-colors"
           >
             Reintentar
           </button>
@@ -270,8 +270,8 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
         disabled={!allValid}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
           allValid
-            ? 'bg-[#1D9E75] text-[#0F1628] shadow-[0_4px_20px_rgba(29,158,117,0.25)] active:scale-[0.98]'
-            : 'bg-[#1D9E7540] text-[#94A3B8] cursor-not-allowed'
+            ? 'bg-[#1D3461] text-[#0F1628] shadow-[0_4px_20px_rgba(29,52,97,0.25)] active:scale-[0.98]'
+            : 'bg-[#1D346140] text-[#94A3B8] cursor-not-allowed'
         }`}
       >
         Continuar

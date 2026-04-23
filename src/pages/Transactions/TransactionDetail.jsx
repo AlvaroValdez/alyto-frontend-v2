@@ -126,7 +126,7 @@ function PaymentInstructionsModal({ tx, onClose }) {
               {qrSrc && (
                 <button
                   onClick={downloadQR}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#E2E8F0] text-[0.8125rem] text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#1D9E7533] transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#E2E8F0] text-[0.8125rem] text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#1D346133] transition-colors"
                 >
                   <Download size={13} /> Descargar QR
                 </button>
@@ -159,7 +159,7 @@ function PaymentInstructionsModal({ tx, onClose }) {
               ].map(([label, value]) => (
                 <div key={label} className="flex items-center justify-between py-2.5">
                   <span className="text-[0.75rem] text-[#94A3B8]">{label}</span>
-                  <span className={`text-[0.875rem] font-semibold ${label === 'Monto' ? 'text-[#1D9E75]' : 'text-[#0D1F3C]'}`}>{value}</span>
+                  <span className={`text-[0.875rem] font-semibold ${label === 'Monto' ? 'text-[#1D3461]' : 'text-[#0D1F3C]'}`}>{value}</span>
                 </div>
               ))}
             </div>
@@ -173,7 +173,7 @@ function PaymentInstructionsModal({ tx, onClose }) {
                 className="ml-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] text-[0.75rem] text-[#4A5568] hover:text-[#0D1F3C] transition-colors flex-shrink-0"
               >
                 {copiedRef
-                  ? <><CheckCheck size={12} className="text-[#1D9E75]" /> Copiado</>
+                  ? <><CheckCheck size={12} className="text-[#1D3461]" /> Copiado</>
                   : <><Copy size={12} /> Copiar</>
                 }
               </button>
@@ -752,7 +752,7 @@ export default function TransactionDetail() {
                   >
                     <span className="truncate">{tx.transactionId}</span>
                     {copied
-                      ? <CheckCircle size={13} color="#1D9E75" style={{ flexShrink: 0 }} />
+                      ? <CheckCircle size={13} color="#1D3461" style={{ flexShrink: 0 }} />
                       : <Copy size={13} color="#94A3B8" style={{ flexShrink: 0 }} />
                     }
                   </button>
@@ -894,7 +894,7 @@ export default function TransactionDetail() {
             <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-7 h-7 rounded-lg bg-[#233E581A] flex items-center justify-center flex-shrink-0">
-                  <Link2 size={14} className="text-[#1D9E75]" />
+                  <Link2 size={14} className="text-[#1D3461]" />
                 </div>
                 <p className="text-[0.6875rem] font-semibold text-[#94A3B8] uppercase tracking-wider">
                   Verificado en blockchain
@@ -925,11 +925,11 @@ export default function TransactionDetail() {
                             setTimeout(() => setCopiedTxid(false), 2000)
                           })
                         }}
-                        className="flex-shrink-0 text-[#94A3B8] hover:text-[#1D9E75] transition-colors"
+                        className="flex-shrink-0 text-[#94A3B8] hover:text-[#1D3461] transition-colors"
                         title="Copiar TXID completo"
                       >
                         {copiedTxid
-                          ? <CheckCircle size={14} className="text-[#1D9E75]" />
+                          ? <CheckCircle size={14} className="text-[#1D3461]" />
                           : <Copy size={14} />
                         }
                       </button>
@@ -937,7 +937,7 @@ export default function TransactionDetail() {
                   </div>
 
                   {copiedTxid && (
-                    <p className="text-[0.6875rem] text-[#1D9E75] text-right -mt-1">¡TXID copiado!</p>
+                    <p className="text-[0.6875rem] text-[#1D3461] text-right -mt-1">¡TXID copiado!</p>
                   )}
 
                   <a
@@ -946,7 +946,7 @@ export default function TransactionDetail() {
                     }/tx/${tx.stellarTxId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#1D9E7533] text-[#1D9E75] text-sm font-medium transition-colors hover:bg-[#233E581A]"
+                    className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#1D346133] text-[#1D3461] text-sm font-medium transition-colors hover:bg-[#233E581A]"
                   >
                     Ver en Stellar Explorer
                     <ExternalLink size={14} />
@@ -968,7 +968,7 @@ export default function TransactionDetail() {
             <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-7 h-7 rounded-lg bg-[#233E581A] flex items-center justify-center flex-shrink-0">
-                  <Download size={14} className="text-[#1D9E75]" />
+                  <Download size={14} className="text-[#1D3461]" />
                 </div>
                 <p className="text-[0.6875rem] font-semibold text-[#94A3B8] uppercase tracking-wider">
                   Comprobante de Servicio B2B

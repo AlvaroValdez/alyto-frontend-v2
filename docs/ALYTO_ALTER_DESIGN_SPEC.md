@@ -1,298 +1,750 @@
-# Alyto-Alter Design System — v1.0
+# Alyto-Alter — Design System Specification v2.0
 
-> **Source of truth for all visual decisions in Alyto Wallet V2.0 frontend.**
-> Any conflict between implementation prompts and this spec → **THE SPEC WINS**.
+> **Status:** Canonical design contract — DO NOT implement without following this spec.
+> **Last updated:** April 2026
+> **Mode:** Light Mode (claro) con identidad Alyto
+> **Reference:** FinWallet UI + Alyto navy/teal brand colors
+> **Stack:** React + Vite
+> **Breakpoints:** Mobile-first: 390px (primary) / 1440px (desktop)
 
 ---
 
-## §1 — Design Tokens
+## 1. Design Tokens
 
-### §1.1 Color Tokens
+### Colors
 
-#### Background
-| CSS Variable | Value | Usage |
-|---|---|---|
-| `--color-bg-primary` | `#0F1628` | Page / screen background |
-| `--color-bg-secondary` | `#1A2340` | Cards, panels, list items |
-| `--color-bg-elevated` | `#1F2B4D` | Elevated cards, hover states |
-| `--color-bg-overlay` | `rgba(15,22,40,0.85)` | Modal backdrops |
-
-#### Text
-| CSS Variable | Value | Usage |
-|---|---|---|
-| `--color-text-primary` | `#FFFFFF` | Headings, labels, main content |
-| `--color-text-secondary` | `#8A96B8` | Subtitles, descriptions |
-| `--color-text-muted` | `#4E5A7A` | Timestamps, metadata, placeholders |
-
-#### Action / Accent
-| CSS Variable | Value | Usage |
-|---|---|---|
-| `--color-accent-teal` | `#14B8A6` | Primary CTAs, active states, links |
-| `--color-accent-teal-hover` | `#0D9488` | Hover on teal elements |
-| `--color-accent-teal-dim` | `rgba(20,184,166,0.12)` | Teal tinted backgrounds |
-| `--color-accent-teal-border` | `rgba(20,184,166,0.25)` | Teal borders |
-
-#### Status
-| CSS Variable | Value | Usage |
-|---|---|---|
-| `--color-success` | `#22C55E` | Positive amounts, completed |
-| `--color-success-bg` | `rgba(34,197,94,0.12)` | Success badge background |
-| `--color-warning` | `#F59E0B` | Pending, warnings |
-| `--color-warning-bg` | `rgba(245,158,11,0.12)` | Warning badge background |
-| `--color-error` | `#EF4444` | Errors, failures |
-| `--color-error-bg` | `rgba(239,68,68,0.12)` | Error badge background |
-| `--color-teal-status` | `#14B8A6` | In-transit, processing badge |
-| `--color-teal-status-bg` | `rgba(20,184,166,0.12)` | Teal badge background |
-| `--color-pending` | `#8A96B8` | Payin-pending badge text |
-| `--color-pending-bg` | `rgba(138,150,184,0.12)` | Pending badge background |
-
-#### Border
-| CSS Variable | Value | Usage |
-|---|---|---|
-| `--color-border` | `#263050` | Default dividers, card borders |
-| `--color-border-light` | `rgba(38,48,80,0.6)` | Subtle borders |
-
-### §1.2 Gradient Tokens
-| CSS Variable | Value |
-|---|---|
-| `--gradient-balance` | `linear-gradient(135deg, #1D3461 0%, #0F1628 60%, #1A2030 100%)` |
-| `--gradient-card` | `linear-gradient(135deg, #1A2340 0%, #1F2B4D 100%)` |
-| `--gradient-teal-glow` | `radial-gradient(ellipse at top, rgba(20,184,166,0.10) 0%, transparent 60%)` |
-
-### §1.3 Typography Scale
-| CSS Variable | Value | Px equiv |
-|---|---|---|
-| `--font-xs` | `0.625rem` | 10px |
-| `--font-sm` | `0.75rem` | 12px |
-| `--font-base` | `0.875rem` | 14px |
-| `--font-md` | `0.9375rem` | 15px |
-| `--font-lg` | `1rem` | 16px |
-| `--font-xl` | `1.125rem` | 18px |
-| `--font-2xl` | `1.375rem` | 22px |
-| `--font-3xl` | `1.75rem` | 28px |
-| `--font-4xl` | `2.5rem` | 40px |
-
-**Font family:** `'Manrope', sans-serif` — weights: 400, 500, 600, 700, 800
-
-### §1.4 Spacing Scale (multiples of 4px)
-| Variable | Value |
-|---|---|
-| `--space-xs` | `4px` |
-| `--space-sm` | `8px` |
-| `--space-md` | `12px` |
-| `--space-lg` | `16px` |
-| `--space-xl` | `20px` |
-| `--space-2xl` | `24px` |
-| `--space-3xl` | `32px` |
-| `--space-4xl` | `48px` |
-
-### §1.5 Border Radius
-| Variable | Value |
-|---|---|
-| `--radius-sm` | `8px` |
-| `--radius-md` | `12px` |
-| `--radius-lg` | `16px` |
-| `--radius-xl` | `20px` |
-| `--radius-2xl` | `24px` |
-| `--radius-full` | `9999px` |
-
-### §1.6 Shadows
-| Variable | Value |
-|---|---|
-| `--shadow-card` | `0 4px 24px rgba(0,0,0,0.30)` |
-| `--shadow-hero` | `0 8px 40px rgba(0,0,0,0.50)` |
-| `--shadow-teal` | `0 4px 20px rgba(20,184,166,0.25)` |
-| `--shadow-modal` | `0 24px 64px rgba(0,0,0,0.60)` |
-
-### §1.7 Animation / Transition Tokens
-| Variable | Value |
-|---|---|
-| `--transition-fast` | `all 0.15s ease` |
-| `--transition-normal` | `all 0.25s ease` |
-| `--transition-slow` | `all 0.40s ease` |
-
-#### Keyframe: `flashTeal`
 ```css
-@keyframes flashTeal {
-  0%   { background-color: var(--color-bg-secondary); }
-  30%  { background-color: var(--color-accent-teal-dim); }
-  100% { background-color: var(--color-bg-secondary); }
+:root {
+  /* ── Backgrounds ── */
+  --color-bg-app:       #F4F6FA;  /* App background — light gray-blue */
+  --color-bg-white:     #FFFFFF;  /* Cards, modals, inputs */
+  --color-bg-hover:     #F0F3F9;  /* Hover states */
+
+  /* ── Brand Navy (from original spec) ── */
+  --color-navy-900:     #0D1F3C;  /* Darkest navy — balance card bg */
+  --color-navy-800:     #1A2F52;  /* Darker navy */
+  --color-navy-700:     #1E3A5F;  /* Nav active states */
+  --color-navy-100:     #EEF2F8;  /* Light navy tint — subtle backgrounds */
+
+  /* ── Teal Accent (from original spec) ── */
+  --color-teal-600:     #1D9E75;  /* Primary teal — CTAs, highlights */
+  --color-teal-500:     #22B88A;  /* Lighter teal */
+  --color-teal-100:     #E6F7F2;  /* Teal background tint */
+
+  /* ── Text ── */
+  --color-text-primary:   #0D1F3C;  /* Navy — headings, primary content */
+  --color-text-secondary: #5A6A8A;  /* Secondary labels */
+  --color-text-muted:     #9AA5C0;  /* Placeholder, disabled, fine print */
+  --color-text-white:     #FFFFFF;  /* Text on dark backgrounds */
+
+  /* ── Status ── */
+  --color-success:        #16A34A;
+  --color-success-bg:     #DCFCE7;
+  --color-warning:        #D97706;
+  --color-warning-bg:     #FEF3C7;
+  --color-error:          #DC2626;
+  --color-error-bg:       #FEE2E2;
+  --color-pending:        #6366F1;
+  --color-pending-bg:     #EEF2FF;
+  --color-transit:        #0891B2;
+  --color-transit-bg:     #E0F2FE;
+
+  /* ── Borders ── */
+  --color-border:         #E8EDF5;  /* Subtle card borders */
+  --color-border-input:   #D1D9E8;  /* Input borders */
+  --color-border-focus:   #1D9E75;  /* Focus ring — teal */
+
+  /* ── Shadows ── */
+  --shadow-card:    0 1px 4px rgba(13, 31, 60, 0.06), 0 4px 16px rgba(13, 31, 60, 0.06);
+  --shadow-card-hover: 0 4px 12px rgba(13, 31, 60, 0.10), 0 8px 32px rgba(13, 31, 60, 0.08);
+  --shadow-nav:     0 -1px 0 rgba(13, 31, 60, 0.06), 0 -4px 16px rgba(13, 31, 60, 0.04);
+  --shadow-teal:    0 4px 16px rgba(29, 158, 117, 0.30);
 }
 ```
 
-#### Keyframe: `pulseRed` (countdown timer < 10s)
+### Typography
+
 ```css
-@keyframes pulseRed {
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --font-primary: 'Manrope', -apple-system, sans-serif;
+
+  --text-xs:   11px;   /* Uppercase labels */
+  --text-sm:   13px;   /* Metadata, secondary */
+  --text-base: 15px;   /* Body */
+  --text-md:   17px;   /* Sub-headings */
+  --text-lg:   20px;   /* Section headings */
+  --text-xl:   24px;   /* Card headings */
+  --text-2xl:  32px;   /* Balance amount */
+  --text-3xl:  40px;   /* Amount input */
+
+  --tracking-wide:  0.05em;
+  --tracking-wider: 0.08em;
+}
+```
+
+### Shape & Spacing
+
+```css
+:root {
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;   /* Standard card */
+  --radius-xl:   20px;   /* Balance card, large modals */
+  --radius-full: 9999px; /* Pills, badges, buttons */
+
+  --spacing-xs:  8px;
+  --spacing-sm:  12px;
+  --spacing-md:  16px;
+  --spacing-lg:  24px;
+  --spacing-xl:  32px;
+}
+```
+
+---
+
+## 2. Global Layout
+
+```css
+body {
+  font-family: var(--font-primary);
+  background: var(--color-bg-app);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+```
+
+---
+
+## 3. Navigation Components
+
+### 3.1 TopNavBar (Mobile + Desktop)
+
+```
+┌─────────────────────────────────────┐
+│  [Logo Alyto]        [🔔 2] [Avatar]│
+│  height: 64px, bg: white, shadow    │
+└─────────────────────────────────────┘
+```
+
+```css
+.top-nav {
+  position: sticky;
+  top: 0;
+  height: 64px;
+  background: var(--color-bg-white);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing-md);
+  z-index: 100;
+  box-shadow: 0 1px 4px rgba(13,31,60,0.06);
+}
+
+/* Bell icon with badge */
+.nav-bell {
+  position: relative;
+}
+.nav-bell-badge {
+  position: absolute;
+  top: -2px; right: -2px;
+  width: 16px; height: 16px;
+  background: var(--color-error);
+  border-radius: var(--radius-full);
+  font-size: 9px;
+  font-weight: 700;
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Avatar */
+.nav-avatar {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--color-navy-900);
+  color: var(--color-text-white);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: var(--text-sm);
+}
+```
+
+### 3.2 BottomNavBar (Mobile only, < 1024px)
+
+```
+┌─────────────────────────────────────┐
+│  🏠      💳      ↗      👥      👤  │
+│  Home  Assets Trans. Contacts Profile│
+│  height: 72px, bg: white            │
+└─────────────────────────────────────┘
+```
+
+```css
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 72px;
+  background: var(--color-bg-white);
+  border-top: 1px solid var(--color-border);
+  box-shadow: var(--shadow-nav);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 100;
+}
+
+.nav-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  transition: color 0.15s;
+  cursor: pointer;
+  flex: 1;
+}
+.nav-tab.active {
+  color: var(--color-teal-600);
+}
+.nav-tab span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* Active indicator dot */
+.nav-tab.active::after {
+  content: '';
+  display: block;
+  width: 4px; height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-teal-600);
+  margin-top: 2px;
+}
+```
+
+### 3.3 SideNavBar (Desktop only, ≥ 1024px)
+
+```css
+.sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: 240px;
+  height: 100vh;
+  background: var(--color-bg-white);
+  border-right: 1px solid var(--color-border);
+  padding: 24px 12px;
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+}
+.sidebar-logo {
+  padding: 0 12px 24px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 16px;
+}
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sidebar-nav-item:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+.sidebar-nav-item.active {
+  background: var(--color-teal-100);
+  color: var(--color-teal-600);
+  font-weight: 600;
+}
+.sidebar-profile {
+  margin-top: auto;
+  padding: 12px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+```
+
+---
+
+## 4. Component Library
+
+### 4.1 Cards
+
+```css
+.card {
+  background: var(--color-bg-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  padding: var(--spacing-lg);
+}
+
+/* Balance card — dark navy with white text */
+.card-balance {
+  background: var(--color-navy-900);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  color: var(--color-text-white);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(13, 31, 60, 0.25);
+}
+.card-balance::before {
+  content: '';
+  position: absolute;
+  top: -50px; right: -50px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+}
+.card-balance .balance-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+}
+.card-balance .balance-amount {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  margin: 8px 0 4px;
+}
+.card-balance .balance-sub {
+  font-size: var(--text-sm);
+  color: rgba(255,255,255,0.6);
+}
+
+/* Quote card */
+.card-quote {
+  background: var(--color-teal-100);
+  border: 1px solid rgba(29, 158, 117, 0.2);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+}
+.card-quote .quote-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+.card-quote .quote-amount {
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--color-teal-600);
+  margin: 4px 0;
+}
+.card-quote .quote-meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+.card-quote .quote-timer {
+  background: white;
+  border-radius: var(--radius-full);
+  padding: 3px 10px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+.card-quote .quote-timer.expiring {
+  color: var(--color-error);
+  animation: pulse 1s ease infinite;
+}
+```
+
+### 4.2 Buttons
+
+```css
+.btn-primary {
+  background: var(--color-navy-900);
+  color: var(--color-text-white);
+  border-radius: var(--radius-full);
+  font-family: var(--font-primary);
+  font-weight: 700;
+  font-size: var(--text-base);
+  padding: 16px 32px;
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  box-shadow: 0 4px 12px rgba(13, 31, 60, 0.25);
+}
+.btn-primary:hover  { opacity: 0.88; }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Teal variant — for confirmations */
+.btn-teal {
+  background: var(--color-teal-600);
+  color: white;
+  box-shadow: var(--shadow-teal);
+}
+.btn-teal:hover { background: var(--color-teal-500); }
+
+/* Ghost */
+.btn-ghost {
+  background: var(--color-bg-app);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  padding: 14px 24px;
+}
+
+/* Action button (icon + label, in dashboard row) */
+.btn-action {
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.1s;
+  flex: 1;
+}
+.btn-action:hover  { box-shadow: var(--shadow-card-hover); }
+.btn-action:active { transform: scale(0.97); }
+.btn-action .action-icon {
+  width: 44px; height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--color-navy-100);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-navy-900);
+}
+/* Send button gets teal icon bg */
+.btn-action.send .action-icon {
+  background: var(--color-teal-100);
+  color: var(--color-teal-600);
+}
+.btn-action span {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+```
+
+### 4.3 Badges
+
+```css
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.badge-success { background: var(--color-success-bg); color: var(--color-success); }
+.badge-pending { background: var(--color-pending-bg); color: var(--color-pending); }
+.badge-warning { background: var(--color-warning-bg); color: var(--color-warning); }
+.badge-error   { background: var(--color-error-bg);   color: var(--color-error); }
+.badge-transit { background: var(--color-transit-bg); color: var(--color-transit); }
+.badge-teal    { background: var(--color-teal-100);   color: var(--color-teal-600); }
+```
+
+### 4.4 Input Fields
+
+```css
+.input-field {
+  background: var(--color-bg-white);
+  border: 1.5px solid var(--color-border-input);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-family: var(--font-primary);
+  font-size: var(--text-base);
+  padding: 13px 16px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input-field:focus {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(29, 158, 117, 0.12);
+}
+.input-field::placeholder { color: var(--color-text-muted); }
+
+/* Amount input — large centered */
+.input-amount {
+  background: transparent;
+  border: none;
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  color: var(--color-text-primary);
+  width: 100%;
+  text-align: center;
+  outline: none;
+}
+
+/* Field label */
+.field-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+```
+
+### 4.5 Transaction List Item
+
+```css
+.tx-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.tx-item:last-child { border-bottom: none; }
+
+.tx-icon {
+  width: 40px; height: 40px;
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tx-icon.success { background: var(--color-success-bg); color: var(--color-success); }
+.tx-icon.pending { background: var(--color-pending-bg); color: var(--color-pending); }
+.tx-icon.failed  { background: var(--color-error-bg);   color: var(--color-error); }
+.tx-icon.transit { background: var(--color-transit-bg); color: var(--color-transit); }
+
+.tx-info { flex: 1; min-width: 0; }
+.tx-name {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tx-meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+.tx-right { text-align: right; flex-shrink: 0; }
+.tx-amount {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+```
+
+---
+
+## 5. Screen Specifications
+
+### 5.1 Dashboard — Mobile
+
+```
+┌─────────────────────────────────────┐
+│  TopNavBar: logo | 🔔 | avatar      │
+├─────────────────────────────────────┤
+│  padding: 16px                      │
+│                                     │
+│  ┌─── Balance Card (navy) ────────┐ │
+│  │  AVAILABLE BALANCE              │ │
+│  │  Bs. 2,450.00                   │ │
+│  │  ≈ $263.45 USD  +2.4% ▲        │ │
+│  └───────────────────────────────┘ │
+│                                     │
+│  [SEND] [LOAD] [WITHDRAW]           │  ← 3 btn-action equal width
+│                                     │
+│  RECENT TRANSACTIONS ─── See All →  │
+│  ┌──────────────────────────────┐   │
+│  │ 🇨🇴 Envío Colombia   510 BOB │   │
+│  │   hace 4h · BOB→COP  PENDING │   │
+│  │ ✓ Envío Argentina  1,200 BOB │   │
+│  │   ayer · BOB→ARS   SUCCESS   │   │
+│  └──────────────────────────────┘   │
+│                                     │
+│  padding-bottom: 88px               │  ← space for BottomNavBar
+├─────────────────────────────────────┤
+│  BottomNavBar (fixed)               │
+└─────────────────────────────────────┘
+```
+
+### 5.2 Dashboard — Desktop
+
+```
+┌───────────┬─────────────────────────────────────────────┐
+│  Sidebar  │  TopNavBar                                   │
+│  240px    ├─────────────────────────────────────────────┤
+│           │  padding: 32px                              │
+│  Logo     │  ┌──── Balance Card ──┐ ┌─── Quick Send ──┐│
+│  ──────   │  │  Bs. 2,450.00      │ │  [Send widget]  ││
+│  navItems │  │  +2.4% this month  │ │                 ││
+│           │  └────────────────────┘ └─────────────────┘│
+│           │                                              │
+│  ──────   │  ┌──── Recent Transactions table ─────────┐ │
+│  Profile  │  │ Date | Beneficiary | Amount | Status   │ │
+└───────────┴─────────────────────────────────────────────┘
+```
+
+### 5.3 Send Money Step 1 — Mobile
+
+```
+┌─────────────────────────────────────┐
+│  ← Send Money                       │
+│                                     │
+│  ┌─── Country Selector ───────────┐ │
+│  │  🇨🇴  Colombia              ▼  │ │
+│  └───────────────────────────────┘ │
+│                                     │
+│  YOU SEND                           │  ← field-label
+│  ┌─── Amount input ───────────────┐ │
+│  │       635.00          [BOB]    │ │
+│  └───────────────────────────────┘ │
+│                                     │
+│  ┌─── Quote Card (teal bg) ──────┐ │
+│  │  RECIPIENT GETS    ⏱ 0:58     │ │
+│  │  267,483 COP                   │ │
+│  │  1 BOB = 421.23 COP           │ │
+│  │  Fee: 17.70 BOB · Pocas horas │ │
+│  └───────────────────────────────┘ │
+│                                     │
+│  [──────── Continuar ───────────]   │  ← btn-primary sticky
+└─────────────────────────────────────┘
+```
+
+### 5.4 Contacts — Mobile
+
+```
+┌─────────────────────────────────────┐
+│  TopNavBar + search bar below       │
+│  🔍 Search contacts...              │
+│                                     │
+│  FAVORITES ────────────────────     │  ← horizontal scroll
+│  [MV 🇨🇴] [JP 🇦🇷] [WZ 🇨🇳] ...  │
+│                                     │
+│  ALL CONTACTS ─────────────────     │
+│  ┌──────────────────────────────┐   │
+│  │ MV Marina Valdez    🇨🇴  ★   │   │
+│  │    Bancolombia ****4512      │   │
+│  │ JP Juan Pérez       🇦🇷      │   │
+│  │    Banco Nación ****8821     │   │
+│  └──────────────────────────────┘   │
+└─────────────────────────────────────┘
+```
+
+---
+
+## 6. Status → Badge Mapping
+
+| Transaction Status | Badge Variant | Label ES |
+|---|---|---|
+| `completed` | success | Completada |
+| `payout_sent` | transit | En tránsito |
+| `payout_in_transit` | transit | En tránsito |
+| `processing` | transit | Procesando |
+| `in_transit` | transit | En tránsito |
+| `payin_confirmed` | pending | Verificando pago |
+| `payin_pending` | pending | Pago pendiente |
+| `payout_pending` | warning | Pago manual |
+| `pending_funding` | warning | Fondos pendientes |
+| `failed` | error | Fallida |
+| `refunded` | warning | Reembolsada |
+| `initiated` | pending | Iniciada |
+
+---
+
+## 7. Anti-patterns (FORBIDDEN)
+
+1. ❌ Dark/navy background for the main app shell — use #F4F6FA
+2. ❌ Dark text on dark background anywhere except balance card
+3. ❌ Purple as primary color — navy + teal only
+4. ❌ Inter, Roboto, Arial fonts — Manrope only
+5. ❌ Border-radius < 8px on cards
+6. ❌ Cards without shadow — always add --shadow-card
+7. ❌ Exposing USDC/Stellar/pivot to user
+8. ❌ Amount inputs with visible borders — transparent style
+9. ❌ Status text without .badge component
+10. ❌ Grid of 4+ action buttons — maximum 3 (Send, Load, Withdraw)
+11. ❌ "Mi Wallet BOB", "Mis Reclamos", "Soporte" as dashboard sections
+12. ❌ Light gray text on white cards — minimum contrast ratio 4.5:1
+
+---
+
+## 8. Responsive Rules
+
+```
+Mobile (< 1024px):
+  - TopNavBar (sticky) + BottomNavBar (fixed)
+  - Single column
+  - Full-width cards with 16px horizontal padding
+  - Sticky action buttons (bottom of screen)
+  - content padding-bottom: 88px (BottomNavBar height)
+
+Desktop (≥ 1024px):
+  - SideNavBar (240px fixed) + TopNavBar
+  - Main content: margin-left: 240px
+  - Multi-column layouts
+  - Max content width: 1100px
+  - No BottomNavBar
+```
+
+---
+
+## 9. Animations
+
+```css
+/* Page enter */
+.page-enter { animation: fadeSlideUp 0.2s ease forwards; }
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Quote flash on update */
+.quote-flash { animation: flashGreen 0.5s ease; }
+@keyframes flashGreen {
+  0%   { background: rgba(29,158,117,0.2); }
+  100% { background: var(--color-teal-100); }
+}
+
+/* Timer pulse < 10s */
+@keyframes pulse {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.55; }
+  50%       { opacity: 0.5; }
 }
+
+/* Standard */
+--transition: 0.15s ease;
 ```
 
 ---
 
-## §2 — Component Specifications
+## 10. Change Protocol
 
-### §2.1 Button
-**File:** `src/components/ui/Button.jsx`
+1. Update this file with rationale
+2. Increment version number
+3. Test at 390px AND 1440px
+4. Verify anti-patterns list
+5. Commit: "design: [description] per Alyto-Alter v[X.Y]"
 
-**Props:** `variant` ('primary' | 'secondary' | 'ghost'), `size` ('sm'|'md'|'lg'), `disabled`, `loading`, `fullWidth`
-
-| Variant | Background | Text | Border | Shadow |
-|---|---|---|---|---|
-| `primary` | `--color-accent-teal` | `#0F1628` | none | `--shadow-teal` |
-| `secondary` | transparent | `--color-text-primary` | `--color-border` | none |
-| `ghost` | transparent | `--color-text-secondary` | none | none |
-
-- Loading state: inline spinner (Loader2 icon, animate-spin) replaces label
-- Disabled: `opacity: 0.4`, `cursor: not-allowed`
-- Full-width: `width: 100%`
-- Hover: primary → `--color-accent-teal-hover`; secondary → border `--color-accent-teal`; ghost → text `--color-text-primary`
-
-### §2.2 Card
-**File:** `src/components/ui/Card.jsx`
-
-**Props:** `variant` ('default' | 'balance' | 'elevated'), `className`, `children`
-
-| Variant | Background | Border | Extra |
-|---|---|---|---|
-| `default` | `--color-bg-secondary` | `--color-border` | none |
-| `balance` | `--gradient-balance` | none | Decorative circles (::before, ::after), `--shadow-hero` |
-| `elevated` | `--color-bg-elevated` | `--color-border` | `--shadow-card` |
-
-Balance card decorative circles:
-```css
-.card-balance::before { /* glow at top */ }
-.card-balance::after  { /* circle top-right */ }
-```
-
-### §2.3 Badge
-**File:** `src/components/ui/Badge.jsx`
-
-**Props:** `variant` ('success' | 'pending' | 'warning' | 'error' | 'teal'), `children`
-
-| Variant | Background | Text | Icon |
-|---|---|---|---|
-| `success` | `--color-success-bg` | `--color-success` | ✓ |
-| `pending` | `--color-pending-bg` | `--color-pending` | ⏳ |
-| `warning` | `--color-warning-bg` | `--color-warning` | ⚠ |
-| `error` | `--color-error-bg` | `--color-error` | ✕ |
-| `teal` | `--color-teal-status-bg` | `--color-teal-status` | ↗ |
-
-### §2.4 Input
-**File:** `src/components/ui/Input.jsx`
-
-**Props:** `type`, `placeholder`, `prefix`, `suffix`, `label`, `error`, `value`, `onChange`
-
-- Background: `--color-bg-secondary`
-- Border: `--color-border`
-- Focus border: `--color-accent-teal`
-- Focus ring: `0 0 0 2px var(--color-accent-teal-dim)`
-- Label: uppercase, `0.75rem`, `--color-text-secondary`, `letter-spacing: 0.06em`
-- Error: border `--color-error`, ring `rgba(239,68,68,0.12)`
-
-### §2.5 QuoteCard
-**File:** `src/components/ui/QuoteCard.jsx`
-
-**Props:** `destinationAmount`, `destinationCurrency`, `effectiveRate`, `totalDeducted`, `originCurrency`, `deliveryTime`, `expiresIn` (seconds), `loading`, `onFlash`
-
-- Container: `card default`
-- Shows "Calculando…" skeleton while `loading`
-- Live countdown timer from `expiresIn` seconds
-  - Normal: `--color-text-muted`
-  - < 30s: `--color-warning`
-  - < 10s: `--color-error` + `pulseRed` animation
-- Flash animation (`flashTeal`) triggered when quote updates
-- Rate line: `1 {originCurrency} = {effectiveRate} {destinationCurrency}`
-- Amount: `--color-success`, bold
-
-### §2.6 StatusBadge
-**File:** `src/components/ui/StatusBadge.jsx`
-
-**Props:** `status` (transaction status string)
-
-| Status | Variant | Label |
-|---|---|---|
-| `completed` | `success` | Completada |
-| `payout_sent` | `teal` | En tránsito |
-| `processing` | `teal` | Procesando |
-| `in_transit` | `teal` | En tránsito |
-| `payin_confirmed` | `pending` | Verificando |
-| `payin_pending` | `pending` | Pago pendiente |
-| `failed` | `error` | Fallida |
-| `refunded` | `warning` | Reembolsada |
-
----
-
-## §3 — Navigation Components
-
-### §3.1 BottomNavBar (mobile, < 1024px)
-**File:** `src/components/layout/BottomNavBar.jsx`
-
-- Position: `fixed bottom-0`, full width, `max-width: 430px`, centered
-- Background: `--color-bg-primary` with `backdrop-filter: blur(20px)`
-- Border top: `1px solid --color-border`
-- Border radius top: `24px`
-- Padding: `12px 0 calc(20px + env(safe-area-inset-bottom))`
-- **5 tabs:** Home (🏠), Assets (💳), Transfers (↗), Contacts (👥), Profile (👤)
-- Active: `--color-bg-elevated` pill + `--color-text-primary`
-- Inactive: `--color-text-muted`
-- Use `NavLink` for active detection
-
-### §3.2 SideNavBar (desktop, ≥ 1024px)
-**File:** `src/components/layout/SideNavBar.jsx`
-
-- Width: `260px`, fixed left, full height
-- Background: `--color-bg-secondary`
-- Border right: `1px solid --color-border`
-- Logo at top (24px padding)
-- Nav items: Dashboard, Cuentas, Transferencias, Contactos, Perfil
-- Active: `--color-bg-elevated` + `--color-text-primary` + left border teal `3px solid --color-accent-teal`
-- Inactive: `--color-text-muted`
-- User info at bottom (avatar 36px + name + entity badge)
-
-### §3.3 TopNavBar (desktop, ≥ 1024px)
-**File:** `src/components/layout/TopNavBar.jsx`
-
-- Height: `64px`, sticky top
-- Background: `--color-bg-secondary`, border bottom: `--color-border`
-- Left: Page title (dynamic, passed as prop)
-- Right: Bell icon (with unread badge) + Avatar (36px)
-
----
-
-## §4 — Screen Layouts
-
-### §4.1 Dashboard — Mobile
-1. Balance card (`card-balance`): "Total Balance" label → amount → USD equiv → decorative circles
-2. Action row (3 buttons): Enviar / Cargar / Retirar — `btn-ghost` with centered icon
-3. "Recientes" section (`label-uppercase`) → transaction list items
-
-### §4.2 Dashboard — Desktop
-- Two columns: 60% (balance + actions + table) | 40% (quick-send + alerts)
-- Transaction table: Fecha | Beneficiario | Corredor | Monto | Estado
-
-### §4.5 Contacts
-**Mobile:**
-- Search bar (input with 🔍 prefix)
-- "Favoritos" horizontal scroll (avatar + name + flag cards)
-- "Todos" full list (avatar + name + bank + country | last amount + star)
-
-**Desktop:**
-- "Quick Access" grid (4 cols)
-- Full table: Nombre | Banco | País | Última tx | Acciones
-
----
-
-## §5 — Global Rules
-
-1. **Mobile-first** — mobile styles first, then desktop via `@media (min-width: 1024px)`
-2. **Touch targets** — minimum 44×44px
-3. **Contrast** — body text ≥ 4.5:1 contrast on bg-primary
-4. **No logic changes** — only visual classes / styles / icons
-5. **Preserve** all event handlers, state, routes, component structure
-6. **Font** — `'Manrope', sans-serif` everywhere
-7. **Scrollbars** — hidden on all scrollable containers (`.scrollbar-hide`)
-
----
-
-*Alyto-Alter Design System v1.0 — AV Finance / Alyto Wallet*
+**Do not change visual design without updating this spec first.**

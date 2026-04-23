@@ -90,7 +90,7 @@ export default function AppLayout() {
             style={{
               height:         64,
               background:     '#FFFFFF',
-              borderBottom:   '1px solid var(--color-border)',
+              boxShadow:      '0 1px 0 #E2E8F0, 0 2px 8px rgba(29,52,97,0.04)',
               display:        'flex',
               alignItems:     'center',
               justifyContent: 'space-between',
@@ -133,20 +133,20 @@ export default function AppLayout() {
                   cursor:         'pointer', position: 'relative',
                 }}
               >
-                <Bell size={16} style={{ color: 'var(--color-text-secondary)' }} />
+                <Bell size={16} style={{ color: '#1D3461' }} />
                 {unreadCount > 0 && (
                   <span
                     style={{
                       position: 'absolute', top: -2, right: -2,
                       minWidth: 16, height: 16,
                       borderRadius: 'var(--radius-full)',
-                      background: 'var(--color-error)', color: '#FFF',
-                      fontSize: '0.5625rem', fontWeight: 700,
+                      background: '#EF4444', color: '#FFF',
+                      fontSize: '0.5rem', fontWeight: 800,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       padding: '0 4px', border: '2px solid #FFFFFF',
                     }}
                   >
-                    {unreadCount > 99 ? '99+' : unreadCount}
+                    {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </button>
@@ -156,11 +156,11 @@ export default function AppLayout() {
                 className="no-underline"
                 style={{
                   width: 36, height: 36, borderRadius: '50%',
-                  background: '#0D1F3C',
-                  border: '2px solid var(--color-border)',
+                  background: '#1D3461',
+                  border: '2px solid rgba(29,52,97,0.15)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '0.8125rem', fontWeight: 700, color: '#FFFFFF',
-                  flexShrink: 0,
+                  fontSize: '0.875rem', fontWeight: 800, color: '#FFFFFF',
+                  flexShrink: 0, letterSpacing: '0.02em',
                 }}
               >
                 {isLoading
@@ -198,9 +198,9 @@ export default function AppLayout() {
         {/* Mobile header */}
         <header
           style={{
-            height:         64,
+            height:         60,
             background:     '#FFFFFF',
-            borderBottom:   '1px solid var(--color-border)',
+            boxShadow:      '0 1px 0 #E2E8F0, 0 2px 8px rgba(29,52,97,0.04)',
             display:        'flex',
             alignItems:     'center',
             justifyContent: 'space-between',
@@ -211,21 +211,23 @@ export default function AppLayout() {
             flexShrink:     0,
           }}
         >
+          {/* Logo */}
           <Link to="/dashboard" className="no-underline flex-shrink-0">
             <img
               src="/assets/LogoAlyto.png"
               alt="Alyto"
-              style={{ height: 28, width: 'auto', objectFit: 'contain' }}
+              style={{ height: 26, width: 'auto', objectFit: 'contain' }}
             />
           </Link>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Right actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {role === 'admin' && (
               <Link
                 to="/admin"
                 className="no-underline flex items-center gap-1 px-2.5 rounded-full text-xs font-semibold"
                 style={{
-                  height:     28,
+                  height:     26,
                   background: 'var(--color-accent-teal-dim)',
                   border:     '1px solid var(--color-accent-teal-border)',
                   color:      'var(--color-accent-teal)',
@@ -237,57 +239,81 @@ export default function AppLayout() {
               </Link>
             )}
 
+            {/* Bell */}
             <button
               onClick={() => navigate('/notifications')}
               aria-label="Notificaciones"
               style={{
-                width: 36, height: 36, borderRadius: '50%',
-                background: 'var(--color-bg-elevated)',
-                border: '1px solid var(--color-border)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', position: 'relative',
+                width:          38,
+                height:         38,
+                borderRadius:   '50%',
+                background:     'var(--color-bg-elevated)',
+                border:         '1px solid var(--color-border)',
+                display:        'flex',
+                alignItems:     'center',
+                justifyContent: 'center',
+                cursor:         'pointer',
+                position:       'relative',
+                flexShrink:     0,
               }}
             >
-              <Bell size={16} style={{ color: 'var(--color-text-secondary)' }} />
+              <Bell size={17} style={{ color: '#1D3461' }} />
               {unreadCount > 0 && (
                 <span
                   style={{
-                    position: 'absolute', top: -2, right: -2,
-                    minWidth: 16, height: 16,
-                    borderRadius: 'var(--radius-full)',
-                    background: 'var(--color-error)', color: '#FFF',
-                    fontSize: '0.5625rem', fontWeight: 700,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '0 4px', border: '2px solid #FFFFFF',
+                    position:       'absolute',
+                    top:            -3,
+                    right:          -3,
+                    minWidth:       17,
+                    height:         17,
+                    borderRadius:   'var(--radius-full)',
+                    background:     '#EF4444',
+                    color:          '#FFFFFF',
+                    fontSize:       '0.5rem',
+                    fontWeight:     800,
+                    display:        'flex',
+                    alignItems:     'center',
+                    justifyContent: 'center',
+                    padding:        '0 4px',
+                    border:         '2px solid #FFFFFF',
+                    letterSpacing:  '-0.01em',
                   }}
                 >
-                  {unreadCount > 99 ? '99+' : unreadCount}
+                  {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
             </button>
 
+            {/* Profile initial */}
             <Link
               to="/profile"
               className="no-underline"
               style={{
-                width: 36, height: 36, borderRadius: '50%',
-                background: '#0D1F3C',
-                border: '2px solid var(--color-border)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.8125rem', fontWeight: 700, color: '#FFFFFF',
-                flexShrink: 0,
+                width:          38,
+                height:         38,
+                borderRadius:   '50%',
+                background:     '#1D3461',
+                border:         '2px solid rgba(29,52,97,0.15)',
+                display:        'flex',
+                alignItems:     'center',
+                justifyContent: 'center',
+                fontSize:       '0.875rem',
+                fontWeight:     800,
+                color:          '#FFFFFF',
+                flexShrink:     0,
+                letterSpacing:  '0.02em',
               }}
             >
               {isLoading
-                ? <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.3)' }} />
+                ? <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.4)' }} />
                 : initials
               }
             </Link>
           </div>
         </header>
 
-        {/* Mobile content */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ paddingBottom: 96 }}>
+        {/* Mobile content — extra bottom padding for floating nav */}
+        <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ paddingBottom: 108 }}>
           <Outlet />
         </div>
 
@@ -336,7 +362,7 @@ export default function AppLayout() {
             <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
               Tu sesión se cerrará por inactividad en
             </p>
-            <p style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--color-accent-teal)', marginBottom: 20, fontVariantNumeric: 'tabular-nums' }}>
+            <p style={{ fontSize: '2rem', fontWeight: 800, color: '#1D3461', marginBottom: 20, fontVariantNumeric: 'tabular-nums' }}>
               {countdown}<span style={{ fontSize: '1rem', fontWeight: 400, color: 'var(--color-text-muted)', marginLeft: 4 }}>seg</span>
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
@@ -355,10 +381,10 @@ export default function AppLayout() {
                 onClick={continueSession}
                 style={{
                   flex: 1, padding: '12px 0', borderRadius: 16,
-                  background: 'var(--color-accent-teal)', border: 'none',
+                  background: '#1D3461', border: 'none',
                   color: '#FFFFFF', fontSize: '0.875rem', fontWeight: 700,
                   cursor: 'pointer', fontFamily: "'Manrope', sans-serif",
-                  boxShadow: 'var(--shadow-teal)',
+                  boxShadow: '0 4px 16px rgba(29,52,97,0.30)',
                 }}
               >
                 Continuar

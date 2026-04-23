@@ -37,7 +37,7 @@ function InfoRow({ label, value, mono = false, highlight = false }) {
       <span className="text-[0.75rem] text-[#94A3B8] flex-shrink-0">{label}</span>
       <span className={`text-[0.875rem] text-right break-all ${
         highlight ? 'font-bold text-[#22C55E]' :
-        mono      ? 'font-mono text-[#1D9E75]' :
+        mono      ? 'font-mono text-[#1D3461]' :
                     'text-[#0D1F3C] font-semibold'
       }`}>
         {value}
@@ -189,7 +189,7 @@ function ManualPayinScreen({ stepData }) {
                 />
                 <button
                   onClick={downloadQR}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#E2E8F0] text-[0.8125rem] text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#1D9E7533] transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#E2E8F0] text-[0.8125rem] text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#1D346133] transition-colors"
                 >
                   <Download size={13} />
                   Descargar QR
@@ -237,13 +237,13 @@ function ManualPayinScreen({ stepData }) {
             <p className="text-[0.625rem] font-semibold text-[#94A3B8] uppercase tracking-wider mb-0.5">
               Referencia (copiar en el concepto)
             </p>
-            <p className="text-[0.75rem] font-mono font-semibold text-[#1D9E75] truncate">
+            <p className="text-[0.75rem] font-mono font-semibold text-[#1D3461] truncate">
               {transactionId ?? '—'}
             </p>
           </div>
           <button
             onClick={copyRef}
-            className="ml-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] hover:border-[#1D9E7533] transition-colors text-[0.75rem] text-[#4A5568] hover:text-[#0D1F3C] flex-shrink-0"
+            className="ml-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] hover:border-[#1D346133] transition-colors text-[0.75rem] text-[#4A5568] hover:text-[#0D1F3C] flex-shrink-0"
           >
             {copiedRef
               ? <><CheckCheck size={12} className="text-[#22C55E]" /> Copiado</>
@@ -290,7 +290,7 @@ function ManualPayinScreen({ stepData }) {
           </div>
           <button
             onClick={handleDone}
-            className="mt-1 px-5 py-2.5 rounded-xl bg-[#1D9E75] text-[#0F1628] text-[0.875rem] font-bold shadow-[0_4px_20px_rgba(29,158,117,0.25)] active:scale-[0.98] transition-all"
+            className="mt-1 px-5 py-2.5 rounded-xl bg-[#1D3461] text-[#0F1628] text-[0.875rem] font-bold shadow-[0_4px_20px_rgba(29,52,97,0.25)] active:scale-[0.98] transition-all"
           >
             Ver estado de mi transferencia →
           </button>
@@ -299,7 +299,7 @@ function ManualPayinScreen({ stepData }) {
         <div className="rounded-2xl bg-white border border-[#E2E8F0] overflow-hidden">
           {/* Header */}
           <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-[#E2E8F0]">
-            <Paperclip size={15} className="text-[#1D9E75] flex-shrink-0" />
+            <Paperclip size={15} className="text-[#1D3461] flex-shrink-0" />
             <p className="text-[0.875rem] font-bold text-[#0D1F3C]">¿Ya realizaste el pago?</p>
           </div>
 
@@ -322,13 +322,13 @@ function ManualPayinScreen({ stepData }) {
             {/* Nombre del archivo PDF */}
             {proofFile && !proofPreview && (
               <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#0D1F3C] border border-[#E2E8F0]">
-                <Paperclip size={14} className="text-[#1D9E75] flex-shrink-0" />
-                <span className="text-[0.8125rem] text-[#1D9E75] truncate">{proofFile.name}</span>
+                <Paperclip size={14} className="text-[#1D3461] flex-shrink-0" />
+                <span className="text-[0.8125rem] text-[#1D3461] truncate">{proofFile.name}</span>
               </div>
             )}
 
             {/* Selector de archivo */}
-            <label className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-dashed border-[#1D9E7533] text-[0.875rem] text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#1D9E7550] transition-colors cursor-pointer">
+            <label className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-dashed border-[#1D346133] text-[0.875rem] text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#1D346150] transition-colors cursor-pointer">
               <Upload size={15} />
               {proofFile ? 'Cambiar archivo' : 'Seleccionar archivo'}
               <input
@@ -353,9 +353,9 @@ function ManualPayinScreen({ stepData }) {
               disabled={!proofFile || uploading}
               className="w-full py-3 rounded-xl text-[0.875rem] font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               style={{
-                background:  proofFile && !uploading ? '#1D9E75' : '#1D9E7540',
+                background:  proofFile && !uploading ? '#1D3461' : '#1D346140',
                 color:       '#0F1628',
-                boxShadow:   proofFile && !uploading ? '0 4px 20px rgba(29,158,117,0.25)' : 'none',
+                boxShadow:   proofFile && !uploading ? '0 4px 20px rgba(29,52,97,0.25)' : 'none',
               }}
             >
               {uploading
@@ -371,7 +371,7 @@ function ManualPayinScreen({ stepData }) {
       {!uploadDone && (
         <button
           onClick={handleDone}
-          className="w-full py-4 rounded-2xl bg-transparent border border-[#E2E8F0] text-[#4A5568] text-[0.875rem] font-semibold hover:border-[#1D9E7533] hover:text-[#0D1F3C] active:scale-[0.98] transition-all"
+          className="w-full py-4 rounded-2xl bg-transparent border border-[#E2E8F0] text-[#4A5568] text-[0.875rem] font-semibold hover:border-[#1D346133] hover:text-[#0D1F3C] active:scale-[0.98] transition-all"
         >
           Ya realicé el pago, lo verifico después →
         </button>
@@ -482,15 +482,15 @@ function PollingPayinScreen({ stepData, onNext }) {
         </div>
         <div className="bg-white rounded-2xl p-4">
           <p className="text-[0.75rem] text-[#4A5568] mb-1">ID de transacción</p>
-          <p className="text-[0.8125rem] font-mono font-semibold text-[#1D9E75] break-all">
+          <p className="text-[0.8125rem] font-mono font-semibold text-[#1D3461] break-all">
             {transactionId || '—'}
           </p>
         </div>
         <a
           href={`mailto:soporte@alyto.com?subject=URL%20de%20pago%20no%20disponible%20-%20${transactionId}`}
-          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-white border border-[#E2E8F0] text-[#0D1F3C] text-[0.9375rem] font-semibold no-underline hover:border-[#1D9E7533] transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-white border border-[#E2E8F0] text-[#0D1F3C] text-[0.9375rem] font-semibold no-underline hover:border-[#1D346133] transition-colors"
         >
-          <MessageCircle size={18} className="text-[#1D9E75]" />
+          <MessageCircle size={18} className="text-[#1D3461]" />
           Contactar soporte
         </a>
       </div>
@@ -511,13 +511,13 @@ function PollingPayinScreen({ stepData, onNext }) {
         </div>
         <div className="bg-white rounded-2xl p-4">
           <p className="text-[0.75rem] text-[#4A5568] mb-1">Referencia de tu operación</p>
-          <p className="text-[0.8125rem] font-mono font-semibold text-[#1D9E75]">{transactionId}</p>
+          <p className="text-[0.8125rem] font-mono font-semibold text-[#1D3461]">{transactionId}</p>
         </div>
         <a
           href={`mailto:soporte@alyto.com?subject=Pago%20pendiente%20${transactionId}`}
-          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-white border border-[#E2E8F0] text-[#0D1F3C] text-[0.9375rem] font-semibold no-underline hover:border-[#1D9E7533] transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-white border border-[#E2E8F0] text-[#0D1F3C] text-[0.9375rem] font-semibold no-underline hover:border-[#1D346133] transition-colors"
         >
-          <MessageCircle size={18} className="text-[#1D9E75]" />
+          <MessageCircle size={18} className="text-[#1D3461]" />
           Contactar soporte
         </a>
       </div>
@@ -554,7 +554,7 @@ function PollingPayinScreen({ stepData, onNext }) {
         </p>
         <button
           onClick={handleOpenWidget}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#1D9E75] text-[#0F1628] font-bold text-[0.9375rem] shadow-[0_4px_20px_rgba(29,158,117,0.25)] active:scale-[0.98] transition-all"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#1D3461] text-[#0F1628] font-bold text-[0.9375rem] shadow-[0_4px_20px_rgba(29,52,97,0.25)] active:scale-[0.98] transition-all"
         >
           <ExternalLink size={16} />
           {widgetOpened ? 'Abrir de nuevo' : (isFintoc ? 'Ir a pagar con mi banco →' : 'Ir a pagar')}
@@ -564,12 +564,12 @@ function PollingPayinScreen({ stepData, onNext }) {
       {widgetOpened && (
         <div className="flex flex-col items-center gap-3 py-2">
           <div className="flex items-center gap-2.5">
-            <Loader2 size={16} className="text-[#1D9E75] animate-spin flex-shrink-0" />
+            <Loader2 size={16} className="text-[#1D3461] animate-spin flex-shrink-0" />
             <span className="text-[0.8125rem] text-[#4A5568]">Esperando confirmación de pago...</span>
           </div>
           <div className="bg-white rounded-xl px-4 py-2.5 w-full">
             <p className="text-[0.6875rem] text-[#94A3B8] mb-0.5">ID de transacción (para soporte)</p>
-            <p className="text-[0.8125rem] font-mono font-semibold text-[#1D9E75]">
+            <p className="text-[0.8125rem] font-mono font-semibold text-[#1D3461]">
               {formatTransactionId(transactionId)}
             </p>
           </div>

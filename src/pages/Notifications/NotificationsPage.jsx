@@ -18,16 +18,16 @@ import { fetchNotifications, markNotificationsRead } from '../../services/api'
 // ── Mapa tipo → icono + colores (sincronizado con backend NOTIFICATIONS) ─────
 
 const TYPE_CONFIG = {
-  payin_confirmed:      { Icon: ArrowDownLeft,  color: '#1D9E75', bg: '#1D9E751A' },
-  payment_completed:    { Icon: CheckCircle2,   color: '#1D9E75', bg: '#1D9E751A' },
+  payin_confirmed:      { Icon: ArrowDownLeft,  color: '#1D3461', bg: '#1D34611A' },
+  payment_completed:    { Icon: CheckCircle2,   color: '#1D3461', bg: '#1D34611A' },
   payout_sent:          { Icon: ArrowUpRight,   color: '#3B82F6', bg: '#3B82F61A' },
   payment_failed:       { Icon: AlertCircle,    color: '#EF4444', bg: '#EF44441A' },
-  deposit_confirmed:    { Icon: ArrowDownLeft,  color: '#1D9E75', bg: '#1D9E751A' },
+  deposit_confirmed:    { Icon: ArrowDownLeft,  color: '#1D3461', bg: '#1D34611A' },
   withdrawal_requested: { Icon: ArrowUpRight,   color: '#F59E0B', bg: '#F59E0B1A' },
   wallet_frozen:        { Icon: Snowflake,      color: '#EF4444', bg: '#EF44441A' },
-  wallet_unfrozen:      { Icon: Sun,            color: '#1D9E75', bg: '#1D9E751A' },
-  p2p_received:         { Icon: Wallet,         color: '#1D9E75', bg: '#1D9E751A' },
-  conversion_confirmed: { Icon: ArrowRightLeft, color: '#1D9E75', bg: '#1D9E751A' },
+  wallet_unfrozen:      { Icon: Sun,            color: '#1D3461', bg: '#1D34611A' },
+  p2p_received:         { Icon: Wallet,         color: '#1D3461', bg: '#1D34611A' },
+  conversion_confirmed: { Icon: ArrowRightLeft, color: '#1D3461', bg: '#1D34611A' },
   conversion_rejected:  { Icon: AlertCircle,    color: '#EF4444', bg: '#EF44441A' },
   qr_payment:           { Icon: Wallet,         color: '#3B82F6', bg: '#3B82F61A' },
   kyc:                  { Icon: CheckCircle2,   color: '#F59E0B', bg: '#F59E0B1A' },
@@ -40,7 +40,7 @@ const TYPE_CONFIG = {
   admin_withdrawal_request:{ Icon: ArrowUpRight,  color: '#EF4444', bg: '#EF44441A' },
   admin_conversion_request:{ Icon: ArrowRightLeft,color: '#F59E0B', bg: '#F59E0B1A' },
   admin_kyb_submitted:     { Icon: Shield,        color: '#3B82F6', bg: '#3B82F61A' },
-  admin_payment_proof:     { Icon: FileText,      color: '#1D9E75', bg: '#1D9E751A' },
+  admin_payment_proof:     { Icon: FileText,      color: '#1D3461', bg: '#1D34611A' },
   admin_p2p_transfer:      { Icon: Send,          color: '#3B82F6', bg: '#3B82F61A' },
 }
 

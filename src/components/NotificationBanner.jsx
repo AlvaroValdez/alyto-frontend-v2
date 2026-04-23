@@ -2,7 +2,7 @@
  * NotificationBanner.jsx — Banner de solicitud de permisos push.
  *
  * Posición: fixed en la parte inferior, encima del bottom nav (bottom: 72px).
- * Color teal (#1D9E75) para máxima visibilidad en el tema oscuro de Alyto.
+ * Color teal (#1D3461) para máxima visibilidad en el tema oscuro de Alyto.
  *
  * Props:
  *   onActivate — Callback al presionar "Activar" → llama requestPermission()
@@ -20,7 +20,7 @@ export default function NotificationBanner({ onActivate, onDismiss }) {
         left:       0,
         right:      0,
         zIndex:     50,
-        background: '#1D9E75',
+        background: '#1D3461',
         padding:    '12px 16px',
         display:    'flex',
         alignItems: 'center',
@@ -46,7 +46,7 @@ export default function NotificationBanner({ onActivate, onDismiss }) {
         onClick={onActivate}
         style={{
           background:   'white',
-          color:        '#1D9E75',
+          color:        '#1D3461',
           border:       'none',
           borderRadius: '20px',
           padding:      '6px 14px',

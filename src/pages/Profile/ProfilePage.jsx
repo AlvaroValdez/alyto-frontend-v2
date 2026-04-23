@@ -22,8 +22,8 @@ import LegalModal              from '../../components/Legal/LegalModal'
 // ── Entity badge ──────────────────────────────────────────────────────────────
 
 const ENTITY_COLORS = {
-  LLC: { bg: '#233E581A', border: '#233E5833', text: '#1D9E75' },
-  SpA: { bg: '#233E581A', border: '#233E5833', text: '#1D9E75' },
+  LLC: { bg: '#233E581A', border: '#233E5833', text: '#1D3461' },
+  SpA: { bg: '#233E581A', border: '#233E5833', text: '#1D3461' },
   SRL: { bg: '#22C55E1A', border: '#22C55E33', text: '#22C55E' },
 }
 
@@ -70,12 +70,12 @@ function Avatar({ firstName, lastName, avatarUrl, size = 72, onUpload, uploading
         <img
           src={avatarUrl}
           alt="Foto de perfil"
-          className="rounded-full border-4 border-[#1D9E75] object-cover shadow-[0_0_0_3px_#FFFFFF]"
+          className="rounded-full border-4 border-[#1D3461] object-cover shadow-[0_0_0_3px_#FFFFFF]"
           style={{ width: size, height: size }}
         />
       ) : (
         <div
-          className="rounded-full border-4 border-[#1D9E75] bg-gradient-to-br from-[#1D3461] to-[#0D1F3C] flex items-center justify-center font-bold text-white tracking-wide shadow-[0_0_0_3px_#FFFFFF]"
+          className="rounded-full border-4 border-[#1D3461] bg-gradient-to-br from-[#1D3461] to-[#0D1F3C] flex items-center justify-center font-bold text-white tracking-wide shadow-[0_0_0_3px_#FFFFFF]"
           style={{ width: size, height: size, fontSize: size * 0.3 }}
         >
           {initials}
@@ -87,7 +87,7 @@ function Avatar({ firstName, lastName, avatarUrl, size = 72, onUpload, uploading
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
         aria-label="Cambiar foto de perfil"
-        className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#1D9E75] border-2 border-white flex items-center justify-center shadow-md transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#1D3461] border-2 border-white flex items-center justify-center shadow-md transition-opacity hover:opacity-90 disabled:opacity-50"
       >
         {uploading
           ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -242,7 +242,7 @@ export default function ProfilePage() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex-1 py-2 text-[0.75rem] font-semibold rounded-xl transition-all ${
                   activeTab === tab.key
-                    ? 'bg-[#1D9E75] text-white shadow-sm'
+                    ? 'bg-[#1D3461] text-white shadow-sm'
                     : 'text-[#94A3B8] hover:text-[#4A5568]'
                 }`}
               >
@@ -290,8 +290,8 @@ export default function ProfilePage() {
               onClick={() => setLegalDoc('terms')}
               className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#F0F2F7] transition-colors border-b border-[#E2E8F0]"
             >
-              <div className="w-8 h-8 rounded-lg bg-[#1D9E751A] flex items-center justify-center flex-shrink-0">
-                <FileText size={15} className="text-[#1D9E75]" />
+              <div className="w-8 h-8 rounded-lg bg-[#1D34611A] flex items-center justify-center flex-shrink-0">
+                <FileText size={15} className="text-[#1D3461]" />
               </div>
               <span className="flex-1 text-left text-[0.875rem] font-semibold text-white">
                 Términos y Condiciones
@@ -302,8 +302,8 @@ export default function ProfilePage() {
               onClick={() => setLegalDoc('privacy')}
               className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#F0F2F7] transition-colors"
             >
-              <div className="w-8 h-8 rounded-lg bg-[#1D9E751A] flex items-center justify-center flex-shrink-0">
-                <Shield size={15} className="text-[#1D9E75]" />
+              <div className="w-8 h-8 rounded-lg bg-[#1D34611A] flex items-center justify-center flex-shrink-0">
+                <Shield size={15} className="text-[#1D3461]" />
               </div>
               <span className="flex-1 text-left text-[0.875rem] font-semibold text-white">
                 Política de Privacidad

@@ -25,9 +25,9 @@ const CURRENCIES = [
 function SuccessToast({ visible }) {
   if (!visible) return null
   return (
-    <div className="mx-4 mb-3 rounded-xl bg-[#1D9E751A] border border-[#1D9E7533] px-4 py-2.5 flex items-center gap-2">
-      <Check size={14} className="text-[#1D9E75] flex-shrink-0" />
-      <span className="text-[0.8125rem] font-medium text-[#1D9E75]">Perfil actualizado</span>
+    <div className="mx-4 mb-3 rounded-xl bg-[#1D34611A] border border-[#1D346133] px-4 py-2.5 flex items-center gap-2">
+      <Check size={14} className="text-[#1D3461] flex-shrink-0" />
+      <span className="text-[0.8125rem] font-medium text-[#1D3461]">Perfil actualizado</span>
     </div>
   )
 }
@@ -135,7 +135,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
         {!editing ? (
           <button
             onClick={() => setEditing(true)}
-            className="flex items-center gap-1.5 text-[#1D9E75] text-[0.8125rem] font-semibold"
+            className="flex items-center gap-1.5 text-[#1D3461] text-[0.8125rem] font-semibold"
           >
             <Edit2 size={13} />
             Editar
@@ -152,7 +152,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-1.5 bg-[#1D9E75] text-[#0D1F3C] text-[0.8125rem] font-bold px-3 py-1.5 rounded-lg disabled:opacity-60 transition-opacity"
+              className="flex items-center gap-1.5 bg-[#1D3461] text-[#0D1F3C] text-[0.8125rem] font-bold px-3 py-1.5 rounded-lg disabled:opacity-60 transition-opacity"
             >
               {saving ? (
                 <Loader2 size={13} className="animate-spin" />
@@ -180,7 +180,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
                 value={form.firstName}
                 onChange={e => handleChange('firstName', e.target.value)}
                 placeholder="Tu nombre"
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#CBD5E1] focus:border-[#1D9E75] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#CBD5E1] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
               />
             </div>
 
@@ -194,7 +194,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
                 value={form.lastName}
                 onChange={e => handleChange('lastName', e.target.value)}
                 placeholder="Tu apellido"
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#CBD5E1] focus:border-[#1D9E75] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#CBD5E1] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
               />
             </div>
 
@@ -208,7 +208,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
                 value={form.phone}
                 onChange={e => handleChange('phone', e.target.value)}
                 placeholder="+56 9 1234 5678"
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#CBD5E1] focus:border-[#1D9E75] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#CBD5E1] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
               />
             </div>
 
@@ -233,7 +233,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
                 <select
                   value={form.preferredLanguage}
                   onChange={e => handleChange('preferredLanguage', e.target.value)}
-                  className="w-full appearance-none bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] focus:border-[#1D9E75] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
+                  className="w-full appearance-none bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
                 >
                   {LANGUAGES.map(l => (
                     <option key={l.value} value={l.value}>{l.label}</option>
@@ -252,7 +252,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
                 <select
                   value={form.preferredCurrency}
                   onChange={e => handleChange('preferredCurrency', e.target.value)}
-                  className="w-full appearance-none bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] focus:border-[#1D9E75] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
+                  className="w-full appearance-none bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
                 >
                   {CURRENCIES.map(c => (
                     <option key={c.value} value={c.value}>{c.label}</option>

@@ -93,15 +93,16 @@ export default function SideNavBar({ user, onLogout }) {
               width:          36,
               height:         36,
               borderRadius:   '50%',
-              background:     '#0D1F3C',
-              border:         '2px solid var(--color-border)',
+              background:     '#1D3461',
+              border:         '2px solid rgba(29,52,97,0.15)',
               display:        'flex',
               alignItems:     'center',
               justifyContent: 'center',
               fontSize:       '0.875rem',
-              fontWeight:     700,
+              fontWeight:     800,
               color:          '#FFFFFF',
               flexShrink:     0,
+              letterSpacing:  '0.02em',
             }}
           >
             {initials}

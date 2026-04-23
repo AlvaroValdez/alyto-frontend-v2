@@ -38,7 +38,7 @@ const NOTIF_CONFIG = {
   admin_withdrawal_request: { Icon: ArrowUpRight,   color: '#EF4444', bg: '#EF44441A' },
   admin_conversion_request: { Icon: ArrowRightLeft, color: '#F59E0B', bg: '#F59E0B1A' },
   admin_kyb_submitted:      { Icon: ShieldIcon,     color: '#3B82F6', bg: '#3B82F61A' },
-  admin_payment_proof:      { Icon: FileText,       color: '#1D9E75', bg: '#1D9E751A' },
+  admin_payment_proof:      { Icon: FileText,       color: '#1D3461', bg: '#1D34611A' },
   admin_p2p_transfer:       { Icon: Send,           color: '#3B82F6', bg: '#3B82F61A' },
 }
 

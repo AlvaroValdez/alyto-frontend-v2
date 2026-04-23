@@ -19,11 +19,11 @@
   --color-text-secondary: #4A5568;  /* Medium gray — descriptions    */
   --color-text-muted:     #94A3B8;  /* Light gray — timestamps       */
 
-  /* ── ACCENT / TEAL ─────────────────────────────────────────── */
-  --color-accent-teal:        #1D9E75;
-  --color-accent-teal-hover:  #178A64;
-  --color-accent-teal-dim:    rgba(29, 158, 117, 0.10);
-  --color-accent-teal-border: rgba(29, 158, 117, 0.25);
+  /* ── ACCENT / ALYTO BLUE ───────────────────────────────────── */
+  --color-accent-teal:        #1D3461;
+  --color-accent-teal-hover:  #162852;
+  --color-accent-teal-dim:    rgba(29, 52, 97, 0.08);
+  --color-accent-teal-border: rgba(29, 52, 97, 0.20);
 
   /* ── STATUS ────────────────────────────────────────────────── */
   --color-success:        #22C55E;
@@ -32,8 +32,8 @@
   --color-warning-bg:     rgba(245, 158, 11, 0.10);
   --color-error:          #EF4444;
   --color-error-bg:       rgba(239, 68, 68, 0.10);
-  --color-teal-status:    #1D9E75;
-  --color-teal-status-bg: rgba(29, 158, 117, 0.10);
+  --color-teal-status:    #1D3461;
+  --color-teal-status-bg: rgba(29, 52, 97, 0.08);
   --color-pending:        #64748B;
   --color-pending-bg:     rgba(100, 116, 139, 0.10);
 
@@ -45,12 +45,12 @@
   /* Balance card gradient STAYS dark — only dark element */
   --gradient-balance:   linear-gradient(135deg, #1D3461 0%, #0F1628 60%, #1A2030 100%);
   --gradient-card:      linear-gradient(135deg, #F0F2F7 0%, #FFFFFF 100%);
-  --gradient-teal-glow: radial-gradient(ellipse at top, rgba(29, 158, 117, 0.12) 0%, transparent 60%);
+  --gradient-teal-glow: radial-gradient(ellipse at top, rgba(29, 52, 97, 0.10) 0%, transparent 60%);
 
   /* ── SHADOWS (light mode — softer) ────────────────────────── */
   --shadow-card:  0 2px 12px rgba(13, 31, 60, 0.08);
   --shadow-hero:  0 8px 40px rgba(0, 0, 0, 0.50);  /* balance card: dark shadow */
-  --shadow-teal:  0 4px 20px rgba(29, 158, 117, 0.25);
+  --shadow-teal:  0 4px 20px rgba(29, 52, 97, 0.25);
   --shadow-modal: 0 24px 64px rgba(13, 31, 60, 0.25);
   --shadow-nav:   0 -1px 0 #E2E8F0;
 
@@ -93,7 +93,7 @@
 
 @keyframes flashTeal {
   0%   { background-color: #FFFFFF; }
-  30%  { background-color: rgba(29, 158, 117, 0.10); }
+  30%  { background-color: rgba(29, 52, 97, 0.08); }
   100% { background-color: #FFFFFF; }
 }
 
