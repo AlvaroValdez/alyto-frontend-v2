@@ -50,8 +50,8 @@ export default function QuoteCard({
     <div
       className={flashing ? 'flash-teal' : ''}
       style={{
-        background:   'var(--color-bg-secondary)',
-        border:       '1px solid var(--color-border)',
+        background:   'var(--color-accent-teal-dim)',
+        border:       '1px solid var(--color-accent-teal-border)',
         borderRadius: 'var(--radius-xl)',
         padding:      'var(--space-lg)',
         transition:   'var(--transition-fast)',
@@ -104,7 +104,7 @@ export default function QuoteCard({
             </div>
           )}
 
-          <div style={{ borderTop: '1px solid var(--color-border)', margin: '4px 0' }} />
+          <div style={{ borderTop: '1px solid var(--color-accent-teal-border)', margin: '4px 0' }} />
 
           {/* Footer: delivery + countdown */}
           <div className="flex justify-between items-center">
@@ -118,11 +118,14 @@ export default function QuoteCard({
             {timeLeft !== null && (
               <span
                 style={{
-                  fontSize:   'var(--font-sm)',
-                  fontWeight: 600,
-                  color:      timerColor,
+                  fontSize:      'var(--font-sm)',
+                  fontWeight:    600,
+                  color:         timerColor,
                   fontVariantNumeric: 'tabular-nums',
-                  animation:  urgent ? 'pulseRed 0.8s ease infinite' : 'none',
+                  animation:     urgent ? 'pulseRed 0.8s ease infinite' : 'none',
+                  background:    '#FFFFFF',
+                  borderRadius:  'var(--radius-full)',
+                  padding:       '2px 8px',
                 }}
               >
                 {formatCountdown(timeLeft)}

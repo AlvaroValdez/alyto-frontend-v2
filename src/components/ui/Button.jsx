@@ -1,21 +1,28 @@
 import { Loader2 } from 'lucide-react'
 
 const SIZE = {
-  sm: { padding: '8px 16px',  fontSize: '0.8125rem', height: '36px', radius: '10px' },
-  md: { padding: '12px 20px', fontSize: '0.9375rem', height: '44px', radius: '12px' },
-  lg: { padding: '14px 24px', fontSize: '0.9375rem', height: '52px', radius: '14px' },
+  sm: { padding: '8px 16px',  fontSize: '0.8125rem', height: '36px', borderRadius: '10px' },
+  md: { padding: '12px 20px', fontSize: '0.9375rem', height: '44px', borderRadius: '12px' },
+  lg: { padding: '14px 24px', fontSize: '0.9375rem', height: '52px', borderRadius: '14px' },
 }
 
 const VARIANT = {
   primary: {
+    background: '#0D1F3C',
+    color:      '#FFFFFF',
+    border:     'none',
+    boxShadow:  '0 2px 12px rgba(13,31,60,0.20)',
+    hoverBg:    '#1A3050',
+  },
+  teal: {
     background: 'var(--color-accent-teal)',
-    color:      '#0F1628',
+    color:      '#FFFFFF',
     border:     'none',
     boxShadow:  'var(--shadow-teal)',
     hoverBg:    'var(--color-accent-teal-hover)',
   },
   secondary: {
-    background: 'transparent',
+    background: '#FFFFFF',
     color:      'var(--color-text-primary)',
     border:     '1px solid var(--color-border)',
     boxShadow:  'none',
@@ -31,19 +38,19 @@ const VARIANT = {
 }
 
 export default function Button({
-  variant = 'primary',
-  size    = 'md',
+  variant  = 'primary',
+  size     = 'md',
   disabled = false,
   loading  = false,
   fullWidth = false,
   children,
   onClick,
-  type = 'button',
+  type     = 'button',
   className = '',
-  style = {},
+  style    = {},
 }) {
-  const s = SIZE[size]   ?? SIZE.md
-  const v = VARIANT[variant] ?? VARIANT.primary
+  const s    = SIZE[size]    ?? SIZE.md
+  const v    = VARIANT[variant] ?? VARIANT.primary
   const isOff = disabled || loading
 
   return (
