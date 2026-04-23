@@ -82,15 +82,12 @@ export default function WalletCard({ bobBalance = 0, usdcBalance = 0, stellarAdd
 
           {/* Top row */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.12)' }}
-              >
-                <span className="text-[0.625rem] font-black text-white tracking-tight">A</span>
-              </div>
-              <span className="text-[0.8125rem] font-semibold text-white/80">Alyto Wallet</span>
-            </div>
+            <img
+              src="/assets/LogoAlytoWB.png"
+              alt="Alyto"
+              className="h-6 w-auto object-contain"
+              style={{ filter: 'brightness(1.05)' }}
+            />
             <span
               className="text-[0.6875rem] font-bold px-2.5 py-1 rounded-full"
               style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.9)' }}
