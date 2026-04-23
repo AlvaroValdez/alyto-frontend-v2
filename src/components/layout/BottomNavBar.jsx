@@ -1,18 +1,29 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Wallet, ArrowUpRight, Users, User } from 'lucide-react'
+import { Home, Wallet, ArrowUpRight, Users, User, ArrowLeftRight, FileText } from 'lucide-react'
 
-const NAV_ITEMS = [
-  { icon: Home,         label: 'Inicio',        to: '/dashboard'    },
-  { icon: Wallet,       label: 'Activos',        to: '/wallet'       },
-  { icon: ArrowUpRight, label: 'Enviar',         to: '/send'         },
-  { icon: Users,        label: 'Contactos',      to: '/contacts'     },
-  { icon: User,         label: 'Perfil',         to: '/profile'      },
+// Nav items por entidad legal
+const NAV_SRL = [
+  { icon: Home,            label: 'Inicio',        to: '/dashboard'    },
+  { icon: Wallet,          label: 'Activos',        to: '/wallet'       },
+  { icon: ArrowUpRight,    label: 'Enviar',         to: '/send'         },
+  { icon: ArrowLeftRight,  label: 'Movimientos',    to: '/transactions' },
+  { icon: User,            label: 'Perfil',         to: '/profile'      },
 ]
 
-const ALYTO_BLUE    = '#1D3461'
+const NAV_DEFAULT = [
+  { icon: Home,            label: 'Inicio',        to: '/dashboard'    },
+  { icon: ArrowUpRight,    label: 'Enviar',         to: '/send'         },
+  { icon: ArrowLeftRight,  label: 'Movimientos',    to: '/transactions' },
+  { icon: Users,           label: 'Contactos',      to: '/contacts'     },
+  { icon: User,            label: 'Perfil',         to: '/profile'      },
+]
+
+const ALYTO_BLUE     = '#1D3461'
 const ALYTO_BLUE_DIM = 'rgba(29,52,97,0.08)'
 
-export default function BottomNavBar() {
+export default function BottomNavBar({ user }) {
+  const items = user?.legalEntity === 'SRL' ? NAV_SRL : NAV_DEFAULT
+
   return (
     <nav
       style={{
@@ -21,7 +32,7 @@ export default function BottomNavBar() {
         left:           '50%',
         transform:      'translateX(-50%)',
         width:          'calc(100% - 32px)',
-        maxWidth:       398,
+        maxWidth:       430,
         background:     '#FFFFFF',
         borderRadius:   20,
         boxShadow:      '0 8px 32px rgba(29,52,97,0.14), 0 2px 8px rgba(29,52,97,0.06)',
@@ -34,7 +45,7 @@ export default function BottomNavBar() {
         zIndex:         50,
       }}
     >
-      {NAV_ITEMS.map(({ icon: Icon, label, to }) => (
+      {items.map(({ icon: Icon, label, to }) => (
         <NavLink
           key={to}
           to={to}
@@ -64,10 +75,10 @@ export default function BottomNavBar() {
               </div>
               <span
                 style={{
-                  fontSize:   '0.5625rem',
-                  fontWeight: isActive ? 700 : 500,
-                  color:      isActive ? ALYTO_BLUE : 'var(--color-text-muted)',
-                  transition: 'var(--transition-fast)',
+                  fontSize:      '0.5625rem',
+                  fontWeight:    isActive ? 700 : 500,
+                  color:         isActive ? ALYTO_BLUE : 'var(--color-text-muted)',
+                  transition:    'var(--transition-fast)',
                   letterSpacing: isActive ? '0.01em' : 0,
                 }}
               >

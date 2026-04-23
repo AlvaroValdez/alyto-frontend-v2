@@ -9,13 +9,15 @@ import SideNavBar   from '../layout/SideNavBar'
 
 const PAGE_TITLES = {
   '/dashboard':    'Inicio',
-  '/wallet':       'Mi Wallet',
+  '/wallet':       'Mis Activos',
   '/send':         'Enviar dinero',
   '/transactions': 'Transferencias',
   '/contacts':     'Contactos',
   '/notifications':'Notificaciones',
   '/profile':      'Mi Perfil',
   '/kyb':          'Cuenta Business',
+  '/kyc':          'Verificación de identidad',
+  '/reclamos':     'Reclamos',
 }
 
 export default function AppLayout() {
@@ -244,7 +246,7 @@ export default function AppLayout() {
 
       {/* Bottom nav flotante — solo mobile (< 1024px) */}
       <div className="lg:hidden">
-        <BottomNavBar />
+        <BottomNavBar user={user} />
       </div>
 
       {/* ── MODAL DE INACTIVIDAD ──────────────────────────────────────── */}

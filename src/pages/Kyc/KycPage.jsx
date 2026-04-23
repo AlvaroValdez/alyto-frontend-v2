@@ -458,10 +458,10 @@ export default function KycPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="h-dvh bg-[#F8FAFC] font-sans flex flex-col max-w-[430px] mx-auto">
+    <div className="font-sans flex flex-col max-w-[430px] mx-auto">
 
-      {/* Header */}
-      <header className="flex items-center gap-3 px-5 pt-8 pb-2">
+      {/* Sub-header con botón volver */}
+      <div className="flex items-center gap-3 px-5 pt-4 pb-2">
         <button
           onClick={() => navigate('/dashboard')}
           className="w-10 h-10 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center flex-shrink-0"
@@ -470,9 +470,9 @@ export default function KycPage() {
         </button>
         <div className="flex-1">
           <p className="text-[0.75rem] text-[#64748B]">Onboarding</p>
-          <h1 className="text-[1.0625rem] font-bold text-[#0F172A] leading-tight">Activar cuenta</h1>
+          <h1 className="text-[1.0625rem] font-bold text-[#0D1F3C] leading-tight">Activar cuenta</h1>
         </div>
-      </header>
+      </div>
 
       {/* Banner de bienvenida (viene desde /register) */}
       {welcomeMsg && (

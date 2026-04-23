@@ -1,18 +1,35 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Wallet, ArrowUpRight, Users, User, LogOut } from 'lucide-react'
+import { Home, Wallet, ArrowUpRight, Users, User, ArrowLeftRight, FileText, LogOut } from 'lucide-react'
 
-const NAV_ITEMS = [
-  { icon: Home,         label: 'Dashboard',      to: '/dashboard'    },
-  { icon: Wallet,       label: 'Cuentas',         to: '/wallet'       },
-  { icon: ArrowUpRight, label: 'Transferencias',  to: '/transactions' },
-  { icon: Users,        label: 'Contactos',       to: '/contacts'     },
-  { icon: User,         label: 'Perfil',          to: '/profile'      },
+const NAV_COMMON = [
+  { icon: Home,           label: 'Dashboard',      to: '/dashboard'    },
+  { icon: ArrowUpRight,   label: 'Enviar',          to: '/send'         },
+  { icon: ArrowLeftRight, label: 'Transferencias',  to: '/transactions' },
+  { icon: Users,          label: 'Contactos',       to: '/contacts'     },
+  { icon: FileText,       label: 'Reclamos',        to: '/reclamos'     },
+  { icon: User,           label: 'Perfil',          to: '/profile'      },
 ]
+
+const NAV_SRL = [
+  { icon: Home,           label: 'Dashboard',      to: '/dashboard'    },
+  { icon: Wallet,         label: 'Activos BOB',    to: '/wallet'       },
+  { icon: ArrowUpRight,   label: 'Enviar',          to: '/send'         },
+  { icon: ArrowLeftRight, label: 'Transferencias',  to: '/transactions' },
+  { icon: FileText,       label: 'Reclamos',        to: '/reclamos'     },
+  { icon: User,           label: 'Perfil',          to: '/profile'      },
+]
+
+const ENTITY_LABEL = {
+  SpA: 'AV Finance SpA',
+  SRL: 'AV Finance SRL',
+  LLC: 'AV Finance LLC',
+}
 
 export default function SideNavBar({ user, onLogout }) {
   const firstName = user?.firstName ?? ''
   const entity    = user?.legalEntity ?? 'LLC'
   const initials  = firstName ? firstName.charAt(0).toUpperCase() : '?'
+  const navItems  = entity === 'SRL' ? NAV_SRL : NAV_COMMON
 
   return (
     <aside
@@ -31,7 +48,7 @@ export default function SideNavBar({ user, onLogout }) {
         overflowY:     'auto',
       }}
     >
-      {/* Logo — dark variant for light background */}
+      {/* Logo */}
       <div style={{ padding: '24px 20px 20px' }}>
         <img
           src="/assets/LogoAlyto.png"
@@ -44,10 +61,11 @@ export default function SideNavBar({ user, onLogout }) {
 
       {/* Nav items */}
       <nav style={{ flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {NAV_ITEMS.map(({ icon: Icon, label, to }) => (
+        {navItems.map(({ icon: Icon, label, to }) => (
           <NavLink
             key={to}
             to={to}
+            end={to === '/dashboard'}
             className="no-underline"
             style={{ display: 'block' }}
           >
@@ -112,7 +130,7 @@ export default function SideNavBar({ user, onLogout }) {
               {firstName || 'Usuario'}
             </p>
             <p style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)' }}>
-              AV Finance {entity}
+              {ENTITY_LABEL[entity] ?? 'AV Finance LLC'}
             </p>
           </div>
         </div>

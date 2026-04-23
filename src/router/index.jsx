@@ -44,6 +44,7 @@ import WalletPage         from '../pages/Wallet/WalletPage'
 import WalletQRScreen     from '../pages/Wallet/WalletQRScreen'
 import KycPage            from '../pages/Kyc/KycPage'
 import KycReturnPage      from '../pages/Kyc/KycReturnPage'
+import ReclamosPage       from '../pages/Reclamos/ReclamosPage'
 
 // ── Páginas KYB ──────────────────────────────────────────────────────────────
 import KybPage       from '../pages/Kyb/KybPage'
@@ -51,13 +52,17 @@ import KybForm       from '../pages/Kyb/KybForm'
 import KybStatusPage from '../pages/Kyb/KybStatusPage'
 
 // ── Páginas admin ─────────────────────────────────────────────────────────────
-import LedgerPage     from '../pages/Admin/Ledger/LedgerPage'
-import CorridorsPanel from '../pages/Admin/Ledger/CorridorsPanel'
-import AnalyticsPage  from '../pages/Admin/Analytics/AnalyticsPage'
-import FundingPage    from '../pages/Admin/Funding/FundingPage'
-import KybListPage    from '../pages/Admin/Kyb/KybListPage'
-import KybDetailPage  from '../pages/Admin/Kyb/KybDetailPage'
-import SRLConfigPage  from '../pages/Admin/SRLConfig/SRLConfigPage'
+import LedgerPage          from '../pages/Admin/Ledger/LedgerPage'
+import CorridorsPanel      from '../pages/Admin/Ledger/CorridorsPanel'
+import AnalyticsPage       from '../pages/Admin/Analytics/AnalyticsPage'
+import FundingPage         from '../pages/Admin/Funding/FundingPage'
+import KybListPage         from '../pages/Admin/Kyb/KybListPage'
+import KybDetailPage       from '../pages/Admin/Kyb/KybDetailPage'
+import SRLConfigPage       from '../pages/Admin/SRLConfig/SRLConfigPage'
+import SpAConfigPage       from '../pages/Admin/SpAConfig/SpAConfigPage'
+import WalletAdminPage     from '../pages/Admin/Wallet/WalletAdminPage'
+import ReclamosAdminPage   from '../pages/Admin/Reclamos/ReclamosAdminPage'
+import SanctionsPage       from '../pages/Admin/Sanctions/SanctionsPage'
 
 // ── Páginas legacy ────────────────────────────────────────────────────────────
 import TransferView   from '../components/TransferView'
@@ -94,47 +99,42 @@ export default function AppRouter() {
         <Route path="/reset-password/:token"  element={<ResetPasswordPage />} />
       </Route>
 
-      {/* ── KYC — sin AppLayout (flujo especial) ────────────────────────── */}
-      <Route path="/kyc" element={
-        <ProtectedRoute><KycPage /></ProtectedRoute>
-      } />
-      <Route path="/kyc/return" element={
-        <ProtectedRoute><KycReturnPage /></ProtectedRoute>
-      } />
-
-      {/* ── Enviar dinero — sin AppLayout (pantalla propia full-screen) ─── */}
-      <Route path="/send" element={
-        <ProtectedRoute>
-          <KycRoute><SendMoneyPage /></KycRoute>
-        </ProtectedRoute>
-      } />
-
       {/* ── Payment Success — pública (redirect Fintoc) ─────────────────── */}
       <Route path="/payment-success" element={<PaymentSuccessPage />} />
       <Route path="/success"         element={<PaymentSuccessPage />} />
 
       {/* ══════════════════════════════════════════════════════════════════
           RUTAS PRIVADAS — todas dentro de AppLayout
-          Header + Bottom Nav flotante se renderizan aquí
+          Header + Bottom Nav flotante se renderizan en todas
           ══════════════════════════════════════════════════════════════════ */}
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
 
         {/* Dashboard */}
         <Route path="/dashboard"     element={<DashboardPage />} />
 
-        {/* Wallet */}
+        {/* Enviar dinero — con KYC guard, dentro de AppLayout */}
+        <Route path="/send"          element={<KycRoute><SendMoneyPage /></KycRoute>} />
+
+        {/* KYC — dentro de AppLayout */}
+        <Route path="/kyc"           element={<KycPage />} />
+        <Route path="/kyc/return"    element={<KycReturnPage />} />
+
+        {/* Wallet (activos / liquidación BOB para SRL) */}
         <Route path="/wallet"        element={<WalletPage />} />
         <Route path="/wallet/qr"     element={<WalletQRScreen />} />
 
         {/* Transferencias */}
-        <Route path="/transactions"                    element={<TransactionsPage />} />
-        <Route path="/transactions/:transactionId"     element={<TransactionDetail />} />
+        <Route path="/transactions"                element={<TransactionsPage />} />
+        <Route path="/transactions/:transactionId" element={<TransactionDetail />} />
 
         {/* Contactos */}
         <Route path="/contacts"      element={<ContactsPage />} />
 
         {/* Notificaciones */}
         <Route path="/notifications" element={<NotificationsPage />} />
+
+        {/* Reclamos */}
+        <Route path="/reclamos"      element={<ReclamosPage />} />
 
         {/* Perfil */}
         <Route path="/profile"       element={<ProfilePage />} />
@@ -145,11 +145,11 @@ export default function AppRouter() {
         <Route path="/kyb/status"    element={<KybStatusPage />} />
 
         {/* Legacy */}
-        <Route path="/transfer"  element={<TransferView />} />
-        <Route path="/corporate" element={<CorporateView />} />
+        <Route path="/transfer"   element={<TransferView />} />
+        <Route path="/corporate"  element={<CorporateView />} />
         <Route path="/settlement" element={<SettlementView />} />
-        <Route path="/payout"    element={<VitaPayoutView onBack={() => window.history.back()} />} />
-        <Route path="/deposit"   element={<VitaPayinView onBack={() => window.history.back()} />} />
+        <Route path="/payout"     element={<VitaPayoutView onBack={() => window.history.back()} />} />
+        <Route path="/deposit"    element={<VitaPayinView  onBack={() => window.history.back()} />} />
 
       </Route>
 
@@ -158,13 +158,17 @@ export default function AppRouter() {
         <AdminRoute><Navigate to="/admin/ledger" replace /></AdminRoute>
       } />
       <Route element={<AdminRoute><AdminLayout /></AdminRoute>}>
-        <Route path="/admin/ledger"          element={<LedgerPage />}     />
-        <Route path="/admin/corridors"       element={<CorridorsPanel />}  />
-        <Route path="/admin/analytics"       element={<AnalyticsPage />}   />
-        <Route path="/admin/funding"         element={<FundingPage />}     />
-        <Route path="/admin/kyb"             element={<KybListPage />}     />
-        <Route path="/admin/kyb/:businessId" element={<KybDetailPage />}   />
-        <Route path="/admin/srl-config"      element={<SRLConfigPage />}   />
+        <Route path="/admin/ledger"          element={<LedgerPage />}        />
+        <Route path="/admin/corridors"       element={<CorridorsPanel />}    />
+        <Route path="/admin/analytics"       element={<AnalyticsPage />}     />
+        <Route path="/admin/funding"         element={<FundingPage />}       />
+        <Route path="/admin/kyb"             element={<KybListPage />}       />
+        <Route path="/admin/kyb/:businessId" element={<KybDetailPage />}     />
+        <Route path="/admin/srl-config"      element={<SRLConfigPage />}     />
+        <Route path="/admin/spa-config"      element={<SpAConfigPage />}     />
+        <Route path="/admin/wallet"          element={<WalletAdminPage />}   />
+        <Route path="/admin/reclamos"        element={<ReclamosAdminPage />} />
+        <Route path="/admin/sanctions"       element={<SanctionsPage />}     />
       </Route>
 
       {/* ── 404 ─────────────────────────────────────────────────────────── */}
