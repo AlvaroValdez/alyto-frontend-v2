@@ -8,40 +8,47 @@
  *  - AdminRoute       → /admin/* (requiere role === 'admin')
  *
  * Layouts:
- *  - AuthLayout   → centra el contenido con logo arriba (auth flow)
- *  - AppLayout    → header + bottom nav (rutas privadas nuevas)
- *  - AdminLayout  → sidebar admin (backoffice)
- *
- * Nota: Las páginas existentes (DashboardPage, SendMoneyPage, etc.)
- * ya incluyen su propia navegación interna — no se envuelven en AppLayout.
+ *  - AuthLayout   → pantallas de auth (login, register, etc.)
+ *  - AppLayout    → header + bottom nav flotante (todas las rutas privadas)
+ *  - AdminLayout  → sidebar backoffice
  */
 
 import { Routes, Route, Navigate } from 'react-router-dom'
 
 // ── Guards ───────────────────────────────────────────────────────────────────
-import ProtectedRoute from '../components/ProtectedRoute'
-import AdminRoute     from '../components/AdminRoute'
-import KycRoute       from './guards/KycRoute'
+import ProtectedRoute  from '../components/ProtectedRoute'
+import AdminRoute      from '../components/AdminRoute'
+import KycRoute        from './guards/KycRoute'
 import PublicOnlyRoute from './guards/PublicOnlyRoute'
 
 // ── Layouts ──────────────────────────────────────────────────────────────────
+import AppLayout   from '../components/Layout/AppLayout'
 import AuthLayout  from '../components/Layout/AuthLayout'
 import AdminLayout from '../components/Layout/AdminLayout'
 
 // ── Páginas auth (públicas) ───────────────────────────────────────────────────
-import LoginPage         from '../pages/Auth/LoginPage'
-import RegisterPage      from '../pages/Auth/RegisterPage'
+import LoginPage          from '../pages/Auth/LoginPage'
+import RegisterPage       from '../pages/Auth/RegisterPage'
 import ForgotPasswordPage from '../pages/Auth/ForgotPasswordPage'
 import ResetPasswordPage  from '../pages/Auth/ResetPasswordPage'
 
 // ── Páginas privadas ─────────────────────────────────────────────────────────
-import DashboardPage     from '../pages/Dashboard/DashboardPage'
-import SendMoneyPage     from '../pages/SendMoney/SendMoneyPage'
-import TransactionsPage  from '../pages/Transactions/TransactionsPage'
-import TransactionDetail from '../pages/Transactions/TransactionDetail'
-import ProfilePage       from '../pages/Profile/ProfilePage'
-import KycPage           from '../pages/Kyc/KycPage'
-import KycReturnPage     from '../pages/Kyc/KycReturnPage'
+import DashboardPage      from '../pages/Dashboard/DashboardPage'
+import SendMoneyPage      from '../pages/SendMoney/SendMoneyPage'
+import TransactionsPage   from '../pages/Transactions/TransactionsPage'
+import TransactionDetail  from '../pages/Transactions/TransactionDetail'
+import ProfilePage        from '../pages/Profile/ProfilePage'
+import ContactsPage       from '../pages/Contacts/ContactsPage'
+import NotificationsPage  from '../pages/Notifications/NotificationsPage'
+import WalletPage         from '../pages/Wallet/WalletPage'
+import WalletQRScreen     from '../pages/Wallet/WalletQRScreen'
+import KycPage            from '../pages/Kyc/KycPage'
+import KycReturnPage      from '../pages/Kyc/KycReturnPage'
+
+// ── Páginas KYB ──────────────────────────────────────────────────────────────
+import KybPage       from '../pages/Kyb/KybPage'
+import KybForm       from '../pages/Kyb/KybForm'
+import KybStatusPage from '../pages/Kyb/KybStatusPage'
 
 // ── Páginas admin ─────────────────────────────────────────────────────────────
 import LedgerPage     from '../pages/Admin/Ledger/LedgerPage'
@@ -52,23 +59,16 @@ import KybListPage    from '../pages/Admin/Kyb/KybListPage'
 import KybDetailPage  from '../pages/Admin/Kyb/KybDetailPage'
 import SRLConfigPage  from '../pages/Admin/SRLConfig/SRLConfigPage'
 
-// ── Páginas KYB (usuario) ─────────────────────────────────────────────────────
-import KybPage        from '../pages/Kyb/KybPage'
-import KybForm        from '../pages/Kyb/KybForm'
-import KybStatusPage  from '../pages/Kyb/KybStatusPage'
+// ── Páginas legacy ────────────────────────────────────────────────────────────
+import TransferView   from '../components/TransferView'
+import CorporateView  from '../components/CorporateView'
+import SettlementView from '../components/SettlementView'
+import VitaPayoutView from '../components/VitaPayoutView'
+import VitaPayinView  from '../components/VitaPayinView'
 
-// ── Páginas legacy (mantener compatibilidad) ─────────────────────────────────
-import TransferView       from '../components/TransferView'
-import CorporateView      from '../components/CorporateView'
-import SettlementView     from '../components/SettlementView'
-import VitaPayoutView     from '../components/VitaPayoutView'
-import VitaPayinView      from '../components/VitaPayinView'
-
-// ── Payment Success (redirect de Fintoc tras pago) ───────────────────────────
+// ── Otras ─────────────────────────────────────────────────────────────────────
 import PaymentSuccessPage from '../pages/PaymentSuccess/PaymentSuccessPage'
-
-// ── 404 ──────────────────────────────────────────────────────────────────────
-import NotFoundPage from '../pages/NotFound/NotFoundPage'
+import NotFoundPage       from '../pages/NotFound/NotFoundPage'
 
 // ── Router ───────────────────────────────────────────────────────────────────
 
@@ -76,7 +76,7 @@ export default function AppRouter() {
   return (
     <Routes>
 
-      {/* ── Raíz: redirect según estado de auth ────────────────────────── */}
+      {/* ── Raíz: redirect a dashboard ──────────────────────────────────── */}
       <Route
         path="/"
         element={
@@ -86,126 +86,78 @@ export default function AppRouter() {
         }
       />
 
-      {/* ── Rutas públicas (auth) con AuthLayout ────────────────────────── */}
+      {/* ── Auth (públicas, sin AppLayout) ──────────────────────────────── */}
       <Route element={<PublicOnlyRoute><AuthLayout /></PublicOnlyRoute>}>
-        <Route path="/login"           element={<LoginPage />} />
-        <Route path="/register"        element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+        <Route path="/login"                  element={<LoginPage />} />
+        <Route path="/register"               element={<RegisterPage />} />
+        <Route path="/forgot-password"        element={<ForgotPasswordPage />} />
+        <Route path="/reset-password/:token"  element={<ResetPasswordPage />} />
       </Route>
 
-      {/* ── Dashboard ───────────────────────────────────────────────────── */}
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <DashboardPage />
-        </ProtectedRoute>
-      } />
-
-      {/* ── KYC — verificación de identidad ─────────────────────────────── */}
+      {/* ── KYC — sin AppLayout (flujo especial) ────────────────────────── */}
       <Route path="/kyc" element={
-        <ProtectedRoute>
-          <KycPage />
-        </ProtectedRoute>
+        <ProtectedRoute><KycPage /></ProtectedRoute>
       } />
-
-      {/* ── KYC return — Stripe redirige aquí tras verificación móvil ───── */}
       <Route path="/kyc/return" element={
-        <ProtectedRoute>
-          <KycReturnPage />
-        </ProtectedRoute>
+        <ProtectedRoute><KycReturnPage /></ProtectedRoute>
       } />
 
-      {/* ── Enviar dinero (requiere KYC aprobado) ────────────────────────── */}
+      {/* ── Enviar dinero — sin AppLayout (pantalla propia full-screen) ─── */}
       <Route path="/send" element={
         <ProtectedRoute>
-          <KycRoute>
-            <SendMoneyPage />
-          </KycRoute>
+          <KycRoute><SendMoneyPage /></KycRoute>
         </ProtectedRoute>
       } />
 
-      {/* ── Historial ────────────────────────────────────────────────────── */}
-      <Route path="/transactions" element={
-        <ProtectedRoute>
-          <TransactionsPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/transactions/:transactionId" element={
-        <ProtectedRoute>
-          <TransactionDetail />
-        </ProtectedRoute>
-      } />
-
-      {/* ── Perfil ───────────────────────────────────────────────────────── */}
-      <Route path="/profile" element={
-        <ProtectedRoute>
-          <ProfilePage />
-        </ProtectedRoute>
-      } />
-
-      {/* ── KYB — Cuenta Business ────────────────────────────────────────── */}
-      <Route path="/kyb" element={
-        <ProtectedRoute>
-          <KybPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/kyb/apply" element={
-        <ProtectedRoute>
-          <KybForm />
-        </ProtectedRoute>
-      } />
-      <Route path="/kyb/status" element={
-        <ProtectedRoute>
-          <KybStatusPage />
-        </ProtectedRoute>
-      } />
-
-      {/* ── Notificaciones (futuro) ────────────────────────────────────── */}
-      <Route path="/notifications" element={
-        <ProtectedRoute>
-          <Navigate to="/dashboard" replace />
-        </ProtectedRoute>
-      } />
-
-      {/* ── Payment Success — Fintoc redirige aquí tras completar el pago ─── */}
-      {/* Ruta pública: el usuario llega aquí desde Fintoc, sin sesión activa */}
+      {/* ── Payment Success — pública (redirect Fintoc) ─────────────────── */}
       <Route path="/payment-success" element={<PaymentSuccessPage />} />
-      {/* Alias /success para redirect_url de Fintoc */}
-      <Route path="/success" element={<PaymentSuccessPage />} />
+      <Route path="/success"         element={<PaymentSuccessPage />} />
 
-      {/* ── Rutas legacy — mantener compatibilidad ───────────────────────── */}
-      <Route path="/transfer" element={
-        <ProtectedRoute><TransferView /></ProtectedRoute>
-      } />
-      <Route path="/corporate" element={
-        <ProtectedRoute requiredEntity="LLC"><CorporateView /></ProtectedRoute>
-      } />
-      <Route path="/settlement" element={
-        <ProtectedRoute requiredEntity="SRL"><SettlementView /></ProtectedRoute>
-      } />
-      <Route path="/payout" element={
-        <ProtectedRoute>
-          <VitaPayoutView onBack={() => window.history.back()} />
-        </ProtectedRoute>
-      } />
-      <Route path="/deposit" element={
-        <ProtectedRoute>
-          <VitaPayinView onBack={() => window.history.back()} />
-        </ProtectedRoute>
-      } />
+      {/* ══════════════════════════════════════════════════════════════════
+          RUTAS PRIVADAS — todas dentro de AppLayout
+          Header + Bottom Nav flotante se renderizan aquí
+          ══════════════════════════════════════════════════════════════════ */}
+      <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+
+        {/* Dashboard */}
+        <Route path="/dashboard"     element={<DashboardPage />} />
+
+        {/* Wallet */}
+        <Route path="/wallet"        element={<WalletPage />} />
+        <Route path="/wallet/qr"     element={<WalletQRScreen />} />
+
+        {/* Transferencias */}
+        <Route path="/transactions"                    element={<TransactionsPage />} />
+        <Route path="/transactions/:transactionId"     element={<TransactionDetail />} />
+
+        {/* Contactos */}
+        <Route path="/contacts"      element={<ContactsPage />} />
+
+        {/* Notificaciones */}
+        <Route path="/notifications" element={<NotificationsPage />} />
+
+        {/* Perfil */}
+        <Route path="/profile"       element={<ProfilePage />} />
+
+        {/* KYB */}
+        <Route path="/kyb"           element={<KybPage />} />
+        <Route path="/kyb/apply"     element={<KybForm />} />
+        <Route path="/kyb/status"    element={<KybStatusPage />} />
+
+        {/* Legacy */}
+        <Route path="/transfer"  element={<TransferView />} />
+        <Route path="/corporate" element={<CorporateView />} />
+        <Route path="/settlement" element={<SettlementView />} />
+        <Route path="/payout"    element={<VitaPayoutView onBack={() => window.history.back()} />} />
+        <Route path="/deposit"   element={<VitaPayinView onBack={() => window.history.back()} />} />
+
+      </Route>
 
       {/* ── Admin con AdminLayout ────────────────────────────────────────── */}
       <Route path="/admin" element={
-        <AdminRoute>
-          <Navigate to="/admin/ledger" replace />
-        </AdminRoute>
+        <AdminRoute><Navigate to="/admin/ledger" replace /></AdminRoute>
       } />
-
-      <Route element={
-        <AdminRoute>
-          <AdminLayout />
-        </AdminRoute>
-      }>
+      <Route element={<AdminRoute><AdminLayout /></AdminRoute>}>
         <Route path="/admin/ledger"          element={<LedgerPage />}     />
         <Route path="/admin/corridors"       element={<CorridorsPanel />}  />
         <Route path="/admin/analytics"       element={<AnalyticsPage />}   />

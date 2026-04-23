@@ -49,7 +49,7 @@ function Avatar({ name, size = 44 }) {
 }
 
 function ContactDetailModal({ contact, onClose, onDelete, onToggleFavorite }) {
-  const name    = contact.nickname ?? `${contact.firstName} ${contact.lastName}`.trim() || 'Sin nombre'
+  const name    = (contact.nickname ?? `${contact.firstName} ${contact.lastName}`.trim()) || 'Sin nombre'
   const bank    = contact.beneficiaryData?.beneficiary_bank ?? contact.beneficiaryData?.beneficiary_bank_label ?? ''
   const account = contact.beneficiaryData?.beneficiary_account_number ?? ''
   const docNum  = contact.beneficiaryData?.beneficiary_document_number ?? contact.beneficiaryData?.beneficiary_document ?? ''
@@ -303,7 +303,7 @@ export default function ContactsPage() {
           </div>
           <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-1">
             {favorites.map(c => {
-              const name = c.nickname ?? `${c.firstName} ${c.lastName}`.trim() || 'Sin nombre'
+              const name = (c.nickname ?? `${c.firstName} ${c.lastName}`.trim()) || 'Sin nombre'
               return (
                 <button
                   key={c._id}
@@ -345,7 +345,7 @@ export default function ContactsPage() {
             }}
           >
             {all.map((c, idx) => {
-              const name    = c.nickname ?? `${c.firstName} ${c.lastName}`.trim() || 'Sin nombre'
+              const name    = (c.nickname ?? `${c.firstName} ${c.lastName}`.trim()) || 'Sin nombre'
               const bank    = c.beneficiaryData?.beneficiary_bank ?? c.beneficiaryData?.beneficiary_bank_label ?? ''
               const account = c.beneficiaryData?.beneficiary_account_number ?? ''
 

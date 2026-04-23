@@ -1,28 +1,35 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { Bell, Home, Wallet, ArrowUpRight, Users, User, Shield, LogOut } from 'lucide-react'
+import { Bell, Shield } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { fetchUnreadCount } from '../../services/api'
 import { useInactivityTimeout } from '../../hooks/useInactivityTimeout'
 import BottomNavBar from '../layout/BottomNavBar'
 import SideNavBar   from '../layout/SideNavBar'
 
-const NAV_ITEMS_MOBILE = [
-  { icon: Home,         label: 'Inicio',         to: '/dashboard'    },
-  { icon: Wallet,       label: 'Activos',         to: '/wallet'       },
-  { icon: ArrowUpRight, label: 'Transferencias',  to: '/transactions' },
-  { icon: Users,        label: 'Contactos',       to: '/contacts'     },
-  { icon: User,         label: 'Perfil',          to: '/profile'      },
-]
+const PAGE_TITLES = {
+  '/dashboard':    'Inicio',
+  '/wallet':       'Mi Wallet',
+  '/send':         'Enviar dinero',
+  '/transactions': 'Transferencias',
+  '/contacts':     'Contactos',
+  '/notifications':'Notificaciones',
+  '/profile':      'Mi Perfil',
+  '/kyb':          'Cuenta Business',
+}
 
 export default function AppLayout() {
   const { user, isLoading, logout } = useAuth()
   const location = useLocation()
-  const navigate = useNavigate()
+  const navigate  = useNavigate()
 
   const firstName = user?.firstName ?? ''
   const role      = user?.role      ?? ''
   const initials  = firstName ? firstName.charAt(0).toUpperCase() : '?'
+
+  const pageTitle = Object.entries(PAGE_TITLES).find(([path]) =>
+    location.pathname === path || location.pathname.startsWith(path + '/')
+  )?.[1] ?? 'Alyto'
 
   const [unreadCount, setUnreadCount] = useState(0)
 
@@ -68,82 +75,121 @@ export default function AppLayout() {
   const { showModal: showInactivityModal, countdown, continueSession, endSession } =
     useInactivityTimeout({ onLogout: handleInactivityLogout })
 
-  function isActive(to) {
-    if (to === '/dashboard') return location.pathname === '/dashboard' || location.pathname === '/'
-    return location.pathname.startsWith(to)
-  }
-
   return (
     <>
-      {/* ═══════════════════════════════════════════════════════
-          DESKTOP LAYOUT (≥ 1024px)
-          SideNavBar (fixed 260px) + TopNavBar + content
-          ═══════════════════════════════════════════════════════ */}
-      <div className="hidden lg:flex" style={{ minHeight: '100vh', background: 'var(--color-bg-app)' }}>
-        <SideNavBar user={user} onLogout={handleLogout} />
+      {/* ══════════════════════════════════════════════════════════════
+          LAYOUT PRINCIPAL — un solo Outlet, responsive con CSS
+          ══════════════════════════════════════════════════════════════ */}
+      <div style={{ minHeight: '100vh', background: 'var(--color-bg-app)', display: 'flex' }}>
 
-        {/* Main area — left of sidebar */}
-        <div style={{ marginLeft: 260, flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        {/* SideNavBar — solo desktop (≥ 1024px) */}
+        <div className="hidden lg:block">
+          <SideNavBar user={user} onLogout={handleLogout} />
+        </div>
 
-          {/* Desktop top bar */}
+        {/* Área principal — ocupa todo en mobile, el resto en desktop */}
+        <div
+          style={{
+            flex:          1,
+            display:       'flex',
+            flexDirection: 'column',
+            minHeight:     '100vh',
+            minWidth:      0,
+          }}
+          className="lg:ml-[260px]"
+        >
+          {/* ── HEADER ───────────────────────────────────────────────── */}
           <header
             style={{
-              height:         64,
+              height:         60,
               background:     '#FFFFFF',
               boxShadow:      '0 1px 0 #E2E8F0, 0 2px 8px rgba(29,52,97,0.04)',
               display:        'flex',
               alignItems:     'center',
               justifyContent: 'space-between',
-              padding:        '0 28px',
+              padding:        '0 20px',
               position:       'sticky',
               top:            0,
-              zIndex:         30,
+              zIndex:         40,
               flexShrink:     0,
             }}
           >
-            <span style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-              {NAV_ITEMS_MOBILE.find(n => isActive(n.to))?.label ?? 'Alyto'}
-            </span>
-
+            {/* Logo (mobile) | Título de página (desktop) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {/* Logo — solo visible en mobile */}
+              <Link to="/dashboard" className="no-underline flex-shrink-0 lg:hidden">
+                <img
+                  src="/assets/LogoAlyto.png"
+                  alt="Alyto"
+                  style={{ height: 26, width: 'auto', objectFit: 'contain' }}
+                />
+              </Link>
+              {/* Título de página — solo visible en desktop */}
+              <span
+                className="hidden lg:block"
+                style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--color-text-primary)' }}
+              >
+                {pageTitle}
+              </span>
+            </div>
+
+            {/* Acciones del header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {/* Badge Admin */}
               {role === 'admin' && (
                 <Link
                   to="/admin"
-                  className="no-underline flex items-center gap-1.5 px-3 rounded-full text-xs font-semibold"
+                  className="no-underline flex items-center gap-1 px-2.5 rounded-full font-semibold"
                   style={{
-                    height:      32,
-                    background:  'var(--color-accent-teal-dim)',
-                    border:      '1px solid var(--color-accent-teal-border)',
-                    color:       'var(--color-accent-teal)',
+                    height:     26,
+                    background: 'rgba(29,52,97,0.08)',
+                    border:     '1px solid rgba(29,52,97,0.20)',
+                    color:      '#1D3461',
+                    fontSize:   '0.6875rem',
                   }}
                 >
-                  <Shield size={12} />
-                  Backoffice
+                  <Shield size={10} />
+                  Admin
                 </Link>
               )}
 
+              {/* Campanita */}
               <button
                 onClick={() => navigate('/notifications')}
                 aria-label="Notificaciones"
                 style={{
-                  width:          36, height: 36, borderRadius: '50%',
+                  width:          38,
+                  height:         38,
+                  borderRadius:   '50%',
                   background:     'var(--color-bg-elevated)',
                   border:         '1px solid var(--color-border)',
-                  display:        'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor:         'pointer', position: 'relative',
+                  display:        'flex',
+                  alignItems:     'center',
+                  justifyContent: 'center',
+                  cursor:         'pointer',
+                  position:       'relative',
+                  flexShrink:     0,
                 }}
               >
-                <Bell size={16} style={{ color: '#1D3461' }} />
+                <Bell size={17} style={{ color: '#1D3461' }} />
                 {unreadCount > 0 && (
                   <span
                     style={{
-                      position: 'absolute', top: -2, right: -2,
-                      minWidth: 16, height: 16,
-                      borderRadius: 'var(--radius-full)',
-                      background: '#EF4444', color: '#FFF',
-                      fontSize: '0.5rem', fontWeight: 800,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      padding: '0 4px', border: '2px solid #FFFFFF',
+                      position:       'absolute',
+                      top:            -3,
+                      right:          -3,
+                      minWidth:       17,
+                      height:         17,
+                      borderRadius:   '9999px',
+                      background:     '#EF4444',
+                      color:          '#FFFFFF',
+                      fontSize:       '0.5rem',
+                      fontWeight:     800,
+                      display:        'flex',
+                      alignItems:     'center',
+                      justifyContent: 'center',
+                      padding:        '0 4px',
+                      border:         '2px solid #FFFFFF',
                     }}
                   >
                     {unreadCount > 9 ? '9+' : unreadCount}
@@ -151,179 +197,57 @@ export default function AppLayout() {
                 )}
               </button>
 
+              {/* Inicial de perfil */}
               <Link
                 to="/profile"
                 className="no-underline"
                 style={{
-                  width: 36, height: 36, borderRadius: '50%',
-                  background: '#1D3461',
-                  border: '2px solid rgba(29,52,97,0.15)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '0.875rem', fontWeight: 800, color: '#FFFFFF',
-                  flexShrink: 0, letterSpacing: '0.02em',
+                  width:          38,
+                  height:         38,
+                  borderRadius:   '50%',
+                  background:     '#1D3461',
+                  border:         '2px solid rgba(29,52,97,0.15)',
+                  display:        'flex',
+                  alignItems:     'center',
+                  justifyContent: 'center',
+                  fontSize:       '0.875rem',
+                  fontWeight:     800,
+                  color:          '#FFFFFF',
+                  flexShrink:     0,
+                  letterSpacing:  '0.02em',
                 }}
               >
                 {isLoading
-                  ? <span style={{ width: 12, height: 12, borderRadius: '50%', background: 'rgba(255,255,255,0.4)' }} />
+                  ? <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.4)' }} />
                   : initials
                 }
               </Link>
             </div>
           </header>
 
-          {/* Content */}
+          {/* ── CONTENIDO ─────────────────────────────────────────────── */}
+          {/*
+              Mobile: paddingBottom 108 para que el contenido no quede
+              detrás del bottom nav flotante (nav ~56px + 16px bottom + margen)
+              Desktop: paddingBottom normal
+          */}
           <main
-            style={{ flex: 1, overflowY: 'auto', padding: '28px', maxWidth: 1200 }}
-            className="scrollbar-hide"
+            className="flex-1 overflow-y-auto scrollbar-hide lg:pb-6"
+            style={{ paddingBottom: 108 }}
           >
-            <Outlet />
+            <div className="lg:max-w-[1200px] lg:mx-auto lg:px-7 lg:py-7">
+              <Outlet />
+            </div>
           </main>
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════
-          MOBILE LAYOUT (< 1024px)
-          Sticky header + scrollable content + BottomNavBar
-          ═══════════════════════════════════════════════════════ */}
-      <div
-        className="flex flex-col lg:hidden"
-        style={{
-          minHeight:  '100vh',
-          maxWidth:   430,
-          margin:     '0 auto',
-          background: 'var(--color-bg-app)',
-          position:   'relative',
-        }}
-      >
-        {/* Mobile header */}
-        <header
-          style={{
-            height:         60,
-            background:     '#FFFFFF',
-            boxShadow:      '0 1px 0 #E2E8F0, 0 2px 8px rgba(29,52,97,0.04)',
-            display:        'flex',
-            alignItems:     'center',
-            justifyContent: 'space-between',
-            padding:        '0 20px',
-            position:       'sticky',
-            top:            0,
-            zIndex:         40,
-            flexShrink:     0,
-          }}
-        >
-          {/* Logo */}
-          <Link to="/dashboard" className="no-underline flex-shrink-0">
-            <img
-              src="/assets/LogoAlyto.png"
-              alt="Alyto"
-              style={{ height: 26, width: 'auto', objectFit: 'contain' }}
-            />
-          </Link>
-
-          {/* Right actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {role === 'admin' && (
-              <Link
-                to="/admin"
-                className="no-underline flex items-center gap-1 px-2.5 rounded-full text-xs font-semibold"
-                style={{
-                  height:     26,
-                  background: 'var(--color-accent-teal-dim)',
-                  border:     '1px solid var(--color-accent-teal-border)',
-                  color:      'var(--color-accent-teal)',
-                  fontSize:   '0.6875rem',
-                }}
-              >
-                <Shield size={10} />
-                Admin
-              </Link>
-            )}
-
-            {/* Bell */}
-            <button
-              onClick={() => navigate('/notifications')}
-              aria-label="Notificaciones"
-              style={{
-                width:          38,
-                height:         38,
-                borderRadius:   '50%',
-                background:     'var(--color-bg-elevated)',
-                border:         '1px solid var(--color-border)',
-                display:        'flex',
-                alignItems:     'center',
-                justifyContent: 'center',
-                cursor:         'pointer',
-                position:       'relative',
-                flexShrink:     0,
-              }}
-            >
-              <Bell size={17} style={{ color: '#1D3461' }} />
-              {unreadCount > 0 && (
-                <span
-                  style={{
-                    position:       'absolute',
-                    top:            -3,
-                    right:          -3,
-                    minWidth:       17,
-                    height:         17,
-                    borderRadius:   'var(--radius-full)',
-                    background:     '#EF4444',
-                    color:          '#FFFFFF',
-                    fontSize:       '0.5rem',
-                    fontWeight:     800,
-                    display:        'flex',
-                    alignItems:     'center',
-                    justifyContent: 'center',
-                    padding:        '0 4px',
-                    border:         '2px solid #FFFFFF',
-                    letterSpacing:  '-0.01em',
-                  }}
-                >
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </button>
-
-            {/* Profile initial */}
-            <Link
-              to="/profile"
-              className="no-underline"
-              style={{
-                width:          38,
-                height:         38,
-                borderRadius:   '50%',
-                background:     '#1D3461',
-                border:         '2px solid rgba(29,52,97,0.15)',
-                display:        'flex',
-                alignItems:     'center',
-                justifyContent: 'center',
-                fontSize:       '0.875rem',
-                fontWeight:     800,
-                color:          '#FFFFFF',
-                flexShrink:     0,
-                letterSpacing:  '0.02em',
-              }}
-            >
-              {isLoading
-                ? <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.4)' }} />
-                : initials
-              }
-            </Link>
-          </div>
-        </header>
-
-        {/* Mobile content — extra bottom padding for floating nav */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ paddingBottom: 108 }}>
-          <Outlet />
-        </div>
-
-        {/* Bottom nav */}
+      {/* Bottom nav flotante — solo mobile (< 1024px) */}
+      <div className="lg:hidden">
         <BottomNavBar />
       </div>
 
-      {/* ═══════════════════════════════════════════════════════
-          INACTIVITY MODAL (shared)
-          ═══════════════════════════════════════════════════════ */}
+      {/* ── MODAL DE INACTIVIDAD ──────────────────────────────────────── */}
       {showInactivityModal && (
         <div
           style={{
@@ -336,13 +260,13 @@ export default function AppLayout() {
         >
           <div
             style={{
-              background:   'var(--color-bg-elevated)',
+              background:   '#FFFFFF',
               borderRadius: 'var(--radius-2xl)',
               border:       '1px solid var(--color-border)',
               boxShadow:    'var(--shadow-modal)',
               maxWidth:     380,
               width:        '100%',
-              padding:      24,
+              padding:      28,
               textAlign:    'center',
             }}
           >
@@ -369,7 +293,7 @@ export default function AppLayout() {
               <button
                 onClick={endSession}
                 style={{
-                  flex: 1, padding: '12px 0', borderRadius: 16,
+                  flex: 1, padding: '12px 0', borderRadius: 14,
                   background: 'transparent', border: '1px solid var(--color-border)',
                   color: 'var(--color-text-secondary)', fontSize: '0.875rem', fontWeight: 600,
                   cursor: 'pointer', fontFamily: "'Manrope', sans-serif",
@@ -380,7 +304,7 @@ export default function AppLayout() {
               <button
                 onClick={continueSession}
                 style={{
-                  flex: 1, padding: '12px 0', borderRadius: 16,
+                  flex: 1, padding: '12px 0', borderRadius: 14,
                   background: '#1D3461', border: 'none',
                   color: '#FFFFFF', fontSize: '0.875rem', fontWeight: 700,
                   cursor: 'pointer', fontFamily: "'Manrope', sans-serif",
