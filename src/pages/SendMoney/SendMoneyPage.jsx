@@ -1,12 +1,4 @@
 /**
- * @deprecated Send Money Flow v1.0 (docs/SEND_MONEY_FLOW.md §2).
- *
- * This 6-step orchestrator is superseded by the 3-step flow container at
- * src/pages/send-money/SendMoneyFlow.jsx. The router now points /send/* at
- * the new flow; this file is retained only to avoid breaking any lingering
- * deep-link imports until a cleanup pass removes it.
- *
- * --- Original documentation below ---
  * SendMoneyPage.jsx — Página principal del flujo de pago cross-border.
  *
  * Orquesta los 6 pasos:
@@ -22,7 +14,6 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, X } from 'lucide-react'
 
-import { useAuth }               from '../../context/AuthContext'
 import { useSendMoney }          from '../../hooks/useSendMoney'
 import StepIndicator             from '../../components/SendMoney/StepIndicator'
 import Step1Amount               from '../../components/SendMoney/Step1Amount'
@@ -43,12 +34,7 @@ const STEP_TITLES = {
 
 export default function SendMoneyPage() {
   const navigate = useNavigate()
-  const { user } = useAuth()
   const { step, stepData, nextStep, prevStep, resetFlow } = useSendMoney()
-
-  // Bolivia (SRL) usa Step2 para seleccionar método de pago (QR / transferencia).
-  // Chile/LLC van directo a Step3 con Fintoc sin pasar por Step2.
-  const isSRL = user?.legalEntity === 'SRL'
 
   const isSuccess = step === 6
 
@@ -77,26 +63,26 @@ export default function SendMoneyPage() {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="min-h-screen bg-[#0F1628] font-sans flex flex-col max-w-[430px] mx-auto">
 
       {/* ── Header ── */}
       {!isSuccess && (
-        <header className="flex items-center justify-between px-4 pt-3 pb-3 flex-shrink-0">
+        <header className="flex items-center justify-between px-4 pt-12 pb-3 flex-shrink-0">
           <button
             onClick={handleBack}
-            className="w-9 h-9 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] hover:border-[#233E5833] transition-all"
+            className="w-9 h-9 rounded-xl bg-[#1A2340] border border-[#263050] flex items-center justify-center text-[#8A96B8] hover:text-white hover:border-[#C4CBD833] transition-all"
           >
             <ArrowLeft size={18} />
           </button>
 
-          <h1 className="text-[0.9375rem] font-bold text-[#0F172A]">
+          <h1 className="text-[0.9375rem] font-bold text-white">
             {STEP_TITLES[step]}
           </h1>
 
           {step < 5 ? (
             <button
               onClick={handleCancel}
-              className="w-9 h-9 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] hover:border-[#233E5833] transition-all"
+              className="w-9 h-9 rounded-xl bg-[#1A2340] border border-[#263050] flex items-center justify-center text-[#8A96B8] hover:text-white hover:border-[#C4CBD833] transition-all"
             >
               <X size={18} />
             </button>
@@ -119,24 +105,16 @@ export default function SendMoneyPage() {
           <Step1Amount
             initialData={stepData}
             onNext={(data) => {
-              if (isSRL) {
-                // Bolivia: ir a Step2 para seleccionar metodo de pago (QR / transferencia)
-                nextStep(data)
-              } else if (data.quote?.payinMethod === 'manual' || data.quote?.isManualCorridor) {
-                // CL→BO manual: ir a Step2 con instrucciones de transferencia
-                nextStep({ ...data, payinMethod: 'manual', isManualCorridor: true })
-              } else {
-                // CL/LLC: solo Fintoc disponible, saltar Step2 directamente
-                nextStep({ ...data, payinMethod: 'fintoc', _skipStep2: true }, 3)
-              }
+              // V2.0: origen siempre CL → Fintoc es el único método disponible.
+              // Saltar Step 2 directamente. Step 2 queda como fallback para
+              // futuros corredores con múltiples métodos de pago.
+              nextStep({ ...data, payinMethod: 'fintoc', _skipStep2: true }, 3)
             }}
           />
         )}
 
         {step === 2 && (
           <Step2PayinMethod
-            originCountry={isSRL ? 'BO' : 'CL'}
-            stepData={stepData}
             onNext={(data) => nextStep(data)}
           />
         )}
@@ -144,7 +122,6 @@ export default function SendMoneyPage() {
         {step === 3 && (
           <Step3Beneficiary
             destinationCountry={stepData.destinationCountry}
-            isManualCorridor={stepData.isManualCorridor === true}
             onNext={(data) => nextStep(data)}
           />
         )}

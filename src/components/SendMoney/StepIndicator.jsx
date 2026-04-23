@@ -1,13 +1,10 @@
 /**
- * @deprecated Send Money Flow v1.0 (docs/SEND_MONEY_FLOW.md §2).
- *
- * Replaced by the 3-dot StepDots indicator embedded in
- * src/pages/send-money/SendMoneyFlow.jsx. The new flow has exactly 3
- * steps (details / review / payment) with no branching on payin method.
- *
- * --- Original documentation below ---
  * StepIndicator.jsx — Barra de progreso visual para el flujo de pasos.
  * El paso 6 (éxito) no necesita indicador.
+ *
+ * skipStep2=false (default) → 5 pasos: Monto · Pago · Destinatario · Confirmar · Transferencia
+ * skipStep2=true            → 4 pasos: Monto · Destinatario · Confirmar · Transferencia
+ *   (el número visual es 1-4; el `number` interno sigue siendo el step real del hook)
  */
 
 import { Check } from 'lucide-react'
@@ -45,17 +42,17 @@ export default function StepIndicator({ currentStep, skipStep2 = false }) {
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-[0.6875rem] font-bold transition-all duration-200 ${
                   isDone
-                    ? 'bg-[#233E58] text-white'
+                    ? 'bg-[#22C55E] text-white'
                     : isActive
-                      ? 'bg-[#233E58] text-white shadow-[0_0_0_3px_#233E5833]'
-                      : 'bg-[#F1F5F9] border border-[#E2E8F0] text-[#94A3B8]'
+                      ? 'bg-[#C4CBD8] text-[#0F1628]'
+                      : 'bg-[#1A2340] border border-[#263050] text-[#4E5A7A]'
                 }`}
               >
                 {isDone ? <Check size={13} /> : displayNum}
               </div>
               <span
                 className={`text-[0.5625rem] font-medium mt-1 whitespace-nowrap ${
-                  isActive ? 'text-[#233E58]' : isDone ? 'text-[#233E58]' : 'text-[#94A3B8]'
+                  isActive ? 'text-[#C4CBD8]' : isDone ? 'text-[#22C55E]' : 'text-[#4E5A7A]'
                 }`}
               >
                 {s.label}
@@ -66,7 +63,7 @@ export default function StepIndicator({ currentStep, skipStep2 = false }) {
             {!isLast && (
               <div
                 className={`flex-1 h-px mx-1 mb-4 transition-all duration-300 ${
-                  currentStep > s.number ? 'bg-[#233E58]' : 'bg-[#E2E8F0]'
+                  currentStep > s.number ? 'bg-[#22C55E]' : 'bg-[#263050]'
                 }`}
               />
             )}

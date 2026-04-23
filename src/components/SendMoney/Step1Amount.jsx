@@ -9,30 +9,11 @@
  * - Contador regresivo de la cotización.
  */
 
-import { useState, useEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
-import { ChevronDown, ChevronUp, Clock, AlertCircle, RefreshCw, WifiOff, Loader2, Search, X, ChevronRight, Check } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ChevronDown, ChevronUp, Clock, AlertCircle, RefreshCw, WifiOff, Loader2 } from 'lucide-react'
 import { useQuoteSocket } from '../../hooks/useQuoteSocket'
 import { useAuth }        from '../../context/AuthContext'
 import { listUserCorridors, getCurrentExchangeRates } from '../../services/paymentsService'
-import { getDeliveryTime } from '../../utils/deliveryTime'
-
-// ── Flag image usando CDN (compatible con todos los SO/navegadores) ───────────
-
-function FlagImg({ code, size = 32 }) {
-  const h = Math.round(size * 0.75)
-  return (
-    <img
-      src={`https://flagcdn.com/${size}x${h}/${code.toLowerCase()}.png`}
-      alt={code}
-      width={size}
-      height={h}
-      className="rounded object-cover"
-      style={{ width: size, height: h }}
-      onError={e => { e.currentTarget.style.opacity = '0' }}
-    />
-  )
-}
 
 // ── Origen según entidad legal ────────────────────────────────────────────────
 
@@ -45,87 +26,51 @@ const ENTITY_ORIGIN = {
 // ── Info de países para enriquecer la respuesta del backend ──────────────────
 
 const COUNTRY_INFO = {
-  // ── LatAm — Vita ────────────────────────────────────────────────────────────
-  CO: { name: 'Colombia',          currency: 'COP', currencyName: 'Peso colombiano',      flag: '🇨🇴' },
-  PE: { name: 'Perú',              currency: 'PEN', currencyName: 'Sol peruano',           flag: '🇵🇪' },
-  BO: { name: 'Bolivia',           currency: 'BOB', currencyName: 'Boliviano',             flag: '🇧🇴' },
-  AR: { name: 'Argentina',         currency: 'ARS', currencyName: 'Peso argentino',        flag: '🇦🇷' },
-  MX: { name: 'México',            currency: 'MXN', currencyName: 'Peso mexicano',         flag: '🇲🇽' },
-  BR: { name: 'Brasil',            currency: 'BRL', currencyName: 'Real brasileño',        flag: '🇧🇷' },
-  CL: { name: 'Chile',             currency: 'CLP', currencyName: 'Peso chileno',          flag: '🇨🇱' },
-  EC: { name: 'Ecuador',           currency: 'USD', currencyName: 'Dólar estadounidense',  flag: '🇪🇨' },
-  VE: { name: 'Venezuela',         currency: 'USD', currencyName: 'Dólar estadounidense',  flag: '🇻🇪' },
-  PY: { name: 'Paraguay',          currency: 'PYG', currencyName: 'Guaraní paraguayo',     flag: '🇵🇾' },
-  UY: { name: 'Uruguay',           currency: 'UYU', currencyName: 'Peso uruguayo',         flag: '🇺🇾' },
-  CR: { name: 'Costa Rica',        currency: 'CRC', currencyName: 'Colón costarricense',   flag: '🇨🇷' },
-  PA: { name: 'Panamá',            currency: 'USD', currencyName: 'Dólar estadounidense',  flag: '🇵🇦' },
-  DO: { name: 'Rep. Dominicana',   currency: 'DOP', currencyName: 'Peso dominicano',       flag: '🇩🇴' },
-  GT: { name: 'Guatemala',         currency: 'GTQ', currencyName: 'Quetzal guatemalteco',  flag: '🇬🇹' },
-  HT: { name: 'Haití',             currency: 'HTG', currencyName: 'Gourde haitiano',       flag: '🇭🇹' },
-  SV: { name: 'El Salvador',       currency: 'USD', currencyName: 'Dólar estadounidense',  flag: '🇸🇻' },
-  // ── Europa — Vita vita_sent ──────────────────────────────────────────────────
-  ES: { name: 'España',            currency: 'EUR', currencyName: 'Euro',                  flag: '🇪🇸' },
-  PL: { name: 'Polonia',           currency: 'PLN', currencyName: 'Esloti polaco',         flag: '🇵🇱' },
-  // ── Global — OwlPay / Vita withdrawal ───────────────────────────────────────
-  US: { name: 'Estados Unidos',    currency: 'USD', currencyName: 'Dólar estadounidense',  flag: '🇺🇸' },
-  EU: { name: 'Europa',            currency: 'EUR', currencyName: 'Euro',                  flag: '🇪🇺' },
-  CN: { name: 'China',             currency: 'CNY', currencyName: 'Yuan chino',            flag: '🇨🇳' },
-  AE: { name: 'Emiratos Árabes',   currency: 'AED', currencyName: 'Dírham emiratí',        flag: '🇦🇪' },
-  GB: { name: 'Reino Unido',       currency: 'GBP', currencyName: 'Libra esterlina',       flag: '🇬🇧' },
-  CA: { name: 'Canadá',            currency: 'CAD', currencyName: 'Dólar canadiense',      flag: '🇨🇦' },
-  AU: { name: 'Australia',         currency: 'AUD', currencyName: 'Dólar australiano',     flag: '🇦🇺' },
-  HK: { name: 'Hong Kong',         currency: 'HKD', currencyName: 'Dólar de Hong Kong',   flag: '🇭🇰' },
-  JP: { name: 'Japón',             currency: 'JPY', currencyName: 'Yen japonés',           flag: '🇯🇵' },
-  SG: { name: 'Singapur',          currency: 'SGD', currencyName: 'Dólar de Singapur',    flag: '🇸🇬' },
-  ZA: { name: 'Sudáfrica',         currency: 'ZAR', currencyName: 'Rand sudafricano',      flag: '🇿🇦' },
-  NG: { name: 'Nigeria',           currency: 'NGN', currencyName: 'Naira nigeriana',       flag: '🇳🇬' },
-  IN: { name: 'India',             currency: 'INR', currencyName: 'Rupia india',           flag: '🇮🇳' },
+  // LatAm — Vita
+  CO: { name: 'Colombia',          currency: 'COP', flag: '🇨🇴' },
+  PE: { name: 'Perú',              currency: 'PEN', flag: '🇵🇪' },
+  BO: { name: 'Bolivia',           currency: 'BOB', flag: '🇧🇴' },
+  AR: { name: 'Argentina',         currency: 'ARS', flag: '🇦🇷' },
+  MX: { name: 'México',            currency: 'MXN', flag: '🇲🇽' },
+  BR: { name: 'Brasil',            currency: 'BRL', flag: '🇧🇷' },
+  CL: { name: 'Chile',             currency: 'CLP', flag: '🇨🇱' },
+  EC: { name: 'Ecuador',           currency: 'USD', flag: '🇪🇨' },
+  VE: { name: 'Venezuela',         currency: 'USD', flag: '🇻🇪' },
+  PY: { name: 'Paraguay',          currency: 'PYG', flag: '🇵🇾' },
+  UY: { name: 'Uruguay',           currency: 'UYU', flag: '🇺🇾' },
+  CR: { name: 'Costa Rica',        currency: 'CRC', flag: '🇨🇷' },
+  PA: { name: 'Panamá',            currency: 'USD', flag: '🇵🇦' },
+  DO: { name: 'Rep. Dominicana',   currency: 'DOP', flag: '🇩🇴' },
+  GT: { name: 'Guatemala',         currency: 'GTQ', flag: '🇬🇹' },
+  // Global — OwlPay
+  US: { name: 'Estados Unidos',    currency: 'USD', flag: '🇺🇸' },
+  EU: { name: 'Europa (EUR)',       currency: 'EUR', flag: '🇪🇺' },
+  CN: { name: 'China',             currency: 'CNY', flag: '🇨🇳' },
+  AE: { name: 'Emiratos Árabes',   currency: 'AED', flag: '🇦🇪' },
+  GB: { name: 'Reino Unido',       currency: 'GBP', flag: '🇬🇧' },
+  CA: { name: 'Canadá',            currency: 'CAD', flag: '🇨🇦' },
+  AU: { name: 'Australia',         currency: 'AUD', flag: '🇦🇺' },
+  JP: { name: 'Japón',             currency: 'JPY', flag: '🇯🇵' },
+  IN: { name: 'India',             currency: 'INR', flag: '🇮🇳' },
+  SG: { name: 'Singapur',          currency: 'SGD', flag: '🇸🇬' },
 }
 
-// Orden de aparición preferido (los más usados primero, el resto va alfabético al final)
-const COUNTRY_PRIORITY = {
-  SpA: ['CO', 'PE', 'AR', 'MX', 'BR', 'US', 'EC', 'VE', 'PY', 'UY', 'BO', 'CR', 'PA', 'DO', 'GT', 'SV', 'AU', 'GB', 'EU', 'CN', 'AE', 'HT'],
-  SRL: ['CO', 'PE', 'CL', 'AR', 'MX', 'BR', 'EC', 'VE', 'PY', 'UY', 'US', 'CR', 'PA', 'DO', 'GT', 'SV', 'ES', 'PL', 'CA', 'HK', 'EU', 'GB', 'AU', 'CN', 'AE', 'JP', 'SG', 'ZA', 'NG', 'HT'],
-  LLC: ['CO', 'PE', 'AR', 'MX', 'BR', 'CL', 'EC', 'VE', 'PY', 'UY', 'US', 'EU', 'GB', 'CN', 'AE', 'AU', 'CA', 'JP', 'SG'],
-}
-
-/** Convierte la lista de corredores en opciones de país destino únicas, ordenadas por relevancia */
-function corridorsToCountries(corridors, legalEntity = 'SpA') {
-  // Calcular el mínimo de envío por país (puede haber varios corredores al mismo destino)
-  const minByCountry = {}
-  for (const c of corridors) {
-    const code = c.destinationCountry
-    if (!code) continue
-    const m = c.minAmountOrigin ?? 0
-    minByCountry[code] = minByCountry[code] === undefined ? m : Math.min(minByCountry[code], m)
-  }
-
-  const seen   = new Set()
+/** Convierte la lista de corredores en opciones de país destino únicas */
+function corridorsToCountries(corridors) {
+  const seen = new Set()
   const result = []
   for (const c of corridors) {
     const code = c.destinationCountry
     if (!code || seen.has(code)) continue
     seen.add(code)
-    const info     = COUNTRY_INFO[code] ?? {}
-    const currency = c.destinationCurrency ?? info.currency ?? '—'
+    const info = COUNTRY_INFO[code] ?? {}
     result.push({
       code,
-      name:         info.name         || c.destinationCountryName || code,
-      currency,
-      currencyName: info.currencyName  || currency,
-      flag:         info.flag          || c.destinationFlag        || '🌍',
-      minAmount:    minByCountry[code] ?? 0,
+      name:     info.name     ?? code,
+      currency: c.destinationCurrency ?? info.currency ?? '—',
+      flag:     info.flag     ?? '🌍',
     })
   }
-  const priority = COUNTRY_PRIORITY[legalEntity] ?? []
-  result.sort((a, b) => {
-    const ia = priority.indexOf(a.code)
-    const ib = priority.indexOf(b.code)
-    if (ia === -1 && ib === -1) return a.name.localeCompare(b.name)
-    if (ia === -1) return 1
-    if (ib === -1) return -1
-    return ia - ib
-  })
   return result
 }
 
@@ -174,130 +119,11 @@ function QuoteSkeleton() {
     <div className="space-y-2 animate-pulse">
       {[1, 2, 3].map(i => (
         <div key={i} className="flex justify-between">
-          <div className="h-3.5 bg-[#E2E8F0] rounded w-28" />
-          <div className="h-3.5 bg-[#E2E8F0] rounded w-20" />
+          <div className="h-3.5 bg-[#1F2B4D] rounded w-28" />
+          <div className="h-3.5 bg-[#1F2B4D] rounded w-20" />
         </div>
       ))}
     </div>
-  )
-}
-
-// ── CountryPickerModal ────────────────────────────────────────────────────────
-
-function CountryPickerModal({ countries, selected, onSelect, onClose }) {
-  const [search, setSearch] = useState('')
-  const inputRef = useRef(null)
-
-  useEffect(() => {
-    const t = setTimeout(() => inputRef.current?.focus(), 80)
-    return () => clearTimeout(t)
-  }, [])
-
-  function handleBackdrop(e) {
-    if (e.target === e.currentTarget) onClose()
-  }
-
-  const q = search.trim().toLowerCase()
-  const filtered = q
-    ? countries.filter(c =>
-        c.name.toLowerCase().includes(q) ||
-        (c.currencyName ?? '').toLowerCase().includes(q) ||
-        c.currency.toLowerCase().includes(q) ||
-        c.code.toLowerCase().includes(q)
-      )
-    : countries
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
-      onClick={handleBackdrop}
-    >
-      <div
-        className="w-full max-w-sm rounded-2xl flex flex-col"
-        style={{
-          background: '#FFFFFF',
-          border: '1px solid #E2E8F0',
-          maxHeight: '70vh',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[#E2E8F0] flex-shrink-0">
-          <p className="text-[1rem] font-bold text-[#0F172A]">¿A dónde envías?</p>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center"
-          >
-            <X size={14} className="text-[#64748B]" />
-          </button>
-        </div>
-
-        {/* Search */}
-        <div className="px-4 py-3 flex-shrink-0">
-          <div className="relative">
-            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
-            <input
-              ref={inputRef}
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar país o moneda…"
-              className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-9 pr-4 py-2.5 text-[0.875rem] text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#233E58] transition-colors"
-            />
-          </div>
-        </div>
-
-        {/* Country list */}
-        <div className="flex-1 overflow-y-auto pb-4">
-          {filtered.map((c, idx) => (
-            <button
-              key={c.code}
-              onClick={() => { onSelect(c); onClose() }}
-              className={`w-full flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[#F8FAFC] active:bg-[#F1F5F9] ${
-                idx < filtered.length - 1 ? 'border-b border-[#E2E8F060]' : ''
-              } ${selected?.code === c.code ? 'bg-[#233E581A]' : ''}`}
-            >
-              {/* Flag */}
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
-                style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}
-              >
-                <FlagImg code={c.code} size={40} />
-              </div>
-
-              {/* Nombre + moneda + mínimo */}
-              <div className="flex-1 text-left min-w-0">
-                <p className="text-[0.9375rem] font-semibold text-[#0F172A] leading-tight truncate">
-                  {c.name}
-                </p>
-                <p className="text-[0.75rem] text-[#64748B]">{c.currencyName ?? c.currency}</p>
-                {c.minAmount > 0 && (
-                  <p className="text-[0.625rem] text-[#94A3B8] mt-0.5">
-                    Mín. {c.minAmount.toLocaleString('es-CL')}
-                  </p>
-                )}
-              </div>
-
-              {/* Checkmark si está seleccionado */}
-              {selected?.code === c.code && (
-                <div className="w-5 h-5 rounded-full bg-[#233E58] flex items-center justify-center flex-shrink-0">
-                  <Check size={11} className="text-white" />
-                </div>
-              )}
-            </button>
-          ))}
-
-          {filtered.length === 0 && (
-            <div className="px-5 py-10 text-center">
-              <p className="text-[0.875rem] text-[#94A3B8]">No se encontraron países</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>,
-    document.body
   )
 }
 
@@ -317,7 +143,7 @@ function StatusBadge({ status }) {
   }
   if (status === 'updating') {
     return (
-      <span className="flex items-center gap-1 text-[0.625rem] font-semibold text-[#64748B]">
+      <span className="flex items-center gap-1 text-[0.625rem] font-semibold text-[#C4CBD8]">
         <Loader2 size={10} className="animate-spin" />
         Actualizando
       </span>
@@ -342,7 +168,6 @@ export default function Step1Amount({ initialData, onNext }) {
   const [corridorsError,   setCorridorsError]   = useState(null)
   const [feesExpanded,     setFeesExpanded]      = useState(false)
   const [bobRateInfo,      setBobRateInfo]       = useState(null)  // { rate, source, updatedAt }
-  const [showCountryModal, setShowCountryModal] = useState(false)
 
   // ── Cargar tasa BOB/USDT cuando el origen es Bolivia ─────────────────────
 
@@ -369,7 +194,7 @@ export default function Step1Amount({ initialData, onNext }) {
     listUserCorridors()
       .then(res => {
         if (cancelled) return
-        const list = corridorsToCountries(res.corridors ?? res, user?.legalEntity)
+        const list = corridorsToCountries(res.corridors ?? res)
         setCountries(list)
         // Restaurar selección si venimos de initialData
         if (initialData?.destinationCountry) {
@@ -398,30 +223,18 @@ export default function Step1Amount({ initialData, onNext }) {
     setDisplayAmount(num ? num.toLocaleString('es-CL') : '')
   }
 
-  function handleCountrySelect(country) {
-    setSelectedCountry(country)
+  function handleCountryChange(e) {
+    const found = countries.find(c => c.code === e.target.value)
+    setSelectedCountry(found || null)
   }
 
   const activeCurrency = quote?.originCurrency ?? origin.currency
 
-  // ── Validación mínimo ─────────────────────────────────────────────────────
-  const minAmount  = selectedCountry?.minAmount ?? 0
-  const belowMin   = rawAmount > 0 && minAmount > 0 && rawAmount < minAmount
-  const amountEmpty = !rawAmount || rawAmount <= 0
-
   const isBlocked   = status === 'connecting' || status === 'expired' ||
                       status === 'disconnected' || status === 'error'
-  const canContinue = !!quote &&
-                      !isBlocked &&
-                      !amountEmpty &&
-                      !!selectedCountry &&
-                      !belowMin &&
-                      (minAmount === 0 || rawAmount >= minAmount)
+  const canContinue = !!quote && !isBlocked && !!rawAmount && !!selectedCountry
 
   function handleNext() {
-    if (!selectedCountry) return
-    if (amountEmpty) return
-    if (minAmount > 0 && rawAmount < minAmount) return
     if (!canContinue) return
     onNext({ originAmount: rawAmount, destinationCountry: selectedCountry.code, quote })
   }
@@ -436,19 +249,19 @@ export default function Step1Amount({ initialData, onNext }) {
 
       {/* ── Título ── */}
       <div>
-        <h2 className="text-[1.125rem] font-bold text-[#0F172A]">¿Cuánto envías?</h2>
-        <p className="text-[0.8125rem] text-[#64748B] mt-0.5">
+        <h2 className="text-[1.125rem] font-bold text-white">¿Cuánto envías?</h2>
+        <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
           {origin.flag} Tu cuenta está en {origin.country} · {origin.currency}
         </p>
       </div>
 
       {/* ── Input de monto ── */}
       <div>
-        <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
+        <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide mb-2">
           Monto a enviar
         </label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-bold text-[1.125rem]">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8A96B8] font-bold text-[1.125rem]">
             {origin.symbol}
           </span>
           <input
@@ -457,99 +270,62 @@ export default function Step1Amount({ initialData, onNext }) {
             value={displayAmount}
             onChange={handleAmountChange}
             placeholder="0"
-            className={`w-full bg-white border rounded-xl pr-16 py-4 text-[1.5rem] font-bold focus:outline-none transition-all placeholder:text-[#CBD5E1] ${origin.symbol.length > 1 ? 'pl-14' : 'pl-8'} ${
-              belowMin
-                ? 'border-[#EF4444] text-[#EF4444] focus:border-[#EF4444] focus:shadow-[0_0_0_3px_#EF444420]'
-                : 'border-[#E2E8F0] text-[#0F172A] focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820]'
-            }`}
+            className="w-full bg-[#1A2340] border border-[#263050] rounded-xl pl-8 pr-16 py-4 text-white text-[1.5rem] font-bold focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] transition-all placeholder:text-[#4E5A7A]"
           />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[0.75rem] font-semibold text-[#94A3B8]">
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[0.75rem] font-semibold text-[#4E5A7A]">
             {activeCurrency}
           </span>
         </div>
-
-        {/* Error mínimo */}
-        {belowMin && (
-          <div className="flex items-center gap-1.5 mt-2">
-            <AlertCircle size={13} className="text-[#EF4444] flex-shrink-0" />
-            <p className="text-[0.75rem] text-[#EF4444] font-medium">
-              Monto mínimo: {origin.symbol}{minAmount.toLocaleString('es-CL')} {activeCurrency}
-            </p>
-          </div>
-        )}
-
-        {/* Hint mínimo cuando aún no se ingresó monto */}
-        {!belowMin && minAmount > 0 && rawAmount === 0 && selectedCountry && (
-          <p className="text-[0.6875rem] text-[#94A3B8] mt-1.5">
-            Mínimo: {origin.symbol}{minAmount.toLocaleString('es-CL')} {activeCurrency}
-          </p>
-        )}
       </div>
 
       {/* ── Selector de país destino ── */}
       <div>
-        <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
+        <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide mb-2">
           País de destino
         </label>
 
         {corridorsLoading ? (
           /* Skeleton del selector */
-          <div className="h-14 rounded-xl bg-[#F1F5F9] border border-[#E2E8F0] animate-pulse" />
+          <div className="h-14 rounded-xl bg-[#1A2340] border border-[#263050] animate-pulse" />
         ) : corridorsError ? (
           <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
             <AlertCircle size={14} className="text-[#EF4444] flex-shrink-0" />
             <p className="text-[0.8125rem] text-[#EF4444]">{corridorsError}</p>
           </div>
         ) : countries.length === 0 ? (
-          <div className="px-4 py-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-center">
-            <p className="text-[0.8125rem] text-[#64748B]">
+          <div className="px-4 py-4 rounded-xl bg-[#1A2340] border border-[#263050] text-center">
+            <p className="text-[0.8125rem] text-[#8A96B8]">
               No hay destinos disponibles para tu cuenta.
             </p>
-            <p className="text-[0.75rem] text-[#94A3B8] mt-1">
+            <p className="text-[0.75rem] text-[#4E5A7A] mt-1">
               Contáctanos para más información.
             </p>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => setShowCountryModal(true)}
-            className="w-full flex items-center gap-3 bg-white border border-[#E2E8F0] rounded-xl px-4 py-3.5 transition-all hover:border-[#233E5833] active:scale-[0.99] focus:outline-none focus:border-[#233E58]"
-          >
-            {/* Flag circle */}
-            <div
-              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
-              style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl pointer-events-none">
+              {selectedCountry?.flag || '🌎'}
+            </span>
+            <select
+              value={selectedCountry?.code || ''}
+              onChange={handleCountryChange}
+              className="w-full appearance-none bg-[#1A2340] border border-[#263050] rounded-xl pl-11 pr-10 py-4 text-white text-[0.9375rem] font-semibold focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] transition-all cursor-pointer"
             >
-              {selectedCountry
-                ? <FlagImg code={selectedCountry.code} size={36} />
-                : <span className="text-lg">🌎</span>
-              }
-            </div>
-
-            {/* Text */}
-            <div className="flex-1 text-left min-w-0">
-              {selectedCountry ? (
-                <>
-                  <p className="text-[0.9375rem] font-semibold text-[#0F172A] leading-tight">
-                    {selectedCountry.name}
-                  </p>
-                  <p className="text-[0.75rem] text-[#64748B]">
-                    {selectedCountry.currencyName ?? selectedCountry.currency}
-                  </p>
-                </>
-              ) : (
-                <p className="text-[0.9375rem] text-[#94A3B8]">Selecciona un país</p>
-              )}
-            </div>
-
-            <ChevronRight size={16} className="text-[#94A3B8] flex-shrink-0" />
-          </button>
+              <option value="" disabled>Selecciona un país</option>
+              {countries.map(c => (
+                <option key={c.code} value={c.code}>
+                  {c.name} ({c.currency})
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4E5A7A] pointer-events-none" />
+          </div>
         )}
       </div>
 
       {/* ── Bloque de cotización ── */}
       {showQuoteBlock && (
-        <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4">
+        <div className="bg-[#1A2340] border border-[#263050] rounded-2xl p-4">
 
           {status === 'connecting' && <QuoteSkeleton />}
 
@@ -561,7 +337,7 @@ export default function Step1Amount({ initialData, onNext }) {
               </p>
               <button
                 onClick={reconnect}
-                className="flex items-center gap-1 text-[0.75rem] text-[#64748B] hover:text-[#0F172A] transition-colors"
+                className="flex items-center gap-1 text-[0.75rem] text-[#C4CBD8] hover:text-white transition-colors"
               >
                 <RefreshCw size={13} /> Reintentar
               </button>
@@ -612,10 +388,10 @@ export default function Step1Amount({ initialData, onNext }) {
             <>
               {/* Recibe */}
               <div className="flex justify-between items-center mb-3">
-                <span className="text-[0.8125rem] text-[#64748B]">{destCountry?.name} recibe</span>
+                <span className="text-[0.8125rem] text-[#8A96B8]">{destCountry?.name} recibe</span>
                 <div className="flex items-center gap-2">
-                  {status === 'updating' && <Loader2 size={13} className="animate-spin text-[#94A3B8]" />}
-                  <span className="text-[1.125rem] font-bold text-[#233E58]">
+                  {status === 'updating' && <Loader2 size={13} className="animate-spin text-[#C4CBD8]" />}
+                  <span className="text-[1.125rem] font-bold text-[#22C55E]">
                     {formatDestAmount(quote.destinationAmount, quote.destinationCurrency)}
                   </span>
                 </div>
@@ -624,7 +400,7 @@ export default function Step1Amount({ initialData, onNext }) {
               {/* Tasa */}
               <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-[0.75rem] text-[#64748B]">Tasa aplicada</span>
+                  <span className="text-[0.75rem] text-[#8A96B8]">Tasa aplicada</span>
                   {isStale && (
                     <span
                       className="text-[0.5625rem] font-semibold text-[#F59E0B] bg-[#F59E0B1A] px-1.5 py-0.5 rounded"
@@ -636,14 +412,14 @@ export default function Step1Amount({ initialData, onNext }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusBadge status={status} />
-                  <span className="text-[0.8125rem] font-semibold text-[#0F172A]">
+                  <span className="text-[0.8125rem] font-semibold text-[#C4CBD8]">
                     1 {activeCurrency} = {Number(quote.exchangeRate).toFixed(4)} {quote.destinationCurrency}
                   </span>
                 </div>
               </div>
 
-              {/* Costo del envío — oculto en corredor manual (comisión absorbida en tasa) */}
-              {!quote.isManualCorridor && (() => {
+              {/* Costo del envío */}
+              {(() => {
                 const f = quote.fees || {}
                 const totalCosto =
                   (f.alytoCSpread || 0) + (f.fixedFee || 0) +
@@ -669,19 +445,19 @@ export default function Step1Amount({ initialData, onNext }) {
                     </button>
 
                     {feesExpanded && (
-                      <div className="mt-2 pt-3 border-t border-[#E2E8F0] space-y-2">
+                      <div className="mt-2 pt-3 border-t border-[#263050] space-y-2">
                         {comisionServicio > 0 && (
                           <div className="flex justify-between">
-                            <span className="text-[0.6875rem] text-[#94A3B8]">· Comisión de servicio</span>
-                            <span className="text-[0.6875rem] text-[#64748B]">
+                            <span className="text-[0.6875rem] text-[#4E5A7A]">· Comisión de servicio</span>
+                            <span className="text-[0.6875rem] text-[#8A96B8]">
                               {origin.symbol}{comisionServicio.toLocaleString('es-CL')} {activeCurrency}
                             </span>
                           </div>
                         )}
                         {feeProcesamiento > 0 && (
                           <div className="flex justify-between">
-                            <span className="text-[0.6875rem] text-[#94A3B8]">· Fee de procesamiento</span>
-                            <span className="text-[0.6875rem] text-[#64748B]">
+                            <span className="text-[0.6875rem] text-[#4E5A7A]">· Fee de procesamiento</span>
+                            <span className="text-[0.6875rem] text-[#8A96B8]">
                               {origin.symbol}{feeProcesamiento.toLocaleString('es-CL')} {activeCurrency}
                             </span>
                           </div>
@@ -692,14 +468,14 @@ export default function Step1Amount({ initialData, onNext }) {
                 )
               })()}
 
-              {!quote.isManualCorridor && <div className="my-3 border-t border-[#E2E8F0]" />}
+              <div className="my-3 border-t border-[#263050]" />
 
-              {/* Tasa BOB/USDT — solo para corredores Bolivia vía Vita (no manual) */}
-              {!quote.isManualCorridor && activeCurrency === 'BOB' && bobRateInfo && (
+              {/* Tasa BOB/USDT — solo para corredores Bolivia */}
+              {activeCurrency === 'BOB' && bobRateInfo && (
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[0.75rem] text-[#94A3B8]">Tasa usada:</span>
-                    <span className="text-[0.8125rem] font-semibold text-[#0F172A]">
+                    <span className="text-[0.75rem] text-[#4E5A7A]">Tasa usada:</span>
+                    <span className="text-[0.8125rem] font-semibold text-[#C4CBD8]">
                       1 {bobRateInfo.pair?.split('/')[1] ?? 'USDT'} = {Number(bobRateInfo.rate).toFixed(2)} BOB
                     </span>
                   </div>
@@ -709,7 +485,7 @@ export default function Step1Amount({ initialData, onNext }) {
                         ⚠️ Tasa desactualizada
                       </span>
                     ) : (
-                      <span className="text-[0.6875rem] text-[#94A3B8]">
+                      <span className="text-[0.6875rem] text-[#4E5A7A]">
                         {bobRateInfo.source ?? 'Binance P2P'} · {timeAgoShort(bobRateInfo.updatedAt)}
                       </span>
                     )}
@@ -726,21 +502,21 @@ export default function Step1Amount({ initialData, onNext }) {
                   </div>
                   <button
                     onClick={reconnect}
-                    className="flex items-center gap-1 text-[0.75rem] text-[#64748B] hover:text-[#0F172A] transition-colors"
+                    className="flex items-center gap-1 text-[0.75rem] text-[#C4CBD8] hover:text-white transition-colors"
                   >
                     <RefreshCw size={13} /> Actualizar
                   </button>
                 </div>
               ) : (
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-1.5 text-[#64748B]">
+                  <div className="flex items-center gap-1.5 text-[#8A96B8]">
                     <Clock size={13} />
-                    <span className="text-[0.75rem]">{quote.estimatedDelivery || getDeliveryTime(destCountry?.code, quote.payoutMethod)}</span>
+                    <span className="text-[0.75rem]">{quote.estimatedDelivery || '1 día hábil'}</span>
                   </div>
                   {countdown !== null && (
-                    <div className="flex items-center gap-1 text-[0.6875rem] text-[#94A3B8]">
+                    <div className="flex items-center gap-1 text-[0.6875rem] text-[#4E5A7A]">
                       <span>Cotización válida</span>
-                      <span className={`font-mono font-semibold ${countdown <= 30 ? 'text-[#F59E0B]' : 'text-[#64748B]'}`}>
+                      <span className={`font-mono font-semibold ${countdown <= 30 ? 'text-[#F59E0B]' : 'text-[#C4CBD8]'}`}>
                         {formatCountdown(countdown)}
                       </span>
                     </div>
@@ -758,22 +534,12 @@ export default function Step1Amount({ initialData, onNext }) {
         disabled={!canContinue}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
           canContinue
-            ? 'bg-[#233E58] text-white shadow-[0_4px_20px_rgba(35,62,88,0.25)] active:scale-[0.98]'
-            : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
+            ? 'bg-[#C4CBD8] text-[#0F1628] shadow-[0_4px_20px_rgba(196,203,216,0.3)] active:scale-[0.98]'
+            : 'bg-[#C4CBD840] text-[#4E5A7A] cursor-not-allowed'
         }`}
       >
         Continuar
       </button>
-
-      {/* ── Modal selector de país ── */}
-      {showCountryModal && (
-        <CountryPickerModal
-          countries={countries}
-          selected={selectedCountry}
-          onSelect={handleCountrySelect}
-          onClose={() => setShowCountryModal(false)}
-        />
-      )}
     </div>
   )
 }

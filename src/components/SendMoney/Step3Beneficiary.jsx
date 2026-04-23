@@ -5,13 +5,8 @@
  * Los campos se cargan desde GET /api/v1/payments/withdrawal-rules/:countryCode
  * y varían según el país destino seleccionado en el Step 1.
  *
- * Para corredores manuales Bolivia (isManualCorridor === true) se muestra
- * un formulario con toggle banco/QR:
- *   - bank_data: identidad + banco boliviano + N° cuenta + tipo cuenta
- *   - qr_image:  identidad + subida de imagen QR del beneficiario
- *
  * Características:
- *   - Skeleton de carga mientras llegan las reglas (solo flujo Vita)
+ *   - Skeleton de carga mientras llegan las reglas
  *   - Manejo de campos condicionales (campo "when")
  *   - Campos fc_* ocultos — se añaden automáticamente al submit
  *   - Validación onBlur por campo (required + min/max de longitud)
@@ -19,12 +14,9 @@
  *     visibles sean válidos
  */
 
-import { useState, useMemo, useRef, useEffect } from 'react'
-import { createPortal } from 'react-dom'
+import { useState, useMemo } from 'react'
 import { useWithdrawalRules } from '../../hooks/useWithdrawalRules'
-import { useContacts }         from '../../hooks/useContacts'
-import { Upload, X, Building2, QrCode, UserCheck, Star, ChevronRight, Check } from 'lucide-react'
-import { createContact } from '../../services/api'
+import { useAuth }             from '../../context/AuthContext'
 
 // ── Prefijos de teléfono por país ─────────────────────────────────────────────
 
@@ -33,56 +25,13 @@ const PHONE_PREFIXES = {
   MX: '+52', BR: '+55', CL: '+56', EC: '+593',
 }
 
-// ── Utilidades RUT chileno ────────────────────────────────────────────────────
-
-/**
- * Formatea dígitos brutos a formato RUT: "12.345.678-9"
- * Acepta cualquier input mientras el usuario escribe.
- */
-function formatRUT(input) {
-  const raw = input.replace(/[^0-9kK]/g, '').toUpperCase()
-  if (raw.length === 0) return ''
-  if (raw.length === 1) return raw
-
-  const verifier = raw.slice(-1)
-  const body     = raw.slice(0, -1)
-
-  let formatted = ''
-  for (let i = 0; i < body.length; i++) {
-    if (i > 0 && (body.length - i) % 3 === 0) formatted += '.'
-    formatted += body[i]
-  }
-  return `${formatted}-${verifier}`
-}
-
-/**
- * Valida un RUT chileno con el algoritmo Módulo 11.
- * Acepta "12.345.678-9" o "12345678-9".
- */
-function validateRUT(formatted) {
-  const raw      = formatted.replace(/\./g, '').replace(/-/g, '').toUpperCase()
-  if (raw.length < 2) return false
-  const body     = raw.slice(0, -1)
-  const verifier = raw.slice(-1)
-  if (!/^\d+$/.test(body)) return false
-
-  let sum = 0, mult = 2
-  for (let i = body.length - 1; i >= 0; i--) {
-    sum  += parseInt(body[i]) * mult
-    mult  = mult === 7 ? 2 : mult + 1
-  }
-  const rem      = sum % 11
-  const expected = rem === 0 ? '0' : rem === 1 ? 'K' : String(11 - rem)
-  return verifier === expected
-}
-
 // ── Esqueleto de carga ────────────────────────────────────────────────────────
 
 function FieldSkeleton() {
   return (
     <div className="flex flex-col gap-2">
-      <div className="h-3 w-24 rounded bg-[#E2E8F0] animate-pulse" />
-      <div className="h-12 w-full rounded-xl bg-[#E2E8F0] animate-pulse" />
+      <div className="h-3 w-24 rounded bg-[#1A2340] animate-pulse" />
+      <div className="h-12 w-full rounded-xl bg-[#1A2340] animate-pulse" />
     </div>
   )
 }
@@ -91,11 +40,11 @@ function LoadingSkeleton() {
   return (
     <div className="flex flex-col gap-4 px-4 pb-4">
       <div>
-        <div className="h-5 w-40 rounded bg-[#E2E8F0] animate-pulse mb-2" />
-        <div className="h-3 w-56 rounded bg-[#E2E8F0] animate-pulse" />
+        <div className="h-5 w-40 rounded bg-[#1A2340] animate-pulse mb-2" />
+        <div className="h-3 w-56 rounded bg-[#1A2340] animate-pulse" />
       </div>
       {Array.from({ length: 5 }).map((_, i) => <FieldSkeleton key={i} />)}
-      <div className="h-14 w-full rounded-2xl bg-[#E2E8F0] animate-pulse mt-2" />
+      <div className="h-14 w-full rounded-2xl bg-[#1A2340] animate-pulse mt-2" />
     </div>
   )
 }
@@ -117,137 +66,9 @@ function validateField(field, value) {
     if (field.type === 'phone' && !/^[+\d\s\-()\u00A0]{5,25}$/.test(v)) {
       return 'Número de teléfono inválido'
     }
-
-    // ── Validaciones específicas por tipo de campo ──────────────────────
-
-    // Numérico puro (type: 'numeric')
-    if (field.type === 'numeric' && v !== '') {
-      if (!/^\d+$/.test(v)) return 'Solo se permiten números'
-    }
-
-    // CLABE México — exactamente 18 dígitos
-    if (field.key === 'account_bank' && field.name === 'CLABE' && v !== '') {
-      if (!/^\d{18}$/.test(v)) return 'CLABE debe tener exactamente 18 dígitos'
-    }
-
-    // CBU / CVU Argentina — exactamente 22 dígitos
-    if (field.key === 'account_bank' &&
-        (field.name?.includes('CBU') || field.name?.includes('CVU')) && v !== '') {
-      if (!/^\d{22}$/.test(v)) return 'CBU/CVU debe tener exactamente 22 dígitos'
-    }
-
-    // Código interbancario Perú (CCI) — exactamente 20 dígitos
-    if (field.key === 'account_bank' && field.name?.includes('interbancario') && v !== '') {
-      if (!/^\d{20}$/.test(v)) return 'El código interbancario debe tener 20 dígitos'
-    }
-
-    // IBAN (Europa, Reino Unido, etc.) — mínimo 15 chars, empieza con 2 letras
-    if (field.key === 'account_bank' && field.name?.includes('IBAN') && v !== '') {
-      const clean = v.replace(/\s/g, '').toUpperCase()
-      if (!/^[A-Z]{2}/.test(clean)) return 'El IBAN debe comenzar con el código de país (ej. ES, GB, DE)'
-      if (clean.length < 15) return 'IBAN demasiado corto'
-      if (clean.length > 34) return 'IBAN demasiado largo'
-    }
-
-    // Routing Number USA — exactamente 9 dígitos
-    if (field.key === 'routing_number' && v !== '') {
-      if (!/^\d{9}$/.test(v)) return 'El routing number debe tener exactamente 9 dígitos'
-    }
-
-    // Sort Code Reino Unido — 6 dígitos (con o sin guiones: 20-00-00 o 200000)
-    if (field.key === 'swift_bic' && field.name === 'Sort Code' && v !== '') {
-      const clean = v.replace(/-/g, '').replace(/\s/g, '')
-      if (!/^\d{6}$/.test(clean)) return 'Sort Code debe tener 6 dígitos (ej. 20-00-00)'
-    }
-
-    // SWIFT / BIC — 8 u 11 caracteres alfanuméricos (excluyendo Sort Code)
-    if (field.key === 'swift_bic' && field.name !== 'Sort Code' &&
-        !field.name?.includes('ruta') && v !== '') {
-      const clean = v.replace(/\s/g, '').toUpperCase()
-      if (!/^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(clean)) {
-        return 'Código SWIFT/BIC inválido (8 u 11 caracteres alfanuméricos)'
-      }
-    }
-
-    // Número de ruta USA Wires (campo swift_bic en uswires) — 9 dígitos
-    if (field.key === 'swift_bic' && field.name?.includes('ruta') && v !== '') {
-      if (!/^\d{9}$/.test(v)) return 'El número de ruta debe tener exactamente 9 dígitos'
-    }
-
-    // CUIL / CUIT Argentina — exactamente 11 dígitos numéricos
-    if (field.key === 'beneficiary_document_number' &&
-        field.min === 11 && field.max === 11 && v !== '') {
-      if (!/^\d{11}$/.test(v)) return 'CUIL/CUIT debe tener exactamente 11 dígitos'
-    }
-
-    // NIT Colombia / Ecuador — mínimo 8 dígitos numéricos
-    if (field.key === 'beneficiary_document_number' &&
-        field.min >= 6 && !field.max && v !== '') {
-      if (!/^\d+$/.test(v)) return 'El documento solo puede contener números'
-    }
-
-    // Cuenta Costa Rica IBAN — exactamente 22 caracteres
-    if (field.key === 'account_bank' && field.min === 22 && field.max === 22 && v !== '') {
-      const clean = v.replace(/\s/g, '')
-      if (clean.length !== 22) return 'El número de cuenta debe tener exactamente 22 caracteres'
-    }
   }
 
   return null
-}
-
-// ── Campo de opción única (select con 1 sola opción → textbox) ────────────────
-// Emite el valor correcto al montar sin necesitar interacción del usuario.
-
-function SingleOptionField({ fieldKey, label, value: fixedValue, currentValue, baseInput, borderOk, onChange, onBlur }) {
-  useEffect(() => {
-    if (currentValue !== fixedValue) {
-      onChange(fieldKey, fixedValue)
-      onBlur(fieldKey)
-    }
-  // Solo al montar
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  return (
-    <input
-      type="text"
-      readOnly
-      value={label}
-      className={`${baseInput} cursor-default ${borderOk} opacity-80`}
-    />
-  )
-}
-
-// ── Campo RUT chileno ─────────────────────────────────────────────────────────
-
-function RutField({ fieldKey, value, error, required, onChange, onBlur, baseInput, borderOk, borderErr }) {
-  function handleChange(e) {
-    onChange(fieldKey, formatRUT(e.target.value))
-  }
-  return (
-    <div>
-      <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
-        RUT
-        {!required && (
-          <span className="ml-1 text-[0.625rem] normal-case font-normal text-[#94A3B8]">(opcional)</span>
-        )}
-      </label>
-      <input
-        type="text"
-        inputMode="text"
-        value={value}
-        onChange={handleChange}
-        onBlur={() => onBlur(fieldKey)}
-        placeholder="12.345.678-9"
-        maxLength={12}
-        className={`${baseInput} ${error ? borderErr : borderOk}`}
-      />
-      {error && (
-        <p className="mt-1 text-[0.6875rem] text-[#EF4444]">{error}</p>
-      )}
-    </div>
-  )
 }
 
 // ── Campo individual ──────────────────────────────────────────────────────────
@@ -255,73 +76,24 @@ function RutField({ fieldKey, value, error, required, onChange, onBlur, baseInpu
 function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
   const { key, label, type, required, options, placeholder } = field
 
-  const baseInput = `w-full bg-white border rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0F172A]
-    placeholder:text-[#CBD5E1] focus:outline-none transition-all`
-  const borderOk  = 'border-[#E2E8F0] focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820]'
+  const baseInput = `w-full bg-[#1A2340] border rounded-xl px-4 py-3.5 text-[0.9375rem] text-white
+    placeholder:text-[#4E5A7A] focus:outline-none transition-all`
+  const borderOk  = 'border-[#263050] focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820]'
   const borderErr = 'border-[#EF4444] shadow-[0_0_0_2px_#EF44441A]'
-
-  // Chile — tipo documento: campo único "rut" → ocultar visualmente pero mantener el auto-set
-  if (key === 'beneficiary_document_type' && type === 'select' && options?.length === 1 && countryCode === 'CL') {
-    return (
-      <div className="hidden">
-        <SingleOptionField
-          fieldKey={key}
-          label={options[0].label}
-          value={options[0].value}
-          currentValue={value}
-          baseInput={baseInput}
-          borderOk={borderOk}
-          onChange={onChange}
-          onBlur={onBlur}
-        />
-      </div>
-    )
-  }
-
-  // Chile — número de documento: campo RUT con formato XX.XXX.XXX-X
-  if (key === 'beneficiary_document_number' && countryCode === 'CL') {
-    return (
-      <RutField
-        fieldKey={key}
-        value={value}
-        error={error}
-        required={required}
-        onChange={onChange}
-        onBlur={onBlur}
-        baseInput={baseInput}
-        borderOk={borderOk}
-        borderErr={borderErr}
-      />
-    )
-  }
 
   return (
     <div>
-      <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
+      <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide mb-2">
         {label}
         {!required && (
-          <span className="ml-1 text-[0.625rem] normal-case font-normal text-[#94A3B8]">(opcional)</span>
+          <span className="ml-1 text-[0.625rem] normal-case font-normal text-[#4E5A7A]">(opcional)</span>
         )}
       </label>
 
-      {type === 'select' && options?.length === 1 ? (
-        // Un solo valor posible — mostrar como campo de texto no editable.
-        // El valor real (options[0].value) se emite en onChange al renderizar.
-        <SingleOptionField
-          fieldKey={key}
-          label={options[0].label}
-          value={options[0].value}
-          currentValue={value}
-          baseInput={baseInput}
-          borderOk={borderOk}
-          onChange={onChange}
-          onBlur={onBlur}
-        />
-
-      ) : type === 'select' ? (
+      {type === 'select' ? (
         <select
-          value={value ?? ''}
-          onChange={e => { onChange(key, e.target.value); onBlur(key) }}
+          value={value}
+          onChange={e => onChange(key, e.target.value)}
           onBlur={() => onBlur(key)}
           className={`${baseInput} appearance-none ${error ? borderErr : borderOk}`}
         >
@@ -333,8 +105,8 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
 
       ) : type === 'phone' ? (
         <div className="flex gap-2">
-          <span className="flex items-center px-3 bg-[#F1F5F9] border border-[#E2E8F0] rounded-xl
-            text-[0.875rem] text-[#64748B] flex-shrink-0 min-w-[64px] justify-center">
+          <span className="flex items-center px-3 bg-[#1A2340] border border-[#263050] rounded-xl
+            text-[0.875rem] text-[#8A96B8] flex-shrink-0 min-w-[64px] justify-center">
             {PHONE_PREFIXES[countryCode] ?? ''}
           </span>
           <input
@@ -351,12 +123,7 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
         <input
           type={type === 'email' ? 'email' : 'text'}
           value={value}
-          onChange={e => {
-            onChange(key, e.target.value)
-            // Para campos con formato exacto, validar en tiempo real
-            const exactLengthFields = ['account_bank', 'routing_number', 'swift_bic']
-            if (exactLengthFields.includes(key)) onBlur(key)
-          }}
+          onChange={e => onChange(key, e.target.value)}
           onBlur={() => onBlur(key)}
           placeholder={placeholder}
           className={`${baseInput} ${error ? borderErr : borderOk}`}
@@ -370,254 +137,28 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
   )
 }
 
-// ── Campos fijos para corredor manual Bolivia ─────────────────────────────────
-
-const BOLIVIA_FIELDS = [
-  { key: 'beneficiary_first_name', label: 'Nombre',     type: 'text',  required: true,  placeholder: 'Ej: Carlos',    min: 2, max: 50 },
-  { key: 'beneficiary_last_name',  label: 'Apellido',   type: 'text',  required: true,  placeholder: 'Ej: García',    min: 2, max: 50 },
-  { key: 'beneficiary_document',   label: 'CI Bolivia', type: 'text',  required: true,  placeholder: 'Ej: 12345678',  min: 5, max: 15 },
-  { key: 'beneficiary_phone',      label: 'Teléfono',   type: 'phone', required: false, placeholder: '70000000' },
-]
-
-const BOLIVIA_BANK_FIELDS = [
-  {
-    key: 'beneficiary_bank', label: 'Banco', type: 'select', required: true,
-    options: [
-      { value: 'Banco Bisa',              label: 'Banco Bisa' },
-      { value: 'Banco Mercantil Santa Cruz', label: 'Banco Mercantil Santa Cruz' },
-      { value: 'Banco Nacional de Bolivia', label: 'Banco Nacional de Bolivia' },
-      { value: 'Banco Unión',             label: 'Banco Unión' },
-      { value: 'Banco FIE',               label: 'Banco FIE' },
-      { value: 'Banco Ganadero',          label: 'Banco Ganadero' },
-      { value: 'Banco Económico',         label: 'Banco Económico' },
-      { value: 'Banco Sol',               label: 'Banco Sol' },
-      { value: 'Banco de Crédito de Bolivia', label: 'Banco de Crédito de Bolivia' },
-      { value: 'Banco Fortaleza',          label: 'Banco Fortaleza' },
-      { value: 'BancoSol',                label: 'BancoSol' },
-      { value: 'Banco Prodem',            label: 'Banco Prodem' },
-    ],
-  },
-  {
-    key: 'beneficiary_account_type', label: 'Tipo de cuenta', type: 'select', required: true,
-    options: [
-      { value: 'Caja de Ahorro',   label: 'Caja de Ahorro' },
-      { value: 'Cuenta Corriente', label: 'Cuenta Corriente' },
-    ],
-  },
-  { key: 'beneficiary_account_number', label: 'N° de cuenta', type: 'text', required: true, placeholder: 'Ej: 1234567890', min: 5, max: 25 },
-]
-
-// ── Toggle banco / QR ────────────────────────────────────────────────────────
-
-function PayoutTypeToggle({ value, onChange }) {
-  const opts = [
-    { id: 'bank_data',  icon: Building2, label: 'Cuenta bancaria' },
-    { id: 'qr_image',   icon: QrCode,    label: 'QR de cobro' },
-  ]
-  return (
-    <div className="flex gap-2">
-      {opts.map(o => {
-        const active = value === o.id
-        return (
-          <button
-            key={o.id}
-            type="button"
-            onClick={() => onChange(o.id)}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-[0.875rem] font-semibold transition-all ${
-              active
-                ? 'bg-[#233E581A] border-[#233E58] text-[#233E58]'
-                : 'bg-white border-[#E2E8F0] text-[#64748B] hover:border-[#233E5833]'
-            }`}
-          >
-            <o.icon size={16} />
-            {o.label}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-// ── QR upload ────────────────────────────────────────────────────────────────
-
-function QRUpload({ qrBase64, onQrChange }) {
-  const inputRef = useRef(null)
-
-  function handleFile(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (file.size > 5 * 1024 * 1024) return
-    const reader = new FileReader()
-    reader.onload = (ev) => onQrChange(ev.target.result)
-    reader.readAsDataURL(file)
-  }
-
-  function handleRemove() {
-    onQrChange(null)
-    if (inputRef.current) inputRef.current.value = ''
-  }
-
-  return (
-    <div className="space-y-3">
-      <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide">
-        QR del beneficiario
-      </label>
-
-      {qrBase64 ? (
-        <div className="relative inline-block">
-          <img
-            src={qrBase64}
-            alt="QR beneficiario"
-            className="w-[180px] h-[180px] rounded-xl bg-white p-1.5 object-contain border border-[#E2E8F0]"
-          />
-          <button
-            type="button"
-            onClick={handleRemove}
-            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[#EF4444] flex items-center justify-center text-white"
-          >
-            <X size={12} />
-          </button>
-        </div>
-      ) : (
-        <label className="flex flex-col items-center justify-center gap-2 w-full py-8 rounded-xl border border-dashed border-[#94A3B8] text-[#64748B] hover:text-[#233E58] hover:border-[#233E5833] transition-colors cursor-pointer">
-          <Upload size={20} />
-          <span className="text-[0.875rem]">Subir imagen del QR</span>
-          <span className="text-[0.6875rem] text-[#94A3B8]">JPG o PNG — máx. 5MB</span>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/jpeg,image/png"
-            className="hidden"
-            onChange={handleFile}
-          />
-        </label>
-      )}
-    </div>
-  )
-}
-
-// ── ContactPickerModal ────────────────────────────────────────────────────────
-
-function ContactPickerModal({ contacts, onSelect, onClose }) {
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center px-4"
-      style={{ background: 'rgba(0,0,0,0.65)' }}
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-    >
-      <div
-        className="w-full max-w-sm rounded-2xl flex flex-col"
-        style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', maxHeight: '70vh', boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[#E2E8F0] flex-shrink-0">
-          <p className="text-[1rem] font-bold text-[#0F172A]">Mis contactos</p>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center"
-          >
-            <X size={14} className="text-[#64748B]" />
-          </button>
-        </div>
-
-        {/* Lista */}
-        <div className="flex-1 overflow-y-auto pb-4">
-          {contacts.map((c, idx) => {
-            const name = c.nickname
-              ? c.nickname
-              : `${c.firstName} ${c.lastName}`.trim() || 'Sin nombre'
-            const bank = c.beneficiaryData?.beneficiary_bank
-                      ?? c.beneficiaryData?.beneficiary_bank_label
-                      ?? ''
-            const account = c.beneficiaryData?.beneficiary_account_number ?? ''
-
-            return (
-              <button
-                key={c._id}
-                onClick={() => onSelect(c)}
-                className={`w-full flex items-center gap-3 px-5 py-4 hover:bg-[#F8FAFC] active:bg-[#F1F5F9] transition-colors ${
-                  idx < contacts.length - 1 ? 'border-b border-[#E2E8F060]' : ''
-                }`}
-              >
-                <div className="w-10 h-10 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center flex-shrink-0">
-                  <span className="text-[0.875rem] font-bold text-[#233E58]">
-                    {name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex-1 text-left min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-[0.9375rem] font-semibold text-[#0F172A] truncate leading-tight">
-                      {name}
-                    </p>
-                    {c.isFavorite && (
-                      <Star size={12} className="text-[#F59E0B] flex-shrink-0" fill="#F59E0B" />
-                    )}
-                  </div>
-                  <p className="text-[0.75rem] text-[#94A3B8] truncate">
-                    {bank}{bank && account ? ' · ' : ''}{account}
-                  </p>
-                  {c.lastSentAt && (
-                    <p className="text-[0.6875rem] text-[#94A3B8]">
-                      Último: {c.lastAmount?.toLocaleString('es-CL')} {c.lastCurrency}
-                    </p>
-                  )}
-                </div>
-                <ChevronRight size={14} className="text-[#94A3B8] flex-shrink-0" />
-              </button>
-            )
-          })}
-        </div>
-      </div>
-    </div>,
-    document.body
-  )
-}
-
 // ── Componente principal ──────────────────────────────────────────────────────
 
-export default function Step3Beneficiary({ destinationCountry, onNext, isManualCorridor = false }) {
-  // Para corredores manuales Bolivia se pasa null al hook para evitar la llamada
-  // a la API de Vita (hook maneja null devolviendo rules:[], loading:false).
-  const { rules, loading, error: loadError, refetch } = useWithdrawalRules(
-    isManualCorridor ? null : destinationCountry,
-  )
-  // Bolivia manual: toggle between bank_data and qr_image payout types
-  const [payoutType, setPayoutType] = useState('bank_data')
-  const [qrBase64, setQrBase64]     = useState(null)
-
-  // Contactos guardados
-  const [showContactPicker, setShowContactPicker] = useState(false)
-  const [saveAsContact,     setSaveAsContact]     = useState(false)
-  const [contactNickname,   setContactNickname]   = useState('')
-
-  const { contacts } = useContacts(destinationCountry)
-  const hasContacts  = contacts.length > 0
-
-  // Campos activos: Bolivia simplificado + bank fields (if bank_data) o solo identidad (if qr_image)
-  const activeFields = isManualCorridor
-    ? (payoutType === 'bank_data'
-        ? [...BOLIVIA_FIELDS, ...BOLIVIA_BANK_FIELDS]
-        : BOLIVIA_FIELDS)
-    : rules
+export default function Step3Beneficiary({ destinationCountry, onNext }) {
+  const { rules, loading, error: loadError, refetch } = useWithdrawalRules(destinationCountry)
+  const { user } = useAuth()
 
   const [values,  setValues]  = useState({})
   const [touched, setTouched] = useState({})
 
-  // ── Campos visibles (aplicar lógica "when" — solo flujo Vita) ───────────────
-  const visibleFields = useMemo(() => {
-    // Bolivia: mostrar todos los campos estáticos (no tienen lógica "when" ni fc_*)
-    if (isManualCorridor) return activeFields
-    // Vita: excluir fc_* y aplicar condicionales "when"
-    return activeFields.filter(field => {
+  // ── Campos visibles (aplicar lógica "when") ───────────────────────────────
+  const visibleRules = useMemo(() => {
+    // Excluir campos fc_* — son internos y se añaden al submit
+    return rules.filter(field => {
       if (field.key.startsWith('fc_')) return false
       if (!field.when) return true
+      // Mostrar solo si el campo referenciado tiene el valor indicado
       const refValue = values[field.when.key] ?? ''
       const expected = field.when.value
       if (Array.isArray(expected)) return expected.includes(refValue)
       return refValue === expected
     })
-  }, [activeFields, isManualCorridor, values])
+  }, [rules, values])
 
   function handleChange(key, value) {
     setValues(prev => ({ ...prev, [key]: value }))
@@ -629,110 +170,34 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
 
   function getError(field) {
     if (!touched[field.key]) return null
-    // Chile: validación RUT con Módulo 11
-    if (destinationCountry === 'CL' && field.key === 'beneficiary_document_number') {
-      const v = (values[field.key] ?? '').trim()
-      if (field.required && v === '') return 'Campo requerido'
-      if (v !== '' && !validateRUT(v)) return 'RUT inválido'
-      return null
-    }
     return validateField(field, values[field.key])
   }
 
   // El formulario es válido cuando todos los campos requeridos visibles tienen valor correcto
-  const fieldsValid = useMemo(() =>
-    visibleFields.every(f => {
-      if (destinationCountry === 'CL' && f.key === 'beneficiary_document_number') {
-        const v = (values[f.key] ?? '').trim()
-        if (f.required && v === '') return false
-        if (v !== '' && !validateRUT(v)) return false
-        return true
-      }
-      return !validateField(f, values[f.key])
-    }),
-  [visibleFields, values, destinationCountry])
-
-  // For qr_image type, also require the QR to be uploaded
-  const allValid = isManualCorridor && payoutType === 'qr_image'
-    ? fieldsValid && !!qrBase64
-    : fieldsValid
-
-  function applyContact(contact) {
-    setValues(contact.beneficiaryData ?? {})
-    if (contact.formType === 'qr_image' && contact.qrImageBase64) {
-      setQrBase64(contact.qrImageBase64)
-      setPayoutType('qr_image')
-    } else if (contact.formType === 'bank_data') {
-      setPayoutType('bank_data')
-    }
-    const allTouched = Object.fromEntries(
-      Object.keys(contact.beneficiaryData ?? {}).map(k => [k, true])
-    )
-    setTouched(allTouched)
-    setShowContactPicker(false)
-  }
+  const allValid = useMemo(() =>
+    visibleRules.every(f => !validateField(f, values[f.key])),
+  [visibleRules, values])
 
   function handleNext() {
-    // Marcar siempre todos los campos visibles como tocados para mostrar errores
-    const allTouched = Object.fromEntries(visibleFields.map(f => [f.key, true]))
-    setTouched(prev => ({ ...prev, ...allTouched }))
+    if (!allValid) {
+      // Marcar todos los campos visibles como touched para revelar errores
+      const allTouched = Object.fromEntries(visibleRules.map(f => [f.key, true]))
+      setTouched(prev => ({ ...prev, ...allTouched }))
+      return
+    }
 
-    if (!allValid) return
-
+    // Construir objeto plano con todos los campos visibles (sin vacíos)
     const beneficiaryData = Object.fromEntries(
-      visibleFields
+      visibleRules
         .filter(f => (values[f.key] ?? '').trim() !== '')
-        .map(f => {
-          let val = values[f.key].trim()
-          // Chile: enviar RUT sin puntos → "12345678-9" (Vita no requiere el formato con puntos)
-          if (destinationCountry === 'CL' && f.key === 'beneficiary_document_number') {
-            val = val.replace(/\./g, '')
-          }
-          return [f.key, val]
-        }),
+        .map(f => [f.key, values[f.key].trim()]),
     )
 
-    // Guardar el label legible del banco para mostrarlo en Step4 (no se envía a Vita)
-    visibleFields.forEach(f => {
-      if (f.type === 'select' && f.options && values[f.key]) {
-        const opt = f.options.find(o => o.value === values[f.key])
-        if (opt) beneficiaryData[`${f.key}_label`] = opt.label
-      }
-    })
+    // Los campos fc_* se añaden automáticamente desde el perfil del usuario
+    // El backend los incluirá en el withdrawal (fc_customer_type, fc_legal_name, etc.)
+    // No se envían desde el frontend para evitar manipulación
 
-    // Bolivia manual: include payout type and QR image if applicable
-    if (isManualCorridor) {
-      beneficiaryData.type = payoutType
-      if (payoutType === 'qr_image' && qrBase64) {
-        beneficiaryData.qr_image = qrBase64
-      }
-    }
-
-    console.log('[Step3] beneficiaryData enviado:', JSON.stringify({
-      ...beneficiaryData,
-      qr_image: beneficiaryData.qr_image ? '[base64]' : undefined,
-    }))
-
-    // Guardar contacto en background si el checkbox está activo
-    if (saveAsContact) {
-      let formType = 'vita'
-      if (isManualCorridor && payoutType === 'qr_image') formType = 'qr_image'
-      else if (isManualCorridor) formType = 'bank_data'
-
-      createContact({
-        nickname:            contactNickname.trim(),
-        firstName:           beneficiaryData.beneficiary_first_name ?? '',
-        lastName:            beneficiaryData.beneficiary_last_name  ?? '',
-        destinationCountry,
-        formType,
-        beneficiaryData,
-        qrImageBase64:   formType === 'qr_image' ? qrBase64 : null,
-        qrImageMimetype: formType === 'qr_image' ? 'image/png' : null,
-      }).catch(err => {
-        console.warn('[Step3] No se pudo guardar contacto:', err.message)
-      })
-    }
-
+    console.log('[Step3] beneficiaryData enviado:', JSON.stringify(beneficiaryData))
     onNext({ beneficiaryData })
   }
 
@@ -744,19 +209,19 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
     return (
       <div className="flex flex-col gap-4 px-4 pb-4">
         <div>
-          <h2 className="text-[1.125rem] font-bold text-[#0F172A]">¿A quién le envías?</h2>
-          <p className="text-[0.8125rem] text-[#64748B] mt-0.5">Ingresa los datos bancarios del beneficiario</p>
+          <h2 className="text-[1.125rem] font-bold text-white">¿A quién le envías?</h2>
+          <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">Ingresa los datos bancarios del beneficiario</p>
         </div>
 
-        <div className="bg-[#EF44441A] border border-[#EF444433] rounded-2xl p-4 flex flex-col gap-3">
-          <p className="text-[0.875rem] text-[#EF4444]">
+        <div className="bg-[#EF44441A] border border-[#EF44441A] rounded-2xl p-4 flex flex-col gap-3">
+          <p className="text-[0.875rem] text-[#F87171]">
             No se pudieron cargar los campos del formulario.
           </p>
-          <p className="text-[0.75rem] text-[#64748B]">{loadError}</p>
+          <p className="text-[0.75rem] text-[#8A96B8]">{loadError}</p>
           <button
             onClick={refetch}
-            className="self-start px-4 py-2 rounded-xl border border-[#233E5833] text-[0.875rem]
-              font-semibold text-[#233E58] hover:bg-[#233E581A] transition-colors"
+            className="self-start px-4 py-2 rounded-xl border border-[#C4CBD833] text-[0.875rem]
+              font-semibold text-[#C4CBD8] hover:bg-[#C4CBD81A] transition-colors"
           >
             Reintentar
           </button>
@@ -765,55 +230,21 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
     )
   }
 
-  // ── Formulario ───────────────────────────────────────────────────────────
+  // ── Formulario dinámico ───────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col gap-4 px-4 pb-4">
 
       {/* Título */}
       <div>
-        <h2 className="text-[1.125rem] font-bold text-[#0F172A]">¿A quién le envías?</h2>
-        <p className="text-[0.8125rem] text-[#64748B] mt-0.5">
-          {isManualCorridor
-            ? 'Ingresa los datos del beneficiario en Bolivia'
-            : 'Ingresa los datos bancarios del beneficiario'}
+        <h2 className="text-[1.125rem] font-bold text-white">¿A quién le envías?</h2>
+        <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
+          Ingresa los datos bancarios del beneficiario
         </p>
       </div>
 
-      {/* Botón "Mis contactos" — solo si hay contactos guardados para este país */}
-      {hasContacts && (
-        <button
-          type="button"
-          onClick={() => setShowContactPicker(true)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-white border border-[#E2E8F0] rounded-xl hover:border-[#233E5833] transition-colors"
-        >
-          <div className="flex items-center gap-2.5">
-            <UserCheck size={16} className="text-[#233E58]" />
-            <span className="text-[0.875rem] font-semibold text-[#0F172A]">
-              Usar contacto guardado
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[0.75rem] text-[#94A3B8]">
-              {contacts.length} contacto{contacts.length !== 1 ? 's' : ''}
-            </span>
-            <ChevronRight size={14} className="text-[#94A3B8]" />
-          </div>
-        </button>
-      )}
-
-      {/* Toggle banco / QR (solo Bolivia manual) */}
-      {isManualCorridor && (
-        <div className="space-y-2">
-          <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide">
-            ¿Cómo recibe el pago?
-          </label>
-          <PayoutTypeToggle value={payoutType} onChange={setPayoutType} />
-        </div>
-      )}
-
-      {/* Campos */}
-      {visibleFields.map(field => (
+      {/* Campos dinámicos */}
+      {visibleRules.map(field => (
         <DynamicField
           key={field.key}
           field={field}
@@ -825,69 +256,26 @@ export default function Step3Beneficiary({ destinationCountry, onNext, isManualC
         />
       ))}
 
-      {/* QR upload (solo si payoutType === 'qr_image') */}
-      {isManualCorridor && payoutType === 'qr_image' && (
-        <QRUpload qrBase64={qrBase64} onQrChange={setQrBase64} />
-      )}
-
-      {/* Guardar como contacto */}
-      <div className="space-y-2">
-        <label className="flex items-center gap-3 cursor-pointer">
-          <button
-            type="button"
-            onClick={() => setSaveAsContact(v => !v)}
-            className={`w-5 h-5 rounded flex items-center justify-center border transition-colors flex-shrink-0 ${
-              saveAsContact
-                ? 'bg-[#233E58] border-[#233E58]'
-                : 'bg-white border-[#E2E8F0]'
-            }`}
-          >
-            {saveAsContact && <Check size={12} className="text-white" />}
-          </button>
-          <span className="text-[0.875rem] text-[#0F172A]">
-            Guardar como contacto
-          </span>
-        </label>
-
-        {saveAsContact && (
-          <input
-            type="text"
-            value={contactNickname}
-            onChange={e => setContactNickname(e.target.value)}
-            placeholder='Apodo (opcional) — ej: "Mamá", "Pedro trabajo"'
-            className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58] transition-colors"
-          />
-        )}
-      </div>
-
       {/* Nota de seguridad */}
-      <div className="flex items-start gap-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3.5 py-3">
+      <div className="flex items-start gap-2.5 bg-[#1A2340] rounded-xl px-3.5 py-3">
         <span className="text-base flex-shrink-0">🔒</span>
-        <p className="text-[0.6875rem] text-[#64748B] leading-relaxed">
+        <p className="text-[0.6875rem] text-[#8A96B8] leading-relaxed">
           Tus datos están cifrados y protegidos. Solo los usamos para procesar este pago.
         </p>
       </div>
 
-      {/* Botón continuar — nunca disabled para que handleNext muestre todos los errores */}
+      {/* Botón continuar */}
       <button
         onClick={handleNext}
+        disabled={!allValid}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
           allValid
-            ? 'bg-[#233E58] text-white shadow-[0_4px_20px_rgba(35,62,88,0.25)] active:scale-[0.98]'
-            : 'bg-[#E2E8F0] text-[#94A3B8]'
+            ? 'bg-[#C4CBD8] text-[#0F1628] shadow-[0_4px_20px_rgba(196,203,216,0.3)] active:scale-[0.98]'
+            : 'bg-[#C4CBD840] text-[#4E5A7A] cursor-not-allowed'
         }`}
       >
         Continuar
       </button>
-
-      {/* Modal selector de contactos */}
-      {showContactPicker && (
-        <ContactPickerModal
-          contacts={contacts}
-          onSelect={applyContact}
-          onClose={() => setShowContactPicker(false)}
-        />
-      )}
     </div>
   )
 }

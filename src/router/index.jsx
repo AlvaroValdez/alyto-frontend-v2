@@ -26,7 +26,6 @@ import PublicOnlyRoute from './guards/PublicOnlyRoute'
 
 // ── Layouts ──────────────────────────────────────────────────────────────────
 import AuthLayout  from '../components/Layout/AuthLayout'
-import AppLayout   from '../components/Layout/AppLayout'
 import AdminLayout from '../components/Layout/AdminLayout'
 
 // ── Páginas auth (públicas) ───────────────────────────────────────────────────
@@ -37,7 +36,7 @@ import ResetPasswordPage  from '../pages/Auth/ResetPasswordPage'
 
 // ── Páginas privadas ─────────────────────────────────────────────────────────
 import DashboardPage     from '../pages/Dashboard/DashboardPage'
-import SendMoneyFlow     from '../pages/send-money/SendMoneyFlow'
+import SendMoneyPage     from '../pages/SendMoney/SendMoneyPage'
 import TransactionsPage  from '../pages/Transactions/TransactionsPage'
 import TransactionDetail from '../pages/Transactions/TransactionDetail'
 import ProfilePage       from '../pages/Profile/ProfilePage'
@@ -51,16 +50,7 @@ import AnalyticsPage  from '../pages/Admin/Analytics/AnalyticsPage'
 import FundingPage    from '../pages/Admin/Funding/FundingPage'
 import KybListPage    from '../pages/Admin/Kyb/KybListPage'
 import KybDetailPage  from '../pages/Admin/Kyb/KybDetailPage'
-import SRLConfigPage      from '../pages/Admin/SRLConfig/SRLConfigPage'
-import SpAConfigPage      from '../pages/Admin/SpAConfig/SpAConfigPage'
-import WalletPage         from '../pages/Wallet/WalletPage'
-import WalletQRScreen     from '../pages/Wallet/WalletQRScreen'
-import WalletAdminPage    from '../pages/Admin/Wallet/WalletAdminPage'
-import ReclamosPage       from '../pages/Reclamos/ReclamosPage'
-import ContactsPage       from '../pages/Contacts/ContactsPage'
-import NotificationsPage  from '../pages/Notifications/NotificationsPage'
-import ReclamosAdminPage  from '../pages/Admin/Reclamos/ReclamosAdminPage'
-import SanctionsPage      from '../pages/Admin/Sanctions/SanctionsPage'
+import SRLConfigPage  from '../pages/Admin/SRLConfig/SRLConfigPage'
 
 // ── Páginas KYB (usuario) ─────────────────────────────────────────────────────
 import KybPage        from '../pages/Kyb/KybPage'
@@ -104,57 +94,84 @@ export default function AppRouter() {
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       </Route>
 
-      {/* ── Rutas privadas con AppLayout (header + bottom nav persistentes) ── */}
-      <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+      {/* ── Dashboard ───────────────────────────────────────────────────── */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <DashboardPage />
+        </ProtectedRoute>
+      } />
 
-        {/* Dashboard */}
-        <Route path="/dashboard" element={<DashboardPage />} />
+      {/* ── KYC — verificación de identidad ─────────────────────────────── */}
+      <Route path="/kyc" element={
+        <ProtectedRoute>
+          <KycPage />
+        </ProtectedRoute>
+      } />
 
-        {/* KYC — verificación de identidad */}
-        <Route path="/kyc"        element={<KycPage />} />
-        <Route path="/kyc/return" element={<KycReturnPage />} />
+      {/* ── KYC return — Stripe redirige aquí tras verificación móvil ───── */}
+      <Route path="/kyc/return" element={
+        <ProtectedRoute>
+          <KycReturnPage />
+        </ProtectedRoute>
+      } />
 
-        {/* Enviar dinero — flujo 3 pasos v1.1 (docs/SEND_MONEY_FLOW.md §2) */}
-        <Route path="/send/*" element={<KycRoute><SendMoneyFlow /></KycRoute>} />
-        <Route path="/send"   element={<Navigate to="/send/amount" replace />} />
+      {/* ── Enviar dinero (requiere KYC aprobado) ────────────────────────── */}
+      <Route path="/send" element={
+        <ProtectedRoute>
+          <KycRoute>
+            <SendMoneyPage />
+          </KycRoute>
+        </ProtectedRoute>
+      } />
 
-        {/* Historial */}
-        <Route path="/transactions"                element={<TransactionsPage />} />
-        <Route path="/transactions/:transactionId" element={<TransactionDetail />} />
+      {/* ── Historial ────────────────────────────────────────────────────── */}
+      <Route path="/transactions" element={
+        <ProtectedRoute>
+          <TransactionsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/transactions/:transactionId" element={
+        <ProtectedRoute>
+          <TransactionDetail />
+        </ProtectedRoute>
+      } />
 
-        {/* Perfil */}
-        <Route path="/profile" element={<ProfilePage />} />
+      {/* ── Perfil ───────────────────────────────────────────────────────── */}
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <ProfilePage />
+        </ProtectedRoute>
+      } />
 
-        {/* KYB — Cuenta Business */}
-        <Route path="/kyb"        element={<KybPage />} />
-        <Route path="/kyb/apply"  element={<KybForm />} />
-        <Route path="/kyb/status" element={<KybStatusPage />} />
+      {/* ── KYB — Cuenta Business ────────────────────────────────────────── */}
+      <Route path="/kyb" element={
+        <ProtectedRoute>
+          <KybPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/kyb/apply" element={
+        <ProtectedRoute>
+          <KybForm />
+        </ProtectedRoute>
+      } />
+      <Route path="/kyb/status" element={
+        <ProtectedRoute>
+          <KybStatusPage />
+        </ProtectedRoute>
+      } />
 
-        {/* Wallet BOB — Exclusivo SRL Bolivia */}
-        <Route path="/wallet" element={
-          <ProtectedRoute requiredEntity="SRL"><WalletPage /></ProtectedRoute>
-        } />
-        <Route path="/wallet/qr" element={
-          <ProtectedRoute requiredEntity="SRL"><WalletQRScreen /></ProtectedRoute>
-        } />
+      {/* ── Notificaciones (futuro) ────────────────────────────────────── */}
+      <Route path="/notifications" element={
+        <ProtectedRoute>
+          <Navigate to="/dashboard" replace />
+        </ProtectedRoute>
+      } />
 
-        {/* Reclamos PRILI */}
-        <Route path="/reclamos" element={<ReclamosPage />} />
-
-        {/* Agenda de Contactos */}
-        <Route path="/contacts" element={<ContactsPage />} />
-
-        {/* Notificaciones */}
-        <Route path="/notifications" element={<NotificationsPage />} />
-
-        {/* Plataforma Institucional LLC */}
-        <Route path="/institutional" element={<CorporateView />} />
-
-      </Route>
-
-      {/* ── Payment Success — ruta pública (Fintoc redirect) ─────────────── */}
+      {/* ── Payment Success — Fintoc redirige aquí tras completar el pago ─── */}
+      {/* Ruta pública: el usuario llega aquí desde Fintoc, sin sesión activa */}
       <Route path="/payment-success" element={<PaymentSuccessPage />} />
-      <Route path="/success"         element={<PaymentSuccessPage />} />
+      {/* Alias /success para redirect_url de Fintoc */}
+      <Route path="/success" element={<PaymentSuccessPage />} />
 
       {/* ── Rutas legacy — mantener compatibilidad ───────────────────────── */}
       <Route path="/transfer" element={
@@ -196,11 +213,6 @@ export default function AppRouter() {
         <Route path="/admin/kyb"             element={<KybListPage />}     />
         <Route path="/admin/kyb/:businessId" element={<KybDetailPage />}   />
         <Route path="/admin/srl-config"      element={<SRLConfigPage />}   />
-        <Route path="/admin/spa-config"      element={<SpAConfigPage />}   />
-        <Route path="/admin/wallet"          element={<WalletAdminPage />}    />
-        <Route path="/admin/reclamos"        element={<ReclamosAdminPage />}  />
-        <Route path="/admin/sanctions"       element={<SanctionsPage />}       />
-        <Route path="/admin/notifications"   element={<NotificationsPage />}   />
       </Route>
 
       {/* ── 404 ─────────────────────────────────────────────────────────── */}

@@ -5,6 +5,34 @@
 
 ---
 
+## 2026-04-22 — Send Money Flow v1.0 / v1.1 REVERTED
+
+**Requested by:** Alvaro Valdez (Founder)
+**Reason:** v1.0 (3-step consolidation) and v1.1 attempts broke the original working flow.
+The 5-step flow (Step1-6) with Vita dynamic beneficiary forms and OwlPay destinations
+is the correct operational model. The invented QR-in-beneficiary-step (isManualCorridor
+toggle) was not the right abstraction.
+
+**Action taken:**
+- Reverted `src/components/SendMoney/*` to commit `586d82f` (2026-03-26 15:03)
+- Manually applied OwlPay country metadata from `f50e4ca` (Step1Amount.jsx only)
+- Deleted `src/pages/send-money/` directory (all v1.0 / v1.1 components)
+- Deleted `docs/SEND_MONEY_FLOW.md` (spec was based on incorrect structure)
+- Restored `src/router/index.jsx` to original `/send` → `SendMoneyPage` route
+- Backup branch `flow-revert-backup` created before changes
+
+**Lesson:** Document the working flow BEFORE proposing architectural changes.
+
+**Current state:** 5-step flow via `SendMoneyPage` (src/pages/SendMoney/SendMoneyPage.jsx):
+1. Step1Amount       — ¿Cuánto envías y a dónde? (Vita quote + OwlPay countries)
+2. Step2PayinMethod  — ¿Cómo pagas?
+3. Step3Beneficiary  — ¿A quién le envías? (Vita dynamic form per country)
+4. Step4Confirm      — Confirma el envío (calls initPayment without proof)
+5. Step5PaymentWidget — Widget + uploadComprobante separado
+6. Step6Success      — ¡Tu dinero está en camino!
+
+---
+
 ## 2026-04-22 — Send Money Flow v1.1 (CORRECTED STRUCTURE)
 
 **Requested by:** Alvaro Valdez (Founder)
