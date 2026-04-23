@@ -9,8 +9,8 @@
  * - Contador regresivo de la cotización.
  */
 
-import { useState, useEffect } from 'react'
-import { ChevronDown, ChevronUp, Clock, AlertCircle, RefreshCw, WifiOff, Loader2 } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { ChevronDown, ChevronUp, Clock, AlertCircle, RefreshCw, WifiOff, Loader2, Search, X, ChevronRight } from 'lucide-react'
 import { useQuoteSocket } from '../../hooks/useQuoteSocket'
 import { useAuth }        from '../../context/AuthContext'
 import { listUserCorridors, getCurrentExchangeRates } from '../../services/paymentsService'
@@ -154,6 +154,199 @@ function StatusBadge({ status }) {
 
 // ── Step1Amount ───────────────────────────────────────────────────────────────
 
+// ── CountryPickerModal ────────────────────────────────────────────────────────
+
+function CountryPickerModal({ countries, selected, onSelect, onClose }) {
+  const [query, setQuery]   = useState('')
+  const inputRef            = useRef(null)
+
+  useEffect(() => {
+    inputRef.current?.focus()
+    // Bloquear scroll del body mientras el modal está abierto
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  const filtered = query.trim()
+    ? countries.filter(c =>
+        c.name.toLowerCase().includes(query.toLowerCase()) ||
+        c.currency.toLowerCase().includes(query.toLowerCase()) ||
+        c.code.toLowerCase().includes(query.toLowerCase())
+      )
+    : countries
+
+  return (
+    /* Overlay */
+    <div
+      style={{
+        position:        'fixed',
+        inset:           0,
+        zIndex:          200,
+        background:      'rgba(13,31,60,0.45)',
+        backdropFilter:  'blur(4px)',
+        display:         'flex',
+        alignItems:      'flex-end',
+        justifyContent:  'center',
+      }}
+      onClick={onClose}
+    >
+      {/* Panel */}
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width:           '100%',
+          maxWidth:        480,
+          background:      '#FFFFFF',
+          borderRadius:    '24px 24px 0 0',
+          maxHeight:       '80dvh',
+          display:         'flex',
+          flexDirection:   'column',
+          boxShadow:       '0 -8px 40px rgba(13,31,60,0.18)',
+        }}
+      >
+        {/* Handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 4 }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E2E8F0' }} />
+        </div>
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px 12px' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0D1F3C', margin: 0 }}>
+            País de destino
+          </h3>
+          <button
+            onClick={onClose}
+            style={{
+              width: 32, height: 32, borderRadius: '50%',
+              background: '#F4F6FA', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <X size={16} color="#4A5568" />
+          </button>
+        </div>
+
+        {/* Buscador */}
+        <div style={{ padding: '0 16px 12px' }}>
+          <div style={{ position: 'relative' }}>
+            <Search
+              size={16}
+              color="#94A3B8"
+              style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+            />
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Buscar país o moneda…"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              style={{
+                width:        '100%',
+                boxSizing:    'border-box',
+                paddingLeft:  40,
+                paddingRight: 14,
+                paddingTop:   10,
+                paddingBottom:10,
+                borderRadius: 12,
+                border:       '1px solid #E2E8F0',
+                background:   '#F4F6FA',
+                fontSize:     '0.9375rem',
+                color:        '#0D1F3C',
+                outline:      'none',
+                fontFamily:   "'Manrope', sans-serif",
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Lista de países */}
+        <div style={{ overflowY: 'auto', padding: '0 16px', paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+          {filtered.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '32px 0', color: '#94A3B8', fontSize: '0.875rem' }}>
+              Sin resultados para "{query}"
+            </div>
+          ) : (
+            filtered.map(c => {
+              const isActive = selected?.code === c.code
+              return (
+                <button
+                  key={c.code}
+                  onClick={() => { onSelect(c); onClose() }}
+                  style={{
+                    display:       'flex',
+                    alignItems:    'center',
+                    gap:           14,
+                    width:         '100%',
+                    padding:       '12px 14px',
+                    borderRadius:  14,
+                    background:    isActive ? 'rgba(29,52,97,0.06)' : 'transparent',
+                    border:        isActive ? '1.5px solid rgba(29,52,97,0.20)' : '1.5px solid transparent',
+                    cursor:        'pointer',
+                    marginBottom:  4,
+                    textAlign:     'left',
+                    fontFamily:    "'Manrope', sans-serif",
+                    transition:    'background 0.12s',
+                  }}
+                >
+                  {/* Bandera en círculo */}
+                  <div
+                    style={{
+                      width:          48,
+                      height:         48,
+                      borderRadius:   '50%',
+                      background:     '#F4F6FA',
+                      border:         '1px solid #E2E8F0',
+                      display:        'flex',
+                      alignItems:     'center',
+                      justifyContent: 'center',
+                      fontSize:       '1.625rem',
+                      flexShrink:     0,
+                    }}
+                  >
+                    {c.flag}
+                  </div>
+
+                  {/* Nombre y moneda */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 600, color: '#0D1F3C', lineHeight: 1.2 }}>
+                      {c.name}
+                    </p>
+                    <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#4A5568' }}>
+                      {c.currency} · {c.code}
+                    </p>
+                  </div>
+
+                  {/* Check activo */}
+                  {isActive && (
+                    <div
+                      style={{
+                        width:          22,
+                        height:         22,
+                        borderRadius:   '50%',
+                        background:     '#1D3461',
+                        display:        'flex',
+                        alignItems:     'center',
+                        justifyContent: 'center',
+                        flexShrink:     0,
+                      }}
+                    >
+                      <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                        <path d="M1 4.5L4 7.5L10 1.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                  )}
+                </button>
+              )
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Step1Amount ───────────────────────────────────────────────────────────────
+
 export default function Step1Amount({ initialData, onNext }) {
   const { user } = useAuth()
   const origin   = ENTITY_ORIGIN[user?.legalEntity] ?? ENTITY_ORIGIN.SpA
@@ -168,6 +361,7 @@ export default function Step1Amount({ initialData, onNext }) {
   const [corridorsError,   setCorridorsError]   = useState(null)
   const [feesExpanded,     setFeesExpanded]      = useState(false)
   const [bobRateInfo,      setBobRateInfo]       = useState(null)  // { rate, source, updatedAt }
+  const [showCountryModal, setShowCountryModal]  = useState(false)
 
   // ── Cargar tasa BOB/USDT cuando el origen es Bolivia ─────────────────────
 
@@ -221,11 +415,6 @@ export default function Step1Amount({ initialData, onNext }) {
     const num    = parseInt(digits, 10) || 0
     setRawAmount(num)
     setDisplayAmount(num ? num.toLocaleString('es-CL') : '')
-  }
-
-  function handleCountryChange(e) {
-    const found = countries.find(c => c.code === e.target.value)
-    setSelectedCountry(found || null)
   }
 
   const activeCurrency = quote?.originCurrency ?? origin.currency
@@ -285,8 +474,7 @@ export default function Step1Amount({ initialData, onNext }) {
         </label>
 
         {corridorsLoading ? (
-          /* Skeleton del selector */
-          <div className="h-14 rounded-xl bg-white border border-[#E2E8F0] animate-pulse" />
+          <div className="h-[60px] rounded-xl bg-white border border-[#E2E8F0] animate-pulse" />
         ) : corridorsError ? (
           <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
             <AlertCircle size={14} className="text-[#EF4444] flex-shrink-0" />
@@ -294,32 +482,66 @@ export default function Step1Amount({ initialData, onNext }) {
           </div>
         ) : countries.length === 0 ? (
           <div className="px-4 py-4 rounded-xl bg-white border border-[#E2E8F0] text-center">
-            <p className="text-[0.8125rem] text-[#4A5568]">
-              No hay destinos disponibles para tu cuenta.
-            </p>
-            <p className="text-[0.75rem] text-[#94A3B8] mt-1">
-              Contáctanos para más información.
-            </p>
+            <p className="text-[0.8125rem] text-[#4A5568]">No hay destinos disponibles para tu cuenta.</p>
+            <p className="text-[0.75rem] text-[#94A3B8] mt-1">Contáctanos para más información.</p>
           </div>
         ) : (
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl pointer-events-none">
-              {selectedCountry?.flag || '🌎'}
-            </span>
-            <select
-              value={selectedCountry?.code || ''}
-              onChange={handleCountryChange}
-              className="w-full appearance-none bg-white border border-[#E2E8F0] rounded-xl pl-11 pr-10 py-4 text-[#0D1F3C] text-[0.9375rem] font-semibold focus:outline-none focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#1D346120] transition-all cursor-pointer"
+          /* Botón trigger del modal */
+          <button
+            type="button"
+            onClick={() => setShowCountryModal(true)}
+            style={{
+              width:          '100%',
+              display:        'flex',
+              alignItems:     'center',
+              gap:            12,
+              padding:        '10px 16px',
+              background:     '#FFFFFF',
+              border:         showCountryModal ? '1.5px solid #1D3461' : '1px solid #E2E8F0',
+              borderRadius:   14,
+              cursor:         'pointer',
+              transition:     'border-color 0.15s',
+              boxShadow:      showCountryModal ? '0 0 0 3px rgba(29,52,97,0.08)' : 'none',
+              fontFamily:     "'Manrope', sans-serif",
+              textAlign:      'left',
+            }}
+          >
+            {/* Bandera en círculo */}
+            <div
+              style={{
+                width:          44,
+                height:         44,
+                borderRadius:   '50%',
+                background:     selectedCountry ? '#F4F6FA' : '#F4F6FA',
+                border:         '1px solid #E2E8F0',
+                display:        'flex',
+                alignItems:     'center',
+                justifyContent: 'center',
+                fontSize:       '1.5rem',
+                flexShrink:     0,
+              }}
             >
-              <option value="" disabled>Selecciona un país</option>
-              {countries.map(c => (
-                <option key={c.code} value={c.code}>
-                  {c.name} ({c.currency})
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
-          </div>
+              {selectedCountry?.flag || '🌎'}
+            </div>
+
+            {/* Texto */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {selectedCountry ? (
+                <>
+                  <p style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 700, color: '#0D1F3C', lineHeight: 1.2 }}>
+                    {selectedCountry.name}
+                  </p>
+                  <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#4A5568' }}>
+                    {selectedCountry.currency} · {selectedCountry.code}
+                  </p>
+                </>
+              ) : (
+                <p style={{ margin: 0, fontSize: '0.9375rem', color: '#94A3B8' }}>Selecciona un país</p>
+              )}
+            </div>
+
+            <ChevronRight size={16} color="#94A3B8" style={{ flexShrink: 0 }} />
+          </button>
         )}
       </div>
 
@@ -534,12 +756,22 @@ export default function Step1Amount({ initialData, onNext }) {
         disabled={!canContinue}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
           canContinue
-            ? 'bg-[#1D3461] text-[#0F1628] shadow-[0_4px_20px_rgba(29,52,97,0.25)] active:scale-[0.98]'
+            ? 'bg-[#1D3461] text-white shadow-[0_4px_20px_rgba(29,52,97,0.25)] active:scale-[0.98]'
             : 'bg-[#1D346140] text-[#94A3B8] cursor-not-allowed'
         }`}
       >
         Continuar
       </button>
+
+      {/* ── Modal selector de país ── */}
+      {showCountryModal && (
+        <CountryPickerModal
+          countries={countries}
+          selected={selectedCountry}
+          onSelect={setSelectedCountry}
+          onClose={() => setShowCountryModal(false)}
+        />
+      )}
     </div>
   )
 }
