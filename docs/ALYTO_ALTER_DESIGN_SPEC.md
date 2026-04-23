@@ -52,7 +52,7 @@
   /* ── Borders ── */
   --color-border:         #E8EDF5;  /* Subtle card borders */
   --color-border-input:   #D1D9E8;  /* Input borders */
-  --color-border-focus:   #1D9E75;  /* Focus ring — teal */
+  --color-border-focus:   #0D1F3C;  /* Focus ring — navy (primary brand) */
 
   /* ── Shadows ── */
   --shadow-card:    0 1px 4px rgba(13, 31, 60, 0.06), 0 4px 16px rgba(13, 31, 60, 0.06);
@@ -101,6 +101,29 @@
   --spacing-xl:  32px;
 }
 ```
+
+---
+
+## 1a. Color Role Rules (CANONICAL — v2.1)
+
+| Role | Color | Hex | Used for |
+|---|---|---|---|
+| Primary brand | Navy | `#0D1F3C` | Buttons, nav active, focus rings, highlights |
+| Secondary accent | Teal | `#1D9E75` | Quote amounts, success badges, confirmations |
+| Background app | Light gray | `#F4F6FA` | App shell |
+| Background card | White | `#FFFFFF` | Cards, inputs, nav |
+| Text primary | Navy dark | `#0D1F3C` | All body text |
+| Text secondary | Blue gray | `#5A6A8A` | Labels, metadata |
+
+### Anti-patterns (color role violations)
+
+| ❌ Wrong | ✓ Correct |
+|---|---|
+| Teal as nav active color | Nav active must use `--color-primary` (navy) |
+| Teal on primary buttons | Primary buttons must use `--color-primary` (navy) |
+| Teal input focus ring | Focus ring must use `--color-border-focus` = navy |
+| Navy on quote amounts | Quote "Recibe" amounts must be `--color-accent` (teal) |
+| Navy on success badges | Teal badge variant uses `--color-accent-bg`/`--color-accent` |
 
 ---
 
