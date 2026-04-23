@@ -2,11 +2,11 @@ import { NavLink } from 'react-router-dom'
 import { Home, Wallet, ArrowUpRight, Users, User, LogOut } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { icon: Home,         label: 'Dashboard',       to: '/dashboard'    },
-  { icon: Wallet,       label: 'Cuentas',          to: '/wallet'       },
-  { icon: ArrowUpRight, label: 'Transferencias',   to: '/transactions' },
-  { icon: Users,        label: 'Contactos',        to: '/contacts'     },
-  { icon: User,         label: 'Perfil',           to: '/profile'      },
+  { icon: Home,         label: 'Dashboard',      to: '/dashboard'    },
+  { icon: Wallet,       label: 'Cuentas',         to: '/wallet'       },
+  { icon: ArrowUpRight, label: 'Transferencias',  to: '/transactions' },
+  { icon: Users,        label: 'Contactos',       to: '/contacts'     },
+  { icon: User,         label: 'Perfil',          to: '/profile'      },
 ]
 
 export default function SideNavBar({ user, onLogout }) {
@@ -17,24 +17,24 @@ export default function SideNavBar({ user, onLogout }) {
   return (
     <aside
       style={{
-        width:       260,
-        minWidth:    260,
-        height:      '100vh',
-        position:    'fixed',
-        left:        0,
-        top:         0,
-        background:  'var(--color-bg-secondary)',
-        borderRight: '1px solid var(--color-border)',
-        display:     'flex',
+        width:         260,
+        minWidth:      260,
+        height:        '100vh',
+        position:      'fixed',
+        left:          0,
+        top:           0,
+        background:    '#FFFFFF',
+        borderRight:   '1px solid var(--color-border)',
+        display:       'flex',
         flexDirection: 'column',
-        zIndex:      40,
-        overflowY:   'auto',
+        zIndex:        40,
+        overflowY:     'auto',
       }}
     >
-      {/* Logo */}
+      {/* Logo — dark variant for light background */}
       <div style={{ padding: '24px 20px 20px' }}>
         <img
-          src="/assets/LogoAlytoWB.png"
+          src="/assets/LogoAlyto.png"
           alt="Alyto"
           style={{ height: 32, width: 'auto', objectFit: 'contain' }}
         />
@@ -59,7 +59,7 @@ export default function SideNavBar({ user, onLogout }) {
                   gap:          12,
                   padding:      '10px 14px',
                   borderRadius: 'var(--radius-lg)',
-                  background:   isActive ? 'var(--color-bg-elevated)' : 'transparent',
+                  background:   isActive ? 'var(--color-accent-teal-dim)' : 'transparent',
                   borderLeft:   isActive ? '3px solid var(--color-accent-teal)' : '3px solid transparent',
                   transition:   'var(--transition-fast)',
                   cursor:       'pointer',
@@ -67,13 +67,13 @@ export default function SideNavBar({ user, onLogout }) {
               >
                 <Icon
                   size={18}
-                  style={{ color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-muted)', flexShrink: 0 }}
+                  style={{ color: isActive ? 'var(--color-accent-teal)' : 'var(--color-text-muted)', flexShrink: 0 }}
                 />
                 <span
                   style={{
                     fontSize:   '0.9375rem',
                     fontWeight: isActive ? 700 : 500,
-                    color:      isActive ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+                    color:      isActive ? 'var(--color-accent-teal)' : 'var(--color-text-secondary)',
                     transition: 'var(--transition-fast)',
                   }}
                 >
@@ -90,24 +90,24 @@ export default function SideNavBar({ user, onLogout }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', marginBottom: 8 }}>
           <div
             style={{
-              width:           36,
-              height:          36,
-              borderRadius:    '50%',
-              background:      'linear-gradient(135deg, #1D3461, #0F1628)',
-              border:          '2px solid var(--color-border)',
-              display:         'flex',
-              alignItems:      'center',
-              justifyContent:  'center',
-              fontSize:        '0.875rem',
-              fontWeight:      700,
-              color:           'var(--color-text-primary)',
-              flexShrink:      0,
+              width:          36,
+              height:         36,
+              borderRadius:   '50%',
+              background:     '#0D1F3C',
+              border:         '2px solid var(--color-border)',
+              display:        'flex',
+              alignItems:     'center',
+              justifyContent: 'center',
+              fontSize:       '0.875rem',
+              fontWeight:     700,
+              color:          '#FFFFFF',
+              flexShrink:     0,
             }}
           >
             {initials}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-primary)', truncate: true }}>
+            <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {firstName || 'Usuario'}
             </p>
             <p style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)' }}>

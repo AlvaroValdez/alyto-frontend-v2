@@ -79,7 +79,7 @@ export default function AppLayout() {
           DESKTOP LAYOUT (≥ 1024px)
           SideNavBar (fixed 260px) + TopNavBar + content
           ═══════════════════════════════════════════════════════ */}
-      <div className="hidden lg:flex" style={{ minHeight: '100vh', background: 'var(--color-bg-primary)' }}>
+      <div className="hidden lg:flex" style={{ minHeight: '100vh', background: 'var(--color-bg-app)' }}>
         <SideNavBar user={user} onLogout={handleLogout} />
 
         {/* Main area — left of sidebar */}
@@ -89,7 +89,7 @@ export default function AppLayout() {
           <header
             style={{
               height:         64,
-              background:     'var(--color-bg-secondary)',
+              background:     '#FFFFFF',
               borderBottom:   '1px solid var(--color-border)',
               display:        'flex',
               alignItems:     'center',
@@ -143,7 +143,7 @@ export default function AppLayout() {
                       background: 'var(--color-error)', color: '#FFF',
                       fontSize: '0.5625rem', fontWeight: 700,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      padding: '0 4px', border: '2px solid var(--color-bg-secondary)',
+                      padding: '0 4px', border: '2px solid #FFFFFF',
                     }}
                   >
                     {unreadCount > 99 ? '99+' : unreadCount}
@@ -156,10 +156,10 @@ export default function AppLayout() {
                 className="no-underline"
                 style={{
                   width: 36, height: 36, borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #1D3461, #0F1628)',
+                  background: '#0D1F3C',
                   border: '2px solid var(--color-border)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-text-primary)',
+                  fontSize: '0.8125rem', fontWeight: 700, color: '#FFFFFF',
                   flexShrink: 0,
                 }}
               >
@@ -191,31 +191,29 @@ export default function AppLayout() {
           minHeight:  '100vh',
           maxWidth:   430,
           margin:     '0 auto',
-          background: 'var(--color-bg-primary)',
+          background: 'var(--color-bg-app)',
           position:   'relative',
         }}
       >
         {/* Mobile header */}
         <header
           style={{
-            height:               64,
-            background:           'rgba(15,22,40,0.92)',
-            backdropFilter:       'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            borderBottom:         '1px solid var(--color-border)',
-            display:              'flex',
-            alignItems:           'center',
-            justifyContent:       'space-between',
-            padding:              '0 20px',
-            position:             'sticky',
-            top:                  0,
-            zIndex:               40,
-            flexShrink:           0,
+            height:         64,
+            background:     '#FFFFFF',
+            borderBottom:   '1px solid var(--color-border)',
+            display:        'flex',
+            alignItems:     'center',
+            justifyContent: 'space-between',
+            padding:        '0 20px',
+            position:       'sticky',
+            top:            0,
+            zIndex:         40,
+            flexShrink:     0,
           }}
         >
           <Link to="/dashboard" className="no-underline flex-shrink-0">
             <img
-              src="/assets/LogoAlytoWB.png"
+              src="/assets/LogoAlyto.png"
               alt="Alyto"
               style={{ height: 28, width: 'auto', objectFit: 'contain' }}
             />
@@ -260,7 +258,7 @@ export default function AppLayout() {
                     background: 'var(--color-error)', color: '#FFF',
                     fontSize: '0.5625rem', fontWeight: 700,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '0 4px', border: '2px solid var(--color-bg-elevated)',
+                    padding: '0 4px', border: '2px solid #FFFFFF',
                   }}
                 >
                   {unreadCount > 99 ? '99+' : unreadCount}
@@ -273,15 +271,15 @@ export default function AppLayout() {
               className="no-underline"
               style={{
                 width: 36, height: 36, borderRadius: '50%',
-                background: 'linear-gradient(135deg, #1D3461, #0F1628)',
+                background: '#0D1F3C',
                 border: '2px solid var(--color-border)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-text-primary)',
+                fontSize: '0.8125rem', fontWeight: 700, color: '#FFFFFF',
                 flexShrink: 0,
               }}
             >
               {isLoading
-                ? <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.4)' }} />
+                ? <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.3)' }} />
                 : initials
               }
             </Link>
@@ -358,7 +356,7 @@ export default function AppLayout() {
                 style={{
                   flex: 1, padding: '12px 0', borderRadius: 16,
                   background: 'var(--color-accent-teal)', border: 'none',
-                  color: '#0F1628', fontSize: '0.875rem', fontWeight: 700,
+                  color: '#FFFFFF', fontSize: '0.875rem', fontWeight: 700,
                   cursor: 'pointer', fontFamily: "'Manrope', sans-serif",
                   boxShadow: 'var(--shadow-teal)',
                 }}

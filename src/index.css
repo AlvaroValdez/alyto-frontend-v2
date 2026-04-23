@@ -19,7 +19,7 @@
 
   body {
     font-family: 'Manrope', sans-serif;
-    background: var(--color-bg-primary);
+    background: var(--color-bg-app);
     color: var(--color-text-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

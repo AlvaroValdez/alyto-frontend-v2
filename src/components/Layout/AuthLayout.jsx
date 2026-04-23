@@ -17,7 +17,7 @@ export default function AuthLayout() {
       {/* Logo */}
       <div style={{ marginBottom: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
         <img
-          src="/assets/LogoAlytoWB.png"
+          src="/assets/LogoAlyto.png"
           alt="Alyto"
           style={{ height: 40, width: 'auto', objectFit: 'contain' }}
         />

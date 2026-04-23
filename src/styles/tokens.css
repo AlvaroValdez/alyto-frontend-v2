@@ -1,63 +1,69 @@
 /* ================================================================
-   Alyto-Alter Design Tokens v1.0
-   Source of truth: docs/ALYTO_ALTER_DESIGN_SPEC.md
+   Alyto-Alter Design Tokens v2.0 — LIGHT MODE
+   Source of truth: docs/ALYTO_ALTER_DESIGN_SPEC.md §1
    ================================================================ */
 
 :root {
   /* ── BACKGROUNDS ───────────────────────────────────────────── */
-  --color-bg-primary:   #0F1628;
-  --color-bg-secondary: #1A2340;
-  --color-bg-elevated:  #1F2B4D;
-  --color-bg-overlay:   rgba(15, 22, 40, 0.85);
+  --color-bg-app:       #F4F6FA;   /* Page / screen background   */
+  --color-bg-primary:   #F4F6FA;   /* Alias for bg-app           */
+  --color-bg-secondary: #FFFFFF;   /* Cards, panels              */
+  --color-bg-elevated:  #F0F2F7;   /* Hover states, section bgs  */
+  --color-bg-overlay:   rgba(13, 31, 60, 0.50); /* Modal backdrop */
+
+  /* Balance card stays dark — only dark surface in the app */
+  --color-bg-balance: #0F1628;
 
   /* ── TEXT ──────────────────────────────────────────────────── */
-  --color-text-primary:   #FFFFFF;
-  --color-text-secondary: #8A96B8;
-  --color-text-muted:     #4E5A7A;
+  --color-text-primary:   #0D1F3C;  /* Navy — headings, main content */
+  --color-text-secondary: #4A5568;  /* Medium gray — descriptions    */
+  --color-text-muted:     #94A3B8;  /* Light gray — timestamps       */
 
-  /* ── ACCENT / ACTION ───────────────────────────────────────── */
-  --color-accent-teal:        #14B8A6;
-  --color-accent-teal-hover:  #0D9488;
-  --color-accent-teal-dim:    rgba(20, 184, 166, 0.12);
-  --color-accent-teal-border: rgba(20, 184, 166, 0.25);
+  /* ── ACCENT / TEAL ─────────────────────────────────────────── */
+  --color-accent-teal:        #1D9E75;
+  --color-accent-teal-hover:  #178A64;
+  --color-accent-teal-dim:    rgba(29, 158, 117, 0.10);
+  --color-accent-teal-border: rgba(29, 158, 117, 0.25);
 
   /* ── STATUS ────────────────────────────────────────────────── */
   --color-success:        #22C55E;
-  --color-success-bg:     rgba(34, 197, 94, 0.12);
+  --color-success-bg:     rgba(34, 197, 94, 0.10);
   --color-warning:        #F59E0B;
-  --color-warning-bg:     rgba(245, 158, 11, 0.12);
+  --color-warning-bg:     rgba(245, 158, 11, 0.10);
   --color-error:          #EF4444;
-  --color-error-bg:       rgba(239, 68, 68, 0.12);
-  --color-teal-status:    #14B8A6;
-  --color-teal-status-bg: rgba(20, 184, 166, 0.12);
-  --color-pending:        #8A96B8;
-  --color-pending-bg:     rgba(138, 150, 184, 0.12);
+  --color-error-bg:       rgba(239, 68, 68, 0.10);
+  --color-teal-status:    #1D9E75;
+  --color-teal-status-bg: rgba(29, 158, 117, 0.10);
+  --color-pending:        #64748B;
+  --color-pending-bg:     rgba(100, 116, 139, 0.10);
 
   /* ── BORDER ────────────────────────────────────────────────── */
-  --color-border:       #263050;
-  --color-border-light: rgba(38, 48, 80, 0.6);
+  --color-border:       #E2E8F0;
+  --color-border-light: rgba(226, 232, 240, 0.60);
 
   /* ── GRADIENTS ─────────────────────────────────────────────── */
-  --gradient-balance:    linear-gradient(135deg, #1D3461 0%, #0F1628 60%, #1A2030 100%);
-  --gradient-card:       linear-gradient(135deg, #1A2340 0%, #1F2B4D 100%);
-  --gradient-teal-glow:  radial-gradient(ellipse at top, rgba(20, 184, 166, 0.10) 0%, transparent 60%);
+  /* Balance card gradient STAYS dark — only dark element */
+  --gradient-balance:   linear-gradient(135deg, #1D3461 0%, #0F1628 60%, #1A2030 100%);
+  --gradient-card:      linear-gradient(135deg, #F0F2F7 0%, #FFFFFF 100%);
+  --gradient-teal-glow: radial-gradient(ellipse at top, rgba(29, 158, 117, 0.12) 0%, transparent 60%);
 
-  /* ── SHADOWS ───────────────────────────────────────────────── */
-  --shadow-card:  0 4px 24px rgba(0, 0, 0, 0.30);
-  --shadow-hero:  0 8px 40px rgba(0, 0, 0, 0.50);
-  --shadow-teal:  0 4px 20px rgba(20, 184, 166, 0.25);
-  --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.60);
+  /* ── SHADOWS (light mode — softer) ────────────────────────── */
+  --shadow-card:  0 2px 12px rgba(13, 31, 60, 0.08);
+  --shadow-hero:  0 8px 40px rgba(0, 0, 0, 0.50);  /* balance card: dark shadow */
+  --shadow-teal:  0 4px 20px rgba(29, 158, 117, 0.25);
+  --shadow-modal: 0 24px 64px rgba(13, 31, 60, 0.25);
+  --shadow-nav:   0 -1px 0 #E2E8F0;
 
   /* ── TYPOGRAPHY SCALE ──────────────────────────────────────── */
-  --font-xs:  0.625rem;   /* 10px */
-  --font-sm:  0.75rem;    /* 12px */
-  --font-base:0.875rem;   /* 14px */
-  --font-md:  0.9375rem;  /* 15px */
-  --font-lg:  1rem;       /* 16px */
-  --font-xl:  1.125rem;   /* 18px */
-  --font-2xl: 1.375rem;   /* 22px */
-  --font-3xl: 1.75rem;    /* 28px */
-  --font-4xl: 2.5rem;     /* 40px */
+  --font-xs:   0.625rem;   /* 10px */
+  --font-sm:   0.75rem;    /* 12px */
+  --font-base: 0.875rem;   /* 14px */
+  --font-md:   0.9375rem;  /* 15px */
+  --font-lg:   1rem;       /* 16px */
+  --font-xl:   1.125rem;   /* 18px */
+  --font-2xl:  1.375rem;   /* 22px */
+  --font-3xl:  1.75rem;    /* 28px */
+  --font-4xl:  2.5rem;     /* 40px */
 
   /* ── SPACING ───────────────────────────────────────────────── */
   --space-xs:  4px;
@@ -86,9 +92,9 @@
 /* ── ANIMATIONS ──────────────────────────────────────────────── */
 
 @keyframes flashTeal {
-  0%   { background-color: var(--color-bg-secondary); }
-  30%  { background-color: var(--color-accent-teal-dim); }
-  100% { background-color: var(--color-bg-secondary); }
+  0%   { background-color: #FFFFFF; }
+  30%  { background-color: rgba(29, 158, 117, 0.10); }
+  100% { background-color: #FFFFFF; }
 }
 
 @keyframes pulseRed {
@@ -110,71 +116,83 @@
   to { transform: rotate(360deg); }
 }
 
-/* ── UTILITY CLASSES (Alyto-Alter) ──────────────────────────── */
+/* ── UTILITY CLASSES (Alyto-Alter v2.0) ─────────────────────── */
 
+/* Standard white card */
 .alter-card {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
+  background:    var(--color-bg-secondary);
+  border:        1px solid var(--color-border);
   border-radius: var(--radius-xl);
-  padding: var(--space-xl);
+  padding:       var(--space-xl);
+  box-shadow:    var(--shadow-card);
 }
 
+/* Elevated section */
 .alter-card-elevated {
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
+  background:    var(--color-bg-elevated);
+  border:        1px solid var(--color-border);
   border-radius: var(--radius-xl);
-  padding: var(--space-xl);
-  box-shadow: var(--shadow-card);
+  padding:       var(--space-xl);
+  box-shadow:    var(--shadow-card);
 }
 
+/* Balance card — stays dark, only dark surface in the app */
 .alter-card-balance {
-  background: var(--gradient-balance);
+  background:    var(--gradient-balance);
   border-radius: var(--radius-2xl);
-  padding: 28px 24px 24px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--shadow-hero);
+  padding:       28px 24px 24px;
+  position:      relative;
+  overflow:      hidden;
+  box-shadow:    var(--shadow-hero);
 }
 
 .alter-card-balance::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 200px;
-  height: 100px;
+  content:    '';
+  position:   absolute;
+  top:        0;
+  left:       50%;
+  transform:  translateX(-50%);
+  width:      200px;
+  height:     100px;
   background: var(--gradient-teal-glow);
   pointer-events: none;
 }
 
 .alter-card-balance::after {
-  content: '';
-  position: absolute;
-  top: -40px;
-  right: -40px;
-  width: 160px;
-  height: 160px;
+  content:       '';
+  position:      absolute;
+  top:           -40px;
+  right:         -40px;
+  width:         160px;
+  height:        160px;
   border-radius: 50%;
-  border: 1px solid rgba(20, 184, 166, 0.10);
+  border:        1px solid rgba(255, 255, 255, 0.06);
   pointer-events: none;
 }
 
+/* Uppercase label (section headings) */
 .label-uppercase {
-  font-size: var(--font-sm);
-  font-weight: 600;
-  color: var(--color-text-muted);
-  letter-spacing: 0.07em;
+  font-size:      var(--font-sm);
+  font-weight:    600;
+  color:          var(--color-text-muted);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
+/* Flash animation on quote update */
 .flash-teal {
   animation: flashTeal 0.8s ease;
 }
 
+/* Skeleton loader — light mode shimmer */
 .skeleton-line {
-  background: linear-gradient(90deg, var(--color-bg-elevated) 25%, var(--color-border) 50%, var(--color-bg-elevated) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-elevated) 25%,
+    #E8ECF4 50%,
+    var(--color-bg-elevated) 75%
+  );
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: var(--radius-sm);
+  animation:       shimmer 1.5s infinite;
+  border-radius:   var(--radius-sm);
 }
