@@ -42,6 +42,13 @@ function BobRegulatoryNotice() {
   )
 }
 
+// ── Constantes premium ─────────────────────────────────────────────────────
+
+const GOLD        = '#E8B84B'
+const GOLD_DIM    = 'rgba(232,184,75,0.14)'
+const GOLD_BORDER = 'rgba(232,184,75,0.28)'
+const GOLD_GLOW   = 'rgba(232,184,75,0.32)'
+
 // ── Estado: not_started ────────────────────────────────────────────────────
 
 function NotStartedCard({ navigate, isSRL }) {
@@ -60,38 +67,84 @@ function NotStartedCard({ navigate, isSRL }) {
   return (
     <div className="space-y-4">
       <div
-        className="rounded-2xl p-5"
+        className="rounded-2xl p-5 relative overflow-hidden"
         style={{
-          background: 'var(--gradient-balance)',
-          border: '1px solid var(--color-border)',
+          background: 'linear-gradient(145deg, #0D1F3C 0%, #162D4E 55%, #0A1525 100%)',
+          border: `1px solid ${GOLD_BORDER}`,
+          boxShadow: `0 8px 36px rgba(13,31,60,0.50), 0 0 0 1px ${GOLD_BORDER}`,
         }}
       >
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-2xl bg-[#1D34611A] border border-[#1D346133] flex items-center justify-center">
-            <Building2 size={20} className="text-[#1D3461]" />
+        {/* Gold radial glow at top */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse at 50% -10%, rgba(232,184,75,0.14) 0%, transparent 55%)',
+          }}
+        />
+        {/* Subtle grid texture */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+          }}
+        />
+        {/* Decorative corner circle */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            width: 140, height: 140,
+            borderRadius: '50%',
+            border: `1px solid ${GOLD_BORDER}`,
+            top: -50, right: -50,
+            opacity: 0.6,
+          }}
+        />
+
+        {/* Content */}
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-4">
+            <div
+              className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: GOLD_DIM, border: `1px solid ${GOLD_BORDER}` }}
+            >
+              <Building2 size={20} style={{ color: GOLD }} />
+            </div>
+            <div>
+              <h3
+                className="text-[0.9375rem] font-bold tracking-tight"
+                style={{ color: GOLD }}
+              >
+                Cuenta Business
+              </h3>
+              <p className="text-[0.75rem]" style={{ color: 'rgba(232,184,75,0.60)' }}>
+                Comisiones desde 0.5%
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-[0.9375rem] font-bold text-[#0D1F3C]">Cuenta Business</h3>
-            <p className="text-[0.75rem] text-[#4A5568]">Comisiones desde 0.5%</p>
-          </div>
+
+          <ul className="space-y-2.5 mb-5">
+            {benefits.map(b => (
+              <li key={b} className="flex items-start gap-2.5 text-[0.8125rem]" style={{ color: 'rgba(255,255,255,0.78)' }}>
+                <CheckCircle2 size={14} className="mt-0.5 flex-shrink-0" style={{ color: GOLD }} />
+                {b}
+              </li>
+            ))}
+          </ul>
+
+          <button
+            onClick={() => navigate('/kyb')}
+            className="w-full py-3 rounded-xl text-[0.875rem] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-all duration-150"
+            style={{
+              background: `linear-gradient(135deg, ${GOLD} 0%, #D4A33A 100%)`,
+              color: '#0D1F3C',
+              boxShadow: `0 4px 20px ${GOLD_GLOW}`,
+            }}
+          >
+            Solicitar cuenta Business <ChevronRight size={16} />
+          </button>
         </div>
-
-        <ul className="space-y-2 mb-5">
-          {benefits.map(b => (
-            <li key={b} className="flex items-start gap-2 text-[0.8125rem] text-[#4A5568]">
-              <CheckCircle2 size={14} className="text-[#1D3461] mt-0.5 flex-shrink-0" />
-              {b}
-            </li>
-          ))}
-        </ul>
-
-        <button
-          onClick={() => navigate('/kyb')}
-          className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-[#0D1F3C] flex items-center justify-center gap-2"
-          style={{ background: '#1D3461', boxShadow: '0 4px 20px rgba(35,62,88,0.3)' }}
-        >
-          Solicitar cuenta Business <ChevronRight size={16} />
-        </button>
       </div>
 
       {isSRL && <BobRegulatoryNotice />}
