@@ -1,23 +1,32 @@
 /**
- * SendMoneyFlow.jsx — Contenedor del flujo Enviar dinero (Send Money Flow v1.0).
+ * SendMoneyFlow.jsx — Contenedor del flujo Enviar dinero.
  *
- * Implementa el contrato canónico de 3 pasos definido en
- * docs/SEND_MONEY_FLOW.md §2:
+ * Soporta dos versiones del flujo:
  *
- *   /send/details           → StepDetails  (país + monto + beneficiario)
- *   /send/review            → StepReview   (revisión con desglose expandible)
- *   /send/payment/:txId     → StepPayment  (instrucciones + comprobante)
+ * v1.1 (spec docs/SEND_MONEY_FLOW.md):
+ *   /send/amount       → StepAmount      (monto + país destino)
+ *   /send/beneficiary  → StepBeneficiary (formulario dinámico por proveedor)
+ *   /send/confirm      → StepConfirm     (review + pago + comprobante, 2 estados internos)
  *
- * El estado del flujo vive en este contenedor y se comparte vía props a las
- * sub-rutas (se monta una sola vez mientras el usuario navega entre pasos).
- * Al salir de /send/* el estado se desmonta — no hay persistencia entre
- * sesiones (spec §1.6).
+ * v1.0 legacy (mantenido para compatibilidad):
+ *   /send/details      → StepDetails
+ *   /send/review       → StepReview
+ *   /send/payment/:id  → StepPayment
+ *
+ * El estado del flujo vive en este contenedor y se comparte vía props.
+ * Al salir de /send/* el estado se desmonta — sin persistencia entre sesiones.
  */
 
 import { useMemo, useState, useCallback, useEffect } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom'
 import { ArrowLeft, X } from 'lucide-react'
 
+// v1.1
+import StepAmount      from './StepAmount'
+import StepBeneficiary from './StepBeneficiary'
+import StepConfirm     from './StepConfirm'
+
+// v1.0 legacy
 import StepDetails from './StepDetails'
 import StepReview  from './StepReview'
 import StepPayment from './StepPayment'
@@ -60,7 +69,9 @@ function StepHeader({ title, onBack, onCancel, showCancel = true }) {
 }
 
 function StepDots({ current }) {
-  const steps = ['details', 'review', 'payment']
+  const v11Steps = ['amount', 'beneficiary', 'confirm']
+  const v10Steps = ['details', 'review', 'payment']
+  const steps = v11Steps.includes(current) ? v11Steps : v10Steps
   const idx   = steps.indexOf(current)
   return (
     <div className="flex justify-center items-center gap-2 px-4 pb-2 flex-shrink-0">
@@ -89,21 +100,30 @@ export default function SendMoneyFlow() {
   const resetFlow = useCallback(() => setFlowData(INITIAL_DATA), [])
 
   const currentStep = useMemo(() => {
-    if (location.pathname.includes('/payment/')) return 'payment'
-    if (location.pathname.endsWith('/review'))   return 'review'
+    if (location.pathname.includes('/payment/'))        return 'payment'
+    if (location.pathname.endsWith('/review'))          return 'review'
+    if (location.pathname.endsWith('/confirm'))         return 'confirm'
+    if (location.pathname.endsWith('/beneficiary'))     return 'beneficiary'
+    if (location.pathname.endsWith('/amount'))          return 'amount'
     return 'details'
   }, [location.pathname])
 
   const title = {
-    details: 'Enviar dinero',
-    review:  'Revisar transferencia',
-    payment: 'Realiza tu pago',
-  }[currentStep]
+    amount:      'Enviar dinero',
+    beneficiary: 'Beneficiario',
+    confirm:     'Confirmar transferencia',
+    details:     'Enviar dinero',
+    review:      'Revisar transferencia',
+    payment:     'Realiza tu pago',
+  }[currentStep] ?? 'Enviar dinero'
 
   function handleBack() {
-    if (currentStep === 'details') navigate(-1)
-    else if (currentStep === 'review')  navigate('/send/details')
-    else if (currentStep === 'payment') navigate('/send/review')
+    if (currentStep === 'amount')      navigate(-1)
+    else if (currentStep === 'beneficiary') navigate('/send/amount')
+    else if (currentStep === 'confirm')     navigate('/send/beneficiary')
+    else if (currentStep === 'details')     navigate(-1)
+    else if (currentStep === 'review')      navigate('/send/details')
+    else if (currentStep === 'payment')     navigate('/send/review')
   }
 
   function handleCancel() {
@@ -127,7 +147,22 @@ export default function SendMoneyFlow() {
 
       <div className="flex-1 overflow-y-auto scrollbar-hide pt-2">
         <Routes>
-          <Route index element={<Navigate to="details" replace />} />
+          {/* v1.1 routes */}
+          <Route index element={<Navigate to="amount" replace />} />
+          <Route
+            path="amount"
+            element={<StepAmount flowData={flowData} updateFlow={updateFlow} />}
+          />
+          <Route
+            path="beneficiary"
+            element={<StepBeneficiary flowData={flowData} updateFlow={updateFlow} />}
+          />
+          <Route
+            path="confirm"
+            element={<StepConfirm flowData={flowData} updateFlow={updateFlow} />}
+          />
+
+          {/* v1.0 legacy routes — kept for backward compatibility */}
           <Route
             path="details"
             element={<StepDetails flowData={flowData} updateFlow={updateFlow} />}

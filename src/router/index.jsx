@@ -114,9 +114,9 @@ export default function AppRouter() {
         <Route path="/kyc"        element={<KycPage />} />
         <Route path="/kyc/return" element={<KycReturnPage />} />
 
-        {/* Enviar dinero — flujo 3 pasos v1.0 (docs/SEND_MONEY_FLOW.md §2) */}
+        {/* Enviar dinero — flujo 3 pasos v1.1 (docs/SEND_MONEY_FLOW.md §2) */}
         <Route path="/send/*" element={<KycRoute><SendMoneyFlow /></KycRoute>} />
-        <Route path="/send"   element={<Navigate to="/send/details" replace />} />
+        <Route path="/send"   element={<Navigate to="/send/amount" replace />} />
 
         {/* Historial */}
         <Route path="/transactions"                element={<TransactionsPage />} />
