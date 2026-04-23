@@ -208,15 +208,15 @@ import { useAuth }                 from '../../context/AuthContext.jsx'
 // ── Configuración de estados ──────────────────────────────────────────────────
 
 const STATUS_CONFIG = {
-  initiated:        { label: 'Iniciada',          color: '#64748B', bg: '#64748B1A' },
-  payin_pending:    { label: 'Pago pendiente',     color: '#64748B', bg: '#64748B1A' },
-  payin_confirmed:  { label: 'Pago confirmado',    color: '#233E58', bg: '#233E581A' },
-  payin_completed:  { label: 'Pago completado',    color: '#233E58', bg: '#233E581A' },
+  initiated:        { label: 'Iniciada',          color: 'var(--color-text-secondary)', bg: '#64748B1A' },
+  payin_pending:    { label: 'Pago pendiente',     color: 'var(--color-text-secondary)', bg: '#64748B1A' },
+  payin_confirmed:  { label: 'Pago confirmado',    color: 'var(--color-accent-teal)', bg: '#233E581A' },
+  payin_completed:  { label: 'Pago completado',    color: 'var(--color-accent-teal)', bg: '#233E581A' },
   processing:       { label: 'Procesando',         color: '#3B82F6', bg: '#3B82F61A' },
   in_transit:       { label: 'En tránsito',        color: '#3B82F6', bg: '#3B82F61A' },
-  payout_pending:   { label: 'Enviando...',        color: '#233E58', bg: '#233E581A' },
+  payout_pending:   { label: 'Enviando...',        color: 'var(--color-accent-teal)', bg: '#233E581A' },
   payout_sent:      { label: 'Enviado al banco',   color: '#3B82F6', bg: '#3B82F61A' },
-  completed:        { label: 'Completada',         color: '#233E58', bg: '#233E581A' },
+  completed:        { label: 'Completada',         color: 'var(--color-accent-teal)', bg: '#233E581A' },
   failed:           { label: 'Fallida',            color: '#EF4444', bg: '#EF44441A' },
   refunded:         { label: 'Reembolsada',        color: '#F59E0B', bg: '#F59E0B1A' },
 }
@@ -356,7 +356,7 @@ function Row({ label, value, bold, valueColor }) {
       <span className="text-[0.8125rem] text-[#8A96B8] flex-shrink-0">{label}</span>
       <span
         className={`text-[0.8125rem] text-right ${bold ? 'font-bold' : 'font-medium'}`}
-        style={{ color: valueColor ?? '#0F172A' }}
+        style={{ color: valueColor ?? 'var(--color-text-primary)' }}
       >
         {value}
       </span>
@@ -535,7 +535,7 @@ export default function TransactionDetail() {
     )
   }
 
-  const cfg      = STATUS_CONFIG[tx.status] ?? { label: tx.status, color: '#64748B', bg: '#64748B1A' }
+  const cfg      = STATUS_CONFIG[tx.status] ?? { label: tx.status, color: 'var(--color-text-secondary)', bg: '#64748B1A' }
   const isFailed = tx.status === 'failed' || tx.status === 'refunded'
   const isManualPending = tx.payinMethod === 'manual' &&
     (tx.status === 'initiated' || tx.status === 'payin_pending')
@@ -748,35 +748,35 @@ export default function TransactionDetail() {
                   <button
                     onClick={handleCopy}
                     className="flex items-center gap-2 w-full text-left hover:opacity-70 transition-opacity"
-                    style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: copied ? '#233E58' : '#0F172A' }}
+                    style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: copied ? 'var(--color-accent-teal)' : 'var(--color-text-primary)' }}
                   >
                     <span className="truncate">{tx.transactionId}</span>
                     {copied
-                      ? <CheckCircle size={13} color="#233E58" style={{ flexShrink: 0 }} />
+                      ? <CheckCircle size={13} color="#14B8A6" style={{ flexShrink: 0 }} />
                       : <Copy size={13} color="#94A3B8" style={{ flexShrink: 0 }} />
                     }
                   </button>
-                  {copied && <p style={{ color: '#233E58', fontSize: '0.625rem', marginTop: 2 }}>¡Copiado!</p>}
+                  {copied && <p style={{ color: 'var(--color-accent-teal)', fontSize: '0.625rem', marginTop: 2 }}>¡Copiado!</p>}
                 </div>
 
                 {/* Tú enviaste / Ellos reciben / Tasa */}
                 <div className="flex flex-col gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid #F1F5F9' }}>
                   <div className="flex items-center justify-between">
-                    <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Tú enviaste</span>
-                    <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 600 }}>
+                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Tú enviaste</span>
+                    <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 600 }}>
                       {countryFlag(currencyToCountry(tx.originCurrency))} {formatAmount(tx.originAmount, tx.originCurrency)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Ellos reciben</span>
-                    <span style={{ color: '#233E58', fontSize: '0.8125rem', fontWeight: 700 }}>
+                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Ellos reciben</span>
+                    <span style={{ color: 'var(--color-accent-teal)', fontSize: '0.8125rem', fontWeight: 700 }}>
                       {countryFlag(tx.destinationCountry)} {formatAmount(effectiveDestAmount, tx.destinationCurrency)}
                     </span>
                   </div>
                   {tx.exchangeRate > 0 && (
                     <div className="flex items-center justify-between">
-                      <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Tasa de cambio</span>
-                      <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>
+                      <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Tasa de cambio</span>
+                      <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>
                         1 {tx.originCurrency} = {tx.exchangeRate.toLocaleString('es-CL', { maximumFractionDigits: 4 })} {tx.destinationCurrency}
                       </span>
                     </div>
@@ -788,46 +788,46 @@ export default function TransactionDetail() {
                   <div className="flex flex-col gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid #F1F5F9' }}>
                     {tx.beneficiary.fullName && (
                       <div className="flex items-center justify-between">
-                        <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Beneficiario</span>
-                        <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>
+                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Beneficiario</span>
+                        <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>
                           {tx.beneficiary.fullName}
                         </span>
                       </div>
                     )}
                     {tx.beneficiary.bankName && (
                       <div className="flex items-center justify-between">
-                        <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Banco</span>
-                        <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>
+                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Banco</span>
+                        <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>
                           {resolveBankName(tx.beneficiary.bankName) ?? tx.beneficiary.bankName}
                         </span>
                       </div>
                     )}
                     <div className="flex items-center justify-between">
-                      <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Cuenta</span>
-                      <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>
+                      <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Cuenta</span>
+                      <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>
                         {maskAccount(tx.beneficiary.accountNumber) ?? '••••'}
                       </span>
                     </div>
                     {tx.beneficiary.accountType && (
                       <div className="flex items-center justify-between">
-                        <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Tipo</span>
-                        <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>{tx.beneficiary.accountType}</span>
+                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Tipo</span>
+                        <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>{tx.beneficiary.accountType}</span>
                       </div>
                     )}
                     {tx.beneficiary.documentNumber && (
                       <div className="flex items-center justify-between">
-                        <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>
+                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>
                           {tx.beneficiary.documentType ? tx.beneficiary.documentType.toUpperCase() : 'CI / Documento'}
                         </span>
-                        <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>
+                        <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>
                           {tx.beneficiary.documentNumber}
                         </span>
                       </div>
                     )}
                     {tx.concept && (
                       <div className="flex items-center justify-between gap-3">
-                        <span style={{ color: '#64748B', fontSize: '0.8125rem', flexShrink: 0 }}>Concepto</span>
-                        <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500, textAlign: 'right' }}>
+                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem', flexShrink: 0 }}>Concepto</span>
+                        <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500, textAlign: 'right' }}>
                           {tx.concept}
                         </span>
                       </div>
@@ -838,15 +838,15 @@ export default function TransactionDetail() {
                 {/* Fecha, tiempo estimado, estado */}
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
-                    <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Fecha de envío</span>
-                    <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>{formatExactDate(tx.createdAt)}</span>
+                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Fecha de envío</span>
+                    <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>{formatExactDate(tx.createdAt)}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Tiempo estimado</span>
-                    <span style={{ color: '#0F172A', fontSize: '0.8125rem', fontWeight: 500 }}>{deliveryLabel}</span>
+                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Tiempo estimado</span>
+                    <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>{deliveryLabel}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span style={{ color: '#64748B', fontSize: '0.8125rem' }}>Estado</span>
+                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Estado</span>
                     <span
                       style={{ background: cfg.bg, color: cfg.color, fontSize: '0.75rem', fontWeight: 600, padding: '3px 12px', borderRadius: 999 }}
                     >
@@ -873,7 +873,7 @@ export default function TransactionDetail() {
                 onClick={handleDownloadImage}
                 disabled={sharing}
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all active:scale-95 disabled:opacity-60"
-                style={{ background: 'var(--color-bg-elevated)', border: '1px solid #E2E8F0', color: '#64748B' }}
+                style={{ background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
               >
                 <Download size={15} />
                 Guardar
@@ -881,7 +881,7 @@ export default function TransactionDetail() {
               <button
                 onClick={handlePrint}
                 className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all active:scale-95"
-                style={{ background: 'var(--color-bg-elevated)', border: '1px solid #E2E8F0', color: '#64748B' }}
+                style={{ background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
                 title="Imprimir / PDF"
               >
                 <Printer size={15} />

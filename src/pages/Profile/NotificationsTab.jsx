@@ -120,7 +120,7 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
         Preferencias
       </p>
 
-      <div className="mx-4 bg-[#1A2340] rounded-2xl border border-[#263050] overflow-hidden divide-y divide-[#E2E8F0]">
+      <div className="mx-4 bg-[#1A2340] rounded-2xl border border-[#263050] overflow-hidden divide-y divide-[#263050]">
         <NotifRow
           icon={Mail}
           title="Notificaciones por email"

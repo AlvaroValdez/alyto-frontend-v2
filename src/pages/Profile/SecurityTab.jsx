@@ -176,7 +176,7 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
 
       {/* ── SECCIÓN 1 — Cambiar contraseña ──────────────────────────── */}
       <Section title="Cambiar contraseña">
-        <form onSubmit={handleChangePassword} className="divide-y divide-[#E2E8F0]">
+        <form onSubmit={handleChangePassword} className="divide-y divide-[#263050]">
 
           {/* Contraseña actual */}
           <div className="px-4 py-3">

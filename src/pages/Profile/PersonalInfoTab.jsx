@@ -169,7 +169,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
       <div className="mx-4 bg-[#1A2340] rounded-2xl border border-[#263050] overflow-hidden">
         {editing ? (
           /* ── Modo edición ─────────────────────────────────────── */
-          <div className="divide-y divide-[#E2E8F0]">
+          <div className="divide-y divide-[#263050]">
             {/* Nombre */}
             <div className="px-4 py-3">
               <label className="text-[0.6875rem] font-medium text-[#8A96B8] uppercase tracking-wide block mb-1.5">

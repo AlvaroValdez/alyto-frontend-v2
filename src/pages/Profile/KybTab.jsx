@@ -62,8 +62,8 @@ function NotStartedCard({ navigate, isSRL }) {
       <div
         className="rounded-2xl p-5"
         style={{
-          background: 'linear-gradient(135deg, #F0FDF9 0%, #FFFFFF 60%, #F8FAFC 100%)',
-          border: '1px solid #E2E8F0',
+          background: 'var(--gradient-balance)',
+          border: '1px solid var(--color-border)',
         }}
       >
         <div className="flex items-center gap-3 mb-4">
@@ -105,7 +105,7 @@ function PendingCard({ kybData, navigate }) {
   return (
     <div
       className="rounded-2xl p-5 flex flex-col items-center text-center"
-      style={{ background: 'white', border: '1px solid #E2E8F0' }}
+      style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}
     >
       <Clock size={28} className="text-[#8A96B8] mb-3" />
       <p className="text-[0.9375rem] font-bold text-white mb-1">Solicitud en revisión</p>
@@ -133,7 +133,7 @@ function MoreInfoCard({ navigate }) {
   return (
     <div
       className="rounded-2xl p-5 flex flex-col items-center text-center"
-      style={{ background: 'white', border: '1px solid #F59E0B33' }}
+      style={{ background: 'var(--color-bg-secondary)', border: '1px solid #F59E0B33' }}
     >
       <AlertTriangle size={28} className="text-[#F59E0B] mb-3" />
       <p className="text-[0.9375rem] font-bold text-white mb-1">Se requiere más información</p>
@@ -176,7 +176,7 @@ function ApprovedCard({ kybData, navigate, isSRL }) {
     <div className="space-y-3">
       <div
         className="rounded-2xl p-5"
-        style={{ background: 'white', border: '1px solid #233E5833' }}
+        style={{ background: 'var(--color-bg-secondary)', border: '1px solid #233E5833' }}
       >
         <div className="flex items-center gap-2 mb-4">
           <CheckCircle2 size={20} className="text-[#14B8A6]" />
@@ -187,7 +187,7 @@ function ApprovedCard({ kybData, navigate, isSRL }) {
             <div
               key={l.label}
               className="flex items-center justify-between px-3 py-2.5 rounded-xl"
-              style={{ background: 'var(--color-bg-elevated)', border: '1px solid #E2E8F0' }}
+              style={{ background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}
             >
               <span className="text-[0.8125rem] text-[#8A96B8]">{l.label}</span>
               <span className="text-[0.8125rem] font-bold text-white">{l.value}</span>
@@ -214,7 +214,7 @@ function RejectedCard({ kybData }) {
   return (
     <div
       className="rounded-2xl p-5 flex flex-col items-center text-center"
-      style={{ background: 'white', border: '1px solid #EF444433' }}
+      style={{ background: 'var(--color-bg-secondary)', border: '1px solid #EF444433' }}
     >
       <XCircle size={28} className="text-[#EF4444] mb-3" />
       <p className="text-[0.9375rem] font-bold text-white mb-1">Solicitud rechazada</p>
@@ -265,7 +265,7 @@ export default function KybTab({ kycStatus, legalEntity }) {
       <div className="px-4 py-2">
         <div
           className="rounded-2xl p-5 flex flex-col items-center text-center"
-          style={{ background: 'white', border: '1px solid #E2E8F0' }}
+          style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}
         >
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center mb-4"
