@@ -23,7 +23,10 @@
 - Added principle §1.6: Provider-agnostic beneficiary forms
 - Added anti-patterns #11-15 covering step separation rules
 
-**Code changes:** [to be filled after implementation commits]
+**Code changes:**
+- `f8057d8` — docs: spec files committed to both repos
+- `737c7c9` — feat: StepAmount / StepBeneficiary / StepConfirm + updated SendMoneyFlow router
+- `2581b08` — test: spec-compliance tests updated (51 assertions, all passing)
 
 ---
 
