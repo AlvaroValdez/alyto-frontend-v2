@@ -5,8 +5,9 @@
  * Otros países/métodos muestran badge "Próximamente".
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Check, Zap, Clock } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
 
 const PAYIN_METHODS = {
   CL: [
@@ -74,13 +75,13 @@ function MethodCard({ method, selected, onSelect }) {
         isDisabled
           ? 'bg-white border-[#1A2340] opacity-50 cursor-not-allowed'
           : selected
-            ? 'bg-[#1D34611A] border-[#1D3461] shadow-[0_0_0_1px_#1D346133]'
-            : 'bg-white border-[#E2E8F0] hover:border-[#1D346133] hover:bg-[#F0F2F7] cursor-pointer'
+            ? 'bg-[#0D1F3C1A] border-[#0D1F3C] shadow-[0_0_0_1px_#0D1F3C33]'
+            : 'bg-white border-[#E2E8F0] hover:border-[#0D1F3C33] hover:bg-[#F0F2F7] cursor-pointer'
       }`}
     >
       {/* Logo */}
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
-        selected ? 'bg-[#1D346120]' : 'bg-[#E2E8F0]'
+        selected ? 'bg-[#0D1F3C20]' : 'bg-[#E2E8F0]'
       }`}>
         {method.logo}
       </div>
@@ -95,8 +96,8 @@ function MethodCard({ method, selected, onSelect }) {
             method.badgeType === 'instant'
               ? 'bg-[#22C55E1A] text-[#22C55E]'
               : method.badgeType === 'soon'
-                ? 'bg-[#1D34611A] text-[#4A5568]'
-                : 'bg-[#1D34611A] text-[#1D3461]'
+                ? 'bg-[#0D1F3C1A] text-[#4A5568]'
+                : 'bg-[#0D1F3C1A] text-[#0D1F3C]'
           }`}>
             <BadgeIcon type={method.badgeType} />
             {method.badge}
@@ -110,10 +111,10 @@ function MethodCard({ method, selected, onSelect }) {
       {/* Check circle */}
       <div className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all ${
         selected
-          ? 'bg-[#1D3461] border-[#1D3461]'
+          ? 'bg-[#0D1F3C] border-[#0D1F3C]'
           : 'border-[#E2E8F0] bg-transparent'
       }`}>
-        {selected && <Check size={12} className="text-[#0F1628]" strokeWidth={3} />}
+        {selected && <Check size={12} className="text-white" strokeWidth={3} />}
       </div>
     </button>
   )
@@ -129,7 +130,16 @@ const COUNTRY_LABELS = {
 }
 
 export default function Step2PayinMethod({ onNext, originCountry = 'CL' }) {
+  const { user } = useAuth()
   const [selected, setSelected] = useState(null)
+
+  // SRL (Bolivia) and LLC always pay via manual bank transfer — skip this step
+  useEffect(() => {
+    if (!user?.legalEntity) return
+    if (user.legalEntity === 'SRL' || user.legalEntity === 'LLC') {
+      onNext({ payinMethod: 'manual', _skipStep2: true })
+    }
+  }, [user?.legalEntity]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const methods = PAYIN_METHODS[originCountry] || []
 
@@ -183,8 +193,8 @@ export default function Step2PayinMethod({ onNext, originCountry = 'CL' }) {
         disabled={!selected}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
           selected
-            ? 'bg-[#1D3461] text-[#0F1628] shadow-[0_4px_20px_rgba(29,52,97,0.25)] active:scale-[0.98]'
-            : 'bg-[#1D346140] text-[#94A3B8] cursor-not-allowed'
+            ? 'bg-[#0D1F3C] text-white shadow-[0_4px_20px_rgba(13,31,60,0.25)] active:scale-[0.98]'
+            : 'bg-[#0D1F3C40] text-[#94A3B8] cursor-not-allowed'
         }`}
       >
         Continuar
