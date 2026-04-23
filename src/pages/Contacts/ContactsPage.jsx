@@ -2,11 +2,12 @@ import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Users, Star, Trash2, Loader2, AlertCircle,
-  Search, Plus, X, Send, ChevronRight, Check,
+  Search, Plus, X, Send, ChevronRight,
   CreditCard, FileText, Building2, Mail, UserCheck, Pencil, Filter,
 } from 'lucide-react'
 import { useContacts } from '../../hooks/useContacts'
 import { deleteContact, toggleContactFavorite, createContact, updateContact } from '../../services/api'
+import VitaContactForm from '../../components/Contacts/VitaContactForm'
 
 // ── Datos de países ───────────────────────────────────────────────────────────
 
@@ -227,66 +228,15 @@ function CountryPickerModal({ selected, onSelect, onClose }) {
 
 // ── AddContactSheet ───────────────────────────────────────────────────────────
 
-const INPUT_STYLE = {
-  width: '100%', boxSizing: 'border-box',
-  padding: '12px 14px', borderRadius: 12,
-  border: '1px solid #E2E8F0', background: '#FFFFFF',
-  fontSize: '0.9375rem', color: '#0D1F3C', outline: 'none',
-  fontFamily: "'Manrope', sans-serif', transition: 'border-color 0.15s'",
-}
-const SELECT_STYLE = { ...INPUT_STYLE, appearance: 'none', cursor: 'pointer' }
-const LABEL_STYLE = {
-  display: 'block', fontSize: '0.6875rem', fontWeight: 700,
-  color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6,
-}
-
 function AddContactSheet({ onClose, onSaved }) {
-  const [showCountryModal, setShowCountryModal] = useState(false)
-  const [saving,           setSaving]           = useState(false)
-  const [saveError,        setSaveError]        = useState('')
+  const [saving,    setSaving]    = useState(false)
+  const [saveError, setSaveError] = useState('')
 
-  const [form, setForm] = useState({
-    country:        '',
-    nickname:       '',
-    firstName:      '',
-    lastName:       '',
-    docType:        '',
-    docNumber:      '',
-    bank:           '',
-    accountNumber:  '',
-    accountType:    '',
-    email:          '',
-  })
-
-  const meta      = COUNTRY_META[form.country]
-  const isValid   = form.country && form.firstName && form.lastName &&
-                    form.docType && form.docNumber && form.accountNumber
-
-  function set(key, val) { setForm(f => ({ ...f, [key]: val })) }
-
-  async function handleSave() {
-    if (!isValid || saving) return
+  async function handleSave(data) {
     setSaving(true)
     setSaveError('')
     try {
-      await createContact({
-        firstName:           form.firstName.trim(),
-        lastName:            form.lastName.trim(),
-        nickname:            form.nickname.trim() || undefined,
-        destinationCountry:  form.country,
-        destinationCurrency: meta?.currency,
-        formType:            'bank_data',
-        beneficiaryData: {
-          beneficiary_first_name:      form.firstName.trim(),
-          beneficiary_last_name:       form.lastName.trim(),
-          beneficiary_document_type:   form.docType,
-          beneficiary_document_number: form.docNumber.trim(),
-          beneficiary_bank:            form.bank.trim() || undefined,
-          beneficiary_account_number:  form.accountNumber.trim(),
-          account_type_bank:           form.accountType || undefined,
-          beneficiary_email:           form.email.trim() || undefined,
-        },
-      })
+      await createContact(data)
       onSaved()
       onClose()
     } catch (err) {
@@ -304,9 +254,9 @@ function AddContactSheet({ onClose, onSaved }) {
         maxHeight: '92dvh', display: 'flex', flexDirection: 'column',
         boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
       }}>
-        {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '20px 20px 16px', background: '#F4F6FA', borderRadius: '24px 24px 0 0' }}>
+          padding: '20px 20px 16px', background: '#F4F6FA', borderRadius: '24px 24px 0 0',
+          flexShrink: 0 }}>
           <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#0D1F3C' }}>
             Nuevo contacto
           </h3>
@@ -317,175 +267,16 @@ function AddContactSheet({ onClose, onSaved }) {
           </button>
         </div>
 
-        {/* Form */}
-        <div style={{ overflowY: 'auto', flex: 1, padding: '0 16px', paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
-
-          {/* País destino */}
-          <div style={{ marginBottom: 12 }}>
-            <span style={LABEL_STYLE}>País destino *</span>
-            <button
-              type="button"
-              onClick={() => setShowCountryModal(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%',
-                padding: '10px 14px', background: '#FFFFFF', border: '1px solid #E2E8F0',
-                borderRadius: 12, cursor: 'pointer', fontFamily: "'Manrope', sans-serif",
-                textAlign: 'left' }}
-            >
-              {form.country ? (
-                <>
-                  <img src={flagSrc(meta.flagCode)} alt={meta.name} width={36} height={36}
-                    style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover',
-                      border: '1px solid rgba(0,0,0,0.08)', flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 700, color: '#0D1F3C' }}>
-                      {meta.name}
-                    </p>
-                    <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#4A5568' }}>
-                      {meta.currency}
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#F4F6FA',
-                    border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', fontSize: '1.25rem', flexShrink: 0 }}>
-                    🌎
-                  </div>
-                  <span style={{ fontSize: '0.9375rem', color: '#94A3B8', flex: 1 }}>
-                    Selecciona un país
-                  </span>
-                </>
-              )}
-              <ChevronRight size={16} color="#94A3B8" />
-            </button>
-          </div>
-
-          {/* Sección: Identidad */}
-          {form.country && (
-            <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 16,
-              padding: '16px', marginBottom: 12 }}>
-              <p style={{ ...LABEL_STYLE, marginBottom: 12 }}>Datos del beneficiario</p>
-
-              {/* Apodo */}
-              <div style={{ marginBottom: 12 }}>
-                <label style={LABEL_STYLE}>Apodo (opcional)</label>
-                <input
-                  type="text"
-                  placeholder="Ej: Mamá, Proveedor Lima"
-                  value={form.nickname}
-                  onChange={e => set('nickname', e.target.value)}
-                  style={INPUT_STYLE}
-                />
-              </div>
-
-              {/* Nombre + Apellido */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-                <div>
-                  <label style={LABEL_STYLE}>Nombre *</label>
-                  <input type="text" placeholder="Juan" value={form.firstName}
-                    onChange={e => set('firstName', e.target.value)} style={INPUT_STYLE} />
-                </div>
-                <div>
-                  <label style={LABEL_STYLE}>Apellido *</label>
-                  <input type="text" placeholder="García" value={form.lastName}
-                    onChange={e => set('lastName', e.target.value)} style={INPUT_STYLE} />
-                </div>
-              </div>
-
-              {/* Tipo + Número de documento */}
-              <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 10, marginBottom: 12 }}>
-                <div>
-                  <label style={LABEL_STYLE}>Tipo doc. *</label>
-                  <select value={form.docType} onChange={e => set('docType', e.target.value)} style={SELECT_STYLE}>
-                    <option value="">—</option>
-                    {(meta?.docTypes ?? ['DNI','Pasaporte']).map(dt => (
-                      <option key={dt} value={dt}>{dt}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label style={LABEL_STYLE}>N.º documento *</label>
-                  <input type="text" placeholder="12345678" value={form.docNumber}
-                    onChange={e => set('docNumber', e.target.value)} style={INPUT_STYLE} />
-                </div>
-              </div>
-
-              {/* Email */}
-              <div>
-                <label style={LABEL_STYLE}>Email (opcional)</label>
-                <input type="email" placeholder="email@ejemplo.com" value={form.email}
-                  onChange={e => set('email', e.target.value)} style={INPUT_STYLE} />
-              </div>
-            </div>
-          )}
-
-          {/* Sección: Datos bancarios */}
-          {form.country && (
-            <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 16,
-              padding: '16px', marginBottom: 16 }}>
-              <p style={{ ...LABEL_STYLE, marginBottom: 12 }}>Datos bancarios</p>
-
-              {/* Banco */}
-              <div style={{ marginBottom: 12 }}>
-                <label style={LABEL_STYLE}>Banco (opcional)</label>
-                <input type="text" placeholder="Ej: Bancolombia, BCP" value={form.bank}
-                  onChange={e => set('bank', e.target.value)} style={INPUT_STYLE} />
-              </div>
-
-              {/* N.º de cuenta */}
-              <div style={{ marginBottom: 12 }}>
-                <label style={LABEL_STYLE}>N.º de cuenta *</label>
-                <input type="text" placeholder="1234567890" value={form.accountNumber}
-                  onChange={e => set('accountNumber', e.target.value)} style={INPUT_STYLE}
-                  inputMode="numeric" />
-              </div>
-
-              {/* Tipo de cuenta */}
-              <div>
-                <label style={LABEL_STYLE}>Tipo de cuenta</label>
-                <select value={form.accountType} onChange={e => set('accountType', e.target.value)} style={SELECT_STYLE}>
-                  <option value="">— opcional —</option>
-                  {(meta?.accountTypes ?? ['Cuenta de Ahorros','Cuenta Corriente']).map(at => (
-                    <option key={at} value={at}>{at}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
-
-          {saveError && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px',
-              background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, marginBottom: 12 }}>
-              <AlertCircle size={14} color="#EF4444" />
-              <p style={{ margin: 0, fontSize: '0.8125rem', color: '#EF4444' }}>{saveError}</p>
-            </div>
-          )}
-
-          <button
-            onClick={handleSave}
-            disabled={!isValid || saving}
-            style={{
-              width: '100%', padding: '14px 0', borderRadius: 14,
-              background: isValid && !saving ? '#1D3461' : 'rgba(29,52,97,0.25)',
-              border: 'none', color: isValid && !saving ? '#FFFFFF' : '#94A3B8',
-              fontSize: '0.9375rem', fontWeight: 700, cursor: isValid && !saving ? 'pointer' : 'not-allowed',
-              fontFamily: "'Manrope', sans-serif",
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            }}
-          >
-            {saving ? <><Loader2 size={16} className="animate-spin" /> Guardando…</> : 'Guardar contacto'}
-          </button>
+        <div style={{ overflowY: 'auto', flex: 1, padding: '0 16px',
+          paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
+          <VitaContactForm
+            onSave={handleSave}
+            onCancel={onClose}
+            saving={saving}
+            saveError={saveError}
+          />
         </div>
       </div>
-
-      {showCountryModal && (
-        <CountryPickerModal
-          selected={form.country}
-          onSelect={code => set('country', code)}
-          onClose={() => setShowCountryModal(false)}
-        />
-      )}
     </div>
   )
 }
@@ -493,44 +284,14 @@ function AddContactSheet({ onClose, onSaved }) {
 // ── EditContactSheet ──────────────────────────────────────────────────────────
 
 function EditContactSheet({ contact, onClose, onSaved }) {
-  const meta0    = COUNTRY_META[contact.destinationCountry]
-  const bd0      = contact.beneficiaryData ?? {}
   const [saving,    setSaving]    = useState(false)
   const [saveError, setSaveError] = useState('')
 
-  const [form, setForm] = useState({
-    nickname:      contact.nickname      ?? '',
-    firstName:     contact.firstName     ?? '',
-    lastName:      contact.lastName      ?? '',
-    bank:          bd0.beneficiary_bank  ?? '',
-    accountNumber: bd0.beneficiary_account_number ?? bd0.account_bank ?? '',
-    accountType:   bd0.account_type_bank ?? '',
-    email:         bd0.beneficiary_email ?? '',
-  })
-
-  function set(key, val) { setForm(f => ({ ...f, [key]: val })) }
-
-  const isValid = form.firstName.trim() && form.lastName.trim()
-
-  async function handleSave() {
-    if (!isValid || saving) return
+  async function handleSave(data) {
     setSaving(true)
     setSaveError('')
     try {
-      await updateContact(contact._id, {
-        nickname:    form.nickname.trim()    || undefined,
-        firstName:   form.firstName.trim(),
-        lastName:    form.lastName.trim(),
-        beneficiaryData: {
-          ...bd0,
-          beneficiary_first_name:     form.firstName.trim(),
-          beneficiary_last_name:      form.lastName.trim(),
-          beneficiary_bank:           form.bank.trim()          || undefined,
-          beneficiary_account_number: form.accountNumber.trim() || undefined,
-          account_type_bank:          form.accountType          || undefined,
-          beneficiary_email:          form.email.trim()         || undefined,
-        },
-      })
+      await updateContact(contact._id, data)
       onSaved()
       onClose()
     } catch (err) {
@@ -549,7 +310,8 @@ function EditContactSheet({ contact, onClose, onSaved }) {
         boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '20px 20px 16px', background: '#F4F6FA', borderRadius: '24px 24px 0 0' }}>
+          padding: '20px 20px 16px', background: '#F4F6FA', borderRadius: '24px 24px 0 0',
+          flexShrink: 0 }}>
           <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#0D1F3C' }}>
             Editar contacto
           </h3>
@@ -562,97 +324,16 @@ function EditContactSheet({ contact, onClose, onSaved }) {
 
         <div style={{ overflowY: 'auto', flex: 1, padding: '0 16px',
           paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
-
-          {/* País (no editable) */}
-          {meta0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10,
-              padding: '10px 14px', background: '#FFFFFF', border: '1px solid #E2E8F0',
-              borderRadius: 12, marginBottom: 12 }}>
-              <CountryFlag code={contact.destinationCountry} size={28} />
-              <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#4A5568' }}>
-                {meta0.name} · {meta0.currency}
-              </span>
-            </div>
-          )}
-
-          {/* Identidad */}
-          <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 16,
-            padding: '16px', marginBottom: 12 }}>
-            <p style={{ ...LABEL_STYLE, marginBottom: 12 }}>Identidad</p>
-
-            <div style={{ marginBottom: 12 }}>
-              <label style={LABEL_STYLE}>Alias (opcional)</label>
-              <input type="text" placeholder="Ej: Mamá, Proveedor Lima" value={form.nickname}
-                onChange={e => set('nickname', e.target.value)} style={INPUT_STYLE} />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 0 }}>
-              <div>
-                <label style={LABEL_STYLE}>Nombre *</label>
-                <input type="text" value={form.firstName}
-                  onChange={e => set('firstName', e.target.value)} style={INPUT_STYLE} />
-              </div>
-              <div>
-                <label style={LABEL_STYLE}>Apellido *</label>
-                <input type="text" value={form.lastName}
-                  onChange={e => set('lastName', e.target.value)} style={INPUT_STYLE} />
-              </div>
-            </div>
-          </div>
-
-          {/* Datos bancarios */}
-          <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 16,
-            padding: '16px', marginBottom: 12 }}>
-            <p style={{ ...LABEL_STYLE, marginBottom: 12 }}>Datos bancarios</p>
-
-            <div style={{ marginBottom: 12 }}>
-              <label style={LABEL_STYLE}>Banco (opcional)</label>
-              <input type="text" value={form.bank}
-                onChange={e => set('bank', e.target.value)} style={INPUT_STYLE} />
-            </div>
-            <div style={{ marginBottom: 12 }}>
-              <label style={LABEL_STYLE}>N.º de cuenta</label>
-              <input type="text" value={form.accountNumber} inputMode="numeric"
-                onChange={e => set('accountNumber', e.target.value)} style={INPUT_STYLE} />
-            </div>
-            <div style={{ marginBottom: 12 }}>
-              <label style={LABEL_STYLE}>Tipo de cuenta</label>
-              <select value={form.accountType} onChange={e => set('accountType', e.target.value)} style={SELECT_STYLE}>
-                <option value="">— opcional —</option>
-                {(meta0?.accountTypes ?? ['Cuenta de Ahorros','Cuenta Corriente']).map(at => (
-                  <option key={at} value={at}>{at}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label style={LABEL_STYLE}>Email (opcional)</label>
-              <input type="email" value={form.email}
-                onChange={e => set('email', e.target.value)} style={INPUT_STYLE} />
-            </div>
-          </div>
-
-          {saveError && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px',
-              background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, marginBottom: 12 }}>
-              <AlertCircle size={14} color="#EF4444" />
-              <p style={{ margin: 0, fontSize: '0.8125rem', color: '#EF4444' }}>{saveError}</p>
-            </div>
-          )}
-
-          <button
-            onClick={handleSave}
-            disabled={!isValid || saving}
-            style={{
-              width: '100%', padding: '14px 0', borderRadius: 14,
-              background: isValid && !saving ? '#1D3461' : 'rgba(29,52,97,0.25)',
-              border: 'none', color: isValid && !saving ? '#FFFFFF' : '#94A3B8',
-              fontSize: '0.9375rem', fontWeight: 700,
-              cursor: isValid && !saving ? 'pointer' : 'not-allowed',
-              fontFamily: "'Manrope', sans-serif",
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            }}
-          >
-            {saving ? <><Loader2 size={16} className="animate-spin" /> Guardando…</> : 'Guardar cambios'}
-          </button>
+          <VitaContactForm
+            initialDestinationCountry={contact.destinationCountry}
+            initialNickname={contact.nickname ?? ''}
+            initialValues={contact.beneficiaryData ?? {}}
+            onSave={handleSave}
+            onCancel={onClose}
+            saving={saving}
+            saveError={saveError}
+            submitLabel="Guardar cambios"
+          />
         </div>
       </div>
     </div>

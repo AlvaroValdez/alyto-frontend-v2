@@ -9,7 +9,7 @@
  * al navegar entre pasos del flujo de pago.
  *
  * Uso:
- *   const { rules, loading, error, refetch } = useWithdrawalRules(destinationCountry)
+ *   const { rules, payoutMethod, loading, error, refetch } = useWithdrawalRules(destinationCountry)
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -24,19 +24,23 @@ function loadFromCache(countryCode) {
   try {
     const raw = sessionStorage.getItem(`${CACHE_KEY_PREFIX}${countryCode}`)
     if (!raw) return null
-    const { rules, cachedAt } = JSON.parse(raw)
-    if (Date.now() - cachedAt > CACHE_TTL_MS) return null
-    return rules
+    const parsed = JSON.parse(raw)
+    if (Date.now() - (parsed.cachedAt ?? 0) > CACHE_TTL_MS) return null
+    // Soporta formato antiguo { rules, cachedAt } y nuevo { fields, payoutMethod, cachedAt }
+    return {
+      fields:       parsed.fields       ?? parsed.rules ?? [],
+      payoutMethod: parsed.payoutMethod ?? 'vitaWallet',
+    }
   } catch {
     return null
   }
 }
 
-function saveToCache(countryCode, rules) {
+function saveToCache(countryCode, fields, payoutMethod) {
   try {
     sessionStorage.setItem(
       `${CACHE_KEY_PREFIX}${countryCode}`,
-      JSON.stringify({ rules, cachedAt: Date.now() }),
+      JSON.stringify({ fields, payoutMethod, cachedAt: Date.now() }),
     )
   } catch { /* sessionStorage lleno o no disponible */ }
 }
@@ -45,12 +49,13 @@ function saveToCache(countryCode, rules) {
 
 /**
  * @param {string|null} countryCode  ISO alpha-2 del país destino (ej. 'CO', 'PE')
- * @returns {{ rules: Array, loading: boolean, error: string|null, refetch: Function }}
+ * @returns {{ rules: Array, payoutMethod: string|null, loading: boolean, error: string|null, refetch: Function }}
  */
 export function useWithdrawalRules(countryCode) {
-  const [rules,   setRules]   = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState(null)
+  const [rules,        setRules]        = useState([])
+  const [payoutMethod, setPayoutMethod] = useState(null)
+  const [loading,      setLoading]      = useState(false)
+  const [error,        setError]        = useState(null)
 
   // Ref para cancelar fetchs en vuelo si el país cambia o el componente desmonta
   const abortRef = useRef(null)
@@ -58,6 +63,7 @@ export function useWithdrawalRules(countryCode) {
   const fetchRules = useCallback(async (code) => {
     if (!code) {
       setRules([])
+      setPayoutMethod(null)
       setLoading(false)
       setError(null)
       return
@@ -66,7 +72,8 @@ export function useWithdrawalRules(countryCode) {
     // Revisar caché primero
     const cached = loadFromCache(code)
     if (cached) {
-      setRules(cached)
+      setRules(cached.fields)
+      setPayoutMethod(cached.payoutMethod)
       setLoading(false)
       setError(null)
       return
@@ -83,8 +90,10 @@ export function useWithdrawalRules(countryCode) {
       const data = await getWithdrawalRules(code, abortRef.current.signal)
       // Backend returns { destCountry, payoutMethod, fields } OR a legacy array.
       const fields = Array.isArray(data) ? data : (data?.fields ?? [])
-      saveToCache(code, fields)
+      const pm     = Array.isArray(data) ? 'vitaWallet' : (data?.payoutMethod ?? 'vitaWallet')
+      saveToCache(code, fields, pm)
       setRules(fields)
+      setPayoutMethod(pm)
       setError(null)
     } catch (err) {
       if (err.name === 'AbortError') return  // fetch cancelado — no actualizar estado
@@ -98,6 +107,7 @@ export function useWithdrawalRules(countryCode) {
   // Recargar cuando cambia el país
   useEffect(() => {
     setRules([])
+    setPayoutMethod(null)
     fetchRules(countryCode)
 
     return () => {
@@ -113,5 +123,5 @@ export function useWithdrawalRules(countryCode) {
     fetchRules(countryCode)
   }, [countryCode, fetchRules])
 
-  return { rules, loading, error, refetch }
+  return { rules, payoutMethod, loading, error, refetch }
 }

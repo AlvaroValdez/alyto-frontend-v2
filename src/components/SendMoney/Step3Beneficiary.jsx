@@ -18,6 +18,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useWithdrawalRules } from '../../hooks/useWithdrawalRules'
 import { useAuth }             from '../../context/AuthContext'
 import { createContact }       from '../../services/api'
+import ContactPicker           from '../Contacts/ContactPicker'
 
 // ── Prefijos de teléfono por país ─────────────────────────────────────────────
 
@@ -141,7 +142,7 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function Step3Beneficiary({ destinationCountry, onNext }) {
-  const { rules, loading, error: loadError, refetch } = useWithdrawalRules(destinationCountry)
+  const { rules, payoutMethod, loading, error: loadError, refetch } = useWithdrawalRules(destinationCountry)
   const { user } = useAuth()
 
   const [values,  setValues]  = useState({})
@@ -178,6 +179,18 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
     setIsSavedContact(false)
     setContactId(null)
     setValues({})
+    setTouched({})
+  }
+
+  function handleContactPick(contact) {
+    if (contact.beneficiaryData && typeof contact.beneficiaryData === 'object') {
+      setValues(contact.beneficiaryData)
+    }
+    setContactId(contact._id ?? null)
+    setIsSavedContact(true)
+    const name = contact.nickname ||
+      `${contact.firstName ?? ''} ${contact.lastName ?? ''}`.trim()
+    if (name) setPrefillName(name)
     setTouched({})
   }
 
@@ -238,7 +251,7 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
           lastName,
           destinationCountry:  destinationCountry,
           destinationCurrency: '',
-          formType:            'bank_data',
+          formType:            payoutMethod === 'owlPay' ? 'owlpay' : 'vita',
           beneficiaryData,
         })
       } catch (err) {
@@ -291,7 +304,16 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
         </p>
       </div>
 
-      {/* Prefill banner — shown when coming from Contacts page */}
+      {/* Contactos guardados — picker inline, hidden once a contact is selected */}
+      {!prefillName && (
+        <ContactPicker
+          destinationCountry={destinationCountry}
+          selectedId={contactId}
+          onSelect={handleContactPick}
+        />
+      )}
+
+      {/* Prefill banner — shown when coming from Contacts page or ContactPicker */}
       {prefillName && (
         <div style={{
           display:      'flex',
