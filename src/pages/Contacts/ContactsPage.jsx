@@ -760,7 +760,7 @@ export default function ContactsPage() {
           </p>
           <p style={{ margin: 0, fontSize: '0.875rem', color: '#4A5568', lineHeight: 1.6, maxWidth: 260,
             marginBottom: 20 }}>
-            Agrega un beneficiario para enviar dinero más rápido sin tener que ingresar sus datos cada vez.
+            No tienes contactos guardados aún. Guárdalos al hacer tu próxima transferencia.
           </p>
           <button onClick={() => setShowAdd(true)} style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
