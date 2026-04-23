@@ -72,15 +72,15 @@ function MethodCard({ method, selected, onSelect }) {
       disabled={isDisabled}
       className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all duration-150 text-left ${
         isDisabled
-          ? 'bg-[#1A2340] border-[#1A2340] opacity-50 cursor-not-allowed'
+          ? 'bg-white border-[#1A2340] opacity-50 cursor-not-allowed'
           : selected
-            ? 'bg-[#14B8A61A] border-[#14B8A6] shadow-[0_0_0_1px_#14B8A633]'
-            : 'bg-[#1A2340] border-[#263050] hover:border-[#14B8A633] hover:bg-[#1F2B4D] cursor-pointer'
+            ? 'bg-[#1D9E751A] border-[#1D9E75] shadow-[0_0_0_1px_#1D9E7533]'
+            : 'bg-white border-[#E2E8F0] hover:border-[#1D9E7533] hover:bg-[#F0F2F7] cursor-pointer'
       }`}
     >
       {/* Logo */}
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
-        selected ? 'bg-[#14B8A620]' : 'bg-[#263050]'
+        selected ? 'bg-[#1D9E7520]' : 'bg-[#E2E8F0]'
       }`}>
         {method.logo}
       </div>
@@ -88,21 +88,21 @@ function MethodCard({ method, selected, onSelect }) {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
-          <span className={`text-[0.9375rem] font-semibold ${isDisabled ? 'text-[#4E5A7A]' : 'text-white'}`}>
+          <span className={`text-[0.9375rem] font-semibold ${isDisabled ? 'text-[#94A3B8]' : 'text-[#0D1F3C]'}`}>
             {method.name}
           </span>
           <span className={`inline-flex items-center gap-1 text-[0.625rem] font-semibold px-2 py-0.5 rounded-full ${
             method.badgeType === 'instant'
               ? 'bg-[#22C55E1A] text-[#22C55E]'
               : method.badgeType === 'soon'
-                ? 'bg-[#14B8A61A] text-[#8A96B8]'
-                : 'bg-[#14B8A61A] text-[#14B8A6]'
+                ? 'bg-[#1D9E751A] text-[#4A5568]'
+                : 'bg-[#1D9E751A] text-[#1D9E75]'
           }`}>
             <BadgeIcon type={method.badgeType} />
             {method.badge}
           </span>
         </div>
-        <p className="text-[0.75rem] text-[#8A96B8] truncate">
+        <p className="text-[0.75rem] text-[#4A5568] truncate">
           {method.description}
         </p>
       </div>
@@ -110,8 +110,8 @@ function MethodCard({ method, selected, onSelect }) {
       {/* Check circle */}
       <div className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all ${
         selected
-          ? 'bg-[#14B8A6] border-[#14B8A6]'
-          : 'border-[#263050] bg-transparent'
+          ? 'bg-[#1D9E75] border-[#1D9E75]'
+          : 'border-[#E2E8F0] bg-transparent'
       }`}>
         {selected && <Check size={12} className="text-[#0F1628]" strokeWidth={3} />}
       </div>
@@ -149,8 +149,8 @@ export default function Step2PayinMethod({ onNext, originCountry = 'CL' }) {
 
       {/* ── Título ── */}
       <div>
-        <h2 className="text-[1.125rem] font-bold text-white">¿Cómo pagas?</h2>
-        <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
+        <h2 className="text-[1.125rem] font-bold text-[#0D1F3C]">¿Cómo pagas?</h2>
+        <p className="text-[0.8125rem] text-[#4A5568] mt-0.5">
           Selecciona el método de pago en {countryLabel}
         </p>
       </div>
@@ -168,8 +168,8 @@ export default function Step2PayinMethod({ onNext, originCountry = 'CL' }) {
       </div>
 
       {/* Nota informativa */}
-      <div className="bg-[#1A2340] rounded-xl px-4 py-3">
-        <p className="text-[0.75rem] text-[#8A96B8] leading-relaxed">
+      <div className="bg-white rounded-xl px-4 py-3">
+        <p className="text-[0.75rem] text-[#4A5568] leading-relaxed">
           {originCountry === 'BO'
             ? 'Tu pago será procesado manualmente por AV Finance SRL. Recibirás una confirmación una vez verificado el depósito.'
             : 'El débito se realizará desde tu cuenta bancaria chilena en tiempo real. El monto será reservado durante el proceso del pago.'
@@ -183,8 +183,8 @@ export default function Step2PayinMethod({ onNext, originCountry = 'CL' }) {
         disabled={!selected}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
           selected
-            ? 'bg-[#14B8A6] text-[#0F1628] shadow-[0_4px_20px_rgba(20,184,166,0.25)] active:scale-[0.98]'
-            : 'bg-[#14B8A640] text-[#4E5A7A] cursor-not-allowed'
+            ? 'bg-[#1D9E75] text-[#0F1628] shadow-[0_4px_20px_rgba(29,158,117,0.25)] active:scale-[0.98]'
+            : 'bg-[#1D9E7540] text-[#94A3B8] cursor-not-allowed'
         }`}
       >
         Continuar

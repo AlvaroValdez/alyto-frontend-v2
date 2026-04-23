@@ -42,17 +42,17 @@ export default function StepIndicator({ currentStep, skipStep2 = false }) {
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-[0.6875rem] font-bold transition-all duration-200 ${
                   isDone
-                    ? 'bg-[#22C55E] text-white'
+                    ? 'bg-[#22C55E] text-[#0D1F3C]'
                     : isActive
-                      ? 'bg-[#14B8A6] text-[#0F1628]'
-                      : 'bg-[#1A2340] border border-[#263050] text-[#4E5A7A]'
+                      ? 'bg-[#1D9E75] text-white'
+                      : 'bg-white border border-[#E2E8F0] text-[#94A3B8]'
                 }`}
               >
                 {isDone ? <Check size={13} /> : displayNum}
               </div>
               <span
                 className={`text-[0.5625rem] font-medium mt-1 whitespace-nowrap ${
-                  isActive ? 'text-[#14B8A6]' : isDone ? 'text-[#22C55E]' : 'text-[#4E5A7A]'
+                  isActive ? 'text-[#1D9E75]' : isDone ? 'text-[#22C55E]' : 'text-[#94A3B8]'
                 }`}
               >
                 {s.label}
@@ -63,7 +63,7 @@ export default function StepIndicator({ currentStep, skipStep2 = false }) {
             {!isLast && (
               <div
                 className={`flex-1 h-px mx-1 mb-4 transition-all duration-300 ${
-                  currentStep > s.number ? 'bg-[#22C55E]' : 'bg-[#263050]'
+                  currentStep > s.number ? 'bg-[#22C55E]' : 'bg-[#E2E8F0]'
                 }`}
               />
             )}

@@ -119,8 +119,8 @@ function QuoteSkeleton() {
     <div className="space-y-2 animate-pulse">
       {[1, 2, 3].map(i => (
         <div key={i} className="flex justify-between">
-          <div className="h-3.5 bg-[#1F2B4D] rounded w-28" />
-          <div className="h-3.5 bg-[#1F2B4D] rounded w-20" />
+          <div className="h-3.5 bg-[#F0F2F7] rounded w-28" />
+          <div className="h-3.5 bg-[#F0F2F7] rounded w-20" />
         </div>
       ))}
     </div>
@@ -143,7 +143,7 @@ function StatusBadge({ status }) {
   }
   if (status === 'updating') {
     return (
-      <span className="flex items-center gap-1 text-[0.625rem] font-semibold text-[#14B8A6]">
+      <span className="flex items-center gap-1 text-[0.625rem] font-semibold text-[#1D9E75]">
         <Loader2 size={10} className="animate-spin" />
         Actualizando
       </span>
@@ -249,19 +249,19 @@ export default function Step1Amount({ initialData, onNext }) {
 
       {/* ── Título ── */}
       <div>
-        <h2 className="text-[1.125rem] font-bold text-white">¿Cuánto envías?</h2>
-        <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
+        <h2 className="text-[1.125rem] font-bold text-[#0D1F3C]">¿Cuánto envías?</h2>
+        <p className="text-[0.8125rem] text-[#4A5568] mt-0.5">
           {origin.flag} Tu cuenta está en {origin.country} · {origin.currency}
         </p>
       </div>
 
       {/* ── Input de monto ── */}
       <div>
-        <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide mb-2">
+        <label className="block text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-wide mb-2">
           Monto a enviar
         </label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8A96B8] font-bold text-[1.125rem]">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#4A5568] font-bold text-[1.125rem]">
             {origin.symbol}
           </span>
           <input
@@ -270,9 +270,9 @@ export default function Step1Amount({ initialData, onNext }) {
             value={displayAmount}
             onChange={handleAmountChange}
             placeholder="0"
-            className="w-full bg-[#1A2340] border border-[#263050] rounded-xl pl-8 pr-16 py-4 text-white text-[1.5rem] font-bold focus:outline-none focus:border-[#14B8A6] focus:shadow-[0_0_0_2px_#14B8A620] transition-all placeholder:text-[#4E5A7A]"
+            className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-8 pr-16 py-4 text-[#0D1F3C] text-[1.5rem] font-bold focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_2px_#1D9E7520] transition-all placeholder:text-[#94A3B8]"
           />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[0.75rem] font-semibold text-[#4E5A7A]">
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[0.75rem] font-semibold text-[#94A3B8]">
             {activeCurrency}
           </span>
         </div>
@@ -280,24 +280,24 @@ export default function Step1Amount({ initialData, onNext }) {
 
       {/* ── Selector de país destino ── */}
       <div>
-        <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide mb-2">
+        <label className="block text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-wide mb-2">
           País de destino
         </label>
 
         {corridorsLoading ? (
           /* Skeleton del selector */
-          <div className="h-14 rounded-xl bg-[#1A2340] border border-[#263050] animate-pulse" />
+          <div className="h-14 rounded-xl bg-white border border-[#E2E8F0] animate-pulse" />
         ) : corridorsError ? (
           <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
             <AlertCircle size={14} className="text-[#EF4444] flex-shrink-0" />
             <p className="text-[0.8125rem] text-[#EF4444]">{corridorsError}</p>
           </div>
         ) : countries.length === 0 ? (
-          <div className="px-4 py-4 rounded-xl bg-[#1A2340] border border-[#263050] text-center">
-            <p className="text-[0.8125rem] text-[#8A96B8]">
+          <div className="px-4 py-4 rounded-xl bg-white border border-[#E2E8F0] text-center">
+            <p className="text-[0.8125rem] text-[#4A5568]">
               No hay destinos disponibles para tu cuenta.
             </p>
-            <p className="text-[0.75rem] text-[#4E5A7A] mt-1">
+            <p className="text-[0.75rem] text-[#94A3B8] mt-1">
               Contáctanos para más información.
             </p>
           </div>
@@ -309,7 +309,7 @@ export default function Step1Amount({ initialData, onNext }) {
             <select
               value={selectedCountry?.code || ''}
               onChange={handleCountryChange}
-              className="w-full appearance-none bg-[#1A2340] border border-[#263050] rounded-xl pl-11 pr-10 py-4 text-white text-[0.9375rem] font-semibold focus:outline-none focus:border-[#14B8A6] focus:shadow-[0_0_0_2px_#14B8A620] transition-all cursor-pointer"
+              className="w-full appearance-none bg-white border border-[#E2E8F0] rounded-xl pl-11 pr-10 py-4 text-[#0D1F3C] text-[0.9375rem] font-semibold focus:outline-none focus:border-[#1D9E75] focus:shadow-[0_0_0_2px_#1D9E7520] transition-all cursor-pointer"
             >
               <option value="" disabled>Selecciona un país</option>
               {countries.map(c => (
@@ -318,14 +318,14 @@ export default function Step1Amount({ initialData, onNext }) {
                 </option>
               ))}
             </select>
-            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4E5A7A] pointer-events-none" />
+            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
           </div>
         )}
       </div>
 
       {/* ── Bloque de cotización ── */}
       {showQuoteBlock && (
-        <div className="bg-[#1A2340] border border-[#263050] rounded-2xl p-4">
+        <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4">
 
           {status === 'connecting' && <QuoteSkeleton />}
 
@@ -337,7 +337,7 @@ export default function Step1Amount({ initialData, onNext }) {
               </p>
               <button
                 onClick={reconnect}
-                className="flex items-center gap-1 text-[0.75rem] text-[#14B8A6] hover:text-white transition-colors"
+                className="flex items-center gap-1 text-[0.75rem] text-[#1D9E75] hover:text-[#0D1F3C] transition-colors"
               >
                 <RefreshCw size={13} /> Reintentar
               </button>
@@ -355,14 +355,14 @@ export default function Step1Amount({ initialData, onNext }) {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="text-[0.8125rem] text-white font-semibold">
+                    <p className="text-[0.8125rem] text-[#0D1F3C] font-semibold">
                       {selectedCountry?.flag} {selectedCountry?.name}
                     </p>
                     <span className="text-[0.625rem] font-bold text-[#F59E0B] bg-[#F59E0B1A] border border-[#F59E0B33] px-2 py-0.5 rounded-full uppercase tracking-wide">
                       Próximamente
                     </span>
                   </div>
-                  <p className="text-[0.75rem] text-[#8A96B8] mt-0.5">
+                  <p className="text-[0.75rem] text-[#4A5568] mt-0.5">
                     Este corredor estará disponible pronto.
                   </p>
                 </div>
@@ -372,11 +372,11 @@ export default function Step1Amount({ initialData, onNext }) {
                 <AlertCircle size={16} className="text-[#EF4444] flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <p className="text-[0.8125rem] text-[#EF4444] font-medium">Error de cotización</p>
-                  <p className="text-[0.75rem] text-[#8A96B8] mt-0.5">{error}</p>
+                  <p className="text-[0.75rem] text-[#4A5568] mt-0.5">{error}</p>
                 </div>
                 <button
                   onClick={reconnect}
-                  className="flex items-center gap-1 text-[0.75rem] text-[#14B8A6] hover:text-white transition-colors flex-shrink-0"
+                  className="flex items-center gap-1 text-[0.75rem] text-[#1D9E75] hover:text-[#0D1F3C] transition-colors flex-shrink-0"
                 >
                   <RefreshCw size={13} /> Reintentar
                 </button>
@@ -388,9 +388,9 @@ export default function Step1Amount({ initialData, onNext }) {
             <>
               {/* Recibe */}
               <div className="flex justify-between items-center mb-3">
-                <span className="text-[0.8125rem] text-[#8A96B8]">{destCountry?.name} recibe</span>
+                <span className="text-[0.8125rem] text-[#4A5568]">{destCountry?.name} recibe</span>
                 <div className="flex items-center gap-2">
-                  {status === 'updating' && <Loader2 size={13} className="animate-spin text-[#14B8A6]" />}
+                  {status === 'updating' && <Loader2 size={13} className="animate-spin text-[#1D9E75]" />}
                   <span className="text-[1.125rem] font-bold text-[#22C55E]">
                     {formatDestAmount(quote.destinationAmount, quote.destinationCurrency)}
                   </span>
@@ -400,7 +400,7 @@ export default function Step1Amount({ initialData, onNext }) {
               {/* Tasa */}
               <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-[0.75rem] text-[#8A96B8]">Tasa aplicada</span>
+                  <span className="text-[0.75rem] text-[#4A5568]">Tasa aplicada</span>
                   {isStale && (
                     <span
                       className="text-[0.5625rem] font-semibold text-[#F59E0B] bg-[#F59E0B1A] px-1.5 py-0.5 rounded"
@@ -412,7 +412,7 @@ export default function Step1Amount({ initialData, onNext }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusBadge status={status} />
-                  <span className="text-[0.8125rem] font-semibold text-[#14B8A6]">
+                  <span className="text-[0.8125rem] font-semibold text-[#1D9E75]">
                     1 {activeCurrency} = {Number(quote.exchangeRate).toFixed(4)} {quote.destinationCurrency}
                   </span>
                 </div>
@@ -432,32 +432,32 @@ export default function Step1Amount({ initialData, onNext }) {
                       onClick={() => setFeesExpanded(v => !v)}
                       className="w-full flex justify-between items-center py-1"
                     >
-                      <span className="text-[0.75rem] text-[#8A96B8]">Costo del envío</span>
+                      <span className="text-[0.75rem] text-[#4A5568]">Costo del envío</span>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[0.8125rem] font-semibold text-white">
+                        <span className="text-[0.8125rem] font-semibold text-[#0D1F3C]">
                           {totalCosto > 0 ? `${origin.symbol}${totalCosto.toLocaleString('es-CL')} ${activeCurrency}` : '—'}
                         </span>
                         {feesExpanded
-                          ? <ChevronUp   size={14} className="text-[#4E5A7A]" />
-                          : <ChevronDown size={14} className="text-[#4E5A7A]" />
+                          ? <ChevronUp   size={14} className="text-[#94A3B8]" />
+                          : <ChevronDown size={14} className="text-[#94A3B8]" />
                         }
                       </div>
                     </button>
 
                     {feesExpanded && (
-                      <div className="mt-2 pt-3 border-t border-[#263050] space-y-2">
+                      <div className="mt-2 pt-3 border-t border-[#E2E8F0] space-y-2">
                         {comisionServicio > 0 && (
                           <div className="flex justify-between">
-                            <span className="text-[0.6875rem] text-[#4E5A7A]">· Comisión de servicio</span>
-                            <span className="text-[0.6875rem] text-[#8A96B8]">
+                            <span className="text-[0.6875rem] text-[#94A3B8]">· Comisión de servicio</span>
+                            <span className="text-[0.6875rem] text-[#4A5568]">
                               {origin.symbol}{comisionServicio.toLocaleString('es-CL')} {activeCurrency}
                             </span>
                           </div>
                         )}
                         {feeProcesamiento > 0 && (
                           <div className="flex justify-between">
-                            <span className="text-[0.6875rem] text-[#4E5A7A]">· Fee de procesamiento</span>
-                            <span className="text-[0.6875rem] text-[#8A96B8]">
+                            <span className="text-[0.6875rem] text-[#94A3B8]">· Fee de procesamiento</span>
+                            <span className="text-[0.6875rem] text-[#4A5568]">
                               {origin.symbol}{feeProcesamiento.toLocaleString('es-CL')} {activeCurrency}
                             </span>
                           </div>
@@ -468,14 +468,14 @@ export default function Step1Amount({ initialData, onNext }) {
                 )
               })()}
 
-              <div className="my-3 border-t border-[#263050]" />
+              <div className="my-3 border-t border-[#E2E8F0]" />
 
               {/* Tasa BOB/USDT — solo para corredores Bolivia */}
               {activeCurrency === 'BOB' && bobRateInfo && (
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[0.75rem] text-[#4E5A7A]">Tasa usada:</span>
-                    <span className="text-[0.8125rem] font-semibold text-[#14B8A6]">
+                    <span className="text-[0.75rem] text-[#94A3B8]">Tasa usada:</span>
+                    <span className="text-[0.8125rem] font-semibold text-[#1D9E75]">
                       1 {bobRateInfo.pair?.split('/')[1] ?? 'USDT'} = {Number(bobRateInfo.rate).toFixed(2)} BOB
                     </span>
                   </div>
@@ -485,7 +485,7 @@ export default function Step1Amount({ initialData, onNext }) {
                         ⚠️ Tasa desactualizada
                       </span>
                     ) : (
-                      <span className="text-[0.6875rem] text-[#4E5A7A]">
+                      <span className="text-[0.6875rem] text-[#94A3B8]">
                         {bobRateInfo.source ?? 'Binance P2P'} · {timeAgoShort(bobRateInfo.updatedAt)}
                       </span>
                     )}
@@ -502,21 +502,21 @@ export default function Step1Amount({ initialData, onNext }) {
                   </div>
                   <button
                     onClick={reconnect}
-                    className="flex items-center gap-1 text-[0.75rem] text-[#14B8A6] hover:text-white transition-colors"
+                    className="flex items-center gap-1 text-[0.75rem] text-[#1D9E75] hover:text-[#0D1F3C] transition-colors"
                   >
                     <RefreshCw size={13} /> Actualizar
                   </button>
                 </div>
               ) : (
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-1.5 text-[#8A96B8]">
+                  <div className="flex items-center gap-1.5 text-[#4A5568]">
                     <Clock size={13} />
                     <span className="text-[0.75rem]">{quote.estimatedDelivery || '1 día hábil'}</span>
                   </div>
                   {countdown !== null && (
-                    <div className="flex items-center gap-1 text-[0.6875rem] text-[#4E5A7A]">
+                    <div className="flex items-center gap-1 text-[0.6875rem] text-[#94A3B8]">
                       <span>Cotización válida</span>
-                      <span className={`font-mono font-semibold ${countdown <= 30 ? 'text-[#F59E0B]' : 'text-[#14B8A6]'}`}>
+                      <span className={`font-mono font-semibold ${countdown <= 30 ? 'text-[#F59E0B]' : 'text-[#1D9E75]'}`}>
                         {formatCountdown(countdown)}
                       </span>
                     </div>
@@ -534,8 +534,8 @@ export default function Step1Amount({ initialData, onNext }) {
         disabled={!canContinue}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
           canContinue
-            ? 'bg-[#14B8A6] text-[#0F1628] shadow-[0_4px_20px_rgba(20,184,166,0.25)] active:scale-[0.98]'
-            : 'bg-[#14B8A640] text-[#4E5A7A] cursor-not-allowed'
+            ? 'bg-[#1D9E75] text-[#0F1628] shadow-[0_4px_20px_rgba(29,158,117,0.25)] active:scale-[0.98]'
+            : 'bg-[#1D9E7540] text-[#94A3B8] cursor-not-allowed'
         }`}
       >
         Continuar

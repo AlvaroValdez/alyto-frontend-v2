@@ -30,8 +30,8 @@ const PHONE_PREFIXES = {
 function FieldSkeleton() {
   return (
     <div className="flex flex-col gap-2">
-      <div className="h-3 w-24 rounded bg-[#1A2340] animate-pulse" />
-      <div className="h-12 w-full rounded-xl bg-[#1A2340] animate-pulse" />
+      <div className="h-3 w-24 rounded bg-white animate-pulse" />
+      <div className="h-12 w-full rounded-xl bg-white animate-pulse" />
     </div>
   )
 }
@@ -40,11 +40,11 @@ function LoadingSkeleton() {
   return (
     <div className="flex flex-col gap-4 px-4 pb-4">
       <div>
-        <div className="h-5 w-40 rounded bg-[#1A2340] animate-pulse mb-2" />
-        <div className="h-3 w-56 rounded bg-[#1A2340] animate-pulse" />
+        <div className="h-5 w-40 rounded bg-white animate-pulse mb-2" />
+        <div className="h-3 w-56 rounded bg-white animate-pulse" />
       </div>
       {Array.from({ length: 5 }).map((_, i) => <FieldSkeleton key={i} />)}
-      <div className="h-14 w-full rounded-2xl bg-[#1A2340] animate-pulse mt-2" />
+      <div className="h-14 w-full rounded-2xl bg-white animate-pulse mt-2" />
     </div>
   )
 }
@@ -76,17 +76,17 @@ function validateField(field, value) {
 function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
   const { key, label, type, required, options, placeholder } = field
 
-  const baseInput = `w-full bg-[#1A2340] border rounded-xl px-4 py-3.5 text-[0.9375rem] text-white
-    placeholder:text-[#4E5A7A] focus:outline-none transition-all`
-  const borderOk  = 'border-[#263050] focus:border-[#14B8A6] focus:shadow-[0_0_0_2px_#14B8A620]'
+  const baseInput = `w-full bg-white border rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0D1F3C]
+    placeholder:text-[#94A3B8] focus:outline-none transition-all`
+  const borderOk  = 'border-[#E2E8F0] focus:border-[#1D9E75] focus:shadow-[0_0_0_2px_#1D9E7520]'
   const borderErr = 'border-[#EF4444] shadow-[0_0_0_2px_#EF44441A]'
 
   return (
     <div>
-      <label className="block text-[0.75rem] font-semibold text-[#8A96B8] uppercase tracking-wide mb-2">
+      <label className="block text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-wide mb-2">
         {label}
         {!required && (
-          <span className="ml-1 text-[0.625rem] normal-case font-normal text-[#4E5A7A]">(opcional)</span>
+          <span className="ml-1 text-[0.625rem] normal-case font-normal text-[#94A3B8]">(opcional)</span>
         )}
       </label>
 
@@ -105,8 +105,8 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
 
       ) : type === 'phone' ? (
         <div className="flex gap-2">
-          <span className="flex items-center px-3 bg-[#1A2340] border border-[#263050] rounded-xl
-            text-[0.875rem] text-[#8A96B8] flex-shrink-0 min-w-[64px] justify-center">
+          <span className="flex items-center px-3 bg-white border border-[#E2E8F0] rounded-xl
+            text-[0.875rem] text-[#4A5568] flex-shrink-0 min-w-[64px] justify-center">
             {PHONE_PREFIXES[countryCode] ?? ''}
           </span>
           <input
@@ -209,19 +209,19 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
     return (
       <div className="flex flex-col gap-4 px-4 pb-4">
         <div>
-          <h2 className="text-[1.125rem] font-bold text-white">¿A quién le envías?</h2>
-          <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">Ingresa los datos bancarios del beneficiario</p>
+          <h2 className="text-[1.125rem] font-bold text-[#0D1F3C]">¿A quién le envías?</h2>
+          <p className="text-[0.8125rem] text-[#4A5568] mt-0.5">Ingresa los datos bancarios del beneficiario</p>
         </div>
 
         <div className="bg-[#EF44441A] border border-[#EF44441A] rounded-2xl p-4 flex flex-col gap-3">
           <p className="text-[0.875rem] text-[#F87171]">
             No se pudieron cargar los campos del formulario.
           </p>
-          <p className="text-[0.75rem] text-[#8A96B8]">{loadError}</p>
+          <p className="text-[0.75rem] text-[#4A5568]">{loadError}</p>
           <button
             onClick={refetch}
-            className="self-start px-4 py-2 rounded-xl border border-[#14B8A633] text-[0.875rem]
-              font-semibold text-[#14B8A6] hover:bg-[#14B8A61A] transition-colors"
+            className="self-start px-4 py-2 rounded-xl border border-[#1D9E7533] text-[0.875rem]
+              font-semibold text-[#1D9E75] hover:bg-[#1D9E751A] transition-colors"
           >
             Reintentar
           </button>
@@ -237,8 +237,8 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
 
       {/* Título */}
       <div>
-        <h2 className="text-[1.125rem] font-bold text-white">¿A quién le envías?</h2>
-        <p className="text-[0.8125rem] text-[#8A96B8] mt-0.5">
+        <h2 className="text-[1.125rem] font-bold text-[#0D1F3C]">¿A quién le envías?</h2>
+        <p className="text-[0.8125rem] text-[#4A5568] mt-0.5">
           Ingresa los datos bancarios del beneficiario
         </p>
       </div>
@@ -257,9 +257,9 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
       ))}
 
       {/* Nota de seguridad */}
-      <div className="flex items-start gap-2.5 bg-[#1A2340] rounded-xl px-3.5 py-3">
+      <div className="flex items-start gap-2.5 bg-white rounded-xl px-3.5 py-3">
         <span className="text-base flex-shrink-0">🔒</span>
-        <p className="text-[0.6875rem] text-[#8A96B8] leading-relaxed">
+        <p className="text-[0.6875rem] text-[#4A5568] leading-relaxed">
           Tus datos están cifrados y protegidos. Solo los usamos para procesar este pago.
         </p>
       </div>
@@ -270,8 +270,8 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
         disabled={!allValid}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
           allValid
-            ? 'bg-[#14B8A6] text-[#0F1628] shadow-[0_4px_20px_rgba(20,184,166,0.25)] active:scale-[0.98]'
-            : 'bg-[#14B8A640] text-[#4E5A7A] cursor-not-allowed'
+            ? 'bg-[#1D9E75] text-[#0F1628] shadow-[0_4px_20px_rgba(29,158,117,0.25)] active:scale-[0.98]'
+            : 'bg-[#1D9E7540] text-[#94A3B8] cursor-not-allowed'
         }`}
       >
         Continuar

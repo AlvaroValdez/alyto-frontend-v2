@@ -49,26 +49,26 @@ export default function Step6Success({ stepData, onReset }) {
 
       {/* ── Mensaje principal ── */}
       <div className="text-center">
-        <h2 className="text-[1.375rem] font-extrabold text-white mb-1">
+        <h2 className="text-[1.375rem] font-extrabold text-[#0D1F3C] mb-1">
           ¡Tu dinero está en camino!
         </h2>
-        <p className="text-[0.875rem] text-[#8A96B8]">
+        <p className="text-[0.875rem] text-[#4A5568]">
           El pago fue iniciado exitosamente
         </p>
       </div>
 
       {/* ── Resumen de la operación ── */}
-      <div className="w-full bg-[#1A2340] border border-[#263050] rounded-2xl overflow-hidden">
+      <div className="w-full bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden">
 
         {/* Monto destacado */}
         <div
           className="px-5 py-4 text-center"
           style={{ background: 'linear-gradient(135deg, #1D346120 0%, #22C55E10 100%)' }}
         >
-          <p className="text-[0.6875rem] font-semibold text-[#8A96B8] uppercase tracking-wide mb-1">
+          <p className="text-[0.6875rem] font-semibold text-[#4A5568] uppercase tracking-wide mb-1">
             Monto enviado
           </p>
-          <p className="text-[1.75rem] font-extrabold text-white">
+          <p className="text-[1.75rem] font-extrabold text-[#0D1F3C]">
             ${Number(originAmount || 0).toLocaleString('es-CL')} CLP
           </p>
           {quote?.destinationAmount && (
@@ -79,7 +79,7 @@ export default function Step6Success({ stepData, onReset }) {
         </div>
 
         {/* Detalles */}
-        <div className="px-5 py-3 divide-y divide-[#263050]">
+        <div className="px-5 py-3 divide-y divide-[#E2E8F0]">
           {[
             { label: 'Beneficiario',  value: beneficiary?.fullName },
             { label: 'Banco',         value: beneficiary?.bankName },
@@ -87,19 +87,19 @@ export default function Step6Success({ stepData, onReset }) {
             { label: 'Tiempo est.',   value: quote?.estimatedDelivery || '1 día hábil' },
           ].map(({ label, value }) => (
             <div key={label} className="flex justify-between items-center py-2.5">
-              <span className="text-[0.8125rem] text-[#8A96B8]">{label}</span>
-              <span className="text-[0.8125rem] font-semibold text-white">{value || '—'}</span>
+              <span className="text-[0.8125rem] text-[#4A5568]">{label}</span>
+              <span className="text-[0.8125rem] font-semibold text-[#0D1F3C]">{value || '—'}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* ── ID de comprobante ── */}
-      <div className="w-full bg-[#1A2340] rounded-xl px-4 py-3">
-        <p className="text-[0.6875rem] text-[#4E5A7A] mb-1">
+      <div className="w-full bg-white rounded-xl px-4 py-3">
+        <p className="text-[0.6875rem] text-[#94A3B8] mb-1">
           Número de comprobante
         </p>
-        <p className="text-[0.8125rem] font-mono font-semibold text-[#14B8A6]">
+        <p className="text-[0.8125rem] font-mono font-semibold text-[#1D9E75]">
           {formatTransactionId(transactionId)}
         </p>
       </div>
@@ -108,7 +108,7 @@ export default function Step6Success({ stepData, onReset }) {
       <div className="w-full flex flex-col gap-3">
         <button
           onClick={() => navigate('/')}
-          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#14B8A6] text-[#0F1628] text-[0.9375rem] font-bold shadow-[0_4px_20px_rgba(20,184,166,0.25)] active:scale-[0.98] transition-all"
+          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#1D9E75] text-[#0F1628] text-[0.9375rem] font-bold shadow-[0_4px_20px_rgba(29,158,117,0.25)] active:scale-[0.98] transition-all"
         >
           <ArrowUpRight size={18} />
           Ver mis transacciones
@@ -116,7 +116,7 @@ export default function Step6Success({ stepData, onReset }) {
 
         <button
           onClick={onReset}
-          className="w-full py-3.5 rounded-2xl bg-transparent border border-[#263050] text-white text-[0.9375rem] font-semibold hover:border-[#14B8A633] hover:text-[#14B8A6] transition-all"
+          className="w-full py-3.5 rounded-2xl bg-transparent border border-[#E2E8F0] text-[#0D1F3C] text-[0.9375rem] font-semibold hover:border-[#1D9E7533] hover:text-[#1D9E75] transition-all"
         >
           Enviar otro pago
         </button>

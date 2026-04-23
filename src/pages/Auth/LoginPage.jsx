@@ -17,7 +17,7 @@ const INPUT_STYLE = {
   padding:      '14px 16px',
   fontSize:     'var(--font-md)',
   color:        'var(--color-text-primary)',
-  background:   'var(--color-bg-elevated)',
+  background:   '#FFFFFF',
   border:       '1px solid var(--color-border)',
   outline:      'none',
   fontFamily:   "'Manrope', sans-serif",
@@ -169,7 +169,7 @@ export default function LoginPage() {
           >
             {form.rememberMe && (
               <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                <path d="M1 4L3.5 6.5L9 1" stroke="#0F1628" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M1 4L3.5 6.5L9 1" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             )}
           </div>
@@ -187,7 +187,7 @@ export default function LoginPage() {
             padding:      '14px 0',
             fontSize:     'var(--font-md)',
             fontWeight:   700,
-            color:        '#0F1628',
+            color:        loading ? 'var(--color-text-muted)' : '#FFFFFF',
             background:   loading ? 'var(--color-bg-elevated)' : 'var(--color-accent-teal)',
             border:       'none',
             cursor:       loading ? 'not-allowed' : 'pointer',
