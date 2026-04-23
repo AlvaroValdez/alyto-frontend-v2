@@ -5,37 +5,42 @@
 
 ---
 
-## Format
+## 2026-04-22 — Send Money Flow v1.1 (CORRECTED STRUCTURE)
 
-```
-## YYYY-MM-DD — [Flow Name] v[X.Y]
-**Requested by:** [person]
-**Reason:** [why the change is necessary]
-**Impact:** [what parts of the system are affected]
-**Spec changes:** [high-level bullet list]
-**Code changes:** [commit hashes after implementation]
-```
+**Requested by:** Alvaro Valdez (Founder)
+**Reason:** v1.0 had incorrect step structure (Step 1 mixed Amount + Beneficiary, Step 2 Review, Step 3 Payment). This contradicted the actual operational model where beneficiary data requires its own step due to dynamic forms (Vita per-country fields, OwlPay QR/wallet). v1.1 corrects to proper 3-step structure.
+
+**Impact:**
+- Frontend: complete rewrite of SendMoney step components
+- Backend: no logic changes (calculator already unified in v1.0 design)
+- Schema: no changes
+- UX: proper progressive data collection, no form fatigue
+
+**Spec changes from v1.0:**
+- Step 1: Amount + Destination only (no beneficiary)
+- Step 2: Beneficiary only (dynamic form by provider)
+- Step 3: Review + Payment + Proof (two internal states on same screen)
+- Added principle §1.6: Provider-agnostic beneficiary forms
+- Added anti-patterns #11-15 covering step separation rules
+
+**Code changes:** [to be filled after implementation commits]
 
 ---
 
-## 2026-04-22 — Send Money Flow v1.0 (INITIAL)
+## 2026-04-22 — Send Money Flow v1.0 (SUPERSEDED)
 
 **Requested by:** Alvaro Valdez (Founder)
-**Reason:** Previous flow had 5 steps with inconsistent calculations between quote and execution (0.39% drift), causing user confusion in Bolivia. Multiple iterations to fix individual issues created fragmentation.
+**Reason:** Previous flow had 5 steps with inconsistent calculations between quote and execution (0.39% drift).
 
-**Impact:**
-- Frontend: full rewrite of SendMoney flow from 5 to 3 steps
-- Backend: unified calculation formula in `calculateBOBQuote` and `quoteSocket.js`
-- Schema: `vitaRateMarkup` field kept but always 0 for new transactions
-- UX: progressive disclosure (simple by default, details on expand)
+**Status:** SUPERSEDED by v1.1 — structure was incorrect.
 
-**Spec changes:**
-- Established 5 inviolable design principles
-- Defined exactly 3 navigation steps
-- Removed `vitaRateMarkup` from calculation chain
-- Specified single unified calculation formula
-- Defined display rules for currencies
-- Listed 10 forbidden anti-patterns
-- Added test fixtures
+**Key achievements retained from v1.0:**
+- Removal of vitaRateMarkup from calculation
+- Unified calculator module
+- 5→3 step reduction
+- Design principles §1.1-§1.5
 
-**Code changes:** [to be filled after implementation commits]
+**What changed in v1.1:**
+- Step 1 was "Details" (amount + beneficiary mixed) → now "Amount only"
+- Step 2 was "Review" → now "Beneficiary"
+- Step 3 was "Payment" → now "Review + Payment + Proof"
