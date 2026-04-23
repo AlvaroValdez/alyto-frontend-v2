@@ -10,6 +10,7 @@ import { useState } from 'react'
 import { Loader2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { initPayment } from '../../services/paymentsService'
 import { useAuth } from '../../context/AuthContext'
+import Sentry from '../../services/sentry.js'
 
 const ENTITY_ORIGIN_CURRENCY = { SpA: 'CLP', LLC: 'USD', SRL: 'BOB' }
 
@@ -64,9 +65,11 @@ export default function Step4Confirm({ stepData, onNext }) {
   const feeProcesamiento = (fees.payinFee     || 0) + (fees.payoutFee || 0)
 
   const payinMethodLabel = {
-    fintoc: 'Fintoc — Transferencia bancaria',
-    vita:   'Vita Wallet',
-  }[payinMethod] || payinMethod
+    fintoc:  'Fintoc — Transferencia bancaria',
+    vita:    'Vita Wallet',
+    manual:  'Transferencia bancaria manual',
+    owlpay:  'OwlPay Harbor',
+  }[payinMethod] || payinMethod || '—'
 
   async function handleConfirm() {
     if (!confirmed) return
@@ -103,6 +106,10 @@ export default function Step4Confirm({ stepData, onNext }) {
         paymentQRStatic:   res.paymentQRStatic   ?? [],
       })
     } catch (err) {
+      Sentry.captureException(err, {
+        tags:  { step: 'crossborder_init' },
+        extra: { corridorId: quote?.corridorId, originAmount },
+      })
       setError(err.message || 'Error al procesar el pago. Intenta nuevamente.')
     } finally {
       setLoading(false)
@@ -131,7 +138,7 @@ export default function Step4Confirm({ stepData, onNext }) {
         <Row
           label="Tasa aplicada"
           value={`1 ${originCurrency} = ${Number(quote?.exchangeRate || 0).toFixed(4)} ${quote?.destinationCurrency || ''}`}
-          valueClass="text-[#1D3461] text-[0.8125rem]"
+          valueClass="text-[#0D1F3C] text-[0.8125rem]"
         />
         {/* Costo del envío — una sola línea con detalle opcional */}
         <div className="py-2.5">
@@ -224,7 +231,7 @@ export default function Step4Confirm({ stepData, onNext }) {
             value={`${beneficiary?.documentType ?? beneficiary?.beneficiary_document_type ?? ''} ${beneficiary?.documentId ?? beneficiary?.beneficiary_document_number}`.trim()}
           />
         )}
-        <Row label="Método de pago" value={payinMethodLabel} valueClass="text-[#1D3461] text-[0.8125rem]" />
+        <Row label="Método de pago" value={payinMethodLabel} valueClass="text-[#0D1F3C] text-[0.8125rem]" />
       </div>
 
       {/* ── Checkbox de confirmación ── */}
@@ -238,12 +245,12 @@ export default function Step4Confirm({ stepData, onNext }) {
           />
           <div
             className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-              confirmed ? 'bg-[#1D3461] border-[#1D3461]' : 'bg-transparent border-[#E2E8F0]'
+              confirmed ? 'bg-[#0D1F3C] border-[#0D1F3C]' : 'bg-transparent border-[#E2E8F0]'
             }`}
           >
             {confirmed && (
               <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                <path d="M1 4L3.5 6.5L9 1" stroke="#0F1628" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M1 4L3.5 6.5L9 1" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             )}
           </div>
@@ -267,8 +274,8 @@ export default function Step4Confirm({ stepData, onNext }) {
         disabled={!confirmed || loading}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 flex items-center justify-center gap-2 ${
           confirmed && !loading
-            ? 'bg-[#1D3461] text-[#0F1628] shadow-[0_4px_20px_rgba(29,52,97,0.25)] active:scale-[0.98]'
-            : 'bg-[#1D346140] text-[#94A3B8] cursor-not-allowed'
+            ? 'bg-[#0D1F3C] text-white shadow-[0_4px_20px_rgba(29,52,97,0.25)] active:scale-[0.98]'
+            : 'bg-[#0D1F3C40] text-[#94A3B8] cursor-not-allowed'
         }`}
       >
         {loading && <Loader2 size={18} className="animate-spin" />}
