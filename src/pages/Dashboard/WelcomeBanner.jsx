@@ -1,12 +1,3 @@
-/**
- * WelcomeBanner.jsx — Saludo personalizado + alertas contextuales
- *
- * Muestra:
- *  1. Saludo según hora del día ("Buenos días / tardes / noches, {firstName}")
- *  2. Banner amarillo-plata si kycStatus !== 'approved' → botón "Verificar ahora"
- *  3. Banner azul si hay activeTransactions > 0 → botón "Ver estado"
- */
-
 import { Link } from 'react-router-dom'
 import { ShieldAlert, Clock } from 'lucide-react'
 
@@ -14,63 +5,113 @@ export default function WelcomeBanner({ firstName, kycStatus, activeTransactions
   const kycApproved = kycStatus === 'approved'
 
   return (
-    <div className="px-4 mb-1">
+    <div style={{ padding: '0 16px', marginBottom: 4 }}>
 
-      {/* ── Saludo ──────────────────────────────────────────────────── */}
-      <p className="text-[1.125rem] font-bold text-[#0F172A] mb-4">
+      {/* Greeting */}
+      <p style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 16 }}>
         Hola, {firstName} 👋
       </p>
 
-      {/* ── Banner KYC pendiente ─────────────────────────────────────── */}
+      {/* KYC pending banner */}
       {!kycApproved && (
         <Link
           to="/kyc"
-          className="flex items-start gap-3 rounded-2xl px-4 py-3.5 mb-3 no-underline transition-all hover:border-[#233E5866]"
+          className="no-underline block"
           style={{
-            background: '#233E581A',
-            border:     '1px solid #233E5833',
+            display:      'flex',
+            alignItems:   'flex-start',
+            gap:          12,
+            borderRadius: 'var(--radius-xl)',
+            padding:      '14px 16px',
+            marginBottom: 12,
+            background:   'var(--color-accent-teal-dim)',
+            border:       '1px solid var(--color-accent-teal-border)',
+            transition:   'var(--transition-fast)',
           }}
         >
-          <div className="w-8 h-8 rounded-xl bg-[#233E581A] flex items-center justify-center flex-shrink-0 mt-0.5">
-            <ShieldAlert size={15} className="text-[#233E58]" />
+          <div
+            style={{
+              width: 32, height: 32, borderRadius: 10,
+              background: 'var(--color-accent-teal-dim)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0, marginTop: 2,
+            }}
+          >
+            <ShieldAlert size={15} style={{ color: 'var(--color-accent-teal)' }} />
           </div>
-          <div className="flex-1">
-            <p className="text-[0.875rem] font-semibold text-[#233E58] mb-0.5">
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-accent-teal)', marginBottom: 2 }}>
               Completa tu verificación de identidad
             </p>
-            <p className="text-[0.75rem] text-[#64748B] leading-relaxed">
+            <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
               Para comenzar a enviar dinero necesitas verificar tu identidad.
             </p>
           </div>
-          <div className="flex-shrink-0 mt-1">
-            <span className="text-[0.6875rem] font-semibold text-[#233E58] border border-[#233E5833] bg-[#233E581A] px-2 py-0.5 rounded-full whitespace-nowrap">
-              Verificar ahora
-            </span>
-          </div>
+          <span
+            style={{
+              flexShrink:   0,
+              marginTop:    2,
+              fontSize:     '0.6875rem',
+              fontWeight:   600,
+              color:        'var(--color-accent-teal)',
+              border:       '1px solid var(--color-accent-teal-border)',
+              background:   'var(--color-accent-teal-dim)',
+              padding:      '2px 10px',
+              borderRadius: 'var(--radius-full)',
+              whiteSpace:   'nowrap',
+            }}
+          >
+            Verificar ahora
+          </span>
         </Link>
       )}
 
-      {/* ── Banner transferencias activas ─────────────────────────────── */}
+      {/* Active transactions banner */}
       {activeTransactions > 0 && (
         <Link
           to="/transactions"
-          className="flex items-center gap-3 rounded-2xl px-4 py-3.5 mb-3 no-underline transition-all hover:border-[#233E5866]"
+          className="no-underline block"
           style={{
-            background: '#233E581A',
-            border:     '1px solid #233E5833',
+            display:      'flex',
+            alignItems:   'center',
+            gap:          12,
+            borderRadius: 'var(--radius-xl)',
+            padding:      '14px 16px',
+            marginBottom: 12,
+            background:   'var(--color-teal-status-bg)',
+            border:       '1px solid var(--color-teal-status-bg)',
+            transition:   'var(--transition-fast)',
           }}
         >
-          <div className="w-8 h-8 rounded-xl bg-[#233E581A] flex items-center justify-center flex-shrink-0">
-            <Clock size={15} className="text-[#233E58]" />
+          <div
+            style={{
+              width: 32, height: 32, borderRadius: 10,
+              background: 'var(--color-teal-status-bg)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Clock size={15} style={{ color: 'var(--color-teal-status)' }} />
           </div>
-          <div className="flex-1">
-            <p className="text-[0.875rem] font-semibold text-[#0F172A]">
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
               {activeTransactions === 1
                 ? 'Tienes 1 transferencia en proceso'
                 : `Tienes ${activeTransactions} transferencias en proceso`}
             </p>
           </div>
-          <span className="text-[0.6875rem] font-semibold text-[#233E58] border border-[#233E5833] px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
+          <span
+            style={{
+              flexShrink:   0,
+              fontSize:     '0.6875rem',
+              fontWeight:   600,
+              color:        'var(--color-teal-status)',
+              border:       '1px solid var(--color-accent-teal-border)',
+              padding:      '2px 10px',
+              borderRadius: 'var(--radius-full)',
+              whiteSpace:   'nowrap',
+            }}
+          >
             Ver estado
           </span>
         </Link>

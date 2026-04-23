@@ -1,16 +1,3 @@
-/**
- * DashboardPage.jsx — Pantalla principal post-login de Alyto Wallet V2.0
- *
- * Layout (top → bottom):
- *  1. Shell: status bar + header (logo + bell + avatar)
- *  2. SECCIÓN 1 — WelcomeBanner (saludo + alertas)
- *  3. SECCIÓN 2 — Stats cards (o mensaje de bienvenida si 0 transacciones)
- *  4. SECCIÓN 3 — QuickActions (grid 2×2)
- *  5. SECCIÓN 4 — RecentTransactions (últimas 3)
- *  6. SECCIÓN 5 — Corredores disponibles (scroll horizontal)
- *  7. Bottom Nav (fijo)
- */
-
 import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { ChevronRight, Wallet, AlertCircle, Shield } from 'lucide-react'
@@ -25,84 +12,88 @@ import RecentTransactions     from './RecentTransactions'
 
 function StatCard({ label, value, accent }) {
   return (
-    <div className="flex-shrink-0 w-36 bg-white rounded-2xl p-4 border border-[#E2E8F0]">
-      <p className="text-[0.6875rem] font-medium text-[#64748B] uppercase tracking-[0.08em] mb-2 truncate">
+    <div
+      style={{
+        flexShrink:   0,
+        width:        144,
+        background:   'var(--color-bg-secondary)',
+        borderRadius: 'var(--radius-xl)',
+        padding:      16,
+        border:       '1px solid var(--color-border)',
+      }}
+    >
+      <p className="label-uppercase" style={{ marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {label}
       </p>
-      <p
-        className="text-[1.125rem] font-bold leading-none"
-        style={{ color: accent ?? '#0F172A' }}
-      >
+      <p style={{ fontSize: '1.125rem', fontWeight: 700, color: accent ?? 'var(--color-text-primary)', lineHeight: 1 }}>
         {value}
       </p>
     </div>
   )
 }
 
-// ── Stats skeleton ────────────────────────────────────────────────────────────
-
 function StatsSkeletons() {
   return (
     <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 mb-2 pb-1">
-      {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="flex-shrink-0 w-36 bg-white rounded-2xl p-4 border border-[#E2E8F0] animate-pulse">
-          <div className="h-2.5 bg-[#E2E8F0] rounded-full w-4/5 mb-3" />
-          <div className="h-5 bg-[#F1F5F9] rounded-full w-3/5" />
+      {[1,2,3,4].map(i => (
+        <div
+          key={i}
+          style={{
+            flexShrink: 0, width: 144, borderRadius: 'var(--radius-xl)',
+            padding: 16, border: '1px solid var(--color-border)',
+            background: 'var(--color-bg-secondary)',
+          }}
+        >
+          <div className="skeleton-line" style={{ height: 10, width: '80%', marginBottom: 12 }} />
+          <div className="skeleton-line" style={{ height: 18, width: '60%' }} />
         </div>
       ))}
     </div>
   )
 }
 
-// ── Destination countries section ─────────────────────────────────────────────
+// ── Country meta ──────────────────────────────────────────────────────────────
 
 const COUNTRY_META = {
-  // LatAm — Vita
-  CO: { name: 'Colombia',          currencyName: 'Peso colombiano',      flag: '🇨🇴' },
-  PE: { name: 'Perú',              currencyName: 'Sol peruano',           flag: '🇵🇪' },
-  BO: { name: 'Bolivia',           currencyName: 'Boliviano',             flag: '🇧🇴' },
-  AR: { name: 'Argentina',         currencyName: 'Peso argentino',        flag: '🇦🇷' },
-  MX: { name: 'México',            currencyName: 'Peso mexicano',         flag: '🇲🇽' },
-  BR: { name: 'Brasil',            currencyName: 'Real brasileño',        flag: '🇧🇷' },
-  CL: { name: 'Chile',             currencyName: 'Peso chileno',          flag: '🇨🇱' },
-  EC: { name: 'Ecuador',           currencyName: 'Dólar',                 flag: '🇪🇨' },
-  VE: { name: 'Venezuela',         currencyName: 'Dólar',                 flag: '🇻🇪' },
-  PY: { name: 'Paraguay',          currencyName: 'Guaraní',               flag: '🇵🇾' },
-  UY: { name: 'Uruguay',           currencyName: 'Peso uruguayo',         flag: '🇺🇾' },
-  CR: { name: 'Costa Rica',        currencyName: 'Colón',                 flag: '🇨🇷' },
-  PA: { name: 'Panamá',            currencyName: 'Dólar',                 flag: '🇵🇦' },
-  DO: { name: 'Rep. Dominicana',   currencyName: 'Peso dominicano',       flag: '🇩🇴' },
-  GT: { name: 'Guatemala',         currencyName: 'Quetzal',               flag: '🇬🇹' },
-  HT: { name: 'Haití',             currencyName: 'Gourde',                flag: '🇭🇹' },
-  SV: { name: 'El Salvador',       currencyName: 'Dólar',                 flag: '🇸🇻' },
-  // Europa — Vita vita_sent
-  ES: { name: 'España',            currencyName: 'Euro',                  flag: '🇪🇸' },
-  PL: { name: 'Polonia',           currencyName: 'Esloti polaco',         flag: '🇵🇱' },
-  // Global — OwlPay / Vita withdrawal
-  US: { name: 'Estados Unidos',    currencyName: 'Dólar',                 flag: '🇺🇸' },
-  EU: { name: 'Europa',            currencyName: 'Euro',                  flag: '🇪🇺' },
-  CN: { name: 'China',             currencyName: 'Yuan chino',            flag: '🇨🇳' },
-  AE: { name: 'Emiratos Árabes',   currencyName: 'Dírham emiratí',        flag: '🇦🇪' },
-  GB: { name: 'Reino Unido',       currencyName: 'Libra esterlina',       flag: '🇬🇧' },
-  CA: { name: 'Canadá',            currencyName: 'Dólar canadiense',      flag: '🇨🇦' },
-  AU: { name: 'Australia',         currencyName: 'Dólar australiano',     flag: '🇦🇺' },
-  HK: { name: 'Hong Kong',         currencyName: 'Dólar de Hong Kong',    flag: '🇭🇰' },
-  JP: { name: 'Japón',             currencyName: 'Yen japonés',           flag: '🇯🇵' },
-  SG: { name: 'Singapur',          currencyName: 'Dólar de Singapur',    flag: '🇸🇬' },
-  ZA: { name: 'Sudáfrica',         currencyName: 'Rand sudafricano',      flag: '🇿🇦' },
-  NG: { name: 'Nigeria',           currencyName: 'Naira nigeriana',       flag: '🇳🇬' },
+  CO: { name: 'Colombia',         currencyName: 'Peso colombiano',    flag: '🇨🇴' },
+  PE: { name: 'Perú',             currencyName: 'Sol peruano',         flag: '🇵🇪' },
+  BO: { name: 'Bolivia',          currencyName: 'Boliviano',           flag: '🇧🇴' },
+  AR: { name: 'Argentina',        currencyName: 'Peso argentino',      flag: '🇦🇷' },
+  MX: { name: 'México',           currencyName: 'Peso mexicano',       flag: '🇲🇽' },
+  BR: { name: 'Brasil',           currencyName: 'Real brasileño',      flag: '🇧🇷' },
+  CL: { name: 'Chile',            currencyName: 'Peso chileno',        flag: '🇨🇱' },
+  EC: { name: 'Ecuador',          currencyName: 'Dólar',               flag: '🇪🇨' },
+  VE: { name: 'Venezuela',        currencyName: 'Dólar',               flag: '🇻🇪' },
+  PY: { name: 'Paraguay',         currencyName: 'Guaraní',             flag: '🇵🇾' },
+  UY: { name: 'Uruguay',          currencyName: 'Peso uruguayo',       flag: '🇺🇾' },
+  CR: { name: 'Costa Rica',       currencyName: 'Colón',               flag: '🇨🇷' },
+  PA: { name: 'Panamá',           currencyName: 'Dólar',               flag: '🇵🇦' },
+  DO: { name: 'Rep. Dominicana',  currencyName: 'Peso dominicano',     flag: '🇩🇴' },
+  GT: { name: 'Guatemala',        currencyName: 'Quetzal',             flag: '🇬🇹' },
+  HT: { name: 'Haití',            currencyName: 'Gourde',              flag: '🇭🇹' },
+  SV: { name: 'El Salvador',      currencyName: 'Dólar',               flag: '🇸🇻' },
+  ES: { name: 'España',           currencyName: 'Euro',                flag: '🇪🇸' },
+  PL: { name: 'Polonia',          currencyName: 'Esloti polaco',       flag: '🇵🇱' },
+  US: { name: 'Estados Unidos',   currencyName: 'Dólar',               flag: '🇺🇸' },
+  EU: { name: 'Europa',           currencyName: 'Euro',                flag: '🇪🇺' },
+  CN: { name: 'China',            currencyName: 'Yuan chino',          flag: '🇨🇳' },
+  AE: { name: 'Emiratos Árabes',  currencyName: 'Dírham emiratí',      flag: '🇦🇪' },
+  GB: { name: 'Reino Unido',      currencyName: 'Libra esterlina',     flag: '🇬🇧' },
+  CA: { name: 'Canadá',           currencyName: 'Dólar canadiense',    flag: '🇨🇦' },
+  AU: { name: 'Australia',        currencyName: 'Dólar australiano',   flag: '🇦🇺' },
+  HK: { name: 'Hong Kong',        currencyName: 'Dólar de Hong Kong',  flag: '🇭🇰' },
+  JP: { name: 'Japón',            currencyName: 'Yen japonés',         flag: '🇯🇵' },
+  SG: { name: 'Singapur',         currencyName: 'Dólar de Singapur',   flag: '🇸🇬' },
+  ZA: { name: 'Sudáfrica',        currencyName: 'Rand sudafricano',    flag: '🇿🇦' },
+  NG: { name: 'Nigeria',          currencyName: 'Naira nigeriana',     flag: '🇳🇬' },
 }
 
 function CountryFlag({ code }) {
-  const src = `https://flagcdn.com/48x36/${code.toLowerCase()}.png`
   return (
     <img
-      src={src}
+      src={`https://flagcdn.com/48x36/${code.toLowerCase()}.png`}
       alt={code}
-      width={48}
-      height={36}
-      className="rounded-md object-cover shadow-sm"
-      style={{ width: 40, height: 30 }}
+      style={{ width: 40, height: 30, borderRadius: 6, objectFit: 'cover' }}
       onError={e => {
         e.currentTarget.style.display = 'none'
         e.currentTarget.nextSibling && (e.currentTarget.nextSibling.style.display = 'flex')
@@ -114,24 +105,54 @@ function CountryFlag({ code }) {
 function DestinationCountryCard({ country }) {
   const isManual = country.payinMethod === 'manual'
   return (
-    <div className="flex-shrink-0 bg-white rounded-2xl p-3.5 border border-[#E2E8F0] min-w-[108px] flex flex-col items-center gap-2">
-      {/* Flag image — flagcdn.com renders en todos los SO/navegadores */}
-      <div className="relative flex items-center justify-center" style={{ width: 40, height: 30 }}>
+    <div
+      style={{
+        flexShrink:   0,
+        background:   'var(--color-bg-secondary)',
+        borderRadius: 'var(--radius-xl)',
+        padding:      14,
+        border:       '1px solid var(--color-border)',
+        minWidth:     108,
+        display:      'flex',
+        flexDirection:'column',
+        alignItems:   'center',
+        gap:          8,
+      }}
+    >
+      <div style={{ position: 'relative', width: 40, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <CountryFlag code={country.code} />
-        {/* Fallback si la imagen falla */}
         <div
-          className="absolute inset-0 items-center justify-center rounded-md bg-[#F1F5F9] text-[0.625rem] font-bold text-[#94A3B8]"
-          style={{ display: 'none' }}
+          style={{
+            position:        'absolute', inset: 0,
+            alignItems:      'center', justifyContent: 'center',
+            borderRadius:    6, background: 'var(--color-bg-elevated)',
+            fontSize:        '0.625rem', fontWeight: 700,
+            color:           'var(--color-text-muted)', display: 'none',
+          }}
         >
           {country.code}
         </div>
       </div>
-
-      <div className="text-center">
-        <p className="text-[0.75rem] font-semibold text-[#0F172A] leading-tight">{country.name}</p>
-        <p className="text-[0.625rem] text-[#94A3B8] mt-0.5">{country.currencyName}</p>
+      <div style={{ textAlign: 'center' }}>
+        <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-primary)', lineHeight: 1.2 }}>
+          {country.name}
+        </p>
+        <p style={{ fontSize: '0.625rem', color: 'var(--color-text-muted)', marginTop: 2 }}>
+          {country.currencyName}
+        </p>
         {isManual && (
-          <span className="inline-block mt-1 text-[0.5625rem] font-semibold text-[#FBBF24] bg-[#F59E0B1A] border border-[#F59E0B33] px-1.5 py-0.5 rounded-full leading-none">
+          <span
+            style={{
+              display:      'inline-block', marginTop: 4,
+              fontSize:     '0.5625rem', fontWeight: 600,
+              color:        'var(--color-warning)',
+              background:   'var(--color-warning-bg)',
+              border:       '1px solid rgba(245,158,11,0.25)',
+              padding:      '1px 6px',
+              borderRadius: 'var(--radius-full)',
+              lineHeight:   1.4,
+            }}
+          >
             Verificación manual
           </span>
         )}
@@ -140,16 +161,58 @@ function DestinationCountryCard({ country }) {
   )
 }
 
+// ── Shortcut card (Wallet BOB / Institutional / Reclamos) ─────────────────────
+
+function ShortcutCard({ to, iconBg, icon: Icon, iconColor, title, subtitle }) {
+  return (
+    <div style={{ margin: '0 16px', marginBottom: 12 }}>
+      <Link
+        to={to}
+        className="no-underline block"
+        style={{
+          display:       'flex',
+          alignItems:    'center',
+          justifyContent:'space-between',
+          padding:       '14px 16px',
+          borderRadius:  'var(--radius-xl)',
+          background:    'var(--color-bg-secondary)',
+          border:        '1px solid var(--color-border)',
+          transition:    'var(--transition-fast)',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-bg-elevated)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-bg-secondary)' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div
+            style={{
+              width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+              background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <Icon size={18} style={{ color: iconColor }} />
+          </div>
+          <div>
+            <p style={{ fontSize: 'var(--font-md)', fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1.2 }}>
+              {title}
+            </p>
+            <p style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-muted)', marginTop: 2 }}>
+              {subtitle}
+            </p>
+          </div>
+        </div>
+        <ChevronRight size={18} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+      </Link>
+    </div>
+  )
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user }                            = useAuth()
+  const { data, loading, error }            = useDashboard()
+  const [destCountries, setDestCountries]   = useState([])
 
-  const { data, loading, error } = useDashboard()
-
-  // Corredores disponibles para el usuario (lista dinámica del backend)
-  const [destCountries, setDestCountries] = useState([])
   useEffect(() => {
     listUserCorridors()
       .then(res => {
@@ -170,218 +233,142 @@ export default function DashboardPage() {
         }
         setDestCountries(list)
       })
-      .catch(() => {}) // silencioso — no es crítico para el dashboard
+      .catch(() => {})
   }, [])
 
-  // Datos del dashboard: usar data de la API o fallback a AuthContext
-  const firstName        = data?.user?.firstName ?? user?.firstName ?? ''
-  const legalEntity      = data?.user?.entity    ?? user?.legalEntity ?? 'LLC'
-  const kycStatus        = data?.user?.kycStatus ?? user?.kycStatus  ?? 'pending'
+  const firstName         = data?.user?.firstName ?? user?.firstName ?? ''
+  const legalEntity       = data?.user?.entity    ?? user?.legalEntity ?? 'LLC'
+  const kycStatus         = data?.user?.kycStatus ?? user?.kycStatus  ?? 'pending'
   const activeTransactions = data?.stats?.activeTransactions ?? 0
-  const stats            = data?.stats
-  const recentTxs        = data?.recentTransactions ?? []
+  const stats             = data?.stats
+  const recentTxs         = data?.recentTransactions ?? []
+  const hasTransactions   = stats != null && stats.totalTransactions > 0
 
-  const hasTransactions = stats != null && stats.totalTransactions > 0
-
-  // Moneda de origen según entidad del usuario
   const originCurrency = legalEntity === 'SRL' ? 'BOB' : legalEntity === 'LLC' ? 'USD' : 'CLP'
 
   function formatOriginAmount(amount) {
     if (!amount && amount !== 0) return '—'
-    if (originCurrency === 'BOB') {
-      return `Bs ${Number(amount).toLocaleString('es-BO', {
-        minimumFractionDigits: 2, maximumFractionDigits: 2,
-      })}`
-    }
-    if (originCurrency === 'USD') {
-      return `$ ${Number(amount).toLocaleString('en-US', {
-        minimumFractionDigits: 2, maximumFractionDigits: 2,
-      })}`
-    }
-    return `$ ${Number(amount).toLocaleString('es-CL', {
-      minimumFractionDigits: 0, maximumFractionDigits: 0,
-    })}`
+    if (originCurrency === 'BOB') return `Bs ${Number(amount).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    if (originCurrency === 'USD') return `$ ${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    return `$ ${Number(amount).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
   }
 
   return (
-    <div className="pt-4">
+    <div style={{ paddingTop: 16 }}>
 
-        {/* ─────────────────────────────────────────────────────────── */}
-        {/* Mi Wallet BOB — justo debajo del header (solo SRL)          */}
-        {/* ─────────────────────────────────────────────────────────── */}
-        {legalEntity === 'SRL' && (
-          <div className="mx-4 mb-3">
-            <Link
-              to="/wallet"
-              className="flex items-center justify-between px-4 py-4 rounded-2xl bg-white border border-[#E2E8F0] no-underline hover:border-[#233E5833] transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#22C55E1A] flex items-center justify-center flex-shrink-0">
-                  <Wallet size={18} className="text-[#22C55E]" />
-                </div>
-                <div>
-                  <p className="text-[0.9375rem] font-bold text-[#0F172A] leading-tight">
-                    Mi Wallet BOB
-                  </p>
-                  <p className="text-[0.75rem] text-[#94A3B8]">
-                    Saldo en bolivianos · AV Finance SRL
-                  </p>
-                </div>
-              </div>
-              <ChevronRight size={18} className="text-[#94A3B8] group-hover:text-[#233E58] transition-colors flex-shrink-0" />
-            </Link>
-          </div>
-        )}
-
-        {/* ─────────────────────────────────────────────────────────── */}
-        {/* SECCIÓN 1 — WelcomeBanner                                   */}
-        {/* ─────────────────────────────────────────────────────────── */}
-        <WelcomeBanner
-          firstName={firstName}
-          kycStatus={kycStatus}
-          activeTransactions={activeTransactions}
+      {/* Wallet BOB — SRL only */}
+      {legalEntity === 'SRL' && (
+        <ShortcutCard
+          to="/wallet"
+          iconBg="var(--color-success-bg)"
+          icon={Wallet}
+          iconColor="var(--color-success)"
+          title="Mi Wallet BOB"
+          subtitle="Saldo en bolivianos · AV Finance SRL"
         />
+      )}
 
-        {/* ─────────────────────────────────────────────────────────── */}
-        {/* SECCIÓN 2 — Stats cards                                     */}
-        {/* ─────────────────────────────────────────────────────────── */}
-        {loading ? (
-          <StatsSkeletons />
-        ) : !hasTransactions ? (
-          /* Estado vacío — primera visita */
-          <div className="mx-4 mb-4 rounded-2xl border border-[#E2E8F0] bg-white px-5 py-6 text-center">
-            <p className="text-[2rem] mb-2">🚀</p>
-            <p className="text-[0.9375rem] font-semibold text-[#0F172A] mb-1">
-              Bienvenido a Alyto
-            </p>
-            <p className="text-[0.8125rem] text-[#64748B]">
-              Realiza tu primera transferencia hoy
-            </p>
-          </div>
-        ) : (
-          /* Stats cards — scroll horizontal */
-          <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 mb-4 pb-1">
-            <StatCard
-              label="Total enviado"
-              value={`${formatOriginAmount(stats.totalSent)}`}
-              accent="#0F172A"
-            />
-            <StatCard
-              label="Transferencias"
-              value={stats.totalTransactions}
-              accent="#233E58"
-            />
-            <StatCard
-              label="Completadas"
-              value={stats.completedTransactions}
-              accent="#22C55E"
-            />
-            <StatCard
-              label="En proceso"
-              value={stats.activeTransactions}
-              accent={stats.activeTransactions > 0 ? '#233E58' : '#94A3B8'}
-            />
-          </div>
-        )}
+      <WelcomeBanner firstName={firstName} kycStatus={kycStatus} activeTransactions={activeTransactions} />
 
-        {/* ─────────────────────────────────────────────────────────── */}
-        {/* SECCIÓN 3 — QuickActions                                    */}
-        {/* ─────────────────────────────────────────────────────────── */}
-        <QuickActions kycStatus={kycStatus} />
-
-        {/* ─────────────────────────────────────────────────────────── */}
-        {/* SECCIÓN 3b — Acceso Plataforma Institucional (solo LLC)    */}
-        {/* ─────────────────────────────────────────────────────────── */}
-        {legalEntity === 'LLC' && (
-          <div className="mx-4 mb-4">
-            <Link
-              to="/institutional"
-              className="flex items-center justify-between px-4 py-4 rounded-2xl bg-white border border-[#E2E8F0] no-underline hover:border-[#233E5833] transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#233E581A] flex items-center justify-center flex-shrink-0">
-                  <Shield size={18} className="text-[#233E58]" />
-                </div>
-                <div>
-                  <p className="text-[0.9375rem] font-bold text-[#0F172A] leading-tight">
-                    Plataforma Institucional
-                  </p>
-                  <p className="text-[0.75rem] text-[#94A3B8]">
-                    On-ramp B2B · OwlPay Harbor · AV Finance LLC
-                  </p>
-                </div>
-              </div>
-              <ChevronRight size={18} className="text-[#94A3B8] group-hover:text-[#233E58] transition-colors flex-shrink-0" />
-            </Link>
-          </div>
-        )}
-
-        {/* ─────────────────────────────────────────────────────────── */}
-        {/* SECCIÓN 3c — Acceso Reclamos PRILI (todos los usuarios)     */}
-        {/* ─────────────────────────────────────────────────────────── */}
-        <div className="mx-4 mb-4">
-          <Link
-            to="/reclamos"
-            className="flex items-center justify-between px-4 py-4 rounded-2xl bg-white border border-[#E2E8F0] no-underline hover:border-[#233E5833] transition-colors group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#3B82F61A] flex items-center justify-center flex-shrink-0">
-                <AlertCircle size={18} className="text-[#3B82F6]" />
-              </div>
-              <div>
-                <p className="text-[0.9375rem] font-bold text-[#0F172A] leading-tight">
-                  Mis Reclamos
-                </p>
-                <p className="text-[0.75rem] text-[#94A3B8]">
-                  Punto de Reclamo PRILI · ASFI
-                </p>
-              </div>
-            </div>
-            <ChevronRight size={18} className="text-[#94A3B8] group-hover:text-[#233E58] transition-colors flex-shrink-0" />
-          </Link>
+      {/* Stats */}
+      {loading ? (
+        <StatsSkeletons />
+      ) : !hasTransactions ? (
+        <div
+          style={{
+            margin: '0 16px 16px',
+            borderRadius: 'var(--radius-xl)',
+            border: '1px solid var(--color-border)',
+            background: 'var(--color-bg-secondary)',
+            padding: '24px 20px',
+            textAlign: 'center',
+          }}
+        >
+          <p style={{ fontSize: '2rem', marginBottom: 8 }}>🚀</p>
+          <p style={{ fontSize: 'var(--font-md)', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: 4 }}>
+            Bienvenido a Alyto
+          </p>
+          <p style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)' }}>
+            Realiza tu primera transferencia hoy
+          </p>
         </div>
+      ) : (
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 mb-4 pb-1">
+          <StatCard label="Total enviado" value={formatOriginAmount(stats.totalSent)} accent="var(--color-text-primary)" />
+          <StatCard label="Transferencias" value={stats.totalTransactions} accent="var(--color-accent-teal)" />
+          <StatCard label="Completadas" value={stats.completedTransactions} accent="var(--color-success)" />
+          <StatCard label="En proceso" value={stats.activeTransactions} accent={stats.activeTransactions > 0 ? 'var(--color-teal-status)' : 'var(--color-text-muted)'} />
+        </div>
+      )}
 
-        {/* ─────────────────────────────────────────────────────────── */}
-        {/* SECCIÓN 4 — RecentTransactions                              */}
-        {/* ─────────────────────────────────────────────────────────── */}
-        <RecentTransactions
-          transactions={recentTxs}
-          loading={loading}
+      <QuickActions kycStatus={kycStatus} />
+
+      {/* LLC institutional access */}
+      {legalEntity === 'LLC' && (
+        <ShortcutCard
+          to="/institutional"
+          iconBg="var(--color-accent-teal-dim)"
+          icon={Shield}
+          iconColor="var(--color-accent-teal)"
+          title="Plataforma Institucional"
+          subtitle="On-ramp B2B · OwlPay Harbor · AV Finance LLC"
         />
+      )}
 
-        {/* ─────────────────────────────────────────────────────────── */}
-        {/* SECCIÓN 5 — ¿A dónde puedes enviar?                        */}
-        {/* ─────────────────────────────────────────────────────────── */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between px-4 mb-3">
-            <p className="text-base font-bold text-[#0F172A]">¿A dónde puedes enviar?</p>
-            {destCountries.length > 0 && (
-              <span className="text-[0.6875rem] font-medium text-[#94A3B8]">
-                {destCountries.length} país{destCountries.length !== 1 ? 'es' : ''}
-              </span>
-            )}
-          </div>
-          {destCountries.length === 0 ? (
-            <div className="mx-4 px-4 py-4 rounded-2xl bg-white border border-[#E2E8F0] text-center">
-              <p className="text-[0.8125rem] text-[#94A3B8]">
-                Sin destinos disponibles aún.
-              </p>
-            </div>
-          ) : (
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-1">
-              {destCountries.map((c) => (
-                <DestinationCountryCard key={c.code} country={c} />
-              ))}
-            </div>
+      {/* Reclamos */}
+      <ShortcutCard
+        to="/reclamos"
+        iconBg="rgba(59,130,246,0.12)"
+        icon={AlertCircle}
+        iconColor="#3B82F6"
+        title="Mis Reclamos"
+        subtitle="Punto de Reclamo PRILI · ASFI"
+      />
+
+      <RecentTransactions transactions={recentTxs} loading={loading} />
+
+      {/* Destination countries */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', marginBottom: 12 }}>
+          <p style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+            ¿A dónde puedes enviar?
+          </p>
+          {destCountries.length > 0 && (
+            <span style={{ fontSize: 'var(--font-xs)', color: 'var(--color-text-muted)' }}>
+              {destCountries.length} país{destCountries.length !== 1 ? 'es' : ''}
+            </span>
           )}
         </div>
-
-        {/* Error global — solo si no hay datos previos */}
-        {error && !data && (
-          <div className="mx-4 mb-4 rounded-2xl border border-[#EF444433] bg-[#EF44441A] px-4 py-3">
-            <p className="text-[0.875rem] text-[#EF4444]">{error}</p>
+        {destCountries.length === 0 ? (
+          <div
+            style={{
+              margin: '0 16px', padding: 16, borderRadius: 'var(--radius-xl)',
+              background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)',
+              textAlign: 'center',
+            }}
+          >
+            <p style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-muted)' }}>Sin destinos disponibles aún.</p>
+          </div>
+        ) : (
+          <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-1">
+            {destCountries.map(c => <DestinationCountryCard key={c.code} country={c} />)}
           </div>
         )}
+      </div>
+
+      {error && !data && (
+        <div
+          style={{
+            margin: '0 16px 16px',
+            borderRadius: 'var(--radius-xl)',
+            background: 'var(--color-error-bg)',
+            border: '1px solid rgba(239,68,68,0.25)',
+            padding: '12px 16px',
+          }}
+        >
+          <p style={{ fontSize: 'var(--font-sm)', color: 'var(--color-error)' }}>{error}</p>
+        </div>
+      )}
 
     </div>
   )

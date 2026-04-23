@@ -1,13 +1,3 @@
-/**
- * QuickActions.jsx — Grid 2×2 de acciones rápidas
- *
- * Acciones:
- *  💸 Enviar dinero  →  /send         (deshabilitado si kycStatus !== 'approved')
- *  📋 Historial      →  /transactions
- *  👤 Mi perfil      →  /profile
- *  ❓ Soporte        →  wa.me/{VITE_SUPPORT_WHATSAPP}
- */
-
 import { useNavigate } from 'react-router-dom'
 import { Send, List, User, MessageCircle, QrCode } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
@@ -15,42 +5,10 @@ import { useAuth } from '../../context/AuthContext'
 const WHATSAPP_NUMBER = import.meta.env.VITE_SUPPORT_WHATSAPP ?? ''
 
 const ACTIONS = [
-  {
-    id:      'send',
-    emoji:   null,
-    icon:    Send,
-    label:   'Enviar dinero',
-    primary: true,
-    requiresKyc: true,
-    route:   '/send',
-  },
-  {
-    id:      'history',
-    emoji:   null,
-    icon:    List,
-    label:   'Historial',
-    primary: false,
-    requiresKyc: false,
-    route:   '/transactions',
-  },
-  {
-    id:      'profile',
-    emoji:   null,
-    icon:    User,
-    label:   'Mi perfil',
-    primary: false,
-    requiresKyc: false,
-    route:   '/profile',
-  },
-  {
-    id:      'support',
-    emoji:   null,
-    icon:    MessageCircle,
-    label:   'Soporte',
-    primary: false,
-    requiresKyc: false,
-    route:   null, // manejo especial — abre WhatsApp
-  },
+  { id: 'send',    icon: Send,          label: 'Enviar dinero', primary: true,  requiresKyc: true,  route: '/send'     },
+  { id: 'history', icon: List,          label: 'Historial',     primary: false, requiresKyc: false, route: '/transactions' },
+  { id: 'profile', icon: User,          label: 'Mi perfil',     primary: false, requiresKyc: false, route: '/profile'  },
+  { id: 'support', icon: MessageCircle, label: 'Soporte',       primary: false, requiresKyc: false, route: null        },
 ]
 
 function ActionCard({ action, kycApproved, onNavigate, onSupport, colSpan2 = false }) {
@@ -59,11 +17,8 @@ function ActionCard({ action, kycApproved, onNavigate, onSupport, colSpan2 = fal
 
   function handleClick() {
     if (isDisabled) return
-    if (action.id === 'support') {
-      onSupport()
-    } else {
-      onNavigate(action.route)
-    }
+    if (action.id === 'support') onSupport()
+    else onNavigate(action.route)
   }
 
   return (
@@ -71,40 +26,56 @@ function ActionCard({ action, kycApproved, onNavigate, onSupport, colSpan2 = fal
       onClick={handleClick}
       disabled={isDisabled}
       title={isDisabled ? 'Disponible tras verificar tu identidad' : undefined}
-      className={`flex flex-col items-start gap-3 p-4 rounded-2xl border transition-all text-left w-full ${colSpan2 ? 'col-span-2' : ''} ${
-        isDisabled
-          ? 'bg-white border-[#E2E8F0] opacity-40 cursor-not-allowed'
+      style={{
+        display:        'flex',
+        flexDirection:  'column',
+        alignItems:     'flex-start',
+        gap:            12,
+        padding:        16,
+        borderRadius:   'var(--radius-xl)',
+        border:         action.primary
+          ? 'none'
+          : '1px solid var(--color-border)',
+        background:     isDisabled
+          ? 'var(--color-bg-secondary)'
           : action.primary
-            ? 'bg-[#233E58] border-[#233E58] cursor-pointer hover:bg-[#1C3247]'
-            : 'bg-white border-[#E2E8F0] cursor-pointer hover:bg-[#F8FAFC] hover:border-[#233E5833]'
-      }`}
+            ? 'var(--color-accent-teal)'
+            : 'var(--color-bg-secondary)',
+        opacity:        isDisabled ? 0.4 : 1,
+        cursor:         isDisabled ? 'not-allowed' : 'pointer',
+        textAlign:      'left',
+        width:          '100%',
+        gridColumn:     colSpan2 ? 'span 2' : undefined,
+        transition:     'var(--transition-fast)',
+        boxShadow:      action.primary && !isDisabled ? 'var(--shadow-teal)' : 'none',
+        fontFamily:     "'Manrope', sans-serif",
+      }}
+      onMouseEnter={e => {
+        if (isDisabled) return
+        e.currentTarget.style.background = action.primary ? 'var(--color-accent-teal-hover)' : 'var(--color-bg-elevated)'
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.background = isDisabled ? 'var(--color-bg-secondary)' : action.primary ? 'var(--color-accent-teal)' : 'var(--color-bg-secondary)'
+      }}
     >
       <div
-        className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-          action.primary
-            ? 'bg-white/20'
-            : 'bg-[#F1F5F9]'
-        }`}
+        style={{
+          width:          36, height: 36, borderRadius: 12,
+          display:        'flex', alignItems: 'center', justifyContent: 'center',
+          background:     action.primary ? 'rgba(255,255,255,0.25)' : 'var(--color-bg-elevated)',
+        }}
       >
         <Icon
           size={17}
-          className={
-            isDisabled
-              ? 'text-[#94A3B8]'
-              : action.primary
-                ? 'text-white'
-                : 'text-[#64748B]'
-          }
+          style={{ color: isDisabled ? 'var(--color-text-muted)' : action.primary ? '#0F1628' : 'var(--color-text-secondary)' }}
         />
       </div>
       <span
-        className={`text-[0.8125rem] font-semibold ${
-          isDisabled
-            ? 'text-[#94A3B8]'
-            : action.primary
-              ? 'text-white'
-              : 'text-[#0F172A]'
-        }`}
+        style={{
+          fontSize:   'var(--font-sm)',
+          fontWeight: 600,
+          color:      isDisabled ? 'var(--color-text-muted)' : action.primary ? '#0F1628' : 'var(--color-text-primary)',
+        }}
       >
         {action.label}
       </span>
@@ -125,14 +96,12 @@ export default function QuickActions({ kycStatus }) {
   }
 
   return (
-    <div className="px-4 mb-2">
-      {/* Section header */}
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-base font-bold text-[#0F172A]">Acciones rápidas</p>
+    <div style={{ padding: '0 16px', marginBottom: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <p className="label-uppercase">Acciones rápidas</p>
       </div>
 
-      {/* Grid 2×2 (2×3 para usuarios SRL con botón QR) */}
-      <div className="grid grid-cols-2 gap-3">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         {ACTIONS.map((action) => (
           <ActionCard
             key={action.id}
@@ -144,14 +113,7 @@ export default function QuickActions({ kycStatus }) {
         ))}
         {isSRL && (
           <ActionCard
-            action={{
-              id:          'qr',
-              icon:        QrCode,
-              label:       'QR',
-              primary:     false,
-              requiresKyc: false,
-              route:       '/wallet/qr',
-            }}
+            action={{ id: 'qr', icon: QrCode, label: 'QR', primary: false, requiresKyc: false, route: '/wallet/qr' }}
             kycApproved={kycApproved}
             onNavigate={navigate}
             onSupport={handleSupport}
