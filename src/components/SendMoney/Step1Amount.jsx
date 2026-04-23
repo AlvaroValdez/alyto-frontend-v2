@@ -18,9 +18,9 @@ import { listUserCorridors, getCurrentExchangeRates } from '../../services/payme
 // ── Origen según entidad legal ────────────────────────────────────────────────
 
 const ENTITY_ORIGIN = {
-  SpA: { country: 'Chile',   currency: 'CLP', flag: '🇨🇱', symbol: '$'  },
-  LLC: { country: 'EE.UU.',  currency: 'USD', flag: '🇺🇸', symbol: '$'  },
-  SRL: { country: 'Bolivia', currency: 'BOB', flag: '🇧🇴', symbol: 'Bs' },
+  SpA: { country: 'Chile',   currency: 'CLP', flag: '🇨🇱', symbol: '$',  currencyName: 'Peso chileno' },
+  LLC: { country: 'EE.UU.',  currency: 'USD', flag: '🇺🇸', symbol: '$',  currencyName: 'Dólar'        },
+  SRL: { country: 'Bolivia', currency: 'BOB', flag: '🇧🇴', symbol: 'Bs', currencyName: 'Boliviano'    },
 }
 
 // ── Info de países para enriquecer la respuesta del backend ──────────────────
@@ -340,6 +340,7 @@ export default function Step1Amount({ initialData, onNext }) {
   const { user } = useAuth()
   const origin   = ENTITY_ORIGIN[user?.legalEntity] ?? ENTITY_ORIGIN.SpA
 
+  const [amountFocused,  setAmountFocused]  = useState(false)
   const [rawAmount,      setRawAmount]      = useState(initialData?.originAmount || 0)
   const [displayAmount,  setDisplayAmount]  = useState(
     initialData?.originAmount ? formatAmount(String(initialData.originAmount)) : '',
@@ -428,29 +429,87 @@ export default function Step1Amount({ initialData, onNext }) {
       {/* ── Título ── */}
       <div>
         <h2 className="text-[1.125rem] font-bold text-[#0D1F3C]">¿Cuánto envías?</h2>
-        <p className="text-[0.8125rem] text-[#4A5568] mt-0.5">
-          {origin.flag} Tu cuenta está en {origin.country} · {origin.currency}
-        </p>
+        <div
+          style={{
+            display:     'inline-flex',
+            alignItems:  'center',
+            gap:         6,
+            background:  '#EEF2FF',
+            borderRadius: 999,
+            padding:     '4px 12px',
+            marginTop:   8,
+          }}
+        >
+          <span style={{ fontSize: 18 }}>{origin.flag}</span>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#4A5568' }}>
+            {origin.currencyName}
+          </span>
+          <span
+            style={{
+              fontSize:     '0.75rem',
+              fontWeight:   700,
+              color:        '#0D1F3C',
+              background:   'white',
+              padding:      '2px 8px',
+              borderRadius: 999,
+            }}
+          >
+            {origin.currency}
+          </span>
+        </div>
       </div>
 
       {/* ── Input de monto ── */}
       <div>
-        <label className="block text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-wide mb-2">
+        <label className="block text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-[0.08em] mb-2">
           Monto a enviar
         </label>
-        <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#4A5568] font-bold text-[1.125rem]">
-            {origin.symbol}
-          </span>
+        <div
+          style={{
+            display:    'flex',
+            alignItems: 'center',
+            gap:        12,
+            padding:    '12px 16px',
+            background: 'white',
+            border:     amountFocused ? '1.5px solid #1D3461' : '1.5px solid #E2E8F0',
+            borderRadius: 14,
+            boxShadow:  amountFocused ? '0 0 0 3px rgba(29,52,97,0.08)' : 'none',
+            transition: 'border-color 0.15s, box-shadow 0.15s',
+          }}
+        >
           <input
             type="text"
             inputMode="numeric"
             value={displayAmount}
             onChange={handleAmountChange}
+            onFocus={() => setAmountFocused(true)}
+            onBlur={() => setAmountFocused(false)}
             placeholder="0"
-            className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-8 pr-16 py-4 text-[#0D1F3C] text-[1.5rem] font-bold focus:outline-none focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#1D346120] transition-all placeholder:text-[#94A3B8]"
+            style={{
+              flex:       1,
+              background: 'transparent',
+              border:     'none',
+              fontSize:   '2rem',
+              fontWeight: 800,
+              color:      displayAmount ? '#0D1F3C' : '#CBD5E1',
+              outline:    'none',
+              textAlign:  'left',
+              fontFamily: "'Manrope', sans-serif",
+              minWidth:   0,
+            }}
           />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[0.75rem] font-semibold text-[#94A3B8]">
+          <span
+            style={{
+              background:    '#1D3461',
+              color:         'white',
+              padding:       '6px 12px',
+              borderRadius:  999,
+              fontSize:      '0.8125rem',
+              fontWeight:    700,
+              letterSpacing: '0.04em',
+              flexShrink:    0,
+            }}
+          >
             {activeCurrency}
           </span>
         </div>
@@ -458,7 +517,7 @@ export default function Step1Amount({ initialData, onNext }) {
 
       {/* ── Selector de país destino ── */}
       <div>
-        <label className="block text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-wide mb-2">
+        <label className="block text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-[0.08em] mb-2">
           País de destino
         </label>
 
