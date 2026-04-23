@@ -143,7 +143,7 @@ function StatusBadge({ status }) {
   }
   if (status === 'updating') {
     return (
-      <span className="flex items-center gap-1 text-[0.625rem] font-semibold text-[#C4CBD8]">
+      <span className="flex items-center gap-1 text-[0.625rem] font-semibold text-[#14B8A6]">
         <Loader2 size={10} className="animate-spin" />
         Actualizando
       </span>
@@ -270,7 +270,7 @@ export default function Step1Amount({ initialData, onNext }) {
             value={displayAmount}
             onChange={handleAmountChange}
             placeholder="0"
-            className="w-full bg-[#1A2340] border border-[#263050] rounded-xl pl-8 pr-16 py-4 text-white text-[1.5rem] font-bold focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] transition-all placeholder:text-[#4E5A7A]"
+            className="w-full bg-[#1A2340] border border-[#263050] rounded-xl pl-8 pr-16 py-4 text-white text-[1.5rem] font-bold focus:outline-none focus:border-[#14B8A6] focus:shadow-[0_0_0_2px_#14B8A620] transition-all placeholder:text-[#4E5A7A]"
           />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[0.75rem] font-semibold text-[#4E5A7A]">
             {activeCurrency}
@@ -309,7 +309,7 @@ export default function Step1Amount({ initialData, onNext }) {
             <select
               value={selectedCountry?.code || ''}
               onChange={handleCountryChange}
-              className="w-full appearance-none bg-[#1A2340] border border-[#263050] rounded-xl pl-11 pr-10 py-4 text-white text-[0.9375rem] font-semibold focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] transition-all cursor-pointer"
+              className="w-full appearance-none bg-[#1A2340] border border-[#263050] rounded-xl pl-11 pr-10 py-4 text-white text-[0.9375rem] font-semibold focus:outline-none focus:border-[#14B8A6] focus:shadow-[0_0_0_2px_#14B8A620] transition-all cursor-pointer"
             >
               <option value="" disabled>Selecciona un país</option>
               {countries.map(c => (
@@ -337,7 +337,7 @@ export default function Step1Amount({ initialData, onNext }) {
               </p>
               <button
                 onClick={reconnect}
-                className="flex items-center gap-1 text-[0.75rem] text-[#C4CBD8] hover:text-white transition-colors"
+                className="flex items-center gap-1 text-[0.75rem] text-[#14B8A6] hover:text-white transition-colors"
               >
                 <RefreshCw size={13} /> Reintentar
               </button>
@@ -376,7 +376,7 @@ export default function Step1Amount({ initialData, onNext }) {
                 </div>
                 <button
                   onClick={reconnect}
-                  className="flex items-center gap-1 text-[0.75rem] text-[#C4CBD8] hover:text-white transition-colors flex-shrink-0"
+                  className="flex items-center gap-1 text-[0.75rem] text-[#14B8A6] hover:text-white transition-colors flex-shrink-0"
                 >
                   <RefreshCw size={13} /> Reintentar
                 </button>
@@ -390,7 +390,7 @@ export default function Step1Amount({ initialData, onNext }) {
               <div className="flex justify-between items-center mb-3">
                 <span className="text-[0.8125rem] text-[#8A96B8]">{destCountry?.name} recibe</span>
                 <div className="flex items-center gap-2">
-                  {status === 'updating' && <Loader2 size={13} className="animate-spin text-[#C4CBD8]" />}
+                  {status === 'updating' && <Loader2 size={13} className="animate-spin text-[#14B8A6]" />}
                   <span className="text-[1.125rem] font-bold text-[#22C55E]">
                     {formatDestAmount(quote.destinationAmount, quote.destinationCurrency)}
                   </span>
@@ -412,7 +412,7 @@ export default function Step1Amount({ initialData, onNext }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusBadge status={status} />
-                  <span className="text-[0.8125rem] font-semibold text-[#C4CBD8]">
+                  <span className="text-[0.8125rem] font-semibold text-[#14B8A6]">
                     1 {activeCurrency} = {Number(quote.exchangeRate).toFixed(4)} {quote.destinationCurrency}
                   </span>
                 </div>
@@ -475,7 +475,7 @@ export default function Step1Amount({ initialData, onNext }) {
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[0.75rem] text-[#4E5A7A]">Tasa usada:</span>
-                    <span className="text-[0.8125rem] font-semibold text-[#C4CBD8]">
+                    <span className="text-[0.8125rem] font-semibold text-[#14B8A6]">
                       1 {bobRateInfo.pair?.split('/')[1] ?? 'USDT'} = {Number(bobRateInfo.rate).toFixed(2)} BOB
                     </span>
                   </div>
@@ -502,7 +502,7 @@ export default function Step1Amount({ initialData, onNext }) {
                   </div>
                   <button
                     onClick={reconnect}
-                    className="flex items-center gap-1 text-[0.75rem] text-[#C4CBD8] hover:text-white transition-colors"
+                    className="flex items-center gap-1 text-[0.75rem] text-[#14B8A6] hover:text-white transition-colors"
                   >
                     <RefreshCw size={13} /> Actualizar
                   </button>
@@ -516,7 +516,7 @@ export default function Step1Amount({ initialData, onNext }) {
                   {countdown !== null && (
                     <div className="flex items-center gap-1 text-[0.6875rem] text-[#4E5A7A]">
                       <span>Cotización válida</span>
-                      <span className={`font-mono font-semibold ${countdown <= 30 ? 'text-[#F59E0B]' : 'text-[#C4CBD8]'}`}>
+                      <span className={`font-mono font-semibold ${countdown <= 30 ? 'text-[#F59E0B]' : 'text-[#14B8A6]'}`}>
                         {formatCountdown(countdown)}
                       </span>
                     </div>
@@ -534,8 +534,8 @@ export default function Step1Amount({ initialData, onNext }) {
         disabled={!canContinue}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
           canContinue
-            ? 'bg-[#C4CBD8] text-[#0F1628] shadow-[0_4px_20px_rgba(196,203,216,0.3)] active:scale-[0.98]'
-            : 'bg-[#C4CBD840] text-[#4E5A7A] cursor-not-allowed'
+            ? 'bg-[#14B8A6] text-[#0F1628] shadow-[0_4px_20px_rgba(20,184,166,0.25)] active:scale-[0.98]'
+            : 'bg-[#14B8A640] text-[#4E5A7A] cursor-not-allowed'
         }`}
       >
         Continuar

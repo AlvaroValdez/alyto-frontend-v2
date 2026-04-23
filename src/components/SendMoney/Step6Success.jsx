@@ -99,7 +99,7 @@ export default function Step6Success({ stepData, onReset }) {
         <p className="text-[0.6875rem] text-[#4E5A7A] mb-1">
           Número de comprobante
         </p>
-        <p className="text-[0.8125rem] font-mono font-semibold text-[#C4CBD8]">
+        <p className="text-[0.8125rem] font-mono font-semibold text-[#14B8A6]">
           {formatTransactionId(transactionId)}
         </p>
       </div>
@@ -108,7 +108,7 @@ export default function Step6Success({ stepData, onReset }) {
       <div className="w-full flex flex-col gap-3">
         <button
           onClick={() => navigate('/')}
-          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#C4CBD8] text-[#0F1628] text-[0.9375rem] font-bold shadow-[0_4px_20px_rgba(196,203,216,0.3)] active:scale-[0.98] transition-all"
+          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#14B8A6] text-[#0F1628] text-[0.9375rem] font-bold shadow-[0_4px_20px_rgba(20,184,166,0.25)] active:scale-[0.98] transition-all"
         >
           <ArrowUpRight size={18} />
           Ver mis transacciones
@@ -116,7 +116,7 @@ export default function Step6Success({ stepData, onReset }) {
 
         <button
           onClick={onReset}
-          className="w-full py-3.5 rounded-2xl bg-transparent border border-[#263050] text-white text-[0.9375rem] font-semibold hover:border-[#C4CBD833] hover:text-[#C4CBD8] transition-all"
+          className="w-full py-3.5 rounded-2xl bg-transparent border border-[#263050] text-white text-[0.9375rem] font-semibold hover:border-[#14B8A633] hover:text-[#14B8A6] transition-all"
         >
           Enviar otro pago
         </button>

@@ -131,7 +131,7 @@ export default function Step4Confirm({ stepData, onNext }) {
         <Row
           label="Tasa aplicada"
           value={`1 ${originCurrency} = ${Number(quote?.exchangeRate || 0).toFixed(4)} ${quote?.destinationCurrency || ''}`}
-          valueClass="text-[#C4CBD8] text-[0.8125rem]"
+          valueClass="text-[#14B8A6] text-[0.8125rem]"
         />
         {/* Costo del envío — una sola línea con detalle opcional */}
         <div className="py-2.5">
@@ -224,7 +224,7 @@ export default function Step4Confirm({ stepData, onNext }) {
             value={`${beneficiary?.documentType ?? beneficiary?.beneficiary_document_type ?? ''} ${beneficiary?.documentId ?? beneficiary?.beneficiary_document_number}`.trim()}
           />
         )}
-        <Row label="Método de pago" value={payinMethodLabel} valueClass="text-[#C4CBD8] text-[0.8125rem]" />
+        <Row label="Método de pago" value={payinMethodLabel} valueClass="text-[#14B8A6] text-[0.8125rem]" />
       </div>
 
       {/* ── Checkbox de confirmación ── */}
@@ -238,7 +238,7 @@ export default function Step4Confirm({ stepData, onNext }) {
           />
           <div
             className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-              confirmed ? 'bg-[#C4CBD8] border-[#C4CBD8]' : 'bg-transparent border-[#263050]'
+              confirmed ? 'bg-[#14B8A6] border-[#14B8A6]' : 'bg-transparent border-[#263050]'
             }`}
           >
             {confirmed && (
@@ -267,8 +267,8 @@ export default function Step4Confirm({ stepData, onNext }) {
         disabled={!confirmed || loading}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 flex items-center justify-center gap-2 ${
           confirmed && !loading
-            ? 'bg-[#C4CBD8] text-[#0F1628] shadow-[0_4px_20px_rgba(196,203,216,0.3)] active:scale-[0.98]'
-            : 'bg-[#C4CBD840] text-[#4E5A7A] cursor-not-allowed'
+            ? 'bg-[#14B8A6] text-[#0F1628] shadow-[0_4px_20px_rgba(20,184,166,0.25)] active:scale-[0.98]'
+            : 'bg-[#14B8A640] text-[#4E5A7A] cursor-not-allowed'
         }`}
       >
         {loading && <Loader2 size={18} className="animate-spin" />}

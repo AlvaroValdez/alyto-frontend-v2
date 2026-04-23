@@ -74,13 +74,13 @@ function MethodCard({ method, selected, onSelect }) {
         isDisabled
           ? 'bg-[#1A2340] border-[#1A2340] opacity-50 cursor-not-allowed'
           : selected
-            ? 'bg-[#C4CBD81A] border-[#C4CBD8] shadow-[0_0_0_1px_#C4CBD833]'
-            : 'bg-[#1A2340] border-[#263050] hover:border-[#C4CBD833] hover:bg-[#1F2B4D] cursor-pointer'
+            ? 'bg-[#14B8A61A] border-[#14B8A6] shadow-[0_0_0_1px_#14B8A633]'
+            : 'bg-[#1A2340] border-[#263050] hover:border-[#14B8A633] hover:bg-[#1F2B4D] cursor-pointer'
       }`}
     >
       {/* Logo */}
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
-        selected ? 'bg-[#C4CBD820]' : 'bg-[#263050]'
+        selected ? 'bg-[#14B8A620]' : 'bg-[#263050]'
       }`}>
         {method.logo}
       </div>
@@ -95,8 +95,8 @@ function MethodCard({ method, selected, onSelect }) {
             method.badgeType === 'instant'
               ? 'bg-[#22C55E1A] text-[#22C55E]'
               : method.badgeType === 'soon'
-                ? 'bg-[#C4CBD81A] text-[#8A96B8]'
-                : 'bg-[#C4CBD81A] text-[#C4CBD8]'
+                ? 'bg-[#14B8A61A] text-[#8A96B8]'
+                : 'bg-[#14B8A61A] text-[#14B8A6]'
           }`}>
             <BadgeIcon type={method.badgeType} />
             {method.badge}
@@ -110,7 +110,7 @@ function MethodCard({ method, selected, onSelect }) {
       {/* Check circle */}
       <div className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all ${
         selected
-          ? 'bg-[#C4CBD8] border-[#C4CBD8]'
+          ? 'bg-[#14B8A6] border-[#14B8A6]'
           : 'border-[#263050] bg-transparent'
       }`}>
         {selected && <Check size={12} className="text-[#0F1628]" strokeWidth={3} />}
@@ -183,8 +183,8 @@ export default function Step2PayinMethod({ onNext, originCountry = 'CL' }) {
         disabled={!selected}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
           selected
-            ? 'bg-[#C4CBD8] text-[#0F1628] shadow-[0_4px_20px_rgba(196,203,216,0.3)] active:scale-[0.98]'
-            : 'bg-[#C4CBD840] text-[#4E5A7A] cursor-not-allowed'
+            ? 'bg-[#14B8A6] text-[#0F1628] shadow-[0_4px_20px_rgba(20,184,166,0.25)] active:scale-[0.98]'
+            : 'bg-[#14B8A640] text-[#4E5A7A] cursor-not-allowed'
         }`}
       >
         Continuar
