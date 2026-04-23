@@ -71,9 +71,10 @@
   --gradient-teal-glow: radial-gradient(ellipse at top, rgba(29, 52, 97, 0.10) 0%, transparent 60%);
 
   /* ── SHADOWS (light mode — softer) ────────────────────────── */
-  --shadow-card:  0 2px 12px rgba(13, 31, 60, 0.08);
-  --shadow-hero:  0 8px 40px rgba(0, 0, 0, 0.50);  /* balance card: dark shadow */
-  --shadow-teal:  0 4px 20px rgba(29, 52, 97, 0.25);
+  --shadow-card:    0 2px 12px rgba(13, 31, 60, 0.08);
+  --shadow-hero:    0 8px 40px rgba(0, 0, 0, 0.50);  /* balance card: dark shadow */
+  --shadow-primary: 0 4px 20px rgba(13, 31, 60, 0.25); /* navy CTA button shadow */
+  --shadow-teal:    0 4px 20px rgba(29, 158, 117, 0.25); /* teal accent shadow */
   --shadow-modal: 0 24px 64px rgba(13, 31, 60, 0.25);
   --shadow-nav:   0 -1px 0 #E2E8F0;
 

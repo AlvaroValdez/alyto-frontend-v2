@@ -33,13 +33,13 @@ export default function QuickActions({ kycStatus }) {
                 padding:       '16px 8px',
                 borderRadius:  'var(--radius-xl)',
                 background:    action.teal && !isDisabled
-                  ? 'var(--color-accent-teal)'
+                  ? 'var(--color-primary)'
                   : '#FFFFFF',
                 border:        action.teal && !isDisabled
                   ? 'none'
                   : '1px solid var(--color-border)',
                 boxShadow:     action.teal && !isDisabled
-                  ? 'var(--shadow-teal)'
+                  ? 'var(--shadow-primary)'
                   : 'var(--shadow-card)',
                 opacity:       isDisabled ? 0.4 : 1,
                 cursor:        isDisabled ? 'not-allowed' : 'pointer',
@@ -57,12 +57,12 @@ export default function QuickActions({ kycStatus }) {
                   justifyContent: 'center',
                   background:     action.teal && !isDisabled
                     ? 'rgba(255,255,255,0.20)'
-                    : 'var(--color-accent-teal-dim)',
+                    : 'var(--color-primary-bg)',
                 }}
               >
                 <Icon
                   size={20}
-                  style={{ color: action.teal && !isDisabled ? '#FFFFFF' : 'var(--color-accent-teal)' }}
+                  style={{ color: action.teal && !isDisabled ? '#FFFFFF' : 'var(--color-primary)' }}
                 />
               </div>
               <span
