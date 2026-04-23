@@ -1,19 +1,21 @@
 /**
  * firebase-messaging-sw.js — Service Worker para notificaciones push en background.
+ * @version 2.0.0
  *
- * IMPORTANTE: Las variables FIREBASE_* deben ser inyectadas en este archivo
- * antes del deploy (ej. con un script de build) o reemplazadas con los
- * valores reales del proyecto Firebase. No son variables de entorno Vite
- * ya que los Service Workers no pasan por el bundler.
- *
- * Valores disponibles en Firebase Console → Configuración del proyecto → Web apps.
+ * Las credenciales Firebase son públicas por diseño (igual que cualquier SDK web).
+ * La seguridad real se maneja via Firebase Security Rules.
  */
+
+// ── Lifecycle: activar inmediatamente sin esperar tabs abiertas ──────────
+self.addEventListener('install', () => self.skipWaiting())
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim())
+})
 
 importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js')
 importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-messaging-compat.js')
 
 // ── Configuración ─────────────────────────────────────────────────────────
-// Reemplazar estos valores con los del proyecto Firebase antes del deploy.
 firebase.initializeApp({
   apiKey:            "AIzaSyA7i-m4O9qVFcr2QjzNP9mzYQge75JLEFE",
   authDomain:        "alyto-14283.firebaseapp.com",
