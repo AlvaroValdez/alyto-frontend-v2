@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import {
   Users, Star, Trash2, Loader2, AlertCircle,
   Search, Plus, X, Send, ChevronRight, Check,
-  CreditCard, FileText, Building2, Mail, UserCheck,
+  CreditCard, FileText, Building2, Mail, UserCheck, Pencil, Filter,
 } from 'lucide-react'
 import { useContacts } from '../../hooks/useContacts'
-import { deleteContact, toggleContactFavorite, createContact } from '../../services/api'
+import { deleteContact, toggleContactFavorite, createContact, updateContact } from '../../services/api'
 
 // ── Datos de países ───────────────────────────────────────────────────────────
 
@@ -270,20 +270,21 @@ function AddContactSheet({ onClose, onSaved }) {
     setSaveError('')
     try {
       await createContact({
-        firstName:          form.firstName.trim(),
-        lastName:           form.lastName.trim(),
-        nickname:           form.nickname.trim() || undefined,
-        destinationCountry: form.country,
+        firstName:           form.firstName.trim(),
+        lastName:            form.lastName.trim(),
+        nickname:            form.nickname.trim() || undefined,
+        destinationCountry:  form.country,
         destinationCurrency: meta?.currency,
+        formType:            'bank_data',
         beneficiaryData: {
-          beneficiary_first_name:    form.firstName.trim(),
-          beneficiary_last_name:     form.lastName.trim(),
-          beneficiary_document_type: form.docType,
+          beneficiary_first_name:      form.firstName.trim(),
+          beneficiary_last_name:       form.lastName.trim(),
+          beneficiary_document_type:   form.docType,
           beneficiary_document_number: form.docNumber.trim(),
-          beneficiary_bank:          form.bank.trim() || undefined,
-          beneficiary_account_number: form.accountNumber.trim(),
-          account_type_bank:         form.accountType || undefined,
-          beneficiary_email:         form.email.trim() || undefined,
+          beneficiary_bank:            form.bank.trim() || undefined,
+          beneficiary_account_number:  form.accountNumber.trim(),
+          account_type_bank:           form.accountType || undefined,
+          beneficiary_email:           form.email.trim() || undefined,
         },
       })
       onSaved()
@@ -489,6 +490,175 @@ function AddContactSheet({ onClose, onSaved }) {
   )
 }
 
+// ── EditContactSheet ──────────────────────────────────────────────────────────
+
+function EditContactSheet({ contact, onClose, onSaved }) {
+  const meta0    = COUNTRY_META[contact.destinationCountry]
+  const bd0      = contact.beneficiaryData ?? {}
+  const [saving,    setSaving]    = useState(false)
+  const [saveError, setSaveError] = useState('')
+
+  const [form, setForm] = useState({
+    nickname:      contact.nickname      ?? '',
+    firstName:     contact.firstName     ?? '',
+    lastName:      contact.lastName      ?? '',
+    bank:          bd0.beneficiary_bank  ?? '',
+    accountNumber: bd0.beneficiary_account_number ?? bd0.account_bank ?? '',
+    accountType:   bd0.account_type_bank ?? '',
+    email:         bd0.beneficiary_email ?? '',
+  })
+
+  function set(key, val) { setForm(f => ({ ...f, [key]: val })) }
+
+  const isValid = form.firstName.trim() && form.lastName.trim()
+
+  async function handleSave() {
+    if (!isValid || saving) return
+    setSaving(true)
+    setSaveError('')
+    try {
+      await updateContact(contact._id, {
+        nickname:    form.nickname.trim()    || undefined,
+        firstName:   form.firstName.trim(),
+        lastName:    form.lastName.trim(),
+        beneficiaryData: {
+          ...bd0,
+          beneficiary_first_name:     form.firstName.trim(),
+          beneficiary_last_name:      form.lastName.trim(),
+          beneficiary_bank:           form.bank.trim()          || undefined,
+          beneficiary_account_number: form.accountNumber.trim() || undefined,
+          account_type_bank:          form.accountType          || undefined,
+          beneficiary_email:          form.email.trim()         || undefined,
+        },
+      })
+      onSaved()
+      onClose()
+    } catch (err) {
+      setSaveError(err.message || 'No se pudo actualizar el contacto')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 250,
+      background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'flex-end' }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: '100%', background: '#F4F6FA', borderRadius: '24px 24px 0 0',
+        maxHeight: '92dvh', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '20px 20px 16px', background: '#F4F6FA', borderRadius: '24px 24px 0 0' }}>
+          <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#0D1F3C' }}>
+            Editar contacto
+          </h3>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%',
+            background: '#FFFFFF', border: '1px solid #E2E8F0', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <X size={16} color="#4A5568" />
+          </button>
+        </div>
+
+        <div style={{ overflowY: 'auto', flex: 1, padding: '0 16px',
+          paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
+
+          {/* País (no editable) */}
+          {meta0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 14px', background: '#FFFFFF', border: '1px solid #E2E8F0',
+              borderRadius: 12, marginBottom: 12 }}>
+              <CountryFlag code={contact.destinationCountry} size={28} />
+              <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#4A5568' }}>
+                {meta0.name} · {meta0.currency}
+              </span>
+            </div>
+          )}
+
+          {/* Identidad */}
+          <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 16,
+            padding: '16px', marginBottom: 12 }}>
+            <p style={{ ...LABEL_STYLE, marginBottom: 12 }}>Identidad</p>
+
+            <div style={{ marginBottom: 12 }}>
+              <label style={LABEL_STYLE}>Alias (opcional)</label>
+              <input type="text" placeholder="Ej: Mamá, Proveedor Lima" value={form.nickname}
+                onChange={e => set('nickname', e.target.value)} style={INPUT_STYLE} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 0 }}>
+              <div>
+                <label style={LABEL_STYLE}>Nombre *</label>
+                <input type="text" value={form.firstName}
+                  onChange={e => set('firstName', e.target.value)} style={INPUT_STYLE} />
+              </div>
+              <div>
+                <label style={LABEL_STYLE}>Apellido *</label>
+                <input type="text" value={form.lastName}
+                  onChange={e => set('lastName', e.target.value)} style={INPUT_STYLE} />
+              </div>
+            </div>
+          </div>
+
+          {/* Datos bancarios */}
+          <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 16,
+            padding: '16px', marginBottom: 12 }}>
+            <p style={{ ...LABEL_STYLE, marginBottom: 12 }}>Datos bancarios</p>
+
+            <div style={{ marginBottom: 12 }}>
+              <label style={LABEL_STYLE}>Banco (opcional)</label>
+              <input type="text" value={form.bank}
+                onChange={e => set('bank', e.target.value)} style={INPUT_STYLE} />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={LABEL_STYLE}>N.º de cuenta</label>
+              <input type="text" value={form.accountNumber} inputMode="numeric"
+                onChange={e => set('accountNumber', e.target.value)} style={INPUT_STYLE} />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={LABEL_STYLE}>Tipo de cuenta</label>
+              <select value={form.accountType} onChange={e => set('accountType', e.target.value)} style={SELECT_STYLE}>
+                <option value="">— opcional —</option>
+                {(meta0?.accountTypes ?? ['Cuenta de Ahorros','Cuenta Corriente']).map(at => (
+                  <option key={at} value={at}>{at}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={LABEL_STYLE}>Email (opcional)</label>
+              <input type="email" value={form.email}
+                onChange={e => set('email', e.target.value)} style={INPUT_STYLE} />
+            </div>
+          </div>
+
+          {saveError && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px',
+              background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, marginBottom: 12 }}>
+              <AlertCircle size={14} color="#EF4444" />
+              <p style={{ margin: 0, fontSize: '0.8125rem', color: '#EF4444' }}>{saveError}</p>
+            </div>
+          )}
+
+          <button
+            onClick={handleSave}
+            disabled={!isValid || saving}
+            style={{
+              width: '100%', padding: '14px 0', borderRadius: 14,
+              background: isValid && !saving ? '#1D3461' : 'rgba(29,52,97,0.25)',
+              border: 'none', color: isValid && !saving ? '#FFFFFF' : '#94A3B8',
+              fontSize: '0.9375rem', fontWeight: 700,
+              cursor: isValid && !saving ? 'pointer' : 'not-allowed',
+              fontFamily: "'Manrope', sans-serif",
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}
+          >
+            {saving ? <><Loader2 size={16} className="animate-spin" /> Guardando…</> : 'Guardar cambios'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── ContactDetailSheet ────────────────────────────────────────────────────────
 
 function DetailRow({ icon: Icon, label, value }) {
@@ -510,7 +680,7 @@ function DetailRow({ icon: Icon, label, value }) {
   )
 }
 
-function ContactDetailSheet({ contact, onClose, onDelete, onToggleFavorite, onSend }) {
+function ContactDetailSheet({ contact, onClose, onDelete, onToggleFavorite, onSend, onEdit }) {
   const [deleting, setDeleting] = useState(false)
   const name    = contactName(contact)
   const bd      = contact.beneficiaryData ?? {}
@@ -613,29 +783,40 @@ function ContactDetailSheet({ contact, onClose, onDelete, onToggleFavorite, onSe
           )}
 
           {/* Acciones secundarias */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
             <button onClick={onToggleFavorite} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               padding: '12px 0', borderRadius: 12,
               background: contact.isFavorite ? '#FEF9C3' : '#FFFFFF',
               border: `1px solid ${contact.isFavorite ? '#FDE047' : '#E2E8F0'}`,
               color: contact.isFavorite ? '#A16207' : '#4A5568',
-              fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+              fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer',
               fontFamily: "'Manrope', sans-serif",
             }}>
-              <Star size={15} style={{ fill: contact.isFavorite ? '#FBBF24' : 'none', color: contact.isFavorite ? '#FBBF24' : '#4A5568' }} />
-              {contact.isFavorite ? 'Favorito' : 'Marcar fav.'}
+              <Star size={14} style={{ fill: contact.isFavorite ? '#FBBF24' : 'none', color: contact.isFavorite ? '#FBBF24' : '#4A5568' }} />
+              {contact.isFavorite ? 'Fav.' : 'Fav.'}
+            </button>
+
+            <button onClick={onEdit} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              padding: '12px 0', borderRadius: 12,
+              background: '#FFFFFF', border: '1px solid #E2E8F0',
+              color: '#1D3461', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer',
+              fontFamily: "'Manrope', sans-serif",
+            }}>
+              <Pencil size={14} />
+              Editar
             </button>
 
             <button onClick={handleDelete} disabled={deleting} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               padding: '12px 0', borderRadius: 12,
               background: '#FEF2F2', border: '1px solid #FECACA',
-              color: '#EF4444', fontSize: '0.875rem', fontWeight: 600,
+              color: '#EF4444', fontSize: '0.8125rem', fontWeight: 600,
               cursor: deleting ? 'not-allowed' : 'pointer',
               fontFamily: "'Manrope', sans-serif",
             }}>
-              {deleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+              {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
               Eliminar
             </button>
           </div>
@@ -669,10 +850,14 @@ function ContactSkeleton() {
 
 export default function ContactsPage() {
   const navigate = useNavigate()
-  const { contacts, loading, error, reload } = useContacts()
+  const [filterCountry, setFilterCountry] = useState(null)
+  const { contacts, loading, error, reload } = useContacts(filterCountry)
+  // All contacts (no filter) just for computing available country chips
+  const { contacts: allContacts } = useContacts(null)
 
   const [selected,    setSelected]    = useState(null)
   const [showAdd,     setShowAdd]     = useState(false)
+  const [showEdit,    setShowEdit]    = useState(false)
   const [search,      setSearch]      = useState('')
 
   const handleToggleFavorite = useCallback(async contact => {
@@ -691,6 +876,13 @@ export default function ContactsPage() {
     navigate('/send')
     setSelected(null)
   }, [navigate])
+
+  const handleEdit = useCallback(() => {
+    setShowEdit(true)
+  }, [])
+
+  // Countries present across all contacts (unfiltered) for the filter chips
+  const availableCountries = [...new Set(allContacts.map(c => c.destinationCountry).filter(Boolean))].sort()
 
   const q        = search.toLowerCase()
   const filtered = contacts.filter(c => contactName(c).toLowerCase().includes(q))
@@ -730,6 +922,52 @@ export default function ContactsPage() {
           <Plus size={20} color="#FFFFFF" />
         </button>
       </div>
+
+      {/* Country filter chips */}
+      {!loading && availableCountries.length > 1 && (
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '0 16px 12px',
+          scrollbarWidth: 'none' }}>
+          <button
+            onClick={() => setFilterCountry(null)}
+            style={{
+              flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
+              padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
+              background: filterCountry === null ? '#1D3461' : '#FFFFFF',
+              color: filterCountry === null ? '#FFFFFF' : '#4A5568',
+              fontSize: '0.8125rem', fontWeight: 600,
+              border: `1px solid ${filterCountry === null ? '#1D3461' : '#E2E8F0'}`,
+              fontFamily: "'Manrope', sans-serif",
+            }}
+          >
+            <Filter size={12} />
+            Todos
+          </button>
+          {availableCountries.map(code => {
+            const meta = COUNTRY_META[code]
+            const isActive = filterCountry === code
+            return (
+              <button key={code}
+                onClick={() => setFilterCountry(isActive ? null : code)}
+                style={{
+                  flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '6px 12px', borderRadius: 20, cursor: 'pointer',
+                  background: isActive ? '#1D3461' : '#FFFFFF',
+                  color: isActive ? '#FFFFFF' : '#4A5568',
+                  border: `1px solid ${isActive ? '#1D3461' : '#E2E8F0'}`,
+                  fontSize: '0.8125rem', fontWeight: 600,
+                  fontFamily: "'Manrope', sans-serif",
+                }}
+              >
+                {meta && (
+                  <img src={flagSrc(meta.flagCode)} alt={meta.name} width={18} height={18}
+                    style={{ width: 18, height: 18, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                )}
+                {meta?.name ?? code}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* Loading */}
       {loading && <div style={{ padding: '0 16px' }}><ContactSkeleton /></div>}
@@ -898,13 +1136,22 @@ export default function ContactsPage() {
       )}
 
       {/* Modals */}
-      {selected && (
+      {selected && !showEdit && (
         <ContactDetailSheet
           contact={selected}
           onClose={() => setSelected(null)}
           onDelete={() => handleDelete(selected)}
           onToggleFavorite={() => handleToggleFavorite(selected)}
           onSend={() => handleSend(selected)}
+          onEdit={handleEdit}
+        />
+      )}
+
+      {selected && showEdit && (
+        <EditContactSheet
+          contact={selected}
+          onClose={() => setShowEdit(false)}
+          onSaved={() => { setShowEdit(false); setSelected(null); reload() }}
         />
       )}
 

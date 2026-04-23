@@ -45,7 +45,7 @@ export default function Step4Confirm({ stepData, onNext }) {
   const [feesExpanded, setFeesExpanded] = useState(false)
 
   // Step3 guarda los datos bajo la key "beneficiaryData" (campos dinámicos de Vita)
-  const { quote, originAmount, destinationCountry, payinMethod, beneficiaryData } = stepData
+  const { quote, originAmount, destinationCountry, payinMethod, beneficiaryData, contactId } = stepData
 
   const originCurrency = quote?.originCurrency
     ?? ENTITY_ORIGIN_CURRENCY[user?.legalEntity]
@@ -85,6 +85,7 @@ export default function Step4Confirm({ stepData, onNext }) {
         // Datos de la cotización: el backend los guarda en el transaction para trazabilidad
         destinationAmount: quote.destinationAmount ?? null,
         exchangeRate:      quote.exchangeRate      ?? null,
+        ...(contactId ? { contactId } : {}),
       })
       console.log('[initPayment] respuesta completa:', JSON.stringify(res))
 

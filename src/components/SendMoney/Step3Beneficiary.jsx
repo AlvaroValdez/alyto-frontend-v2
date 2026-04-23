@@ -149,7 +149,7 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
 
   // ── Prefill & save-as-contact state ──────────────────────────────────────
   const [isSavedContact, setIsSavedContact] = useState(false)
-  const [contactId,      setContactId]      = useState(null)   // eslint-disable-line no-unused-vars
+  const [contactId,      setContactId]      = useState(null)
   const [prefillName,    setPrefillName]    = useState(null)
   const [saveAsContact,  setSaveAsContact]  = useState(false)
   const [contactAlias,   setContactAlias]   = useState('')
@@ -246,7 +246,7 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
       }
     }
 
-    onNext({ beneficiaryData })
+    onNext({ beneficiaryData, contactId })
   }
 
   // ── Estados de carga y error ──────────────────────────────────────────────

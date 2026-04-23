@@ -33,6 +33,7 @@ const INITIAL_STATE = {
     payinMethod: null,
     // Step 3
     beneficiaryData: null,
+    contactId: null,
     // Step 4 → confirmado implícitamente al llamar nextStep
     // Step 5
     transactionId: null,
