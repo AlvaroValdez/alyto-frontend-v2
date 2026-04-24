@@ -1,24 +1,22 @@
 /**
  * Step3Beneficiary.jsx — "¿A quién le envías?"
  *
- * Formulario 100% dinámico basado en las reglas reales de Vita Wallet.
- * Los campos se cargan desde GET /api/v1/payments/withdrawal-rules/:countryCode
- * y varían según el país destino seleccionado en el Step 1.
+ * Dos rutas según el proveedor de payout del corredor:
  *
- * Características:
- *   - Skeleton de carga mientras llegan las reglas
- *   - Manejo de campos condicionales (campo "when")
- *   - Campos fc_* ocultos — se añaden automáticamente al submit
- *   - Validación onBlur por campo (required + min/max de longitud)
- *   - Botón "Continuar" deshabilitado hasta que todos los campos requeridos
- *     visibles sean válidos
+ *   vitaWallet — formulario dinámico desde GET /payments/withdrawal-rules/:countryCode
+ *                Los campos los devuelve Vita Wallet, varían por país.
+ *
+ *   owlPay    — formulario estático definido en owlPayForms.js (por país de destino).
+ *               NO se llama a Harbor para obtener el schema — eso es responsabilidad
+ *               del backend en buildOwlPayBeneficiary().
  */
 
 import { useState, useMemo, useEffect } from 'react'
-import { useWithdrawalRules } from '../../hooks/useWithdrawalRules'
-import { useAuth }             from '../../context/AuthContext'
-import { createContact }       from '../../services/api'
-import ContactPicker           from '../Contacts/ContactPicker'
+import { useWithdrawalRules }       from '../../hooks/useWithdrawalRules'
+import { useAuth }                  from '../../context/AuthContext'
+import { createContact }            from '../../services/api'
+import ContactPicker                from '../Contacts/ContactPicker'
+import { OWLPAY_FORMS, GENERIC_OWLPAY_FORM } from './owlPayForms'
 
 // ── Prefijos de teléfono por país ─────────────────────────────────────────────
 
@@ -27,28 +25,25 @@ const PHONE_PREFIXES = {
   MX: '+52', BR: '+55', CL: '+56', EC: '+593',
 }
 
-// ── Traducción de nombres de campo Harbor → español ───────────────────────────
+// ── Traducción de nombres de campo Vita → español (solo para formularios Vita) ──
 
 const FIELD_LABELS = {
-  // Beneficiario
   beneficiary_name:          'Nombre completo del beneficiario',
   beneficiary_dob:           'Fecha de nacimiento',
   beneficiary_id_doc_number: 'Número de documento',
-  // Dirección
   street:                    'Dirección',
   city:                      'Ciudad',
   state_province:            'Provincia / Estado',
   postal_code:               'Código postal',
-  // Instrumento de pago (SWIFT)
   account_holder_name:       'Nombre del titular de la cuenta',
   bank_name:                 'Nombre del banco',
   account_number:            'Número de cuenta',
   swift_code:                'Código SWIFT / BIC',
-  // Propósito
   transfer_purpose:          'Propósito de la transferencia',
   is_self_transfer:          '¿Transferencia a cuenta propia?',
 }
 
+// Opciones para transfer_purpose en formularios Vita (OwlPay usa las opciones del form config)
 const TRANSFER_PURPOSE_OPTIONS = [
   { value: 'FAMILY_MAINTENANCE',    label: 'Manutención familiar' },
   { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
@@ -59,7 +54,6 @@ const TRANSFER_PURPOSE_OPTIONS = [
   { value: 'TRAVEL',                label: 'Viaje' },
   { value: 'INVESTMENT_SHARES',     label: 'Inversión' },
   { value: 'ADVERTISING',           label: 'Publicidad' },
-  { value: 'SALARY',                label: 'Nómina / Salario' },
   { value: 'EXPORTED_GOODS',        label: 'Bienes exportados' },
   { value: 'GENERAL_GOODS_OFFLINE', label: 'Bienes generales' },
 ]
@@ -83,7 +77,7 @@ const CN_PROVINCE_OPTIONS = [
   { value: 'ZJ', label: 'Zhejiang' },
 ]
 
-// ── Esqueleto de carga ────────────────────────────────────────────────────────
+// ── Skeleton de carga ─────────────────────────────────────────────────────────
 
 function FieldSkeleton() {
   return (
@@ -110,19 +104,28 @@ function LoadingSkeleton() {
 // ── Validación por campo ──────────────────────────────────────────────────────
 
 function validateField(field, value) {
-  const v = (value ?? '').toString().trim()
+  // Normalise: booleans stringify to 'true'/'false' which are never empty
+  const raw = value === true ? 'true' : value === false ? 'false' : (value ?? '')
+  const v   = String(raw).trim()
 
   if (field.required && v === '') return 'Campo requerido'
 
   if (v !== '') {
+    const maxLen = field.max ?? field.maxLength
     if (field.min && v.length < field.min) return `Mínimo ${field.min} caracteres`
-    if (field.max && v.length > field.max) return `Máximo ${field.max} caracteres`
+    if (maxLen    && v.length > maxLen)    return `Máximo ${maxLen} caracteres`
 
     if (field.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
       return 'Correo electrónico inválido'
     }
-    if (field.type === 'phone' && !/^[+\d\s\-()\u00A0]{5,25}$/.test(v)) {
+    if (field.type === 'phone' && !/^[+\d\s\-() ]{5,25}$/.test(v)) {
       return 'Número de teléfono inválido'
+    }
+    // Pattern validation (owlPay forms may specify a regex)
+    if (field.pattern) {
+      try {
+        if (!new RegExp(field.pattern).test(v)) return field.hint ?? 'Formato inválido'
+      } catch { /* invalid regex in config — skip */ }
     }
   }
 
@@ -134,7 +137,7 @@ function validateField(field, value) {
 function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
   const { key, label, type, required, options, placeholder } = field
 
-  // Prefer Spanish label from FIELD_LABELS; fall back to whatever the backend sent
+  // OwlPay forms already have Spanish labels; Vita forms use FIELD_LABELS translations
   const displayLabel = FIELD_LABELS[key] ?? label
 
   const baseInput = `w-full bg-white border rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0D1F3C]
@@ -142,11 +145,13 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
   const borderOk  = 'border-[#E2E8F0] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#1D346120]'
   const borderErr = 'border-[#EF4444] shadow-[0_0_0_2px_#EF44441A]'
 
-  // Derive the select options for special fields
+  // For OwlPay forms: options come from the config (non-empty arrays).
+  // For Vita forms: fall back to hardcoded lists for known special keys.
   const resolvedOptions =
-    options ??
-    (key === 'transfer_purpose'                    ? TRANSFER_PURPOSE_OPTIONS :
-     key === 'state_province' && countryCode === 'CN' ? CN_PROVINCE_OPTIONS    : null)
+    (Array.isArray(options) && options.length > 0)
+      ? options
+      : (key === 'transfer_purpose'                        ? TRANSFER_PURPOSE_OPTIONS :
+         key === 'state_province' && countryCode === 'CN'  ? CN_PROVINCE_OPTIONS      : null)
 
   return (
     <div>
@@ -163,7 +168,7 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
           type="button"
           role="switch"
           aria-checked={value === 'true' || value === true}
-          onClick={() => onChange(key, value === 'true' || value === true ? 'false' : 'true')}
+          onClick={() => onChange(key, value === 'true' || value === true ? false : true)}
           className="flex items-center gap-3 text-[0.9375rem] text-[#0D1F3C]"
         >
           <span style={{
@@ -183,13 +188,13 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
 
       ) : (type === 'select' || resolvedOptions) ? (
         <select
-          value={value}
+          value={value ?? ''}
           onChange={e => onChange(key, e.target.value)}
           onBlur={() => onBlur(key)}
           className={`${baseInput} appearance-none ${error ? borderErr : borderOk}`}
         >
           <option value="">Seleccionar...</option>
-          {resolvedOptions.map(opt => (
+          {(resolvedOptions ?? []).map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
@@ -202,7 +207,7 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
           </span>
           <input
             type="tel"
-            value={value}
+            value={value ?? ''}
             onChange={e => onChange(key, e.target.value)}
             onBlur={() => onBlur(key)}
             placeholder={placeholder || 'Número sin prefijo'}
@@ -213,16 +218,20 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
       ) : (
         <input
           type={type === 'email' ? 'email' : 'text'}
-          value={value}
+          value={value ?? ''}
           onChange={e => onChange(key, e.target.value)}
           onBlur={() => onBlur(key)}
           placeholder={placeholder}
+          maxLength={field.maxLength ?? field.max ?? undefined}
           className={`${baseInput} ${error ? borderErr : borderOk}`}
         />
       )}
 
       {error && (
         <p className="mt-1 text-[0.6875rem] text-[#EF4444]">{error}</p>
+      )}
+      {field.hint && !error && (
+        <p className="mt-1 text-[0.6875rem] text-[#94A3B8]">{field.hint}</p>
       )}
     </div>
   )
@@ -234,8 +243,28 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
   const { rules, payoutMethod, loading, error: loadError, refetch } = useWithdrawalRules(destinationCountry)
   const { user } = useAuth()
 
+  // ── OwlPay: form config estático por país ──────────────────────────────────
+  const isOwlPay   = payoutMethod === 'owlPay'
+  const owlPayForm = isOwlPay
+    ? (OWLPAY_FORMS[destinationCountry] ?? GENERIC_OWLPAY_FORM)
+    : null
+
   const [values,  setValues]  = useState({})
   const [touched, setTouched] = useState({})
+
+  // Inicializar defaults de campos OwlPay (ej. is_self_transfer = false)
+  useEffect(() => {
+    if (!isOwlPay || !owlPayForm) return
+    setValues(prev => {
+      const defaults = {}
+      for (const f of owlPayForm.fields) {
+        if (f.default !== undefined && prev[f.key] === undefined) {
+          defaults[f.key] = f.default
+        }
+      }
+      return Object.keys(defaults).length > 0 ? { ...prev, ...defaults } : prev
+    })
+  }, [isOwlPay, owlPayForm])
 
   // ── Prefill & save-as-contact state ──────────────────────────────────────
   const [isSavedContact, setIsSavedContact] = useState(false)
@@ -283,19 +312,22 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
     setTouched({})
   }
 
-  // ── Campos visibles (aplicar lógica "when") ───────────────────────────────
-  const visibleRules = useMemo(() => {
-    // Excluir campos fc_* — son internos y se añaden al submit
+  // ── Campos activos ─────────────────────────────────────────────────────────
+  // OwlPay: usa el config estático
+  // Vita:   filtra campos fc_* y aplica lógica "when"
+  const vitaVisibleRules = useMemo(() => {
+    if (isOwlPay) return []
     return rules.filter(field => {
       if (field.key.startsWith('fc_')) return false
       if (!field.when) return true
-      // Mostrar solo si el campo referenciado tiene el valor indicado
       const refValue = values[field.when.key] ?? ''
       const expected = field.when.value
       if (Array.isArray(expected)) return expected.includes(refValue)
       return refValue === expected
     })
-  }, [rules, values])
+  }, [isOwlPay, rules, values])
+
+  const activeFields = isOwlPay ? (owlPayForm?.fields ?? []) : vitaVisibleRules
 
   function handleChange(key, value) {
     setValues(prev => ({ ...prev, [key]: value }))
@@ -310,37 +342,55 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
     return validateField(field, values[field.key])
   }
 
-  // El formulario es válido cuando todos los campos requeridos visibles tienen valor correcto
   const allValid = useMemo(() =>
-    visibleRules.every(f => !validateField(f, values[f.key])),
-  [visibleRules, values])
+    activeFields.every(f => !validateField(f, values[f.key])),
+  [activeFields, values])
 
   async function handleNext() {
     if (!allValid) {
-      const allTouched = Object.fromEntries(visibleRules.map(f => [f.key, true]))
+      const allTouched = Object.fromEntries(activeFields.map(f => [f.key, true]))
       setTouched(prev => ({ ...prev, ...allTouched }))
       return
     }
 
-    const beneficiaryData = Object.fromEntries(
-      visibleRules
-        .filter(f => (values[f.key] ?? '').trim() !== '')
-        .map(f => [f.key, values[f.key].trim()]),
-    )
+    let beneficiaryData
+
+    if (isOwlPay) {
+      beneficiaryData = {}
+      for (const f of activeFields) {
+        const val = values[f.key]
+        if (val === undefined || val === null) continue
+        if (f.type === 'toggle') {
+          // Persist booleans as booleans (not strings)
+          beneficiaryData[f.key] = val === true || val === 'true'
+        } else {
+          const trimmed = typeof val === 'string' ? val.trim() : val
+          if (trimmed !== '') beneficiaryData[f.key] = trimmed
+        }
+      }
+    } else {
+      beneficiaryData = Object.fromEntries(
+        vitaVisibleRules
+          .filter(f => (String(values[f.key] ?? '')).trim() !== '')
+          .map(f => [f.key, String(values[f.key]).trim()]),
+      )
+    }
 
     // Save contact (non-blocking — never fails the transfer)
     if (saveAsContact && !isSavedContact) {
       try {
-        const firstName = beneficiaryData.beneficiary_first_name ?? ''
-        const lastName  = beneficiaryData.beneficiary_last_name  ?? ''
-        const alias     = contactAlias.trim() || `${firstName} ${lastName}`.trim()
+        const alias = contactAlias.trim()
+          || beneficiaryData.beneficiary_name
+          || `${beneficiaryData.beneficiary_first_name ?? ''} ${beneficiaryData.beneficiary_last_name ?? ''}`.trim()
         await createContact({
           nickname:            alias,
-          firstName,
-          lastName,
+          firstName:           beneficiaryData.beneficiary_name?.split(' ')[0]
+                            ?? beneficiaryData.beneficiary_first_name ?? '',
+          lastName:            beneficiaryData.beneficiary_name?.split(' ').slice(1).join(' ')
+                            ?? beneficiaryData.beneficiary_last_name  ?? '',
           destinationCountry:  destinationCountry,
           destinationCurrency: '',
-          formType:            payoutMethod === 'owlPay' ? 'owlpay' : 'vita',
+          formType:            isOwlPay ? 'owlpay' : 'vita',
           beneficiaryData,
         })
       } catch (err) {
@@ -380,7 +430,7 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
     )
   }
 
-  // ── Formulario dinámico ───────────────────────────────────────────────────
+  // ── Formulario ────────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col gap-4 px-4 pb-4">
@@ -393,7 +443,7 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
         </p>
       </div>
 
-      {/* Contactos guardados — picker inline, hidden once a contact is selected */}
+      {/* Contactos guardados */}
       {!prefillName && (
         <ContactPicker
           destinationCountry={destinationCountry}
@@ -402,7 +452,7 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
         />
       )}
 
-      {/* Prefill banner — shown when coming from Contacts page or ContactPicker */}
+      {/* Prefill banner */}
       {prefillName && (
         <div style={{
           display:      'flex',
@@ -436,8 +486,28 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
         </div>
       )}
 
-      {/* Campos dinámicos */}
-      {visibleRules.map(field => (
+      {/* OwlPay: form title + static fields */}
+      {isOwlPay && owlPayForm && (
+        <>
+          <p className="text-[0.8125rem] font-semibold text-[#1D3461] -mb-1">
+            {owlPayForm.title}
+          </p>
+          {owlPayForm.fields.map(field => (
+            <DynamicField
+              key={field.key}
+              field={field}
+              value={values[field.key] ?? (field.default ?? '')}
+              error={getError(field)}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              countryCode={destinationCountry}
+            />
+          ))}
+        </>
+      )}
+
+      {/* Vita: dynamic fields from backend */}
+      {!isOwlPay && vitaVisibleRules.map(field => (
         <DynamicField
           key={field.key}
           field={field}
@@ -457,7 +527,7 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
         </p>
       </div>
 
-      {/* Guardar como contacto — hidden if prefill already loaded a saved contact */}
+      {/* Guardar como contacto */}
       {!isSavedContact && (
         <div style={{
           background:   '#FFFFFF',
@@ -478,23 +548,22 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
               </div>
             </div>
 
-            {/* Pill toggle */}
             <button
               type="button"
               role="switch"
               aria-checked={saveAsContact}
               onClick={() => setSaveAsContact(v => !v)}
               style={{
-                flexShrink:  0,
-                width:       44,
-                height:      24,
+                flexShrink:   0,
+                width:        44,
+                height:       24,
                 borderRadius: 12,
-                background:  saveAsContact ? 'var(--color-primary)' : '#CBD5E1',
-                border:      'none',
-                cursor:      'pointer',
-                position:    'relative',
-                transition:  'background 0.2s',
-                padding:     0,
+                background:   saveAsContact ? 'var(--color-primary)' : '#CBD5E1',
+                border:       'none',
+                cursor:       'pointer',
+                position:     'relative',
+                transition:   'background 0.2s',
+                padding:      0,
               }}
             >
               <span style={{
@@ -522,8 +591,9 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
                 value={contactAlias}
                 onChange={e => setContactAlias(e.target.value)}
                 placeholder={
-                  `${values['beneficiary_first_name'] ?? ''} ${values['beneficiary_last_name'] ?? ''}`.trim() ||
-                  'Ej: Marina Colombia'
+                  values['beneficiary_name']
+                    || `${values['beneficiary_first_name'] ?? ''} ${values['beneficiary_last_name'] ?? ''}`.trim()
+                    || 'Ej: Marina Colombia'
                 }
                 maxLength={50}
                 className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3.5 text-[0.9375rem]
