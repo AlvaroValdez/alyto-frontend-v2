@@ -730,7 +730,7 @@ export default function TransactionDetail() {
             <div ref={comprobanteRef} className="bg-white rounded-2xl border border-[#E2E8F0]">
 
               {/* Header branding */}
-              <div className="flex flex-col items-center py-5 px-5" style={{ background: 'linear-gradient(180deg, #233E580D 0%, #ffffff 100%)' }}>
+              <div className="flex flex-col items-center py-5 px-5">
                 <img
                   src="/assets/logo-alyto.png"
                   alt="Alyto"
@@ -743,110 +743,114 @@ export default function TransactionDetail() {
               <div className="px-5 pb-6 flex flex-col">
 
                 {/* ID de transacción */}
-                <div className="mb-4 pb-4" style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <p style={{ color: '#94A3B8', fontSize: '0.6875rem', marginBottom: 4 }}>ID de transacción</p>
+                <div className="mb-4 pb-4 text-center" style={{ borderBottom: '1px solid #F1F5F9' }}>
+                  <p style={{ color: '#94A3B8', fontSize: '0.6875rem', marginBottom: 6 }}>ID de transacción</p>
+                  <p
+                    className="break-all"
+                    style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--color-text-primary)', marginBottom: 6 }}
+                  >
+                    {tx.transactionId}
+                  </p>
                   <button
                     onClick={handleCopy}
-                    className="flex items-center gap-2 w-full text-left hover:opacity-70 transition-opacity"
-                    style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: copied ? 'var(--color-accent-teal)' : 'var(--color-text-primary)' }}
+                    className="inline-flex items-center gap-1.5 hover:opacity-70 transition-opacity"
+                    style={{ fontSize: '0.6875rem', color: copied ? 'var(--color-accent-teal)' : '#94A3B8' }}
                   >
-                    <span className="truncate">{tx.transactionId}</span>
                     {copied
-                      ? <CheckCircle size={13} color="#1D3461" style={{ flexShrink: 0 }} />
-                      : <Copy size={13} color="#94A3B8" style={{ flexShrink: 0 }} />
+                      ? <><CheckCircle size={12} /> Copiado</>
+                      : <><Copy size={12} /> Copiar ID</>
                     }
                   </button>
-                  {copied && <p style={{ color: 'var(--color-accent-teal)', fontSize: '0.625rem', marginTop: 2 }}>¡Copiado!</p>}
                 </div>
 
                 {/* Tú enviaste / Ellos reciben / Tasa */}
-                <div className="flex flex-col gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <div className="flex items-center justify-between">
-                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Tú enviaste</span>
-                    <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 600 }}>
+                <div className="flex flex-col gap-3 mb-4 pb-4 w-full text-center" style={{ borderBottom: '1px solid #F1F5F9' }}>
+                  <div>
+                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 2 }}>Tú enviaste</p>
+                    <p style={{ color: 'var(--color-text-primary)', fontSize: '0.9375rem', fontWeight: 600 }}>
                       {countryFlag(currencyToCountry(tx.originCurrency))} {formatAmount(tx.originAmount, tx.originCurrency)}
-                    </span>
+                    </p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Ellos reciben</span>
-                    <span style={{ color: 'var(--color-accent-teal)', fontSize: '0.8125rem', fontWeight: 700 }}>
+                  <div>
+                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 2 }}>Ellos reciben</p>
+                    <p style={{ color: 'var(--color-accent-teal)', fontSize: '0.9375rem', fontWeight: 700 }}>
                       {countryFlag(tx.destinationCountry)} {formatAmount(effectiveDestAmount, tx.destinationCurrency)}
-                    </span>
+                    </p>
                   </div>
                   {tx.exchangeRate > 0 && (
-                    <div className="flex items-center justify-between">
-                      <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Tasa de cambio</span>
-                      <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>
+                    <div>
+                      <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 2 }}>Tasa de cambio</p>
+                      <p style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>
                         1 {tx.originCurrency} = {tx.exchangeRate.toLocaleString('es-CL', { maximumFractionDigits: 4 })} {tx.destinationCurrency}
-                      </span>
+                      </p>
                     </div>
                   )}
                 </div>
 
                 {/* Beneficiario */}
                 {tx.beneficiary && (
-                  <div className="flex flex-col gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid #F1F5F9' }}>
+                  <div className="flex flex-col gap-3 mb-4 pb-4 w-full text-center" style={{ borderBottom: '1px solid #F1F5F9' }}>
                     {tx.beneficiary.fullName && (
-                      <div className="flex items-center justify-between">
-                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Beneficiario</span>
-                        <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>
+                      <div>
+                        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 2 }}>Beneficiario</p>
+                        <p style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>
                           {tx.beneficiary.fullName}
-                        </span>
+                        </p>
                       </div>
                     )}
                     {tx.beneficiary.bankName && (
-                      <div className="flex items-center justify-between">
-                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Banco</span>
-                        <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>
+                      <div>
+                        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 2 }}>Banco</p>
+                        <p style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>
                           {resolveBankName(tx.beneficiary.bankName) ?? tx.beneficiary.bankName}
-                        </span>
+                        </p>
                       </div>
                     )}
-                    <div className="flex items-center justify-between">
-                      <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Cuenta</span>
-                      <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>
+                    <div>
+                      <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 2 }}>Cuenta</p>
+                      <p style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>
                         {maskAccount(tx.beneficiary.accountNumber) ?? '••••'}
-                      </span>
+                      </p>
                     </div>
                     {tx.beneficiary.accountType && (
-                      <div className="flex items-center justify-between">
-                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Tipo</span>
-                        <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>{tx.beneficiary.accountType}</span>
+                      <div>
+                        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 2 }}>Tipo</p>
+                        <p style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>{tx.beneficiary.accountType}</p>
                       </div>
                     )}
                     {tx.beneficiary.documentNumber && (
-                      <div className="flex items-center justify-between">
-                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>
+                      <div>
+                        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 2 }}>
                           {tx.beneficiary.documentType ? tx.beneficiary.documentType.toUpperCase() : 'CI / Documento'}
-                        </span>
-                        <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>
+                        </p>
+                        <p style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>
                           {tx.beneficiary.documentNumber}
-                        </span>
+                        </p>
                       </div>
                     )}
                     {tx.concept && (
-                      <div className="flex items-center justify-between gap-3">
-                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem', flexShrink: 0 }}>Concepto</span>
-                        <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500, textAlign: 'right' }}>
+                      <div>
+                        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 2 }}>Concepto</p>
+                        <p style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>
                           {tx.concept}
-                        </span>
+                        </p>
                       </div>
                     )}
                   </div>
                 )}
 
                 {/* Fecha, tiempo estimado, estado */}
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Fecha de envío</span>
-                    <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>{formatExactDate(tx.createdAt)}</span>
+                <div className="flex flex-col gap-3 w-full text-center">
+                  <div>
+                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 2 }}>Fecha de envío</p>
+                    <p style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>{formatExactDate(tx.createdAt)}</p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Tiempo estimado</span>
-                    <span style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>{deliveryLabel}</span>
+                  <div>
+                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 2 }}>Tiempo estimado</p>
+                    <p style={{ color: 'var(--color-text-primary)', fontSize: '0.8125rem', fontWeight: 500 }}>{deliveryLabel}</p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Estado</span>
+                  <div>
+                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 6 }}>Estado</p>
                     <span
                       style={{ background: cfg.bg, color: cfg.color, fontSize: '0.75rem', fontWeight: 600, padding: '3px 12px', borderRadius: 999 }}
                     >
