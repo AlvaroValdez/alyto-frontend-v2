@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, X } from 'lucide-react'
 
 import { useSendMoney }          from '../../hooks/useSendMoney'
+import { useAuth }               from '../../context/AuthContext'
 import StepIndicator             from '../../components/SendMoney/StepIndicator'
 import Step1Amount               from '../../components/SendMoney/Step1Amount'
 import Step2PayinMethod          from '../../components/SendMoney/Step2PayinMethod'
@@ -34,6 +35,7 @@ const STEP_TITLES = {
 
 export default function SendMoneyPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { step, stepData, nextStep, prevStep, resetFlow } = useSendMoney()
 
   const isSuccess = step === 6
@@ -105,10 +107,10 @@ export default function SendMoneyPage() {
           <Step1Amount
             initialData={stepData}
             onNext={(data) => {
-              // V2.0: origen siempre CL → Fintoc es el único método disponible.
-              // Saltar Step 2 directamente. Step 2 queda como fallback para
-              // futuros corredores con múltiples métodos de pago.
-              nextStep({ ...data, payinMethod: 'fintoc', _skipStep2: true }, 3)
+              // SRL (Bolivia) and LLC always use manual payin — skip Step 2.
+              // SpA (Chile) uses Fintoc — also skip Step 2 (only one method available).
+              const isManual = user?.legalEntity === 'SRL' || user?.legalEntity === 'LLC'
+              nextStep({ ...data, payinMethod: isManual ? 'manual' : 'fintoc', _skipStep2: true }, 3)
             }}
           />
         )}
