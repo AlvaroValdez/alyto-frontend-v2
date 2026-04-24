@@ -27,6 +27,62 @@ const PHONE_PREFIXES = {
   MX: '+52', BR: '+55', CL: '+56', EC: '+593',
 }
 
+// ── Traducción de nombres de campo Harbor → español ───────────────────────────
+
+const FIELD_LABELS = {
+  // Beneficiario
+  beneficiary_name:          'Nombre completo del beneficiario',
+  beneficiary_dob:           'Fecha de nacimiento',
+  beneficiary_id_doc_number: 'Número de documento',
+  // Dirección
+  street:                    'Dirección',
+  city:                      'Ciudad',
+  state_province:            'Provincia / Estado',
+  postal_code:               'Código postal',
+  // Instrumento de pago (SWIFT)
+  account_holder_name:       'Nombre del titular de la cuenta',
+  bank_name:                 'Nombre del banco',
+  account_number:            'Número de cuenta',
+  swift_code:                'Código SWIFT / BIC',
+  // Propósito
+  transfer_purpose:          'Propósito de la transferencia',
+  is_self_transfer:          '¿Transferencia a cuenta propia?',
+}
+
+const TRANSFER_PURPOSE_OPTIONS = [
+  { value: 'FAMILY_MAINTENANCE',    label: 'Manutención familiar' },
+  { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
+  { value: 'SALARY',                label: 'Salario' },
+  { value: 'DONATIONS',             label: 'Donaciones' },
+  { value: 'EDUCATION',             label: 'Educación' },
+  { value: 'MEDICAL_TREATMENT',     label: 'Gastos médicos' },
+  { value: 'TRAVEL',                label: 'Viaje' },
+  { value: 'INVESTMENT_SHARES',     label: 'Inversión' },
+  { value: 'ADVERTISING',           label: 'Publicidad' },
+  { value: 'SALARY',                label: 'Nómina / Salario' },
+  { value: 'EXPORTED_GOODS',        label: 'Bienes exportados' },
+  { value: 'GENERAL_GOODS_OFFLINE', label: 'Bienes generales' },
+]
+
+const CN_PROVINCE_OPTIONS = [
+  { value: 'AH', label: 'Anhui' },        { value: 'BJ', label: 'Beijing' },
+  { value: 'CQ', label: 'Chongqing' },    { value: 'FJ', label: 'Fujian' },
+  { value: 'GD', label: 'Guangdong' },    { value: 'GS', label: 'Gansu' },
+  { value: 'GX', label: 'Guangxi' },      { value: 'GZ', label: 'Guizhou' },
+  { value: 'HA', label: 'Henan' },        { value: 'HB', label: 'Hubei' },
+  { value: 'HE', label: 'Hebei' },        { value: 'HI', label: 'Hainan' },
+  { value: 'HL', label: 'Heilongjiang' }, { value: 'HN', label: 'Hunan' },
+  { value: 'JL', label: 'Jilin' },        { value: 'JS', label: 'Jiangsu' },
+  { value: 'JX', label: 'Jiangxi' },      { value: 'LN', label: 'Liaoning' },
+  { value: 'NM', label: 'Mongolia Interior' }, { value: 'NX', label: 'Ningxia' },
+  { value: 'QH', label: 'Qinghai' },      { value: 'SC', label: 'Sichuan' },
+  { value: 'SD', label: 'Shandong' },     { value: 'SH', label: 'Shanghai' },
+  { value: 'SN', label: 'Shaanxi' },      { value: 'SX', label: 'Shanxi' },
+  { value: 'TJ', label: 'Tianjin' },      { value: 'XJ', label: 'Xinjiang' },
+  { value: 'XZ', label: 'Tibet' },        { value: 'YN', label: 'Yunnan' },
+  { value: 'ZJ', label: 'Zhejiang' },
+]
+
 // ── Esqueleto de carga ────────────────────────────────────────────────────────
 
 function FieldSkeleton() {
@@ -78,21 +134,54 @@ function validateField(field, value) {
 function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
   const { key, label, type, required, options, placeholder } = field
 
+  // Prefer Spanish label from FIELD_LABELS; fall back to whatever the backend sent
+  const displayLabel = FIELD_LABELS[key] ?? label
+
   const baseInput = `w-full bg-white border rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0D1F3C]
     placeholder:text-[#94A3B8] focus:outline-none transition-all`
   const borderOk  = 'border-[#E2E8F0] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#1D346120]'
   const borderErr = 'border-[#EF4444] shadow-[0_0_0_2px_#EF44441A]'
 
+  // Derive the select options for special fields
+  const resolvedOptions =
+    options ??
+    (key === 'transfer_purpose'                    ? TRANSFER_PURPOSE_OPTIONS :
+     key === 'state_province' && countryCode === 'CN' ? CN_PROVINCE_OPTIONS    : null)
+
   return (
     <div>
       <label className="block text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-wide mb-2">
-        {label}
+        {displayLabel}
         {!required && (
           <span className="ml-1 text-[0.625rem] normal-case font-normal text-[#94A3B8]">(opcional)</span>
         )}
       </label>
 
-      {type === 'select' ? (
+      {/* Boolean toggle for is_self_transfer */}
+      {key === 'is_self_transfer' ? (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={value === 'true' || value === true}
+          onClick={() => onChange(key, value === 'true' || value === true ? 'false' : 'true')}
+          className="flex items-center gap-3 text-[0.9375rem] text-[#0D1F3C]"
+        >
+          <span style={{
+            display: 'inline-block', width: 44, height: 24, borderRadius: 12,
+            background: (value === 'true' || value === true) ? '#1D3461' : '#CBD5E1',
+            position: 'relative', flexShrink: 0, transition: 'background 0.2s',
+          }}>
+            <span style={{
+              position: 'absolute', top: 3,
+              left: (value === 'true' || value === true) ? 23 : 3,
+              width: 18, height: 18, borderRadius: '50%', background: '#FFF',
+              transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.20)',
+            }} />
+          </span>
+          <span>{(value === 'true' || value === true) ? 'Sí' : 'No'}</span>
+        </button>
+
+      ) : (type === 'select' || resolvedOptions) ? (
         <select
           value={value}
           onChange={e => onChange(key, e.target.value)}
@@ -100,7 +189,7 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
           className={`${baseInput} appearance-none ${error ? borderErr : borderOk}`}
         >
           <option value="">Seleccionar...</option>
-          {options.map(opt => (
+          {resolvedOptions.map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
