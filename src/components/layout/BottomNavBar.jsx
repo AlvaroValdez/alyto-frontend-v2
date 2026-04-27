@@ -18,7 +18,6 @@ const NAV_DEFAULT = [
   { icon: User,            label: 'Perfil',         to: '/profile'      },
 ]
 
-const ALYTO_BLUE     = '#0D1F3C'
 const ALYTO_BLUE_DIM = 'rgba(13,31,60,0.08)'
 
 export default function BottomNavBar({ user }) {
@@ -70,14 +69,14 @@ export default function BottomNavBar({ user }) {
                 <Icon
                   size={20}
                   strokeWidth={isActive ? 2.2 : 1.8}
-                  style={{ color: isActive ? ALYTO_BLUE : 'var(--color-text-muted)' }}
+                  style={{ color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)' }}
                 />
               </div>
               <span
                 style={{
                   fontSize:      '0.5625rem',
                   fontWeight:    isActive ? 700 : 500,
-                  color:         isActive ? ALYTO_BLUE : 'var(--color-text-muted)',
+                  color:         isActive ? 'var(--color-primary)' : 'var(--color-text-muted)',
                   transition:    'var(--transition-fast)',
                   letterSpacing: isActive ? '0.01em' : 0,
                 }}
