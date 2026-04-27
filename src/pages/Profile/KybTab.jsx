@@ -142,8 +142,6 @@ function NotStartedCard({ navigate }) {
           </button>
         </div>
       </div>
-
-      {isSRL && <BobRegulatoryNotice />}
     </div>
   )
 }
