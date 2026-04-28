@@ -276,7 +276,8 @@ const EMPTY_FORM = {
   originCountry: 'CL', destinationCountry: 'CO',
   payinMethod: 'fintoc', payoutMethod: 'vita',
   legalEntity: 'SpA',
-  alytoCSpread: 2, fixedFee: 300, payinFeePercent: 0.5, profitRetentionPercent: 30,
+  alytoCSpread: 2, businessAlytoCSpread: 0.5,
+  fixedFee: 300, payinFeePercent: 0.5, profitRetentionPercent: 30,
   isActive: true,
 }
 
@@ -302,6 +303,7 @@ function CreateCorridorModal({ onClose, onCreated }) {
         originCurrency,
         destinationCurrency,
         alytoCSpread:           Number(form.alytoCSpread),
+        businessAlytoCSpread:   Number(form.businessAlytoCSpread),
         fixedFee:               Number(form.fixedFee),
         payinFeePercent:        Number(form.payinFeePercent),
         profitRetentionPercent: Number(form.profitRetentionPercent),
@@ -383,6 +385,7 @@ function CreateCorridorModal({ onClose, onCreated }) {
             <Label>Método payout</Label>
             <Sel value={form.payoutMethod} onChange={e => set('payoutMethod', e.target.value)}>
               <option value="vita">vita</option>
+              <option value="owlPay">owlPay</option>
               <option value="anchor_manual">anchor_manual</option>
               <option value="stellar_direct">stellar_direct</option>
             </Sel>
@@ -402,6 +405,22 @@ function CreateCorridorModal({ onClose, onCreated }) {
           <div>
             <Label>Spread Alyto (%)</Label>
             <NumInput value={form.alytoCSpread}           step="0.01" onChange={e => set('alytoCSpread', e.target.value)} />
+          </div>
+          <div>
+            <Label>Business spread % (cuenta business)</Label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              max="10"
+              placeholder="0.5"
+              value={form.businessAlytoCSpread}
+              onChange={e => set('businessAlytoCSpread', parseFloat(e.target.value))}
+              className="w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white bg-[#1A2340] border border-[#263050] focus:border-[#1D9E75] focus:outline-none transition-colors"
+            />
+            <p className="mt-1.5 text-[0.6875rem] text-[#4E5A7A]">
+              Spread preferencial para cuentas KYB aprobadas. Dejar en 0.5 para nuevos corredores.
+            </p>
           </div>
           <div>
             <Label>Fee fijo (moneda origen)</Label>
