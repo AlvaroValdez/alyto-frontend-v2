@@ -91,24 +91,39 @@ function ActionBtn({ icon, title, onClick }) {
 
 // ─── Celda editable (número) ──────────────────────────────────────────────────
 
-function EditableNumberCell({ value, corridorId, field, suffix = '', onSaved }) {
+function EditableNumberCell({
+  value, corridorId, field, suffix = '', onSaved,
+  onSave: customOnSave,
+  accent,
+  min = 0, max, step = 0.01,
+  placeholder,
+}) {
   const [editing,  setEditing]  = useState(false)
-  const [draft,    setDraft]    = useState(String(value ?? 0))
+  const [draft,    setDraft]    = useState(value != null ? String(value) : '')
   const [saving,   setSaving]   = useState(false)
   const [flashOk,  setFlashOk]  = useState(false)
   const [flashErr, setFlashErr] = useState(false)
 
-  const startEdit = () => { setDraft(String(value ?? 0)); setEditing(true) }
+  const startEdit = () => { setDraft(value != null ? String(value) : ''); setEditing(true) }
   const cancel    = () => setEditing(false)
 
   const save = async () => {
     const parsed = parseFloat(draft)
-    if (isNaN(parsed) || parsed < 0) {
+    if (isNaN(parsed) || parsed < min || (max != null && parsed > max)) {
       setFlashErr(true); setTimeout(() => setFlashErr(false), 1500); return
     }
     setSaving(true)
     try {
-      await updateCorridor(corridorId, { [field]: parsed })
+      if (customOnSave) {
+        const result = await customOnSave(parsed)
+        if (result === false) {
+          setFlashErr(true)
+          setTimeout(() => setFlashErr(false), 1500)
+          return
+        }
+      } else {
+        await updateCorridor(corridorId, { [field]: parsed })
+      }
       setFlashOk(true)
       setTimeout(() => setFlashOk(false), 1500)
       onSaved?.()
@@ -132,7 +147,10 @@ function EditableNumberCell({ value, corridorId, field, suffix = '', onSaved }) 
         <input
           autoFocus
           type="number"
-          step="0.01"
+          step={step}
+          min={min}
+          max={max}
+          placeholder={placeholder}
           value={draft}
           onChange={e => setDraft(e.target.value)}
           onKeyDown={onKeyDown}
@@ -148,18 +166,22 @@ function EditableNumberCell({ value, corridorId, field, suffix = '', onSaved }) 
     )
   }
 
+  const colorClass = flashOk
+    ? 'text-[#22C55E]'
+    : flashErr
+      ? 'text-[#F87171]'
+      : (accent ?? 'text-white')
+
   return (
     <button
       onClick={startEdit}
-      className={`flex items-center gap-1.5 group rounded-lg px-2 py-1 transition-colors hover:bg-[#1F2B4D] ${
-        flashOk ? 'text-[#22C55E]' : flashErr ? 'text-[#F87171]' : 'text-white'
-      }`}
-      title={`Editar ${field}`}
+      className={`flex items-center gap-1.5 group rounded-lg px-2 py-1 transition-colors hover:bg-[#1F2B4D] ${colorClass}`}
+      title={`Editar ${field ?? 'valor'}`}
     >
       <span className="text-[0.8125rem] font-semibold tabular-nums">
         {flashOk
           ? <CheckCircle2 size={14} />
-          : `${value ?? 0}${suffix}`
+          : (value == null ? '—' : `${value}${suffix}`)
         }
       </span>
       <Pencil size={10} className="text-[#4E5A7A] opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -720,11 +742,12 @@ export default function CorridorsPanel() {
       {/* ── Tabla ── */}
       {filtered.length > 0 && (
         <div className="overflow-x-auto -mx-4">
-          <table className="w-full min-w-[1120px]">
+          <table className="w-full min-w-[1280px]">
             <thead>
               <tr className="border-b border-[#263050]">
                 <TH>Corredor</TH>
                 <TH>Spread %</TH>
+                <TH>B. Spread %</TH>
                 <TH>Fee fijo</TH>
                 <TH>Fee payin %</TH>
                 <TH>Retention %</TH>
@@ -754,6 +777,22 @@ export default function CorridorsPanel() {
                   {/* Spread % */}
                   <td className="px-3 py-3.5">
                     <EditableNumberCell value={c.alytoCSpread}           corridorId={c.corridorId} field="alytoCSpread"           suffix="%" onSaved={onSaved} />
+                  </td>
+
+                  {/* B. Spread % (cuenta business) */}
+                  <td className="px-3 py-3.5">
+                    <EditableNumberCell
+                      value={c.businessAlytoCSpread}
+                      corridorId={c.corridorId}
+                      field="businessAlytoCSpread"
+                      suffix="%"
+                      onSaved={onSaved}
+                      accent="text-[#1D9E75]"
+                      min={0}
+                      max={10}
+                      step={0.1}
+                      placeholder="0.5"
+                    />
                   </td>
 
                   {/* Fee fijo */}
