@@ -114,6 +114,20 @@ export function deleteCorridor(corridorId) {
 }
 
 /**
+ * Actualiza la tasa manual del corredor (solo payinMethod === 'manual').
+ * Endpoint dedicado con auditoría: la nota es obligatoria (mín. 10 chars).
+ * @param {string} corridorId
+ * @param {{ manualExchangeRate: number, note: string }} data
+ * @returns {Promise<{ corridor }>}
+ */
+export function setCorridorRate(corridorId, data) {
+  return request(`/admin/corridors/${encodeURIComponent(corridorId)}/rate`, {
+    method: 'PATCH',
+    body:   JSON.stringify(data),
+  })
+}
+
+/**
  * Analytics de un corredor por período.
  * @param {string} corridorId
  * @param {{ period?, startDate?, endDate? }} params

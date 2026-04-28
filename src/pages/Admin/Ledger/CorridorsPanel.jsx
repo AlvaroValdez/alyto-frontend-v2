@@ -12,7 +12,7 @@ import {
   Pencil, Check, X, Plus, BarChart2, History, ArrowRight,
 } from 'lucide-react'
 import {
-  listCorridors, updateCorridor, createCorridor,
+  listCorridors, updateCorridor, createCorridor, setCorridorRate,
   getCorridorAnalytics, getCorridorChangeLog,
 } from '../../../services/adminService'
 
@@ -742,12 +742,13 @@ export default function CorridorsPanel() {
       {/* ── Tabla ── */}
       {filtered.length > 0 && (
         <div className="overflow-x-auto -mx-4">
-          <table className="w-full min-w-[1280px]">
+          <table className="w-full min-w-[1400px]">
             <thead>
               <tr className="border-b border-[#263050]">
                 <TH>Corredor</TH>
                 <TH>Spread %</TH>
                 <TH>B. Spread %</TH>
+                <TH>Tasa BOB/USDC</TH>
                 <TH>Fee fijo</TH>
                 <TH>Fee payin %</TH>
                 <TH>Retention %</TH>
@@ -793,6 +794,36 @@ export default function CorridorsPanel() {
                       step={0.1}
                       placeholder="0.5"
                     />
+                  </td>
+
+                  {/* Tasa manual (solo corredores manual) */}
+                  <td className="px-3 py-3.5">
+                    {c.payinMethod === 'manual' ? (
+                      <EditableNumberCell
+                        value={c.manualExchangeRate}
+                        onSave={async (newRate) => {
+                          const note = window.prompt(
+                            'Motivo del cambio de tasa (requerido):',
+                            'Actualización tasa Binance P2P',
+                          )
+                          if (!note || note.length < 10) {
+                            window.alert('El motivo debe tener al menos 10 caracteres.')
+                            return false
+                          }
+                          await setCorridorRate(c.corridorId, {
+                            manualExchangeRate: newRate,
+                            note,
+                          })
+                          return true
+                        }}
+                        onSaved={onSaved}
+                        min={0}
+                        step={0.0001}
+                        placeholder="9.31"
+                      />
+                    ) : (
+                      <span className="text-[0.8125rem] text-[#4E5A7A]">—</span>
+                    )}
                   </td>
 
                   {/* Fee fijo */}
