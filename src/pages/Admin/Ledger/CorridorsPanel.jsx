@@ -18,19 +18,39 @@ import {
 
 // ─── Datos de países ──────────────────────────────────────────────────────────
 
-const COUNTRIES = [
-  { code: 'CL', flag: '🇨🇱', name: 'Chile',     currency: 'CLP' },
-  { code: 'CO', flag: '🇨🇴', name: 'Colombia',  currency: 'COP' },
-  { code: 'BO', flag: '🇧🇴', name: 'Bolivia',   currency: 'BOB' },
-  { code: 'PE', flag: '🇵🇪', name: 'Perú',      currency: 'PEN' },
-  { code: 'US', flag: '🇺🇸', name: 'EE.UU.',    currency: 'USD' },
-  { code: 'AR', flag: '🇦🇷', name: 'Argentina', currency: 'ARS' },
-  { code: 'MX', flag: '🇲🇽', name: 'México',    currency: 'MXN' },
-  { code: 'BR', flag: '🇧🇷', name: 'Brasil',    currency: 'BRL' },
-]
+export const COUNTRIES = {
+  AR: { name: 'Argentina',         currency: 'ARS', flag: '🇦🇷' },
+  AE: { name: 'Emiratos Árabes',   currency: 'AED', flag: '🇦🇪' },
+  AU: { name: 'Australia',         currency: 'AUD', flag: '🇦🇺' },
+  BO: { name: 'Bolivia',           currency: 'BOB', flag: '🇧🇴' },
+  BR: { name: 'Brasil',            currency: 'BRL', flag: '🇧🇷' },
+  CA: { name: 'Canadá',            currency: 'CAD', flag: '🇨🇦' },
+  CL: { name: 'Chile',             currency: 'CLP', flag: '🇨🇱' },
+  CN: { name: 'China',             currency: 'CNY', flag: '🇨🇳' },
+  CO: { name: 'Colombia',          currency: 'COP', flag: '🇨🇴' },
+  CR: { name: 'Costa Rica',        currency: 'CRC', flag: '🇨🇷' },
+  DO: { name: 'Rep. Dominicana',   currency: 'DOP', flag: '🇩🇴' },
+  EC: { name: 'Ecuador',           currency: 'USD', flag: '🇪🇨' },
+  ES: { name: 'España',            currency: 'EUR', flag: '🇪🇸' },
+  EU: { name: 'Europa',            currency: 'EUR', flag: '🇪🇺' },
+  GB: { name: 'Reino Unido',       currency: 'GBP', flag: '🇬🇧' },
+  GT: { name: 'Guatemala',         currency: 'GTQ', flag: '🇬🇹' },
+  HK: { name: 'Hong Kong',         currency: 'HKD', flag: '🇭🇰' },
+  HT: { name: 'Haití',             currency: 'HTG', flag: '🇭🇹' },
+  MX: { name: 'México',            currency: 'MXN', flag: '🇲🇽' },
+  NG: { name: 'Nigeria',           currency: 'NGN', flag: '🇳🇬' },
+  PA: { name: 'Panamá',            currency: 'USD', flag: '🇵🇦' },
+  PE: { name: 'Perú',              currency: 'PEN', flag: '🇵🇪' },
+  PL: { name: 'Polonia',           currency: 'PLN', flag: '🇵🇱' },
+  PY: { name: 'Paraguay',          currency: 'PYG', flag: '🇵🇾' },
+  SV: { name: 'El Salvador',       currency: 'USD', flag: '🇸🇻' },
+  US: { name: 'Estados Unidos',    currency: 'USD', flag: '🇺🇸' },
+  UY: { name: 'Uruguay',           currency: 'UYU', flag: '🇺🇾' },
+  VE: { name: 'Venezuela',         currency: 'VES', flag: '🇻🇪' },
+}
 
-const COUNTRY_MAP = Object.fromEntries(COUNTRIES.map(c => [c.code, c]))
-const countryFlag = (code) => COUNTRY_MAP[code]?.flag ?? '🌐'
+const COUNTRY_ENTRIES = Object.entries(COUNTRIES)
+const countryFlag = (code) => COUNTRIES[code]?.flag ?? '🌐'
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
@@ -268,8 +288,8 @@ function CreateCorridorModal({ onClose, onCreated }) {
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
 
   const corridorId          = `${form.originCountry}-${form.destinationCountry}`
-  const originCurrency      = COUNTRY_MAP[form.originCountry]?.currency ?? ''
-  const destinationCurrency = COUNTRY_MAP[form.destinationCountry]?.currency ?? ''
+  const originCurrency      = COUNTRIES[form.originCountry]?.currency ?? ''
+  const destinationCurrency = COUNTRIES[form.destinationCountry]?.currency ?? ''
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -334,16 +354,16 @@ function CreateCorridorModal({ onClose, onCreated }) {
           <div>
             <Label>País origen</Label>
             <Sel value={form.originCountry} onChange={e => set('originCountry', e.target.value)}>
-              {COUNTRIES.map(c => (
-                <option key={c.code} value={c.code}>{c.flag} {c.name} ({c.currency})</option>
+              {COUNTRY_ENTRIES.map(([code, c]) => (
+                <option key={code} value={code}>{c.flag} {c.name} ({c.currency})</option>
               ))}
             </Sel>
           </div>
           <div>
             <Label>País destino</Label>
             <Sel value={form.destinationCountry} onChange={e => set('destinationCountry', e.target.value)}>
-              {COUNTRIES.map(c => (
-                <option key={c.code} value={c.code}>{c.flag} {c.name} ({c.currency})</option>
+              {COUNTRY_ENTRIES.map(([code, c]) => (
+                <option key={code} value={code}>{c.flag} {c.name} ({c.currency})</option>
               ))}
             </Sel>
           </div>
