@@ -15,6 +15,7 @@ import {
   X, FileText, Loader2, Building2, User, Globe,
 } from 'lucide-react'
 import { applyKyb } from '../../services/kybService'
+import { useAuth } from '../../context/AuthContext'
 
 // ── Catálogos ──────────────────────────────────────────────────────────────
 
@@ -74,17 +75,32 @@ const VOLUMES = [
   { value: '500k+',     label: 'Más de $500.000 USD' },
 ]
 
-const CORRIDORS = [
-  { value: 'BO-US', label: 'Bolivia → EEUU' },
-  { value: 'BO-EU', label: 'Bolivia → Europa' },
-  { value: 'BO-CN', label: 'Bolivia → China' },
-  { value: 'BO-BR', label: 'Bolivia → Brasil' },
-  { value: 'BO-MX', label: 'Bolivia → México' },
-  { value: 'BO-AE', label: 'Bolivia → Emiratos' },
-  { value: 'CL-US', label: 'Chile → EEUU' },
-  { value: 'CL-EU', label: 'Chile → Europa' },
-  { value: 'CL-CN', label: 'Chile → China' },
-  { value: 'GLOBAL', label: 'Global' },
+const SRL_CORRIDORS = [
+  { value: 'bo-us',  label: 'Bolivia → EEUU' },
+  { value: 'bo-cn',  label: 'Bolivia → China' },
+  { value: 'bo-cl',  label: 'Bolivia → Chile' },
+  { value: 'bo-pa',  label: 'Bolivia → Panamá' },
+  { value: 'bo-pe',  label: 'Bolivia → Perú' },
+  { value: 'bo-eu',  label: 'Bolivia → Europa' },
+  { value: 'bo-ar',  label: 'Bolivia → Argentina' },
+  { value: 'bo-br',  label: 'Bolivia → Brasil' },
+  { value: 'bo-co',  label: 'Bolivia → Colombia' },
+  { value: 'bo-mx',  label: 'Bolivia → México' },
+  { value: 'bo-ae',  label: 'Bolivia → Emiratos' },
+  { value: 'bo-ng',  label: 'Bolivia → Nigeria' },
+  { value: 'global', label: 'Global' },
+]
+
+const SPA_CORRIDORS = [
+  { value: 'cl-us',  label: 'Chile → EEUU' },
+  { value: 'cl-cn',  label: 'Chile → China' },
+  { value: 'cl-eu',  label: 'Chile → Europa' },
+  { value: 'cl-ar',  label: 'Chile → Argentina' },
+  { value: 'cl-br',  label: 'Chile → Brasil' },
+  { value: 'cl-co',  label: 'Chile → Colombia' },
+  { value: 'cl-mx',  label: 'Chile → México' },
+  { value: 'cl-pe',  label: 'Chile → Perú' },
+  { value: 'global', label: 'Global' },
 ]
 
 const DOCS_SCHEMA = [
@@ -323,7 +339,7 @@ function Step2({ form, onChange }) {
 
 // ── Paso 3 — Operativa + documentos ───────────────────────────────────────
 
-function Step3({ form, onChange, files, onFileChange }) {
+function Step3({ form, onChange, files, onFileChange, corridorOptions }) {
   const inputRefs = useRef({})
 
   function toggleCorridor(val) {
@@ -360,7 +376,7 @@ function Step3({ form, onChange, files, onFileChange }) {
       <div>
         <label className={labelCls}>Corredores de interés *</label>
         <div className="grid grid-cols-2 gap-2">
-          {CORRIDORS.map(c => {
+          {corridorOptions.map(c => {
             const selected = (form.corridors ?? []).includes(c.value)
             return (
               <button
@@ -466,11 +482,16 @@ const INITIAL_FILES = {
 
 export default function KybForm() {
   const navigate          = useNavigate()
+  const { user }          = useAuth()
   const [step, setStep]   = useState(1)
   const [form, setForm]   = useState(INITIAL_FORM)
   const [files, setFiles] = useState(INITIAL_FILES)
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
+
+  const corridorOptions = user?.legalEntity === 'SpA'
+    ? SPA_CORRIDORS
+    : SRL_CORRIDORS
 
   function handleChange(field, value) {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -604,6 +625,7 @@ export default function KybForm() {
               onChange={handleChange}
               files={files}
               onFileChange={handleFileChange}
+              corridorOptions={corridorOptions}
             />
           )}
 
