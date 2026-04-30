@@ -59,11 +59,17 @@ export function getTransactionDetail(transactionId) {
  * @param {string} status
  * @param {string} note                — nota de auditoría (requerida)
  * @param {object} [extras]            — campos adicionales, ej. { bankReference }
+ * @param {string} [idempotencyKey]    — UUID único por intento; el caller debe generarlo
+ *                                       dentro del handler del click (no en el body del
+ *                                       componente). El backend cachea la respuesta por
+ *                                       (userId, key) durante 24 h y devuelve la misma
+ *                                       respuesta si la misma key llega dos veces.
  */
-export function updateTransactionStatus(transactionId, status, note, extras = {}) {
+export function updateTransactionStatus(transactionId, status, note, extras = {}, idempotencyKey) {
   return request(`/admin/transactions/${encodeURIComponent(transactionId)}/status`, {
     method: 'PATCH',
     body:   JSON.stringify({ status, note, ...extras }),
+    headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
   })
 }
 

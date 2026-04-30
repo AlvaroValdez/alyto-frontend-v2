@@ -185,11 +185,13 @@ function PayinManualBanner({ tx, onConfirmed }) {
     setError(null)
     try {
       const auditNote = note.trim() || `Confirmado via transferencia bancaria ref. ${bankRef.trim()}`
+      const idempotencyKey = crypto.randomUUID()
       await updateTransactionStatus(
         tx.alytoTransactionId,
         'payin_confirmed',
         auditNote,
         { bankReference: bankRef.trim() },
+        idempotencyKey,
       )
       setSuccess(true)
       onConfirmed()
@@ -476,7 +478,8 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
     setSaveError(null)
     setSaveOk(false)
     try {
-      await updateTransactionStatus(tx.alytoTransactionId, newStatus, note.trim())
+      const idempotencyKey = crypto.randomUUID()
+      await updateTransactionStatus(tx.alytoTransactionId, newStatus, note.trim(), {}, idempotencyKey)
       setSaveOk(true)
       setNote('')
       onStatusUpdated?.()
