@@ -48,6 +48,36 @@ const METHOD_DISPLAY_NAMES = {
   WIRE: 'International Wire',
 }
 
+// Normaliza la respuesta del backend Harbor (paymentMethod / exchangeRate /
+// settlementTime*) al shape que espera <PaymentMethodSelector>:
+//   { method, label, rate, deliveryLabel, recommended }
+//
+// El fallback estático ya viene en el shape destino, así que la función
+// es idempotente sobre él.
+function normalizeHarborMethod(m, index) {
+  const rate = parseFloat(m.exchangeRate ?? m.rate)
+
+  // Construir deliveryLabel desde settlementTime si el backend no lo provee
+  let deliveryLabel = m.deliveryLabel ?? m.delivery ?? null
+  if (!deliveryLabel && m.settlementTimeMin != null) {
+    const unit = m.settlementTimeUnit === 'DAYS' ? 'día' : 'hora'
+    if (m.settlementTimeMin === m.settlementTimeMax) {
+      deliveryLabel = `${m.settlementTimeMin} ${unit}${m.settlementTimeMin > 1 ? 's' : ''} hábil${m.settlementTimeMin > 1 ? 'es' : ''}`
+    } else {
+      deliveryLabel = `${m.settlementTimeMin}–${m.settlementTimeMax} ${unit}s`
+    }
+  }
+
+  return {
+    method:        m.paymentMethod ?? m.method,
+    label:         m.paymentMethodLabel ?? m.label ?? m.method,
+    rate:          isFinite(rate) ? rate : null,
+    deliveryLabel: deliveryLabel ?? '—',
+    recommended:   m.recommended ?? (index === 0),  // CIPS llega primero
+    quoteId:       m.quoteId ?? m.quote_id ?? null,
+  }
+}
+
 // ── Traducción de nombres de campo Vita → español (solo para formularios Vita) ──
 
 const FIELD_LABELS = {
@@ -320,9 +350,9 @@ function PaymentMethodSelector({
                   </div>
                   <p className="text-[0.75rem] text-[#4A5568] mt-1">
                     Tasa: <span className="font-semibold text-[#0D1F3C]">
-                      {Number(m.rate).toFixed(2)} {destCurrency}/USDC
+                      {m.rate != null ? Number(m.rate).toFixed(2) : '—'} {destCurrency}/USDC
                     </span>
-                    {' · '}Llegada: {m.deliveryLabel ?? m.delivery ?? '—'}
+                    {' · '}Llegada: {m.deliveryLabel ?? '—'}
                   </p>
                 </div>
                 <span
@@ -369,8 +399,10 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
 
   const availableMethods = useMemo(() => {
     if (!usesHarborMethods) return []
-    if (Array.isArray(harborMethodsRaw) && harborMethodsRaw.length > 0) return harborMethodsRaw
-    return FALLBACK_HARBOR_METHODS[destinationCountry] ?? []
+    const source = (Array.isArray(harborMethodsRaw) && harborMethodsRaw.length > 0)
+      ? harborMethodsRaw
+      : (FALLBACK_HARBOR_METHODS[destinationCountry] ?? [])
+    return source.map(normalizeHarborMethod)
   }, [usesHarborMethods, harborMethodsRaw, destinationCountry])
 
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null)
