@@ -13,6 +13,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { useWithdrawalRules }       from '../../hooks/useWithdrawalRules'
+import { useHarborRequirements }    from '../../hooks/useHarborRequirements'
 import { useAuth }                  from '../../context/AuthContext'
 import { createContact }            from '../../services/api'
 import ContactPicker                from '../Contacts/ContactPicker'
@@ -23,6 +24,28 @@ import { OWLPAY_FORMS, GENERIC_OWLPAY_FORM } from './owlPayForms'
 const PHONE_PREFIXES = {
   CO: '+57', PE: '+51', AR: '+54', BO: '+591',
   MX: '+52', BR: '+55', CL: '+56', EC: '+593',
+}
+
+// ── Corredores OwlPay con selector de método (Harbor) ────────────────────────
+//
+// Para estos países llamamos GET /payments/harbor/requirements y mostramos
+// el selector de método (CIPS/WIRE/etc.) antes del formulario.
+
+const HARBOR_DEST_CURRENCY = {
+  CN: 'CNY',
+}
+
+// Fallback si el endpoint Harbor falla (para que el flujo no se rompa en dev)
+const FALLBACK_HARBOR_METHODS = {
+  CN: [
+    { method: 'CIPS', rate: 6.54, deliveryLabel: '1 día hábil', recommended: true },
+    { method: 'WIRE', rate: 5.10, deliveryLabel: '1-3 días',    recommended: false },
+  ],
+}
+
+const METHOD_DISPLAY_NAMES = {
+  CIPS: 'CIPS',
+  WIRE: 'International Wire',
 }
 
 // ── Traducción de nombres de campo Vita → español (solo para formularios Vita) ──
@@ -217,12 +240,12 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
 
       ) : (
         <input
-          type={type === 'email' ? 'email' : 'text'}
+          type={type === 'email' ? 'email' : type === 'date' ? 'date' : 'text'}
           value={value ?? ''}
           onChange={e => onChange(key, e.target.value)}
           onBlur={() => onBlur(key)}
           placeholder={placeholder}
-          maxLength={field.maxLength ?? field.max ?? undefined}
+          maxLength={type === 'date' ? undefined : (field.maxLength ?? field.max ?? undefined)}
           className={`${baseInput} ${error ? borderErr : borderOk}`}
         />
       )}
@@ -233,6 +256,90 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
       {field.hint && !error && (
         <p className="mt-1 text-[0.6875rem] text-[#94A3B8]">{field.hint}</p>
       )}
+    </div>
+  )
+}
+
+// ── Selector de método de pago (CIPS / WIRE) para corredores Harbor ─────────
+
+function PaymentMethodSelector({
+  destCurrency, methods, selected, onSelect, loading, error,
+}) {
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="h-3 w-44 rounded bg-white animate-pulse" />
+        <div className="h-20 w-full rounded-2xl bg-white animate-pulse" />
+        <div className="h-20 w-full rounded-2xl bg-white animate-pulse" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-wide">
+        Método de pago en destino
+      </p>
+
+      {error && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#F59E0B0F] border border-[#F59E0B33]">
+          <span className="text-base flex-shrink-0">⚠️</span>
+          <p className="text-[0.6875rem] text-[#4A5568]">
+            No se pudieron cargar las tasas en vivo. Mostrando valores de referencia.
+          </p>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-2">
+        {methods.map(m => {
+          const isSelected = m.method === selected
+          const display    = METHOD_DISPLAY_NAMES[m.method] ?? m.method
+          return (
+            <button
+              type="button"
+              key={m.method}
+              onClick={() => onSelect(m.method)}
+              className={`text-left bg-white rounded-2xl px-4 py-3.5 border transition-all ${
+                isSelected
+                  ? 'border-[#1D3461] shadow-[0_0_0_2px_#1D346120]'
+                  : 'border-[#E2E8F0] hover:border-[#1D346155]'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[0.9375rem] font-bold text-[#0D1F3C]">
+                      {display}
+                    </span>
+                    {m.recommended && (
+                      <span className="text-[0.625rem] font-semibold text-[#0D1F3C]
+                        bg-[#FACC15] rounded-full px-2 py-[2px] uppercase tracking-wide">
+                        Recomendado
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[0.75rem] text-[#4A5568] mt-1">
+                    Tasa: <span className="font-semibold text-[#0D1F3C]">
+                      {Number(m.rate).toFixed(2)} {destCurrency}/USDC
+                    </span>
+                    {' · '}Llegada: {m.deliveryLabel ?? m.delivery ?? '—'}
+                  </p>
+                </div>
+                <span
+                  aria-hidden
+                  className={`mt-1 w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                    isSelected ? 'border-[#1D3461]' : 'border-[#CBD5E1]'
+                  }`}
+                >
+                  {isSelected && (
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#1D3461]" />
+                  )}
+                </span>
+              </div>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -248,6 +355,34 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
   const owlPayForm = isOwlPay
     ? (OWLPAY_FORMS[destinationCountry] ?? GENERIC_OWLPAY_FORM)
     : null
+
+  // ── OwlPay Harbor: corredores con selector de método (CIPS/WIRE) ──────────
+  const harborCurrency = isOwlPay ? (HARBOR_DEST_CURRENCY[destinationCountry] ?? null) : null
+  const harborCountry  = harborCurrency ? destinationCountry : null
+  const usesHarborMethods = !!harborCurrency
+
+  const {
+    methods: harborMethodsRaw,
+    loading: harborLoading,
+    error:   harborError,
+  } = useHarborRequirements(harborCountry, harborCurrency)
+
+  const availableMethods = useMemo(() => {
+    if (!usesHarborMethods) return []
+    if (Array.isArray(harborMethodsRaw) && harborMethodsRaw.length > 0) return harborMethodsRaw
+    return FALLBACK_HARBOR_METHODS[destinationCountry] ?? []
+  }, [usesHarborMethods, harborMethodsRaw, destinationCountry])
+
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null)
+
+  // Auto-seleccionar el método recomendado (o el primero) cuando llegan
+  useEffect(() => {
+    if (!usesHarborMethods) { setSelectedPaymentMethod(null); return }
+    if (selectedPaymentMethod) return
+    if (availableMethods.length === 0) return
+    const rec = availableMethods.find(m => m.recommended) ?? availableMethods[0]
+    setSelectedPaymentMethod(rec.method)
+  }, [usesHarborMethods, availableMethods, selectedPaymentMethod])
 
   const [values,  setValues]  = useState({})
   const [touched, setTouched] = useState({})
@@ -342,9 +477,11 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
     return validateField(field, values[field.key])
   }
 
-  const allValid = useMemo(() =>
-    activeFields.every(f => !validateField(f, values[f.key])),
-  [activeFields, values])
+  const allValid = useMemo(() => {
+    if (!activeFields.every(f => !validateField(f, values[f.key]))) return false
+    if (usesHarborMethods && !selectedPaymentMethod) return false
+    return true
+  }, [activeFields, values, usesHarborMethods, selectedPaymentMethod])
 
   async function handleNext() {
     if (!allValid) {
@@ -398,7 +535,20 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
       }
     }
 
-    onNext({ beneficiaryData, contactId })
+    // Cuando el corredor tiene selector Harbor, adjuntamos owlPayMethod para
+    // que tryOwlPayV2 use el quote_id correcto. harborQuoteId solo si vino
+    // del backend — el fallback estático no lo incluye.
+    const selectedMethodObj = usesHarborMethods
+      ? availableMethods.find(m => m.method === selectedPaymentMethod)
+      : null
+    const harborExtra = usesHarborMethods
+      ? {
+          owlPayMethod: selectedPaymentMethod,
+          ...(selectedMethodObj?.quoteId ? { harborQuoteId: selectedMethodObj.quoteId } : {}),
+        }
+      : {}
+
+    onNext({ beneficiaryData, contactId, ...harborExtra })
   }
 
   // ── Estados de carga y error ──────────────────────────────────────────────
@@ -486,23 +636,45 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
         </div>
       )}
 
-      {/* OwlPay: form title + static fields */}
+      {/* Harbor: selector de método de pago (CIPS / WIRE) */}
+      {usesHarborMethods && (
+        <PaymentMethodSelector
+          destCurrency={harborCurrency}
+          methods={availableMethods}
+          selected={selectedPaymentMethod}
+          onSelect={setSelectedPaymentMethod}
+          loading={harborLoading}
+          error={harborError}
+        />
+      )}
+
+      {/* OwlPay: form title + static fields agrupados por sección */}
       {isOwlPay && owlPayForm && (
         <>
           <p className="text-[0.8125rem] font-semibold text-[#1D3461] -mb-1">
             {owlPayForm.title}
           </p>
-          {owlPayForm.fields.map(field => (
-            <DynamicField
-              key={field.key}
-              field={field}
-              value={values[field.key] ?? (field.default ?? '')}
-              error={getError(field)}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              countryCode={destinationCountry}
-            />
-          ))}
+          {owlPayForm.fields.map((field, idx) => {
+            const prevSection = idx > 0 ? owlPayForm.fields[idx - 1].section : null
+            const showHeader  = field.section && field.section !== prevSection
+            return (
+              <div key={field.key} className="flex flex-col gap-3">
+                {showHeader && (
+                  <p className="text-[0.6875rem] font-bold text-[#94A3B8] uppercase tracking-wider mt-1">
+                    {field.section}
+                  </p>
+                )}
+                <DynamicField
+                  field={field}
+                  value={values[field.key] ?? (field.default ?? '')}
+                  error={getError(field)}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  countryCode={destinationCountry}
+                />
+              </div>
+            )
+          })}
         </>
       )}
 

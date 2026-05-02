@@ -115,6 +115,31 @@ export function getWithdrawalRules(countryCode, signal) {
 }
 
 /**
+ * Obtiene los métodos de pago disponibles + schema de campos del beneficiario
+ * para un corredor OwlPay Harbor (ej. CN/CNY).
+ *
+ * Respuesta esperada:
+ *   {
+ *     destCountry, destCurrency,
+ *     methods: [
+ *       { method: 'CIPS' | 'WIRE', rate: number, deliveryLabel: string,
+ *         recommended: boolean, quoteId: string },
+ *       ...
+ *     ],
+ *     fields?: Array  // si el backend devuelve schema dinámico — el frontend
+ *                     // tiene config local como fallback
+ *   }
+ *
+ * @param {string} destCountry   ISO alpha-2 (ej. 'CN')
+ * @param {string} destCurrency  ISO 4217 (ej. 'CNY')
+ * @param {AbortSignal} [signal]
+ */
+export function getHarborRequirements(destCountry, destCurrency, signal) {
+  const qs = new URLSearchParams({ destCountry, destCurrency }).toString()
+  return request(`/payments/harbor/requirements?${qs}`, { signal })
+}
+
+/**
  * Sube el comprobante de pago del usuario (Bolivia / payin manual).
  * @param {string} transactionId
  * @param {File}   file  — JPG, PNG o PDF, máx. 5MB

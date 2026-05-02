@@ -45,7 +45,11 @@ export default function Step4Confirm({ stepData, onNext }) {
   const [feesExpanded, setFeesExpanded] = useState(false)
 
   // Step3 guarda los datos bajo la key "beneficiaryData" (campos dinámicos de Vita)
-  const { quote, originAmount, destinationCountry, payinMethod, beneficiaryData, contactId } = stepData
+  const {
+    quote, originAmount, destinationCountry, payinMethod,
+    beneficiaryData, contactId,
+    owlPayMethod, harborQuoteId,
+  } = stepData
 
   const originCurrency = quote?.originCurrency
     ?? ENTITY_ORIGIN_CURRENCY[user?.legalEntity]
@@ -85,7 +89,11 @@ export default function Step4Confirm({ stepData, onNext }) {
         // Datos de la cotización: el backend los guarda en el transaction para trazabilidad
         destinationAmount: quote.destinationAmount ?? null,
         exchangeRate:      quote.exchangeRate      ?? null,
-        ...(contactId ? { contactId } : {}),
+        ...(contactId      ? { contactId }                : {}),
+        // Selector CIPS/WIRE para corredores OwlPay Harbor (ej. CN). El backend
+        // usa owlPayMethod en tryOwlPayV2 para elegir el quote_id correcto.
+        ...(owlPayMethod   ? { owlPayMethod }             : {}),
+        ...(harborQuoteId  ? { harborQuoteId }            : {}),
       })
       console.log('[initPayment] respuesta completa:', JSON.stringify(res))
 
