@@ -18,7 +18,7 @@ export default function TransferView() {
   // En desarrollo obtiene el userId del usuario de prueba sembrado en el backend.
   // En producción esto vendrá del contexto de autenticación real.
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/v1/dev/test-user`)
+    fetch(`${import.meta.env.VITE_API_URL ?? ''}/dev/test-user`)
       .then(r => r.json())
       .then(d => setUserId(d.userId))
       .catch(() => setError('No se pudo conectar con el servidor de desarrollo.'))

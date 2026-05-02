@@ -227,7 +227,7 @@ export default function SettlementView() {
   const [cardStates, setCardStates] = useState({})
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/v1/dev/srl-transactions`)
+    fetch(`${import.meta.env.VITE_API_URL ?? ''}/dev/srl-transactions`)
       .then(r => r.json())
       .then(d => setTransactions(d.transactions ?? []))
       .catch(() => setFetchError('No se pudo conectar con el servidor de desarrollo.'))
