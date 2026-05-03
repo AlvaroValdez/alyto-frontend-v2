@@ -163,7 +163,7 @@ export default function Step4Confirm({ stepData, onNext }) {
               }
             </div>
             <span className="text-[0.8125rem] font-semibold text-[#4A5568]">
-              {costoEnvio > 0 ? `$${costoEnvio.toLocaleString('es-CL')} CLP` : '—'}
+              {costoEnvio > 0 ? `$${costoEnvio.toLocaleString('es-CL')} ${originCurrency}` : '—'}
             </span>
           </button>
 
@@ -173,7 +173,7 @@ export default function Step4Confirm({ stepData, onNext }) {
                 <div className="flex justify-between">
                   <span className="text-[0.75rem] text-[#94A3B8]">· Comisión de servicio</span>
                   <span className="text-[0.75rem] text-[#94A3B8]">
-                    ${comisionServicio.toLocaleString('es-CL')} CLP
+                    ${comisionServicio.toLocaleString('es-CL')} {originCurrency}
                   </span>
                 </div>
               )}
@@ -181,7 +181,7 @@ export default function Step4Confirm({ stepData, onNext }) {
                 <div className="flex justify-between">
                   <span className="text-[0.75rem] text-[#94A3B8]">· Fee de procesamiento</span>
                   <span className="text-[0.75rem] text-[#94A3B8]">
-                    ${feeProcesamiento.toLocaleString('es-CL')} CLP
+                    ${feeProcesamiento.toLocaleString('es-CL')} {originCurrency}
                   </span>
                 </div>
               )}
@@ -213,6 +213,7 @@ export default function Step4Confirm({ stepData, onNext }) {
           label="Beneficiario"
           value={
             beneficiary?.fullName ||
+            beneficiary?.beneficiary_name ||
             (beneficiary?.beneficiary_first_name
               ? `${beneficiary.beneficiary_first_name} ${beneficiary.beneficiary_last_name ?? ''}`.trim()
               : '—')
