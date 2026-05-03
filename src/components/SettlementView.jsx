@@ -73,7 +73,7 @@ function fmtBOB(val) {
  *    → <button style={AMARILLO}>Reintentar</button>
  */
 function SettlementCard({ tx, cardState, onProcess, bobRate }) {
-  const bobEquiv = fmtBOB((tx.digitalAssetAmount ?? tx.originalAmount) * (tx.exchangeRate ?? bobRate))
+  const bobEquiv = fmtBOB((tx.digitalAssetAmount ?? tx.originalAmount) * (tx.conversionRate?.rate ?? bobRate))
   const isIdle      = !cardState || cardState.status === 'idle'
   const isLoading   = cardState?.status === 'loading'
   const isCompleted = cardState?.status === 'completed'
@@ -147,7 +147,7 @@ function SettlementCard({ tx, cardState, onProcess, bobRate }) {
         </div>
 
         <div className="flex justify-between items-center">
-          <span className="text-[0.75rem] text-[#4E5A7A]">Equiv. BOB <span className="text-[#263050]">(× {tx.exchangeRate ?? bobRate})</span></span>
+          <span className="text-[0.75rem] text-[#4E5A7A]">Equiv. BOB <span className="text-[#263050]">(× {tx.conversionRate?.rate ?? bobRate})</span></span>
           <span className="text-[0.875rem] font-semibold text-[#C4CBD8]">{bobEquiv}</span>
         </div>
 
@@ -238,7 +238,7 @@ export default function SettlementView() {
   const pending   = transactions.filter(t => !cardStates[t._id] || cardStates[t._id]?.status !== 'completed')
   const completed = transactions.filter(t => cardStates[t._id]?.status === 'completed')
   const totalBOB  = transactions.reduce((acc, t) =>
-    acc + (t.digitalAssetAmount ?? t.originalAmount) * (t.exchangeRate ?? BOB_RATE), 0)
+    acc + (t.digitalAssetAmount ?? t.originalAmount) * (t.conversionRate?.rate ?? BOB_RATE), 0)
 
   async function handleProcess(txId) {
     // Marca como loading
