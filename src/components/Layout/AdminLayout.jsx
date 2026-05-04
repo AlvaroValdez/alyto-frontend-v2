@@ -155,7 +155,7 @@ export default function AdminLayout() {
       >
         {/* Logo */}
         <div className="mb-6 px-1">
-          <img src="/assets/logo-alyto.png" alt="Alyto" className="h-7 w-auto" />
+          <img src="/assets/LogoAlytoWB.png" alt="Alyto" className="h-7 w-auto" />
           <p className="text-[0.6875rem] text-[#4E5A7A] mt-1 font-medium uppercase tracking-wider">
             Backoffice
           </p>
