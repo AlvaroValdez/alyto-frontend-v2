@@ -27,6 +27,8 @@ import {
   Download,
   CheckCheck,
   Share2,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react'
 
 // ── QR helpers ────────────────────────────────────────────────────────────────
@@ -678,6 +680,42 @@ export default function TransactionDetail() {
               </button>
             </div>
           )}
+
+          {/* ── Banner: monto actualizado por Harbor (rateHistory) ── */}
+          {tx.rateHistory?.length > 0 && (() => {
+            const last       = tx.rateHistory[tx.rateHistory.length - 1]
+            const isPositive = (last.difference ?? 0) > 0
+            const finalAmt   = formatAmount(last.newAmount,      tx.destinationCurrency)
+            const prevAmt    = formatAmount(last.previousAmount, tx.destinationCurrency)
+
+            if (isPositive) {
+              return (
+                <div className="flex items-start gap-3 rounded-2xl px-4 py-3.5 border bg-[#64748B0D] border-[#64748B26]">
+                  <TrendingUp size={16} className="text-[#64748B] flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[0.875rem] font-semibold text-[#0D1F3C]">Monto final ajustado</p>
+                    <p className="text-[0.75rem] text-[#4A5568] mt-0.5 leading-relaxed">
+                      Recibirás <span className="font-medium">{finalAmt}</span> (estimado: {prevAmt}).
+                      {' '}La tasa fue favorable al procesar.
+                    </p>
+                  </div>
+                </div>
+              )
+            }
+
+            return (
+              <div className="flex items-start gap-3 rounded-2xl px-4 py-3.5 border bg-[#F59E0B0D] border-[#F59E0B33]">
+                <TrendingDown size={16} className="text-[#F59E0B] flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[0.875rem] font-semibold text-[#0D1F3C]">Monto actualizado</p>
+                  <p className="text-[0.75rem] text-[#4A5568] mt-0.5 leading-relaxed">
+                    El monto final es <span className="font-medium">{finalAmt}</span> (estimado: {prevAmt}).
+                    {' '}La tasa de mercado varió al procesar tu envío.
+                  </p>
+                </div>
+              </div>
+            )
+          })()}
 
           {/* ── 2. RESUMEN FINANCIERO ────────────────────────────────────── */}
           <Section title="Resumen financiero">

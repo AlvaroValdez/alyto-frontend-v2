@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Loader2, AlertCircle, ChevronDown, ChevronUp, Clock, RefreshCw } from 'lucide-react'
+import { Loader2, AlertCircle, ChevronDown, ChevronUp, Clock, RefreshCw, Info, CheckCircle2 } from 'lucide-react'
 import { initPayment } from '../../services/paymentsService'
 import { useAuth } from '../../context/AuthContext'
 import Sentry from '../../services/sentry.js'
@@ -269,6 +269,23 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
               {quote?.estimatedDelivery || '1 día hábil'}
             </span>
           </div>
+
+          {/* ── Disclaimer de confianza de la tasa ── */}
+          {quote?.rateConfidence === 'exact' ? (
+            <div className="flex items-center gap-1.5 mt-2">
+              <CheckCircle2 size={12} className="text-[#22C55E] flex-shrink-0" />
+              <span className="text-[0.6875rem] font-medium text-[#22C55E]">
+                Tasa garantizada
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 mt-2">
+              <Info size={12} className="text-[#94A3B8] flex-shrink-0" />
+              <span className="text-[0.6875rem] text-[#94A3B8]">
+                Monto referencial · Se confirma al procesar tu envío
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
