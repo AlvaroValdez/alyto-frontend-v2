@@ -10,8 +10,8 @@
  *   6. Step6Success      — ¡Tu dinero está en camino!
  */
 
-import { useEffect, useState } from 'react'
-import { useNavigate, useBlocker } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, X, AlertTriangle } from 'lucide-react'
 
 import { useSendMoney }          from '../../hooks/useSendMoney'
@@ -39,19 +39,37 @@ export default function SendMoneyPage() {
   const { step, stepData, nextStep, prevStep, resetFlow, goToStep } = useSendMoney()
 
   const isSuccess    = step === 6
-  // Hay transacción pendiente de pago si ya se creó pero aún no llegamos al éxito
   const hasPendingTx = !!stepData.transactionId && !isSuccess
 
   const [showLeaveWarning, setShowLeaveWarning] = useState(false)
 
-  // ── Bloquear navegación de react-router cuando hay tx pendiente ─────────────
-  const blocker = useBlocker(() => hasPendingTx)
+  // Ref para saber si el popstate lo disparamos nosotros (pushState) o el usuario
+  const blockingRef = useRef(false)
 
+  // ── Interceptar el botón "atrás" del navegador con pushState/popstate ──────
   useEffect(() => {
-    if (blocker.state === 'blocked') setShowLeaveWarning(true)
-  }, [blocker.state])
+    if (!hasPendingTx) return
 
-  // ── Bloquear cierre/recarga del navegador cuando hay tx pendiente ───────────
+    // Inyectamos una entrada en el historial para que el "back" del browser
+    // dispare popstate en lugar de salir de /send
+    window.history.pushState({ __alytoBlock: true }, '')
+    blockingRef.current = true
+
+    const handlePopState = () => {
+      if (!blockingRef.current) return
+      // Re-inyectar para que el siguiente "back" también quede interceptado
+      window.history.pushState({ __alytoBlock: true }, '')
+      setShowLeaveWarning(true)
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+      blockingRef.current = false
+    }
+  }, [hasPendingTx])
+
+  // ── Bloquear cierre/recarga de pestaña ─────────────────────────────────────
   useEffect(() => {
     if (!hasPendingTx) return
     const handler = (e) => { e.preventDefault(); e.returnValue = '' }
@@ -66,7 +84,6 @@ export default function SendMoneyPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleBack() {
-    // Si hay una tx pendiente, no permitir retroceder sin confirmar
     if (hasPendingTx) {
       setShowLeaveWarning(true)
       return
@@ -91,26 +108,17 @@ export default function SendMoneyPage() {
     resetFlow()
   }
 
-  // El usuario confirma que quiere salir aunque haya tx pendiente
   function handleLeaveConfirm() {
+    blockingRef.current = false
     resetFlow()
     setShowLeaveWarning(false)
-    if (blocker.state === 'blocked') {
-      blocker.proceed()
-    } else {
-      navigate('/transactions')
-    }
+    navigate('/transactions')
   }
 
-  // El usuario cancela y quiere seguir con el pago
   function handleLeaveDismiss() {
     setShowLeaveWarning(false)
-    if (blocker.state === 'blocked') {
-      blocker.reset()
-    }
   }
 
-  // Ir de vuelta al Step 1 para refrescar cotización (borra el quote pero preserva todo lo demás)
   function handleRefreshQuote() {
     goToStep(1, { quote: null, quoteFetchedAt: null })
   }
@@ -158,8 +166,6 @@ export default function SendMoneyPage() {
           <Step1Amount
             initialData={stepData}
             onNext={(data) => {
-              // SRL (Bolivia) and LLC always use manual payin — skip Step 2.
-              // SpA (Chile) uses Fintoc — also skip Step 2 (only one method available).
               const isManual = user?.legalEntity === 'SRL' || user?.legalEntity === 'LLC'
               nextStep({ ...data, payinMethod: isManual ? 'manual' : 'fintoc', _skipStep2: true }, 3)
             }}
@@ -213,7 +219,6 @@ export default function SendMoneyPage() {
             style={{ paddingBottom: 'max(2.5rem, env(safe-area-inset-bottom))' }}
             onClick={e => e.stopPropagation()}
           >
-            {/* Handle */}
             <div className="w-10 h-1 rounded-full bg-[#E2E8F0] mx-auto mb-5" />
 
             <div className="flex flex-col items-center text-center gap-4">
