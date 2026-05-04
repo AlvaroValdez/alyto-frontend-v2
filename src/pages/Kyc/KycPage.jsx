@@ -29,7 +29,7 @@ import { LEGAL_TERMS, ENTITY_NAMES, ENTITY_JURISDICTIONS } from '../../utils/leg
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
 const WHATSAPP_SUPPORT = `https://wa.me/${
-  import.meta.env.VITE_SUPPORT_WHATSAPP ?? '56912345678'
+  import.meta.env.VITE_SUPPORT_WHATSAPP ?? '56988321490'
 }?text=Necesito%20ayuda%20con%20mi%20verificaci%C3%B3n%20Alyto`
 
 // ── Estado: Intro ─────────────────────────────────────────────────────────────
