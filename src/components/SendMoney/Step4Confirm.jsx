@@ -122,6 +122,12 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
         // Datos de la cotización: el backend los guarda en el transaction para trazabilidad
         destinationAmount: quote.destinationAmount ?? null,
         exchangeRate:      quote.exchangeRate      ?? null,
+        // Provider-aware quote metadata — el WS emite estos campos en las 3 ramas.
+        // Sin esto, tx.rateConfidence queda null en backend para corredores Vita.
+        rateConfidence:    quote.rateConfidence    ?? null,
+        rateSource:        quote.rateSource        ?? null,
+        providerQuoteId:   quote.providerQuoteId   ?? null,
+        rateExpiresAt:     quote.rateExpiresAt     ?? null,
         ...(contactId      ? { contactId }                : {}),
         // Selector CIPS/WIRE para corredores OwlPay Harbor (ej. CN). El backend
         // usa owlPayMethod en tryOwlPayV2 para elegir el quote_id correcto.
