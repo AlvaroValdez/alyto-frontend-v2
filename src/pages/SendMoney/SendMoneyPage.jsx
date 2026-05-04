@@ -10,9 +10,9 @@
  *   6. Step6Success      — ¡Tu dinero está en camino!
  */
 
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useNavigate, useBlocker } from 'react-router-dom'
+import { ArrowLeft, X, AlertTriangle } from 'lucide-react'
 
 import { useSendMoney }          from '../../hooks/useSendMoney'
 import { useAuth }               from '../../context/AuthContext'
@@ -36,18 +36,41 @@ const STEP_TITLES = {
 export default function SendMoneyPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { step, stepData, nextStep, prevStep, resetFlow } = useSendMoney()
+  const { step, stepData, nextStep, prevStep, resetFlow, goToStep } = useSendMoney()
 
-  const isSuccess = step === 6
+  const isSuccess    = step === 6
+  // Hay transacción pendiente de pago si ya se creó pero aún no llegamos al éxito
+  const hasPendingTx = !!stepData.transactionId && !isSuccess
 
-  // Limpiar datos residuales de sessionStorage (versiones anteriores del app)
-  // al entrar y al salir de la página de envío.
+  const [showLeaveWarning, setShowLeaveWarning] = useState(false)
+
+  // ── Bloquear navegación de react-router cuando hay tx pendiente ─────────────
+  const blocker = useBlocker(() => hasPendingTx)
+
+  useEffect(() => {
+    if (blocker.state === 'blocked') setShowLeaveWarning(true)
+  }, [blocker.state])
+
+  // ── Bloquear cierre/recarga del navegador cuando hay tx pendiente ───────────
+  useEffect(() => {
+    if (!hasPendingTx) return
+    const handler = (e) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [hasPendingTx])
+
+  // Limpiar datos residuales al entrar y salir
   useEffect(() => {
     resetFlow()
     return () => resetFlow()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleBack() {
+    // Si hay una tx pendiente, no permitir retroceder sin confirmar
+    if (hasPendingTx) {
+      setShowLeaveWarning(true)
+      return
+    }
     if (step <= 1) {
       navigate(-1)
     } else {
@@ -56,12 +79,40 @@ export default function SendMoneyPage() {
   }
 
   function handleCancel() {
+    if (hasPendingTx) {
+      setShowLeaveWarning(true)
+      return
+    }
     resetFlow()
     navigate('/')
   }
 
   function handleReset() {
     resetFlow()
+  }
+
+  // El usuario confirma que quiere salir aunque haya tx pendiente
+  function handleLeaveConfirm() {
+    resetFlow()
+    setShowLeaveWarning(false)
+    if (blocker.state === 'blocked') {
+      blocker.proceed()
+    } else {
+      navigate('/transactions')
+    }
+  }
+
+  // El usuario cancela y quiere seguir con el pago
+  function handleLeaveDismiss() {
+    setShowLeaveWarning(false)
+    if (blocker.state === 'blocked') {
+      blocker.reset()
+    }
+  }
+
+  // Ir de vuelta al Step 1 para refrescar cotización (borra el quote pero preserva todo lo demás)
+  function handleRefreshQuote() {
+    goToStep(1, { quote: null, quoteFetchedAt: null })
   }
 
   return (
@@ -132,6 +183,7 @@ export default function SendMoneyPage() {
           <Step4Confirm
             stepData={stepData}
             onNext={(data) => nextStep(data)}
+            onRefreshQuote={handleRefreshQuote}
           />
         )}
 
@@ -149,6 +201,59 @@ export default function SendMoneyPage() {
           />
         )}
       </div>
+
+      {/* ── Modal: advertencia de transacción pendiente ── */}
+      {showLeaveWarning && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50"
+          onClick={handleLeaveDismiss}
+        >
+          <div
+            className="w-full max-w-[430px] bg-white rounded-t-3xl px-6 pt-6 pb-10"
+            style={{ paddingBottom: 'max(2.5rem, env(safe-area-inset-bottom))' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Handle */}
+            <div className="w-10 h-1 rounded-full bg-[#E2E8F0] mx-auto mb-5" />
+
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-[#F59E0B1A] flex items-center justify-center">
+                <AlertTriangle size={26} className="text-[#F59E0B]" />
+              </div>
+
+              <div>
+                <h3 className="text-[1.0625rem] font-bold text-[#0D1F3C] mb-2">
+                  Tu transferencia está esperando pago
+                </h3>
+                <p className="text-[0.8125rem] text-[#4A5568] leading-relaxed">
+                  La transferencia fue creada y está pendiente de pago. Si sales ahora,
+                  encuéntrala en <strong className="text-[#0D1F3C]">Mis transferencias</strong> para completarla cuando quieras.
+                </p>
+                {stepData.transactionId && (
+                  <p className="text-[0.6875rem] text-[#94A3B8] mt-2 font-mono">
+                    ID: {stepData.transactionId.slice(0, 8)}…{stepData.transactionId.slice(-6)}
+                  </p>
+                )}
+              </div>
+
+              <div className="w-full flex flex-col gap-2.5 mt-1">
+                <button
+                  onClick={handleLeaveDismiss}
+                  className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] bg-[#0D1F3C] text-white"
+                >
+                  Continuar con el pago
+                </button>
+                <button
+                  onClick={handleLeaveConfirm}
+                  className="w-full py-3 rounded-2xl font-semibold text-[0.875rem] text-[#4A5568] border border-[#E2E8F0]"
+                >
+                  Ver mis transferencias
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -6,11 +6,21 @@
  * Llama POST /payments/crossborder al confirmar.
  */
 
-import { useState } from 'react'
-import { Loader2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Loader2, AlertCircle, ChevronDown, ChevronUp, Clock, RefreshCw } from 'lucide-react'
 import { initPayment } from '../../services/paymentsService'
 import { useAuth } from '../../context/AuthContext'
 import Sentry from '../../services/sentry.js'
+
+// Tiempo máximo que consideramos válida una cotización si no viene quoteExpiresAt
+const QUOTE_MAX_AGE_MS = 4 * 60 * 1000  // 4 minutos
+
+function formatCountdown(secs) {
+  if (!secs || secs <= 0) return '0:00'
+  const m = Math.floor(secs / 60)
+  const s = secs % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
 
 const ENTITY_ORIGIN_CURRENCY = { SpA: 'CLP', LLC: 'USD', SRL: 'BOB' }
 
@@ -36,20 +46,43 @@ function Row({ label, value, valueClass = 'text-[#0D1F3C] text-[0.9375rem]' }) {
   )
 }
 
-export default function Step4Confirm({ stepData, onNext }) {
+export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
   const { user } = useAuth()
 
   const [confirmed, setConfirmed]   = useState(false)
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState(null)
   const [feesExpanded, setFeesExpanded] = useState(false)
+  const [quoteSecsLeft, setQuoteSecsLeft] = useState(null)
 
   // Step3 guarda los datos bajo la key "beneficiaryData" (campos dinámicos de Vita)
   const {
     quote, originAmount, destinationCountry, payinMethod,
     beneficiaryData, contactId,
     owlPayMethod, harborQuoteId,
+    quoteFetchedAt,
   } = stepData
+
+  // ── Countdown de expiración de cotización ──────────────────────────────────
+  const quoteExpiry = quote?.quoteExpiresAt
+    ? new Date(quote.quoteExpiresAt).getTime()
+    : quoteFetchedAt
+      ? quoteFetchedAt + QUOTE_MAX_AGE_MS
+      : null
+
+  useEffect(() => {
+    if (!quoteExpiry) return
+    const tick = () => {
+      const secs = Math.max(0, Math.floor((quoteExpiry - Date.now()) / 1000))
+      setQuoteSecsLeft(secs)
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [quoteExpiry])
+
+  const quoteExpired = quoteSecsLeft !== null && quoteSecsLeft === 0
+  const quoteWarning = quoteSecsLeft !== null && quoteSecsLeft > 0 && quoteSecsLeft <= 60
 
   const originCurrency = quote?.originCurrency
     ?? ENTITY_ORIGIN_CURRENCY[user?.legalEntity]
@@ -135,6 +168,38 @@ export default function Step4Confirm({ stepData, onNext }) {
           Revisa todos los detalles antes de continuar
         </p>
       </div>
+
+      {/* ── Banner: cotización expirada ── */}
+      {quoteExpired && (
+        <div className="flex items-start gap-3 bg-[#EF44441A] border border-[#EF444433] rounded-2xl px-4 py-3">
+          <AlertCircle size={16} className="text-[#EF4444] flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-[0.875rem] font-semibold text-[#EF4444]">Cotización vencida</p>
+            <p className="text-[0.75rem] text-[#EF4444] mt-0.5">
+              La tasa de cambio ha expirado. Actualiza para continuar.
+            </p>
+          </div>
+          {onRefreshQuote && (
+            <button
+              onClick={onRefreshQuote}
+              className="flex items-center gap-1 text-[0.75rem] font-semibold text-[#EF4444] flex-shrink-0"
+            >
+              <RefreshCw size={13} /> Actualizar
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Aviso: cotización por vencer ── */}
+      {quoteWarning && (
+        <div className="flex items-center gap-2.5 bg-[#F59E0B0F] border border-[#F59E0B33] rounded-xl px-3.5 py-2.5">
+          <Clock size={14} className="text-[#F59E0B] flex-shrink-0" />
+          <p className="text-[0.8125rem] text-[#F59E0B] flex-1">
+            Cotización válida por{' '}
+            <span className="font-bold font-mono">{formatCountdown(quoteSecsLeft)}</span>
+          </p>
+        </div>
+      )}
 
       {/* ── Resumen financiero ── */}
       <div className="bg-white border border-[#E2E8F0] rounded-2xl px-4 py-1 divide-y divide-[#E2E8F0]">
@@ -281,15 +346,15 @@ export default function Step4Confirm({ stepData, onNext }) {
       {/* ── Botón confirmar ── */}
       <button
         onClick={handleConfirm}
-        disabled={!confirmed || loading}
+        disabled={!confirmed || loading || quoteExpired}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 flex items-center justify-center gap-2 ${
-          confirmed && !loading
+          confirmed && !loading && !quoteExpired
             ? 'bg-[#0D1F3C] text-white shadow-[0_4px_20px_rgba(29,52,97,0.25)] active:scale-[0.98]'
             : 'bg-[#0D1F3C40] text-[#94A3B8] cursor-not-allowed'
         }`}
       >
         {loading && <Loader2 size={18} className="animate-spin" />}
-        {loading ? 'Procesando...' : 'Confirmar y pagar'}
+        {loading ? 'Procesando...' : quoteExpired ? 'Cotización vencida' : 'Confirmar y pagar'}
       </button>
     </div>
   )

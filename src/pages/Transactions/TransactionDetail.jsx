@@ -208,17 +208,30 @@ import { useAuth }                 from '../../context/AuthContext.jsx'
 // ── Configuración de estados ──────────────────────────────────────────────────
 
 const STATUS_CONFIG = {
-  initiated:        { label: 'Iniciada',          color: 'var(--color-text-secondary)', bg: '#64748B1A' },
-  payin_pending:    { label: 'Pago pendiente',     color: 'var(--color-text-secondary)', bg: '#64748B1A' },
-  payin_confirmed:  { label: 'Pago confirmado',    color: 'var(--color-accent-teal)', bg: '#233E581A' },
-  payin_completed:  { label: 'Pago completado',    color: 'var(--color-accent-teal)', bg: '#233E581A' },
-  processing:       { label: 'Procesando',         color: '#3B82F6', bg: '#3B82F61A' },
-  in_transit:       { label: 'En tránsito',        color: '#3B82F6', bg: '#3B82F61A' },
-  payout_pending:   { label: 'Enviando...',        color: 'var(--color-accent-teal)', bg: '#233E581A' },
-  payout_sent:      { label: 'Enviado al banco',   color: '#3B82F6', bg: '#3B82F61A' },
-  completed:        { label: 'Completada',         color: 'var(--color-accent-teal)', bg: '#233E581A' },
-  failed:           { label: 'Fallida',            color: '#EF4444', bg: '#EF44441A' },
-  refunded:         { label: 'Reembolsada',        color: '#F59E0B', bg: '#F59E0B1A' },
+  initiated:                      { label: 'Iniciada',                color: 'var(--color-text-secondary)', bg: '#64748B1A' },
+  pending_customer_transfer_start:{ label: 'Preparando envío',        color: 'var(--color-text-secondary)', bg: '#64748B1A' },
+  transfer_initiated:             { label: 'Transferencia iniciada',   color: 'var(--color-text-secondary)', bg: '#64748B1A' },
+  payin_pending:                  { label: 'Pago pendiente',          color: 'var(--color-text-secondary)', bg: '#64748B1A' },
+  payin_confirmed:                { label: 'Pago confirmado',         color: 'var(--color-accent-teal)',    bg: '#233E581A' },
+  fintoc_payin_confirmed:         { label: 'Pago confirmado',         color: 'var(--color-accent-teal)',    bg: '#233E581A' },
+  manual_payin_confirmed:         { label: 'Pago confirmado',         color: 'var(--color-accent-teal)',    bg: '#233E581A' },
+  payin_completed:                { label: 'Pago recibido',           color: 'var(--color-accent-teal)',    bg: '#233E581A' },
+  harbor_source_received:         { label: 'Fondos recibidos',        color: '#3B82F6',                     bg: '#3B82F61A' },
+  processing:                     { label: 'Procesando',              color: '#3B82F6',                     bg: '#3B82F61A' },
+  in_transit:                     { label: 'En tránsito',             color: '#3B82F6',                     bg: '#3B82F61A' },
+  pending_funding:                { label: 'Fondos pendientes',       color: '#F59E0B',                     bg: '#F59E0B1A' },
+  pending_funding_usdc:           { label: 'Fondos USDC pendientes',  color: '#F59E0B',                     bg: '#F59E0B1A' },
+  payout_pending:                 { label: 'Enviando...',             color: 'var(--color-accent-teal)',    bg: '#233E581A' },
+  payout_pending_usdc_send:       { label: 'Enviando al beneficiario',color: '#3B82F6',                     bg: '#3B82F61A' },
+  anchor_bolivia_payout_pending:  { label: 'Pago Bolivia en proceso', color: 'var(--color-accent-teal)',    bg: '#233E581A' },
+  payout_dispatched:              { label: 'Pago despachado',         color: '#3B82F6',                     bg: '#3B82F61A' },
+  payout_in_transit:              { label: 'En tránsito',             color: '#3B82F6',                     bg: '#3B82F61A' },
+  payout_sent:                    { label: 'Enviado al banco',        color: '#3B82F6',                     bg: '#3B82F61A' },
+  completed:                      { label: 'Completada',              color: 'var(--color-accent-teal)',    bg: '#233E581A' },
+  confirmed:                      { label: 'Confirmada',              color: 'var(--color-accent-teal)',    bg: '#233E581A' },
+  failed:                         { label: 'Fallida',                 color: '#EF4444',                     bg: '#EF44441A' },
+  refunded:                       { label: 'Reembolsada',             color: '#F59E0B',                     bg: '#F59E0B1A' },
+  expired:                        { label: 'Expirada',                color: '#EF4444',                     bg: '#EF44441A' },
 }
 
 // ── Pasos del timeline ────────────────────────────────────────────────────────
@@ -226,22 +239,22 @@ const STATUS_CONFIG = {
 const TIMELINE_STEPS = [
   {
     label:      'Pago recibido',
-    doneWhen:   s => !['initiated', 'payin_pending'].includes(s) && s !== 'failed' && s !== 'refunded',
-    activeWhen: s => s === 'payin_pending' || s === 'initiated',
+    doneWhen:   s => !['initiated', 'pending_customer_transfer_start', 'transfer_initiated', 'payin_pending'].includes(s) && s !== 'failed' && s !== 'refunded' && s !== 'expired',
+    activeWhen: s => ['initiated', 'pending_customer_transfer_start', 'transfer_initiated', 'payin_pending'].includes(s),
   },
   {
     label:      'En proceso',
-    doneWhen:   s => ['payout_pending', 'payout_sent', 'completed'].includes(s),
-    activeWhen: s => ['payin_confirmed', 'payin_completed', 'processing', 'in_transit'].includes(s),
+    doneWhen:   s => ['payout_pending', 'payout_pending_usdc_send', 'anchor_bolivia_payout_pending', 'payout_dispatched', 'payout_in_transit', 'payout_sent', 'completed', 'confirmed'].includes(s),
+    activeWhen: s => ['payin_confirmed', 'fintoc_payin_confirmed', 'manual_payin_confirmed', 'payin_completed', 'harbor_source_received', 'processing', 'in_transit', 'pending_funding', 'pending_funding_usdc'].includes(s),
   },
   {
     label:      'Enviado al banco',
-    doneWhen:   s => ['payout_sent', 'completed'].includes(s),
-    activeWhen: s => s === 'payout_pending',
+    doneWhen:   s => ['payout_sent', 'completed', 'confirmed'].includes(s),
+    activeWhen: s => ['payout_pending', 'payout_pending_usdc_send', 'anchor_bolivia_payout_pending', 'payout_dispatched', 'payout_in_transit'].includes(s),
   },
   {
     label:      'Entregado',
-    doneWhen:   s => s === 'completed',
+    doneWhen:   s => s === 'completed' || s === 'confirmed',
     activeWhen: s => s === 'payout_sent',
   },
 ]
@@ -536,7 +549,7 @@ export default function TransactionDetail() {
   }
 
   const cfg      = STATUS_CONFIG[tx.status] ?? { label: tx.status, color: 'var(--color-text-secondary)', bg: '#64748B1A' }
-  const isFailed = tx.status === 'failed' || tx.status === 'refunded'
+  const isFailed = tx.status === 'failed' || tx.status === 'refunded' || tx.status === 'expired'
   const isManualPending = tx.payinMethod === 'manual' &&
     (tx.status === 'initiated' || tx.status === 'payin_pending')
 

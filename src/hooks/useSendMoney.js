@@ -89,6 +89,14 @@ export function useSendMoney() {
     setState(INITIAL_STATE)
   }, [])
 
+  // Vuelve al paso indicado preservando todos los datos actuales (útil para refrescar cotización)
+  const goToStep = useCallback((targetStep, extraData = {}) => {
+    setState(prev => ({
+      step: targetStep,
+      stepData: { ...prev.stepData, ...extraData },
+    }))
+  }, [])
+
   /**
    * Envía la solicitud de pago cross-border al backend.
    * Captura automáticamente el error en Sentry si la llamada falla.
@@ -112,5 +120,5 @@ export function useSendMoney() {
     }
   }, [])
 
-  return { step, stepData, nextStep, prevStep, setStepData, resetFlow, submitPayment }
+  return { step, stepData, nextStep, prevStep, setStepData, resetFlow, goToStep, submitPayment }
 }

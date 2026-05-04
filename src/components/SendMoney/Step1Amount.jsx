@@ -415,7 +415,7 @@ export default function Step1Amount({ initialData, onNext }) {
 
   function handleNext() {
     if (!canContinue) return
-    onNext({ originAmount: rawAmount, destinationCountry: selectedCountry.code, quote })
+    onNext({ originAmount: rawAmount, destinationCountry: selectedCountry.code, quote, quoteFetchedAt: Date.now() })
   }
 
   const destCountry    = selectedCountry || countries[0]
