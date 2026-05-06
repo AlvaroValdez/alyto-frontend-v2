@@ -21,6 +21,9 @@ import {
   toggleSRLQR,
   deleteSRLQR,
   updateSRLBankData,
+  uploadWalletSRLQR,
+  toggleWalletSRLQR,
+  deleteWalletSRLQR,
 } from '../../../services/adminService'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -50,7 +53,7 @@ function Toast({ message, onDone }) {
 
 // ── Modal: subir nuevo QR ─────────────────────────────────────────────────
 
-function UploadModal({ onClose, onUploaded }) {
+function UploadModal({ onClose, onUploaded, scope = 'sendmoney' }) {
   const [label,    setLabel]    = useState('')
   const [file,     setFile]     = useState(null)
   const [preview,  setPreview]  = useState(null)
@@ -77,7 +80,11 @@ function UploadModal({ onClose, onUploaded }) {
     setSaving(true)
     setError(null)
     try {
-      await uploadSRLQR(label.trim(), file)
+      if (scope === 'wallet') {
+        await uploadWalletSRLQR(label.trim(), file)
+      } else {
+        await uploadSRLQR(label.trim(), file)
+      }
       onUploaded()
     } catch (err) {
       setError(err.message || 'Error al subir el QR')
@@ -441,23 +448,54 @@ function SkeletonGrid() {
   )
 }
 
+// ── QR Section (reutilizable) ──────────────────────────────────────────────
+
+function QRSection({ title, description, qrImages, loading, onToggle, onDelete, onUploadClick, emptyLabel }) {
+  if (loading) return <SkeletonGrid />
+  if (!qrImages.length) {
+    return (
+      <div className="rounded-2xl p-10 flex flex-col items-center text-center"
+        style={{ background: '#1A2340', border: '2px dashed #263050' }}>
+        <QrCode size={36} className="text-[#263050] mb-3" />
+        <p className="text-[0.9375rem] font-bold text-[#4E5A7A] mb-1">{emptyLabel}</p>
+        <p className="text-[0.8125rem] text-[#4E5A7A] mb-4">{description}</p>
+        <button onClick={onUploadClick}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[0.875rem] font-bold text-[#0F1628]"
+          style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.3)' }}>
+          <Upload size={15} />
+          Subir QR
+        </button>
+      </div>
+    )
+  }
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      {qrImages.map(qr => (
+        <QRCard key={qr.qrId} qr={qr} onToggle={onToggle} onDelete={onDelete} />
+      ))}
+    </div>
+  )
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────
 
 export default function SRLConfigPage() {
-  const [qrImages,  setQrImages]  = useState([])
-  const [bankData,  setBankData]  = useState(null)
-  const [loading,   setLoading]   = useState(true)
-  const [error,     setError]     = useState(null)
-  const [showModal, setShowModal] = useState(false)
-  const [toast,     setToast]     = useState(null)
+  const [qrImages,       setQrImages]       = useState([])
+  const [walletQrImages, setWalletQrImages] = useState([])
+  const [bankData,       setBankData]       = useState(null)
+  const [loading,        setLoading]        = useState(true)
+  const [error,          setError]          = useState(null)
+  const [showModal,      setShowModal]      = useState(null)  // null | 'sendmoney' | 'wallet'
+  const [toast,          setToast]          = useState(null)
 
   async function fetchConfig() {
     setLoading(true)
     setError(null)
     try {
       const data = await getSRLConfig()
-      setQrImages(data.qrImages ?? [])
-      setBankData(data.bankData  ?? {})
+      setQrImages(data.qrImages             ?? [])
+      setWalletQrImages(data.walletQrImages ?? [])
+      setBankData(data.bankData             ?? {})
     } catch (err) {
       setError(err.message || 'Error al cargar la configuración')
     } finally {
@@ -467,11 +505,10 @@ export default function SRLConfigPage() {
 
   useEffect(() => { fetchConfig() }, [])
 
+  // ── SendMoney QR handlers ──
   async function handleToggle(qrId, isActive) {
     await toggleSRLQR(qrId, isActive)
-    setQrImages(prev =>
-      prev.map(q => q.qrId === qrId ? { ...q, isActive } : q)
-    )
+    setQrImages(prev => prev.map(q => q.qrId === qrId ? { ...q, isActive } : q))
     setToast(isActive ? 'QR activado' : 'QR desactivado')
   }
 
@@ -481,14 +518,27 @@ export default function SRLConfigPage() {
     setToast('QR eliminado')
   }
 
+  // ── Wallet QR handlers ──
+  async function handleWalletToggle(qrId, isActive) {
+    await toggleWalletSRLQR(qrId, isActive)
+    setWalletQrImages(prev => prev.map(q => q.qrId === qrId ? { ...q, isActive } : q))
+    setToast(isActive ? 'QR Wallet activado' : 'QR Wallet desactivado')
+  }
+
+  async function handleWalletDelete(qrId) {
+    await deleteWalletSRLQR(qrId)
+    setWalletQrImages(prev => prev.filter(q => q.qrId !== qrId))
+    setToast('QR Wallet eliminado')
+  }
+
   function handleUploaded() {
-    setShowModal(false)
+    setShowModal(null)
     setToast('QR subido correctamente')
     fetchConfig()
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4">
@@ -500,86 +550,98 @@ export default function SRLConfigPage() {
             </h1>
           </div>
           <p className="text-[0.8125rem] text-[#4E5A7A]">
-            Gestiona los códigos QR que ven los usuarios al pagar desde Bolivia
+            Gestiona los códigos QR para pagos SendMoney y para carga de saldo en Wallet BOB
           </p>
         </div>
-
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[0.875rem] font-bold text-[#0F1628] flex-shrink-0"
-          style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.2)' }}
-        >
-          <Upload size={15} />
-          Subir nuevo QR
-        </button>
       </div>
 
       {/* ── Error ── */}
       {error && (
-        <div
-          className="px-4 py-3 rounded-xl text-[0.875rem] text-[#EF4444]"
-          style={{ background: '#EF44441A', border: '1px solid #EF444433' }}
-        >
+        <div className="px-4 py-3 rounded-xl text-[0.875rem] text-[#EF4444]"
+          style={{ background: '#EF44441A', border: '1px solid #EF444433' }}>
           {error}
         </div>
       )}
 
       {/* ── Datos bancarios ── */}
       {!loading && bankData !== null && (
-        <BankDataCard
-          initial={bankData}
-          onSaved={msg => setToast(msg)}
-        />
+        <BankDataCard initial={bankData} onSaved={msg => setToast(msg)} />
       )}
 
-      {/* ── Separador QR ── */}
-      <div className="flex items-center gap-3 pt-1">
-        <QrCode size={16} className="text-[#4E5A7A] flex-shrink-0" />
-        <span className="text-[0.8125rem] font-semibold text-[#4E5A7A]">Códigos QR de pago</span>
-        <div className="h-px flex-1 bg-[#263050]" />
-      </div>
-
-      {/* ── Content ── */}
-      {loading ? (
-        <SkeletonGrid />
-      ) : !qrImages.length ? (
-        <div
-          className="rounded-2xl p-12 flex flex-col items-center text-center"
-          style={{ background: '#1A2340', border: '2px dashed #263050' }}
-        >
-          <QrCode size={40} className="text-[#263050] mb-4" />
-          <p className="text-[0.9375rem] font-bold text-[#4E5A7A] mb-2">
-            Sin QR configurados
-          </p>
-          <p className="text-[0.8125rem] text-[#4E5A7A] mb-5">
-            Sube el primer QR de pago para Bolivia.
-          </p>
+      {/* ══ SECCIÓN 1: QR SendMoney ══ */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <QrCode size={16} className="text-[#4E5A7A] flex-shrink-0" />
+            <div>
+              <span className="text-[0.9375rem] font-bold text-white">QR Pagos SendMoney</span>
+              <p className="text-[0.75rem] text-[#4E5A7A] mt-0.5">
+                Se muestran en el paso de pago al enviar dinero desde Bolivia
+              </p>
+            </div>
+          </div>
           <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[0.875rem] font-bold text-[#0F1628]"
-            style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.3)' }}
-          >
-            <Upload size={15} />
+            onClick={() => setShowModal('sendmoney')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[0.8125rem] font-bold text-[#0F1628] flex-shrink-0"
+            style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.2)' }}>
+            <Upload size={14} />
             Subir QR
           </button>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {qrImages.map(qr => (
-            <QRCard
-              key={qr.qrId}
-              qr={qr}
-              onToggle={handleToggle}
-              onDelete={handleDelete}
-            />
-          ))}
+        <QRSection
+          qrImages={qrImages}
+          loading={loading}
+          onToggle={handleToggle}
+          onDelete={handleDelete}
+          onUploadClick={() => setShowModal('sendmoney')}
+          emptyLabel="Sin QR de pago SendMoney"
+          description="Sube el primer QR de pago para el flujo SendMoney Bolivia."
+        />
+      </div>
+
+      {/* ── Divisor ── */}
+      <div className="h-px bg-[#263050]" />
+
+      {/* ══ SECCIÓN 2: QR Wallet BOB Depósitos ══ */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <QrCode size={16} className="text-[#22C55E] flex-shrink-0" />
+            <div>
+              <span className="text-[0.9375rem] font-bold text-white">QR Depósito Wallet BOB</span>
+              <p className="text-[0.75rem] text-[#4E5A7A] mt-0.5">
+                Se muestran cuando el usuario carga saldo en su Wallet BOB
+              </p>
+            </div>
+            <span className="text-[0.625rem] font-bold px-2 py-0.5 rounded-full"
+              style={{ background: '#22C55E1A', border: '1px solid #22C55E33', color: '#22C55E' }}>
+              Wallet
+            </span>
+          </div>
+          <button
+            onClick={() => setShowModal('wallet')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[0.8125rem] font-bold text-[#0F1628] flex-shrink-0"
+            style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.2)' }}>
+            <Upload size={14} />
+            Subir QR
+          </button>
         </div>
-      )}
+        <QRSection
+          qrImages={walletQrImages}
+          loading={loading}
+          onToggle={handleWalletToggle}
+          onDelete={handleWalletDelete}
+          onUploadClick={() => setShowModal('wallet')}
+          emptyLabel="Sin QR de depósito Wallet"
+          description="Sube un QR de banco o billetera para que los usuarios carguen saldo BOB."
+        />
+      </div>
 
       {/* ── Modal ── */}
       {showModal && (
         <UploadModal
-          onClose={() => setShowModal(false)}
+          scope={showModal}
+          onClose={() => setShowModal(null)}
           onUploaded={handleUploaded}
         />
       )}

@@ -328,6 +328,42 @@ export function updateSRLBankData(bankData) {
   })
 }
 
+// ── SRL Wallet QR — QRs específicos para depósito BOB en Wallet ─────────────
+
+/**
+ * Sube un nuevo QR de depósito Wallet BOB.
+ * @param {string} label — ej. "Banco Bisa QR", "Tigo Money"
+ * @param {File}   file  — imagen PNG/JPG/WebP, máx 2 MB
+ */
+export function uploadWalletSRLQR(label, file) {
+  const fd = new FormData()
+  fd.append('label', label)
+  fd.append('qr', file, file.name)
+  return requestFormData('/admin/srl-config/wallet-qr', fd)
+}
+
+/**
+ * Activa o desactiva un QR de Wallet BOB.
+ * @param {string}  qrId
+ * @param {boolean} isActive
+ */
+export function toggleWalletSRLQR(qrId, isActive) {
+  return request(`/admin/srl-config/wallet-qr/${encodeURIComponent(qrId)}`, {
+    method: 'PATCH',
+    body:   JSON.stringify({ isActive }),
+  })
+}
+
+/**
+ * Elimina un QR de Wallet BOB.
+ * @param {string} qrId
+ */
+export function deleteWalletSRLQR(qrId) {
+  return request(`/admin/srl-config/wallet-qr/${encodeURIComponent(qrId)}`, {
+    method: 'DELETE',
+  })
+}
+
 // ── SpA Config — Transferencias manuales Chile ────────────────────────────
 
 export function getSpaConfig() {

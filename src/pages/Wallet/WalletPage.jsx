@@ -171,7 +171,7 @@ function DepositModal({ open, onClose, onSuccess }) {
           method: 'POST',
           body: JSON.stringify({ amount: n }),
         }),
-        request('/payments/srl-payin-instructions').catch(() => ({ qrImages: [] })),
+        request('/wallet/deposit/qr-images').catch(() => ({ qrImages: [] })),
       ])
       setResult(data)
       const imgs = Array.isArray(instrData?.qrImages) ? instrData.qrImages.filter(q => q.imageBase64) : []
@@ -324,7 +324,7 @@ function DepositModal({ open, onClose, onSuccess }) {
                       <div key={i} className="flex flex-col items-center gap-2 bg-[#F8FAFC] rounded-2xl p-3"
                         style={{ border: '1px solid #E2E8F0' }}>
                         <img
-                          src={`data:image/png;base64,${qr.imageBase64}`}
+                          src={qr.imageBase64}
                           alt={qr.label ?? `QR ${i + 1}`}
                           className="w-full max-w-[160px] rounded-xl"
                           style={{ border: '2px solid #233E5833' }}
