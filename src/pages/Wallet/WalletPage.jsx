@@ -14,10 +14,10 @@ import {
   ArrowLeft, Wallet, ArrowDownToLine, ArrowUpRight,
   ArrowRightLeft, AlertCircle, CheckCircle2, Clock,
   ChevronLeft, ChevronRight, X, Loader2, Copy, CheckCheck, QrCode,
-  RefreshCw, Info,
+  RefreshCw, Info, Upload, Building2,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { request } from '../../services/api'
+import { request, requestFormData } from '../../services/api'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -131,30 +131,53 @@ const DEPOSIT_MIN_BOB = parseInt(import.meta.env.VITE_DEPOSIT_MIN_BOB || '50', 1
 const DEPOSIT_MAX_BOB = parseInt(import.meta.env.VITE_DEPOSIT_MAX_BOB || '10000', 10)
 
 function DepositModal({ open, onClose, onSuccess }) {
-  const [amount, setAmount]   = useState('')
-  const [loading, setLoading] = useState(false)
-  const [result, setResult]   = useState(null)
-  const [error, setError]     = useState('')
-  const [copied, setCopied]   = useState(false)
+  // ─── state ───────────────────────────────────────────────────────────────────
+  const [view, setView]           = useState('amount')   // 'amount' | 'instructions' | 'done'
+  const [amount, setAmount]       = useState('')
+  const [loading, setLoading]     = useState(false)
+  const [result, setResult]       = useState(null)       // response from /deposit/initiate
+  const [qrImages, setQrImages]   = useState([])         // QRs estáticos del admin
+  const [payTab, setPayTab]       = useState('transfer') // 'transfer' | 'qr'
+  const [error, setError]         = useState('')
+  const [copied, setCopied]       = useState(false)
 
-  function handleClose() {
-    setAmount(''); setResult(null); setError(''); setCopied(false)
-    onClose()
+  // comprobante upload
+  const [proofFile, setProofFile]       = useState(null)
+  const [proofPreview, setProofPreview] = useState(null)
+  const [uploading, setUploading]       = useState(false)
+  const [uploadError, setUploadError]   = useState('')
+  const [uploadDone, setUploadDone]     = useState(false)
+
+  function resetAll() {
+    setView('amount'); setAmount(''); setResult(null); setQrImages([])
+    setPayTab('transfer'); setError(''); setCopied(false)
+    setProofFile(null); setProofPreview(null); setUploading(false)
+    setUploadError(''); setUploadDone(false)
   }
 
+  function handleClose() { resetAll(); onClose() }
+
+  // ─── Step 1: iniciar depósito ─────────────────────────────────────────────
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
     const n = Number(amount)
     if (!n || n < DEPOSIT_MIN_BOB)  return setError(`El monto mínimo es Bs. ${DEPOSIT_MIN_BOB}.`)
-    if (n > DEPOSIT_MAX_BOB)        return setError(`El monto máximo por depósito es Bs. ${DEPOSIT_MAX_BOB.toLocaleString('es-BO')}.`)
+    if (n > DEPOSIT_MAX_BOB)        return setError(`El monto máximo es Bs. ${DEPOSIT_MAX_BOB.toLocaleString('es-BO')}.`)
     setLoading(true)
     try {
-      const data = await request('/wallet/deposit/initiate', {
-        method: 'POST',
-        body: JSON.stringify({ amount: n }),
-      })
+      const [data, instrData] = await Promise.all([
+        request('/wallet/deposit/initiate', {
+          method: 'POST',
+          body: JSON.stringify({ amount: n }),
+        }),
+        request('/payments/srl-payin-instructions').catch(() => ({ qrImages: [] })),
+      ])
       setResult(data)
+      const imgs = Array.isArray(instrData?.qrImages) ? instrData.qrImages.filter(q => q.imageBase64) : []
+      setQrImages(imgs)
+      setPayTab(imgs.length > 0 ? 'qr' : 'transfer')
+      setView('instructions')
     } catch (err) {
       setError(err.message ?? 'Error al iniciar el depósito.')
     } finally {
@@ -168,62 +191,235 @@ function DepositModal({ open, onClose, onSuccess }) {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  // ─── Step 2: seleccionar comprobante ────────────────────────────────────────
+  function handleFileChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('El archivo no puede superar 5 MB.')
+      return
+    }
+    setProofFile(file)
+    setUploadError('')
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = ev => setProofPreview(ev.target.result)
+      reader.readAsDataURL(file)
+    } else {
+      setProofPreview(null)
+    }
+  }
+
+  async function handleUpload() {
+    if (!proofFile || !result?.wtxId) return
+    setUploading(true); setUploadError('')
+    try {
+      const fd = new FormData()
+      fd.append('comprobante', proofFile)
+      await requestFormData(`/wallet/deposit/${encodeURIComponent(result.wtxId)}/comprobante`, fd)
+      setUploadDone(true)
+      onSuccess?.()
+    } catch (err) {
+      setUploadError(err.message ?? 'Error al subir el comprobante.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <Modal open={open} onClose={handleClose} title="Cargar saldo BOB">
-      {!result ? (
+
+      {/* ── PASO 1: monto ── */}
+      {view === 'amount' && (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Monto a depositar (BOB)</label>
+            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
+              Monto a depositar (BOB)
+            </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-semibold text-sm">Bs.</span>
-              <input type="number" min={DEPOSIT_MIN_BOB} max={DEPOSIT_MAX_BOB} value={amount}
-                onChange={e => setAmount(e.target.value)} placeholder="100"
-                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none" />
+              <input
+                type="number" min={DEPOSIT_MIN_BOB} max={DEPOSIT_MAX_BOB}
+                value={amount} onChange={e => setAmount(e.target.value)} placeholder="100"
+                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none"
+              />
             </div>
-            <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Mínimo Bs. {DEPOSIT_MIN_BOB} — Máximo Bs. {DEPOSIT_MAX_BOB.toLocaleString('es-BO')}</p>
+            <p className="text-[0.6875rem] text-[#94A3B8] mt-1">
+              Mínimo Bs. {DEPOSIT_MIN_BOB} — Máximo Bs. {DEPOSIT_MAX_BOB.toLocaleString('es-BO')}
+            </p>
           </div>
-          {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>}
+          {error && (
+            <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>
+          )}
           <button type="submit" disabled={loading || !amount}
             className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white disabled:opacity-40"
             style={{ background: '#233E58' }}>
-            {loading ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Generar instrucciones'}
+            {loading ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Generar instrucciones de pago'}
           </button>
         </form>
-      ) : (
-        <div className="space-y-4">
-          <div className="bg-[#F8FAFC] rounded-2xl p-4 border border-[#E2E8F0] space-y-3">
-            {[
-              ['Monto a transferir', formatBOB(result.amount)],
-              ['Banco',              result.bankName],
-              ['Titular',           result.accountHolder],
-              ['N° de cuenta',      result.accountNumber],
-              ['Tipo',              result.accountType],
-            ].map(([label, val]) => (
-              <div key={label} className="flex justify-between">
-                <span className="text-[0.75rem] text-[#64748B]">{label}</span>
-                <span className="text-[0.875rem] font-semibold text-[#0F172A]">{val}</span>
+      )}
+
+      {/* ── PASO 2: instrucciones + comprobante ── */}
+      {view === 'instructions' && (
+        <div className="space-y-5">
+
+          {/* Referencia */}
+          <div className="bg-[#233E580D] rounded-2xl px-4 py-3 flex items-center justify-between gap-3"
+            style={{ border: '1px solid #233E5822' }}>
+            <div className="min-w-0">
+              <p className="text-[0.6875rem] font-medium text-[#64748B] mb-0.5">Referencia — incluir en el concepto</p>
+              <p className="text-[0.875rem] font-mono font-bold text-[#233E58] truncate">{result?.reference}</p>
+            </div>
+            <button onClick={copyReference}
+              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: '#233E581A', border: '1px solid #233E5833' }}>
+              {copied ? <CheckCheck size={15} className="text-[#22C55E]" /> : <Copy size={15} className="text-[#233E58]" />}
+            </button>
+          </div>
+
+          {/* Tabs método de pago */}
+          <div>
+            <div className="flex rounded-xl overflow-hidden mb-4"
+              style={{ border: '1px solid #E2E8F0', background: '#F8FAFC' }}>
+              {[
+                { key: 'transfer', icon: Building2, label: 'Transferencia' },
+                { key: 'qr',       icon: QrCode,    label: 'QR Bancario'   },
+              ].map(tab => (
+                <button key={tab.key} onClick={() => setPayTab(tab.key)}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[0.8125rem] font-semibold transition-all"
+                  style={payTab === tab.key
+                    ? { background: '#233E58', color: '#FFFFFF', borderRadius: '10px' }
+                    : { color: '#64748B' }}>
+                  <tab.icon size={14} />
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab: Transferencia bancaria */}
+            {payTab === 'transfer' && (
+              <div className="bg-[#F8FAFC] rounded-2xl p-4 space-y-2.5" style={{ border: '1px solid #E2E8F0' }}>
+                {[
+                  ['Monto a transferir', formatBOB(result?.amount)],
+                  ['Banco',              result?.bankName],
+                  ['Titular',           result?.accountHolder],
+                  ['N° de cuenta',      result?.accountNumber],
+                  ['Tipo de cuenta',    result?.accountType],
+                ].map(([label, val]) => (
+                  <div key={label} className="flex justify-between items-center">
+                    <span className="text-[0.75rem] text-[#64748B]">{label}</span>
+                    <span className="text-[0.875rem] font-semibold text-[#0F172A] text-right max-w-[55%] break-all">{val}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-            <div className="pt-2 border-t border-[#E2E8F0]">
-              <p className="text-[0.6875rem] font-medium text-[#64748B] mb-1">Referencia (incluir en el concepto)</p>
-              <div className="flex items-center gap-2">
-                <span className="flex-1 text-[0.8125rem] font-mono font-bold text-[#233E58] truncate">{result.reference}</span>
-                <button onClick={copyReference}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: '#233E581A', border: '1px solid #233E5833' }}>
-                  {copied ? <CheckCheck size={14} className="text-[#22C55E]" /> : <Copy size={14} className="text-[#233E58]" />}
+            )}
+
+            {/* Tab: QR Bancario */}
+            {payTab === 'qr' && (
+              <div>
+                {qrImages.length > 0 ? (
+                  <div className={`w-full ${qrImages.length > 1 ? 'grid grid-cols-2 gap-3' : 'flex justify-center'}`}>
+                    {qrImages.map((qr, i) => (
+                      <div key={i} className="flex flex-col items-center gap-2 bg-[#F8FAFC] rounded-2xl p-3"
+                        style={{ border: '1px solid #E2E8F0' }}>
+                        <img
+                          src={`data:image/png;base64,${qr.imageBase64}`}
+                          alt={qr.label ?? `QR ${i + 1}`}
+                          className="w-full max-w-[160px] rounded-xl"
+                          style={{ border: '2px solid #233E5833' }}
+                        />
+                        {qr.label && (
+                          <span className="text-[0.6875rem] font-semibold text-[#64748B]">{qr.label}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2 py-6 text-center bg-[#F8FAFC] rounded-2xl"
+                    style={{ border: '1px solid #E2E8F0' }}>
+                    <QrCode size={32} className="text-[#94A3B8]" />
+                    <p className="text-[0.8125rem] text-[#64748B]">No hay QRs configurados.</p>
+                    <p className="text-[0.75rem] text-[#94A3B8]">Usa transferencia bancaria.</p>
+                  </div>
+                )}
+                <p className="text-[0.6875rem] text-[#94A3B8] mt-2 text-center">
+                  Escanea con tu app bancaria e incluye la referencia en el concepto.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Subir comprobante */}
+          <div className="rounded-2xl overflow-hidden" style={{ border: '1.5px solid #E2E8F0' }}>
+            <div className="px-4 py-3 flex items-center gap-2" style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+              <Upload size={14} className="text-[#233E58]" />
+              <p className="text-[0.8125rem] font-bold text-[#0F172A]">Subir comprobante</p>
+              <span className="ml-auto text-[0.6875rem] font-semibold text-[#F87171]">Requerido</span>
+            </div>
+
+            {uploadDone ? (
+              <div className="px-4 py-5 flex flex-col items-center gap-2 text-center">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: '#22C55E1A' }}>
+                  <CheckCircle2 size={24} className="text-[#22C55E]" />
+                </div>
+                <p className="text-[0.875rem] font-bold text-[#0F172A]">Comprobante recibido</p>
+                <p className="text-[0.75rem] text-[#64748B]">
+                  Verificaremos tu depósito en <span className="font-semibold text-[#0F172A]">2–4 horas hábiles</span>.
+                </p>
+              </div>
+            ) : (
+              <div className="p-4 space-y-3">
+                {!proofFile ? (
+                  <label className="flex flex-col items-center gap-2 py-5 rounded-xl cursor-pointer transition-colors"
+                    style={{ border: '1.5px dashed #CBD5E1', background: '#FAFBFD' }}>
+                    <Upload size={22} className="text-[#94A3B8]" />
+                    <span className="text-[0.8125rem] font-medium text-[#64748B]">Toca para adjuntar</span>
+                    <span className="text-[0.6875rem] text-[#94A3B8]">JPG, PNG o PDF — máx. 5 MB</span>
+                    <input type="file" accept="image/jpeg,image/png,application/pdf"
+                      className="hidden" onChange={handleFileChange} />
+                  </label>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {proofPreview && (
+                      <img src={proofPreview} alt="Vista previa" className="w-full max-h-36 object-contain rounded-xl"
+                        style={{ border: '1px solid #E2E8F0' }} />
+                    )}
+                    <div className="flex items-center gap-2 bg-[#F8FAFC] rounded-xl px-3 py-2.5"
+                      style={{ border: '1px solid #E2E8F0' }}>
+                      <Upload size={14} className="text-[#233E58] flex-shrink-0" />
+                      <span className="text-[0.8125rem] text-[#0F172A] flex-1 truncate">{proofFile.name}</span>
+                      <button onClick={() => { setProofFile(null); setProofPreview(null) }}
+                        className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ background: '#EF44441A' }}>
+                        <X size={12} className="text-[#F87171]" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {uploadError && (
+                  <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-3 py-2">{uploadError}</p>
+                )}
+
+                <button onClick={handleUpload} disabled={!proofFile || uploading}
+                  className="w-full py-3 rounded-2xl font-bold text-[0.875rem] text-white disabled:opacity-40 flex items-center justify-center gap-2"
+                  style={{ background: '#233E58' }}>
+                  {uploading
+                    ? <><Loader2 size={16} className="animate-spin" /> Enviando...</>
+                    : <><Upload size={16} /> Enviar comprobante</>}
                 </button>
               </div>
-            </div>
+            )}
           </div>
-          <p className="text-[0.75rem] text-[#64748B] text-center px-2">
-            Tu saldo será acreditado en <span className="text-[#0F172A] font-semibold">2-4 horas hábiles</span> tras verificación.
-          </p>
-          <button onClick={() => { handleClose(); onSuccess?.() }}
-            className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white"
-            style={{ background: '#233E58' }}>
-            Ya realicé la transferencia
-          </button>
+
+          {uploadDone && (
+            <button onClick={handleClose}
+              className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white"
+              style={{ background: '#22C55E' }}>
+              Cerrar
+            </button>
+          )}
         </div>
       )}
     </Modal>
