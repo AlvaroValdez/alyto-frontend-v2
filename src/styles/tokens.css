@@ -46,12 +46,12 @@
   --color-teal-100: #E6F7F2;
 
   /* ── STATUS ────────────────────────────────────────────────── */
-  --color-success:        #16A34A;
-  --color-success-bg:     #DCFCE7;
+  --color-success:        #22C55E;   /* único verde canónico (reemplaza #16A34A) */
+  --color-success-bg:     #22C55E1A;
   --color-warning:        #F59E0B;
-  --color-warning-bg:     rgba(245, 158, 11, 0.10);
-  --color-error:          #DC2626;
-  --color-error-bg:       #FEE2E2;
+  --color-warning-bg:     #F59E0B1A;
+  --color-error:          #EF4444;   /* único rojo canónico (reemplaza #DC2626) */
+  --color-error-bg:       #EF44441A;
   --color-teal-status:    #0891B2;
   --color-teal-status-bg: #E0F2FE;
   --color-pending:        #6366F1;
@@ -111,6 +111,19 @@
   --transition-fast:   all 0.15s ease;
   --transition-normal: all 0.25s ease;
   --transition-slow:   all 0.40s ease;
+
+  /* ── WALLET PRIMARY (color corporativo usuario) ─────────────── */
+  --color-wallet-primary:        #233E58;
+  --color-wallet-primary-bg:     #233E581A;
+  --color-wallet-primary-border: #233E5833;
+  --color-wallet-primary-hover:  #1A2F45;
+
+  /* ── TEXT ROLES ─────────────────────────────────────────────── */
+  --color-text-muted: #94A3B8;
+  --color-text-hint:  #64748B;
+
+  /* ── DISABLED ───────────────────────────────────────────────── */
+  --opacity-disabled: 0.5;
 }
 
 /* ── ANIMATIONS ──────────────────────────────────────────────── */
