@@ -82,9 +82,9 @@ export default function AppLayout() {
       {/* ══════════════════════════════════════════════════════════════
           LAYOUT PRINCIPAL — un solo Outlet, responsive con CSS
           ══════════════════════════════════════════════════════════════ */}
-      <div style={{ height: '100%', background: 'var(--color-bg-app)', display: 'flex' }}>
+      <div style={{ minHeight: '100vh', background: 'var(--color-bg-app)', display: 'flex', flexDirection: 'column' }}>
 
-        {/* SideNavBar — solo desktop (≥ 1024px) */}
+        {/* SideNavBar — solo desktop (≥ 1024px), position:fixed */}
         <div className="hidden lg:block">
           <SideNavBar user={user} onLogout={handleLogout} />
         </div>
@@ -95,7 +95,6 @@ export default function AppLayout() {
             flex:          1,
             display:       'flex',
             flexDirection: 'column',
-            height:        '100%',
             minWidth:      0,
           }}
           className="lg:ml-[240px]"
@@ -233,11 +232,8 @@ export default function AppLayout() {
               detrás del bottom nav flotante (nav ~56px + 16px bottom + margen)
               Desktop: paddingBottom normal
           */}
-          <main
-            className="flex-1 overflow-y-auto scrollbar-hide"
-            style={{ paddingBottom: 'calc(120px + env(safe-area-inset-bottom))' }}
-          >
-            <div className="lg:max-w-[1200px] lg:mx-auto lg:px-7 lg:py-7">
+          <main className="flex-1">
+            <div className="pb-nav-safe lg:max-w-[1200px] lg:mx-auto lg:px-7 lg:pt-7">
               <Outlet />
             </div>
           </main>

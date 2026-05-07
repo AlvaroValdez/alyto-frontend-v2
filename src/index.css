@@ -11,16 +11,16 @@
     padding: 0;
   }
 
-  html, body, #root {
+  html {
     height: 100%;
+  }
+
+  body, #root {
+    min-height: 100%;
   }
 
   body {
     padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  body {
     font-family: 'Manrope', sans-serif;
     background: var(--color-bg-app);
     color: var(--color-text-primary);
@@ -36,5 +36,15 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Padding inferior que despeja el BottomNavBar flotante en mobile */
+  .pb-nav-safe {
+    padding-bottom: calc(120px + env(safe-area-inset-bottom));
+  }
+  @media (min-width: 1024px) {
+    .pb-nav-safe {
+      padding-bottom: 1.75rem; /* 28px — mismo que lg:pb-7, no hay BottomNav en desktop */
+    }
   }
 }
