@@ -82,7 +82,7 @@ export default function AppLayout() {
       {/* ══════════════════════════════════════════════════════════════
           LAYOUT PRINCIPAL — un solo Outlet, responsive con CSS
           ══════════════════════════════════════════════════════════════ */}
-      <div style={{ minHeight: '100vh', background: 'var(--color-bg-app)', display: 'flex' }}>
+      <div style={{ height: '100%', background: 'var(--color-bg-app)', display: 'flex' }}>
 
         {/* SideNavBar — solo desktop (≥ 1024px) */}
         <div className="hidden lg:block">
@@ -95,7 +95,7 @@ export default function AppLayout() {
             flex:          1,
             display:       'flex',
             flexDirection: 'column',
-            minHeight:     '100vh',
+            height:        '100%',
             minWidth:      0,
           }}
           className="lg:ml-[240px]"
@@ -234,8 +234,8 @@ export default function AppLayout() {
               Desktop: paddingBottom normal
           */}
           <main
-            className="flex-1 overflow-y-auto scrollbar-hide lg:pb-6"
-            style={{ paddingBottom: 108 }}
+            className="flex-1 overflow-y-auto scrollbar-hide"
+            style={{ paddingBottom: 'calc(120px + env(safe-area-inset-bottom))' }}
           >
             <div className="lg:max-w-[1200px] lg:mx-auto lg:px-7 lg:py-7">
               <Outlet />
