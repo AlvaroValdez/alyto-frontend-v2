@@ -60,19 +60,24 @@ function flagUrl(code) {
   return `https://flagcdn.com/w80/${code}.png`
 }
 
-/** Convierte la lista de corredores en opciones de país destino únicas */
+/** Convierte la lista de corredores en opciones de destino únicas.
+ *  Deduplica por (destinationCountry + destinationCurrency) para permitir
+ *  múltiples corredores al mismo país con diferente moneda (ej. bo-cn y bo-cn-usd). */
 function corridorsToCountries(corridors) {
   const seen = new Set()
   const result = []
   for (const c of corridors) {
-    const code = c.destinationCountry
-    if (!code || seen.has(code)) continue
-    seen.add(code)
+    const code     = c.destinationCountry
+    const currency = c.destinationCurrency ?? ''
+    const key      = `${code}:${currency}`
+    if (!code || seen.has(key)) continue
+    seen.add(key)
     const info = COUNTRY_INFO[code] ?? {}
     result.push({
       code,
+      corridorId:   c.corridorId,
       name:         info.name         ?? code,
-      currency:     c.destinationCurrency ?? info.currency ?? '—',
+      currency:     currency || info.currency ?? '—',
       currencyName: info.currencyName  ?? '',
       flagCode:     info.flagCode      ?? code.toLowerCase(),
     })
@@ -272,10 +277,12 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
               Sin resultados para "{query}"
             </div>
           ) : filtered.map(c => {
-            const isActive = selected?.code === c.code
+            const isActive = selected?.corridorId
+              ? selected.corridorId === c.corridorId
+              : selected?.code === c.code
             return (
               <button
-                key={c.code}
+                key={c.corridorId ?? `${c.code}:${c.currency}`}
                 onClick={() => { onSelect(c); onClose() }}
                 style={{
                   display:      'flex',
@@ -382,7 +389,10 @@ export default function Step1Amount({ initialData, onNext }) {
         setCountries(list)
         // Restaurar selección si venimos de initialData
         if (initialData?.destinationCountry) {
-          const found = list.find(c => c.code === initialData.destinationCountry)
+          const found = list.find(c =>
+            c.code === initialData.destinationCountry &&
+            (!initialData.corridorId || c.corridorId === initialData.corridorId),
+          )
           if (found) setSelectedCountry(found)
         }
       })
@@ -396,7 +406,7 @@ export default function Step1Amount({ initialData, onNext }) {
   // ── WebSocket quote ───────────────────────────────────────────────────────
 
   const { quote, status, error, isStale, countdown, reconnect } =
-    useQuoteSocket(rawAmount || null, selectedCountry?.code || null)
+    useQuoteSocket(rawAmount || null, selectedCountry?.code || null, selectedCountry?.corridorId || null)
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -415,7 +425,13 @@ export default function Step1Amount({ initialData, onNext }) {
 
   function handleNext() {
     if (!canContinue) return
-    onNext({ originAmount: rawAmount, destinationCountry: selectedCountry.code, quote, quoteFetchedAt: Date.now() })
+    onNext({
+      originAmount:       rawAmount,
+      destinationCountry: selectedCountry.code,
+      corridorId:         selectedCountry.corridorId ?? null,
+      quote,
+      quoteFetchedAt:     Date.now(),
+    })
   }
 
   const destCountry    = selectedCountry || countries[0]

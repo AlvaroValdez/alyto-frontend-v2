@@ -25,7 +25,7 @@ const DEBOUNCE_MS = 600
 const BACKOFF_MS  = [1000, 2000, 4000, 8000, 16000, 30000]
 const MAX_RETRIES = 5
 
-export function useQuoteSocket(originAmount, destinationCountry) {
+export function useQuoteSocket(originAmount, destinationCountry, corridorId) {
   const [quote,     setQuote]     = useState(null)
   const [status,    setStatus]    = useState('connecting')
   const [error,     setError]     = useState(null)
@@ -38,11 +38,11 @@ export function useQuoteSocket(originAmount, destinationCountry) {
   const debounceRef = useRef(null)
   const cdInterval  = useRef(null)
   const alive       = useRef(true)
-  const params      = useRef({ originAmount, destinationCountry })
+  const params      = useRef({ originAmount, destinationCountry, corridorId })
 
   // Always keep params ref current so callbacks read the latest values
   useEffect(() => {
-    params.current = { originAmount, destinationCountry }
+    params.current = { originAmount, destinationCountry, corridorId }
   })
 
   // ── Countdown ────────────────────────────────────────────────────────────
@@ -107,6 +107,7 @@ export function useQuoteSocket(originAmount, destinationCountry) {
         type:               'subscribe_quote',
         originAmount:       params.current.originAmount,
         destinationCountry: params.current.destinationCountry,
+        ...(params.current.corridorId ? { corridorId: params.current.corridorId } : {}),
       }))
     }
 
@@ -189,15 +190,19 @@ export function useQuoteSocket(originAmount, destinationCountry) {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Reconectar cuando cambia el país destino ──────────────────────────────
+  // ── Reconectar cuando cambia el país destino o el corridorId ────────────
 
-  const prevCountry = useRef(destinationCountry)
+  const prevCountry   = useRef(destinationCountry)
+  const prevCorridorId = useRef(corridorId)
   useEffect(() => {
-    if (prevCountry.current === destinationCountry) return // skip on mount
-    prevCountry.current = destinationCountry
+    const countryChanged  = prevCountry.current   !== destinationCountry
+    const corridorChanged = prevCorridorId.current !== corridorId
+    if (!countryChanged && !corridorChanged) return // skip on mount
+    prevCountry.current    = destinationCountry
+    prevCorridorId.current = corridorId
     if (destinationCountry) reconnect()
     else { setQuote(null); setStatus('connecting') }
-  }, [destinationCountry, reconnect])
+  }, [destinationCountry, corridorId, reconnect])
 
   // ── Enviar update_amount con debounce cuando cambia el monto ─────────────
 
