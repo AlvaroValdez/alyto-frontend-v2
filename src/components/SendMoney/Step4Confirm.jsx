@@ -130,7 +130,6 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
     ?? 'CLP'
   // Alias de compatibilidad — puede llegar como "beneficiary" (legado) o "beneficiaryData" (nuevo)
   const beneficiary = beneficiaryData ?? stepData.beneficiary ?? {}
-  console.log('[Step4] beneficiary recibido:', JSON.stringify(beneficiary))
   const fees = quote?.fees || {}
 
   const effectiveQuote = liveQuote ?? quote
@@ -161,28 +160,25 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
     setError(null)
 
     try {
+      // liveQuote = quote Harbor real (rateConfidence:'exact') si el fetch tuvo éxito.
+      // Tiene prioridad sobre quote (estimado WS) para todos los campos de rate.
+      const q = liveQuote ?? quote
+
       const res = await initPayment({
         corridorId:        quote.corridorId,
         originAmount,
         payinMethod,
-        beneficiaryData:   beneficiary,  // nombre que espera el backend
-        // Datos de la cotización: el backend los guarda en el transaction para trazabilidad
-        destinationAmount: quote.destinationAmount ?? null,
-        exchangeRate:      quote.exchangeRate      ?? null,
-        // Provider-aware quote metadata — el WS emite estos campos en las 3 ramas.
-        // Sin esto, tx.rateConfidence queda null en backend para corredores Vita.
-        rateConfidence:    quote.rateConfidence    ?? null,
-        rateSource:        quote.rateSource        ?? null,
-        providerQuoteId:   quote.providerQuoteId   ?? null,
-        rateExpiresAt:     quote.rateExpiresAt     ?? null,
-        ...(contactId      ? { contactId }                : {}),
-        // Selector CIPS/WIRE para corredores OwlPay Harbor (ej. CN). El backend
-        // usa owlPayMethod en tryOwlPayV2 para elegir el quote_id correcto.
-        ...(owlPayMethod   ? { owlPayMethod }             : {}),
-        ...(harborQuoteId  ? { harborQuoteId }            : {}),
+        beneficiaryData:   beneficiary,
+        destinationAmount: q.destinationAmount ?? null,
+        exchangeRate:      q.exchangeRate      ?? null,
+        rateConfidence:    q.rateConfidence    ?? null,
+        rateSource:        q.rateSource        ?? null,
+        providerQuoteId:   q.providerQuoteId   ?? null,
+        rateExpiresAt:     q.rateExpiresAt     ?? null,
+        ...(contactId                         ? { contactId }    : {}),
+        ...(q.owlPayMethod ?? owlPayMethod    ? { owlPayMethod: q.owlPayMethod ?? owlPayMethod } : {}),
+        ...(q.harborQuoteId ?? harborQuoteId  ? { harborQuoteId: q.harborQuoteId ?? harborQuoteId } : {}),
       })
-      console.log('[initPayment] respuesta completa:', JSON.stringify(res))
-
       // Guardar transactionId para PaymentSuccessPage (destino del redirect de Fintoc)
       if (res.transactionId) {
         sessionStorage.setItem('lastTransactionId', res.transactionId)
