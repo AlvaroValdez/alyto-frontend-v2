@@ -6,9 +6,9 @@
  * Llama POST /payments/crossborder al confirmar.
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Loader2, AlertCircle, ChevronDown, ChevronUp, Clock, RefreshCw, Info, CheckCircle2 } from 'lucide-react'
-import { initPayment } from '../../services/paymentsService'
+import { initPayment, fetchHarborQuote } from '../../services/paymentsService'
 import { useAuth } from '../../context/AuthContext'
 import Sentry from '../../services/sentry.js'
 
@@ -55,6 +55,11 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
   const [feesExpanded, setFeesExpanded] = useState(false)
   const [quoteSecsLeft, setQuoteSecsLeft] = useState(null)
 
+  const [liveQuote, setLiveQuote]       = useState(null)
+  const [quoteLoading, setQuoteLoading] = useState(false)
+  const [quoteError, setQuoteError]     = useState(null)
+  const quoteFetchedRef                 = useRef(false)
+
   // Step3 guarda los datos bajo la key "beneficiaryData" (campos dinámicos de Vita)
   const {
     quote, originAmount, destinationCountry, payinMethod,
@@ -84,6 +89,42 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
   const quoteExpired = quoteSecsLeft !== null && quoteSecsLeft === 0
   const quoteWarning = quoteSecsLeft !== null && quoteSecsLeft > 0 && quoteSecsLeft <= 60
 
+  // ── Fetch Harbor rate real al montar — solo para corredores owlPay ─────────
+  useEffect(() => {
+    if (quote?.payoutMethod !== 'owlPay') return
+    if (!quote?.corridorId || !originAmount)   return
+    if (quoteFetchedRef.current)               return
+    quoteFetchedRef.current = true
+
+    const ctrl = new AbortController()
+    setQuoteLoading(true)
+    setQuoteError(null)
+
+    fetchHarborQuote(quote.corridorId, originAmount, ctrl.signal)
+      .then(fresh => {
+        const freshDest     = fresh?.destinationAmount ?? 0
+        const estimatedDest = quote?.destinationAmount ?? 0
+        if (freshDest > 0) {
+          setLiveQuote(fresh)
+          if (estimatedDest > 0 && Math.abs(freshDest - estimatedDest) / estimatedDest > 0.005) {
+            console.info('[Step4] Harbor quote difiere del WS estimado:', {
+              estimated: estimatedDest,
+              harbor:    freshDest,
+              diff:      ((freshDest - estimatedDest) / estimatedDest * 100).toFixed(2) + '%',
+            })
+          }
+        }
+      })
+      .catch(err => {
+        if (err?.name === 'AbortError') return
+        console.warn('[Step4] Harbor quote falló — usando estimado WS:', err.message)
+        setQuoteError('Tasa referencial — se confirmará al procesar')
+      })
+      .finally(() => setQuoteLoading(false))
+
+    return () => ctrl.abort()
+  }, []) // Solo al montar
+
   const originCurrency = quote?.originCurrency
     ?? ENTITY_ORIGIN_CURRENCY[user?.legalEntity]
     ?? 'CLP'
@@ -91,6 +132,12 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
   const beneficiary = beneficiaryData ?? stepData.beneficiary ?? {}
   console.log('[Step4] beneficiary recibido:', JSON.stringify(beneficiary))
   const fees = quote?.fees || {}
+
+  const effectiveQuote = liveQuote ?? quote
+  const wasUpdated = liveQuote != null &&
+    (quote?.destinationAmount ?? 0) > 0 &&
+    Math.abs((liveQuote.destinationAmount ?? 0) - (quote?.destinationAmount ?? 0))
+      / (quote?.destinationAmount ?? 1) > 0.005
 
   const costoEnvio =
     (fees.alytoCSpread || 0) +
@@ -264,25 +311,52 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
         <div className="py-3">
           <div className="flex justify-between items-center">
             <span className="text-[0.9375rem] font-bold text-[#0D1F3C]">Recibe</span>
-            <span className="text-[1.125rem] font-extrabold text-[#22C55E]">
-              {Number(quote?.destinationAmount || 0).toLocaleString('es-CL')}{' '}
-              {quote?.destinationCurrency || ''}
+            <span className={`text-[1.125rem] font-extrabold text-[#22C55E] ${quoteLoading ? 'opacity-50' : ''}`}>
+              {Number(effectiveQuote?.destinationAmount || 0).toLocaleString('es-CL')}{' '}
+              {effectiveQuote?.destinationCurrency || ''}
             </span>
           </div>
+
+          {quoteLoading && (
+            <div className="flex justify-end mt-1">
+              <span className="text-[0.6875rem] text-[#94A3B8] flex items-center gap-1">
+                <Loader2 size={11} className="animate-spin" />
+                Verificando tasa Harbor...
+              </span>
+            </div>
+          )}
+
+          {wasUpdated && !quoteLoading && (
+            <div className="flex items-start gap-1.5 mt-2 p-2 rounded-lg"
+              style={{ background: '#F59E0B1A', border: '1px solid #F59E0B33' }}>
+              <Info size={12} className="mt-0.5 flex-shrink-0" style={{ color: '#F59E0B' }} />
+              <span className="text-[0.6875rem]" style={{ color: '#92400E' }}>
+                Monto ajustado al tipo de cambio actual. Estimado:{' '}
+                {Number(quote?.destinationAmount || 0).toLocaleString('es-CL')}{' '}
+                {quote?.destinationCurrency || ''}
+              </span>
+            </div>
+          )}
+
           <div className="flex justify-between items-center mt-1">
             <span className="text-[0.75rem] text-[#94A3B8]">Tiempo estimado</span>
             <span className="text-[0.75rem] text-[#4A5568]">
-              {quote?.estimatedDelivery || '1 día hábil'}
+              {effectiveQuote?.estimatedDelivery || quote?.estimatedDelivery || '1 día hábil'}
             </span>
           </div>
 
           {/* ── Disclaimer de confianza de la tasa ── */}
-          {quote?.rateConfidence === 'exact' ? (
+          {effectiveQuote?.rateConfidence === 'exact' ? (
             <div className="flex items-center gap-1.5 mt-2">
               <CheckCircle2 size={12} className="text-[#22C55E] flex-shrink-0" />
               <span className="text-[0.6875rem] font-medium text-[#22C55E]">
                 Tasa garantizada
               </span>
+            </div>
+          ) : quoteError ? (
+            <div className="flex items-center gap-1.5 mt-2">
+              <Info size={12} className="text-[#F59E0B] flex-shrink-0" />
+              <span className="text-[0.6875rem] text-[#F59E0B]">{quoteError}</span>
             </div>
           ) : (
             <div className="flex items-center gap-1.5 mt-2">
@@ -369,15 +443,15 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
       {/* ── Botón confirmar ── */}
       <button
         onClick={handleConfirm}
-        disabled={!confirmed || loading || quoteExpired}
+        disabled={!confirmed || loading || quoteLoading || quoteExpired}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 flex items-center justify-center gap-2 ${
-          confirmed && !loading && !quoteExpired
+          confirmed && !loading && !quoteLoading && !quoteExpired
             ? 'bg-[#0D1F3C] text-white shadow-[0_4px_20px_rgba(29,52,97,0.25)] active:scale-[0.98]'
             : 'bg-[#0D1F3C40] text-[#94A3B8] cursor-not-allowed'
         }`}
       >
-        {loading && <Loader2 size={18} className="animate-spin" />}
-        {loading ? 'Procesando...' : quoteExpired ? 'Cotización vencida' : 'Confirmar y pagar'}
+        {(loading || quoteLoading) && <Loader2 size={18} className="animate-spin" />}
+        {loading ? 'Procesando...' : quoteLoading ? 'Verificando tasa...' : quoteExpired ? 'Cotización vencida' : 'Confirmar y pagar'}
       </button>
     </div>
   )

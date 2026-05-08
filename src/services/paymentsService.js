@@ -159,3 +159,10 @@ export function uploadComprobante(transactionId, file) {
 export function getCurrentExchangeRates() {
   return request('/payments/exchange-rates')
 }
+
+export function fetchHarborQuote(corridorId, originAmount, signal) {
+  return request(
+    `/payments/quote?corridorId=${encodeURIComponent(corridorId)}&originAmount=${originAmount}`,
+    { signal },
+  )
+}
