@@ -323,14 +323,17 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
           )}
 
           {wasUpdated && !quoteLoading && (
-            <div className="flex items-start gap-1.5 mt-2 p-2 rounded-lg"
+            <div className="flex items-start gap-1.5 mt-2 p-2.5 rounded-xl"
               style={{ background: '#F59E0B1A', border: '1px solid #F59E0B33' }}>
-              <Info size={12} className="mt-0.5 flex-shrink-0" style={{ color: '#F59E0B' }} />
-              <span className="text-[0.6875rem]" style={{ color: '#92400E' }}>
-                Monto ajustado al tipo de cambio actual. Estimado:{' '}
-                {Number(quote?.destinationAmount || 0).toLocaleString('es-CL')}{' '}
-                {quote?.destinationCurrency || ''}
-              </span>
+              <Info size={13} className="mt-0.5 flex-shrink-0" style={{ color: '#F59E0B' }} />
+              <div>
+                <p className="text-[0.75rem] font-medium" style={{ color: '#92400E' }}>
+                  Monto ajustado al tipo de cambio en vivo
+                </p>
+                <p className="text-[0.7rem] mt-0.5" style={{ color: '#A16207' }}>
+                  Referencial WS: {Number(quote?.destinationAmount || 0).toLocaleString('es-CL')} {quote?.destinationCurrency || ''} · Confirmado: {Number(effectiveQuote?.destinationAmount || 0).toLocaleString('es-CL')} {effectiveQuote?.destinationCurrency || ''}
+                </p>
+              </div>
             </div>
           )}
 
