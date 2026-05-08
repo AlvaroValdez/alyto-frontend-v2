@@ -337,6 +337,19 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
             </div>
           )}
 
+          {effectiveQuote?.rateExpiresAt && quoteSecsLeft !== 0 && !quoteLoading && (
+            <p className="text-[0.7rem] mt-1.5 flex items-center gap-1" style={{ color: '#94A3B8' }}>
+              <Clock size={11} />
+              Tasa válida por {formatCountdown(quoteSecsLeft)} · Se reconfirma al procesar tu pago
+            </p>
+          )}
+
+          {quoteSecsLeft === 0 && (
+            <p className="text-[0.7rem] mt-1.5" style={{ color: '#F59E0B' }}>
+              ⏱ La tasa se reconfirmará al momento de procesar tu pago
+            </p>
+          )}
+
           <div className="flex justify-between items-center mt-1">
             <span className="text-[0.75rem] text-[#94A3B8]">Tiempo estimado</span>
             <span className="text-[0.75rem] text-[#4A5568]">
