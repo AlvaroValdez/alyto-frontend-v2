@@ -213,10 +213,10 @@ const STATUS_CONFIG = {
   initiated:                      { label: 'Iniciada',                color: 'var(--color-text-secondary)', bg: '#64748B1A' },
   pending_customer_transfer_start:{ label: 'Preparando envío',        color: 'var(--color-text-secondary)', bg: '#64748B1A' },
   transfer_initiated:             { label: 'Transferencia iniciada',   color: 'var(--color-text-secondary)', bg: '#64748B1A' },
-  payin_pending:                  { label: 'Pago pendiente',          color: 'var(--color-text-secondary)', bg: '#64748B1A' },
-  payin_confirmed:                { label: 'Pago confirmado',         color: 'var(--color-accent-teal)',    bg: '#233E581A' },
-  fintoc_payin_confirmed:         { label: 'Pago confirmado',         color: 'var(--color-accent-teal)',    bg: '#233E581A' },
-  manual_payin_confirmed:         { label: 'Pago confirmado',         color: 'var(--color-accent-teal)',    bg: '#233E581A' },
+  payin_pending:                  { label: 'Comprobante recibido',    color: 'var(--color-text-secondary)', bg: '#64748B1A' },
+  payin_confirmed:                { label: 'Pago verificado',         color: 'var(--color-accent-teal)',    bg: '#233E581A' },
+  fintoc_payin_confirmed:         { label: 'Pago verificado',         color: 'var(--color-accent-teal)',    bg: '#233E581A' },
+  manual_payin_confirmed:         { label: 'Pago verificado',         color: 'var(--color-accent-teal)',    bg: '#233E581A' },
   payin_completed:                { label: 'Pago recibido',           color: 'var(--color-accent-teal)',    bg: '#233E581A' },
   harbor_source_received:         { label: 'Fondos recibidos',        color: '#3B82F6',                     bg: '#3B82F61A' },
   processing:                     { label: 'Procesando',              color: '#3B82F6',                     bg: '#3B82F61A' },
@@ -224,14 +224,14 @@ const STATUS_CONFIG = {
   pending_funding:                { label: 'Fondos pendientes',       color: '#F59E0B',                     bg: '#F59E0B1A' },
   pending_funding_usdc:           { label: 'Fondos USDC pendientes',  color: '#F59E0B',                     bg: '#F59E0B1A' },
   payout_pending:                 { label: 'Enviando...',             color: 'var(--color-accent-teal)',    bg: '#233E581A' },
-  payout_pending_usdc_send:       { label: 'Enviando al beneficiario',color: '#3B82F6',                     bg: '#3B82F61A' },
+  payout_pending_usdc_send:       { label: 'Procesando tu envío',     color: '#3B82F6',                     bg: '#3B82F61A' },
   anchor_bolivia_payout_pending:  { label: 'Pago Bolivia en proceso', color: 'var(--color-accent-teal)',    bg: '#233E581A' },
   payout_dispatched:              { label: 'Pago despachado',         color: '#3B82F6',                     bg: '#3B82F61A' },
   payout_in_transit:              { label: 'En tránsito',             color: '#3B82F6',                     bg: '#3B82F61A' },
   payout_sent:                    { label: 'Enviado al banco',        color: '#3B82F6',                     bg: '#3B82F61A' },
-  completed:                      { label: 'Completada',              color: 'var(--color-accent-teal)',    bg: '#233E581A' },
+  completed:                      { label: 'Entregado',               color: 'var(--color-accent-teal)',    bg: '#233E581A' },
   confirmed:                      { label: 'Confirmada',              color: 'var(--color-accent-teal)',    bg: '#233E581A' },
-  failed:                         { label: 'Fallida',                 color: '#EF4444',                     bg: '#EF44441A' },
+  failed:                         { label: 'No se pudo completar',    color: '#EF4444',                     bg: '#EF44441A' },
   refunded:                       { label: 'Reembolsada',             color: '#F59E0B',                     bg: '#F59E0B1A' },
   expired:                        { label: 'Expirada',                color: '#EF4444',                     bg: '#EF44441A' },
 }
@@ -365,16 +365,21 @@ function resolveBankName(code) {
 
 // ── Sub-componentes ───────────────────────────────────────────────────────────
 
-function Row({ label, value, bold, valueColor }) {
+function Row({ label, value, bold, valueColor, subValue }) {
   return (
     <div className="flex items-start justify-between gap-4">
       <span className="text-[0.8125rem] text-[#4A5568] flex-shrink-0">{label}</span>
-      <span
-        className={`text-[0.8125rem] text-right ${bold ? 'font-bold' : 'font-medium'}`}
-        style={{ color: valueColor ?? 'var(--color-text-primary)' }}
-      >
-        {value}
-      </span>
+      <div className="text-right">
+        <span
+          className={`text-[0.8125rem] ${bold ? 'font-bold' : 'font-medium'}`}
+          style={{ color: valueColor ?? 'var(--color-text-primary)' }}
+        >
+          {value}
+        </span>
+        {subValue && (
+          <p className="text-[0.6875rem] mt-0.5" style={{ color: '#94A3B8' }}>{subValue}</p>
+        )}
+      </div>
     </div>
   )
 }
@@ -560,6 +565,9 @@ export default function TransactionDetail() {
     ? tx.destinationAmount
     : (tx.exchangeRate > 0 ? Math.round(tx.originAmount * tx.exchangeRate * 100) / 100 : null)
 
+  // El monto es referencial hasta que el pago sale al banco
+  const isAmountApproximate = !['payout_sent', 'completed', 'confirmed'].includes(tx.status)
+
   // Tiempo estimado: mostrar en lenguaje más atractivo
   const deliveryLabel = (() => {
     const raw = tx.estimatedDelivery ?? ''
@@ -742,10 +750,11 @@ export default function TransactionDetail() {
               <Row
                 label="Beneficiario recibe"
                 value={effectiveDestAmount
-                  ? formatAmount(effectiveDestAmount, tx.destinationCurrency)
+                  ? `${isAmountApproximate ? '~' : ''}${formatAmount(Math.round(effectiveDestAmount), tx.destinationCurrency)}${isAmountApproximate ? ' aprox.' : ''}`
                   : '—'}
                 bold
                 valueColor="#233E58"
+                subValue={isAmountApproximate && effectiveDestAmount ? 'Monto referencial · Se confirma al procesar' : null}
               />
               <Row
                 label="Tiempo estimado"
@@ -825,8 +834,14 @@ export default function TransactionDetail() {
                   <div>
                     <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 2 }}>Ellos reciben</p>
                     <p style={{ color: 'var(--color-accent-teal)', fontSize: '0.9375rem', fontWeight: 700 }}>
-                      {countryFlag(tx.destinationCountry)} {formatAmount(effectiveDestAmount, tx.destinationCurrency)}
+                      {countryFlag(tx.destinationCountry)}{' '}
+                      {isAmountApproximate ? '~' : ''}{formatAmount(Math.round(effectiveDestAmount), tx.destinationCurrency)}{isAmountApproximate ? ' aprox.' : ''}
                     </p>
+                    {isAmountApproximate && effectiveDestAmount && (
+                      <p style={{ color: '#94A3B8', fontSize: '0.6875rem', marginTop: 2 }}>
+                        Monto referencial · Se confirma al procesar
+                      </p>
+                    )}
                   </div>
                   {tx.exchangeRate > 0 && (
                     <div>

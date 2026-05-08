@@ -305,12 +305,20 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
 
         {/* Divider highlight */}
         <div className="py-3">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-start">
             <span className="text-[0.9375rem] font-bold text-[#0D1F3C]">Recibe</span>
-            <span className={`text-[1.125rem] font-extrabold text-[#22C55E] ${quoteLoading ? 'opacity-50' : ''}`}>
-              {Number(effectiveQuote?.destinationAmount || 0).toLocaleString('es-CL')}{' '}
-              {effectiveQuote?.destinationCurrency || ''}
-            </span>
+            <div className="text-right">
+              <div className={`flex items-baseline gap-1 justify-end ${quoteLoading ? 'opacity-50' : ''}`}>
+                <span className="text-[1.125rem] font-extrabold text-[#22C55E]">
+                  ~{Math.round(effectiveQuote?.destinationAmount || 0).toLocaleString('es-CL')}{' '}
+                  {effectiveQuote?.destinationCurrency || ''}
+                </span>
+                <span className="text-[0.6875rem] font-normal" style={{ color: '#94A3B8' }}>aprox.</span>
+              </div>
+              <p className="text-[0.6875rem] mt-0.5" style={{ color: '#94A3B8' }}>
+                El monto exacto se confirma al procesar tu pago
+              </p>
+            </div>
           </div>
 
           {quoteLoading && (

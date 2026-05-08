@@ -72,9 +72,14 @@ export default function Step6Success({ stepData, onReset }) {
             ${Number(originAmount || 0).toLocaleString('es-CL')} CLP
           </p>
           {quote?.destinationAmount && (
-            <p className="text-[0.875rem] font-semibold text-[#22C55E] mt-0.5">
-              ≈ {Number(quote.destinationAmount).toLocaleString('es-CL')} {quote.destinationCurrency}
-            </p>
+            <>
+              <p className="text-[0.875rem] font-semibold text-[#22C55E] mt-0.5">
+                ≈ {Math.round(Number(quote.destinationAmount)).toLocaleString('es-CL')} {quote.destinationCurrency} aprox.
+              </p>
+              <p className="text-[0.6875rem] mt-0.5" style={{ color: '#94A3B8' }}>
+                Monto referencial · Se confirma al procesar
+              </p>
+            </>
           )}
         </div>
 
