@@ -411,7 +411,8 @@ export default function Step1Amount({ initialData, onNext }) {
     useQuoteSocket(rawAmount || null, selectedCountry?.code || null, selectedCountry?.corridorId || null)
 
   // ── Mínimo owlPay — calculado client-side desde datos del corredor ─────────
-  // Para BOB: minAmountUSD × tasa live. Para USD: minAmountUSD directamente.
+  // Valida en la moneda origen; muestra siempre el mínimo en USD para evitar
+  // ambigüedad con el separador de miles en es-CL (5.586 = 5,586 BOB).
   const minAmountForCorridor = (() => {
     if (selectedCountry?.payoutMethod !== 'owlPay') return null
     const usdMin = selectedCountry?.minAmountUSD
@@ -422,6 +423,9 @@ export default function Step1Amount({ initialData, onNext }) {
     }
     if (origin.currency === 'USD') {
       return { amount: usdMin, currency: 'USD', usd: usdMin }
+    }
+    if (origin.currency === 'CLP') {
+      return { amount: Math.ceil(usdMin * 960), currency: 'CLP', usd: usdMin }
     }
     return null
   })()
@@ -667,9 +671,13 @@ export default function Step1Amount({ initialData, onNext }) {
               <span className={`text-[0.75rem] ${belowMinimum ? 'text-[#EF4444] font-medium' : 'text-[#64748B]'}`}>
                 Mínimo requerido:{' '}
                 <span className="font-semibold">
-                  {minAmountForCorridor.amount.toLocaleString('es-CL')} {minAmountForCorridor.currency}
+                  USD {minAmountForCorridor.usd.toLocaleString('es-CL')}
                 </span>
-                {' '}(~USD {minAmountForCorridor.usd.toLocaleString('es-CL')})
+                {minAmountForCorridor.currency !== 'USD' && (
+                  <span className="font-normal opacity-70">
+                    {' '}(≈ {minAmountForCorridor.amount.toLocaleString('es-CL')} {minAmountForCorridor.currency})
+                  </span>
+                )}
               </span>
             </div>
           )}
