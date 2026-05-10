@@ -77,7 +77,7 @@ function corridorsToCountries(corridors) {
       code,
       corridorId:   c.corridorId,
       name:         info.name         ?? code,
-      currency:     currency || info.currency ?? '—',
+      currency:     currency || (info.currency ?? '—'),
       currencyName: info.currencyName  ?? '',
       flagCode:     info.flagCode      ?? code.toLowerCase(),
       payoutMethod: c.payoutMethod     ?? null,
