@@ -89,6 +89,9 @@ function corridorsToCountries(corridors) {
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 
+// Monedas que no usan decimales (enteros puros)
+const INTEGER_CURRENCIES = new Set(['CLP', 'PYG', 'JPY', 'KRW'])
+
 function formatAmount(value) {
   if (!value) return ''
   const num = parseInt(value.replace(/\D/g, ''), 10)
@@ -98,7 +101,11 @@ function formatAmount(value) {
 
 function formatDestAmount(amount, currency) {
   if (!amount) return '—'
-  return `${Number(amount).toLocaleString('es-CL')} ${currency}`
+  const decimals = INTEGER_CURRENCIES.has(currency) ? 0 : 2
+  return `${Number(amount).toLocaleString('es-CL', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })} ${currency}`
 }
 
 function timeAgoShort(iso) {
@@ -675,7 +682,7 @@ export default function Step1Amount({ initialData, onNext }) {
                 </span>
                 {minAmountForCorridor.currency !== 'USD' && (
                   <span className="font-normal opacity-70">
-                    {' '}(≈ {minAmountForCorridor.amount.toLocaleString('es-CL')} {minAmountForCorridor.currency})
+                    {' '}(≈ {formatDestAmount(minAmountForCorridor.amount, minAmountForCorridor.currency)})
                   </span>
                 )}
               </span>
