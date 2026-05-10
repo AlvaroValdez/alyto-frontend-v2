@@ -208,7 +208,7 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 px-4 pb-4">
+    <div className="flex flex-col gap-4 px-4 pb-28">
 
       {/* ── Título ── */}
       <div>

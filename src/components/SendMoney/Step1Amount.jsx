@@ -107,6 +107,7 @@ function corridorsToCountries(corridors) {
       minAmountUSD: c.minAmountUSD  ?? null,
     })
   }
+  result.sort((a, b) => a.name.localeCompare(b.name, 'es'))
   return result
 }
 

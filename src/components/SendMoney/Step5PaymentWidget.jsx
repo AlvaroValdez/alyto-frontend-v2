@@ -142,7 +142,7 @@ function ManualPayinScreen({ stepData }) {
   const showQRSection = qrLoading || !!qrSrc || staticQRs.length > 0
 
   return (
-    <div className="flex flex-col gap-5 px-4 pb-4">
+    <div className="flex flex-col gap-5 px-4 pb-28">
 
       {/* Título */}
       <div>
@@ -455,7 +455,7 @@ function PollingPayinScreen({ stepData, onNext }) {
 
   if (!payinUrl) {
     return (
-      <div className="flex flex-col gap-5 px-4 pb-4">
+      <div className="flex flex-col gap-5 px-4 pb-28">
         <div className="bg-[#EF44441A] border border-[#EF444433] rounded-2xl p-5">
           <div className="flex items-start gap-3">
             <AlertCircle size={20} className="text-[#EF4444] flex-shrink-0 mt-0.5" />
@@ -491,7 +491,7 @@ function PollingPayinScreen({ stepData, onNext }) {
 
   if (timedOut) {
     return (
-      <div className="flex flex-col gap-5 px-4 pb-4">
+      <div className="flex flex-col gap-5 px-4 pb-28">
         <div className="bg-[#EF44441A] border border-[#EF444433] rounded-2xl p-5 text-center">
           <AlertCircle size={32} className="text-[#EF4444] mx-auto mb-3" />
           <h3 className="text-[1rem] font-bold text-[#0D1F3C] mb-1">Tiempo agotado</h3>
@@ -519,7 +519,7 @@ function PollingPayinScreen({ stepData, onNext }) {
   const isFintoc = payinMethod === 'fintoc'
 
   return (
-    <div className="flex flex-col gap-5 px-4 pb-4">
+    <div className="flex flex-col gap-5 px-4 pb-28">
 
       <div>
         <h2 className="text-[1.125rem] font-bold text-[#0D1F3C]">Completa tu pago</h2>

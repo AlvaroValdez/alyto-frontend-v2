@@ -143,7 +143,7 @@ function FieldSkeleton() {
 
 function LoadingSkeleton() {
   return (
-    <div className="flex flex-col gap-4 px-4 pb-4">
+    <div className="flex flex-col gap-4 px-4 pb-28">
       <div>
         <div className="h-5 w-40 rounded bg-white animate-pulse mb-2" />
         <div className="h-3 w-56 rounded bg-white animate-pulse" />
@@ -589,7 +589,7 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
 
   if (loadError) {
     return (
-      <div className="flex flex-col gap-4 px-4 pb-4">
+      <div className="flex flex-col gap-4 px-4 pb-28">
         <div>
           <h2 className="text-[1.125rem] font-bold text-[#0D1F3C]">¿A quién le envías?</h2>
           <p className="text-[0.8125rem] text-[#4A5568] mt-0.5">Ingresa los datos bancarios del beneficiario</p>
@@ -615,7 +615,7 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
   // ── Formulario ────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col gap-4 px-4 pb-4">
+    <div className="flex flex-col gap-4 px-4 pb-28">
 
       {/* Título */}
       <div>

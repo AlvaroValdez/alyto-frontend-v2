@@ -155,7 +155,7 @@ export default function Step2PayinMethod({ onNext, originCountry = 'CL' }) {
   const countryLabel = COUNTRY_LABELS[originCountry] ?? originCountry
 
   return (
-    <div className="flex flex-col gap-5 px-4 pb-4">
+    <div className="flex flex-col gap-5 px-4 pb-28">
 
       {/* ── Título ── */}
       <div>
