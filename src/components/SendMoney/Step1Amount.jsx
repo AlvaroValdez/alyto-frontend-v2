@@ -80,6 +80,8 @@ function corridorsToCountries(corridors) {
       currency:     currency || info.currency ?? '—',
       currencyName: info.currencyName  ?? '',
       flagCode:     info.flagCode      ?? code.toLowerCase(),
+      payoutMethod: c.payoutMethod     ?? null,
+      minAmountUSD: c.minAmountUSD     ?? null,
     })
   }
   return result
@@ -405,8 +407,28 @@ export default function Step1Amount({ initialData, onNext }) {
 
   // ── WebSocket quote ───────────────────────────────────────────────────────
 
-  const { quote, status, error, isStale, countdown, reconnect } =
+  const { quote, status, error, errorMeta, isStale, countdown, reconnect } =
     useQuoteSocket(rawAmount || null, selectedCountry?.code || null, selectedCountry?.corridorId || null)
+
+  // ── Mínimo owlPay — calculado client-side desde datos del corredor ─────────
+  // Para BOB: minAmountUSD × tasa live. Para USD: minAmountUSD directamente.
+  const minAmountForCorridor = (() => {
+    if (selectedCountry?.payoutMethod !== 'owlPay') return null
+    const usdMin = selectedCountry?.minAmountUSD
+    if (!usdMin) return null
+    if (origin.currency === 'BOB') {
+      const rate = bobRateInfo?.rate ?? 9.31
+      return { amount: Math.ceil(usdMin * rate), currency: 'BOB', usd: usdMin }
+    }
+    if (origin.currency === 'USD') {
+      return { amount: usdMin, currency: 'USD', usd: usdMin }
+    }
+    return null
+  })()
+
+  const belowMinimum = minAmountForCorridor !== null &&
+    rawAmount > 0 &&
+    rawAmount < minAmountForCorridor.amount
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -421,7 +443,7 @@ export default function Step1Amount({ initialData, onNext }) {
 
   const isBlocked   = status === 'connecting' || status === 'expired' ||
                       status === 'disconnected' || status === 'error'
-  const canContinue = !!quote && !isBlocked && !!rawAmount && !!selectedCountry
+  const canContinue = !!quote && !isBlocked && !!rawAmount && !!selectedCountry && !belowMinimum
 
   function handleNext() {
     if (!canContinue) return
@@ -634,7 +656,25 @@ export default function Step1Amount({ initialData, onNext }) {
             </div>
           )}
 
-          {status === 'error' && (
+          {/* Hint de mínimo owlPay — visible siempre que el corredor lo requiera */}
+          {minAmountForCorridor && (
+            <div className={`flex items-center gap-2 rounded-xl px-3 py-2 ${
+              belowMinimum
+                ? 'bg-[#EF44441A] border border-[#EF444433]'
+                : 'bg-[#F8FAFC] border border-[#E2E8F0]'
+            }`}>
+              <AlertCircle size={13} className={`flex-shrink-0 ${belowMinimum ? 'text-[#EF4444]' : 'text-[#94A3B8]'}`} />
+              <span className={`text-[0.75rem] ${belowMinimum ? 'text-[#EF4444] font-medium' : 'text-[#64748B]'}`}>
+                Mínimo requerido:{' '}
+                <span className="font-semibold">
+                  {minAmountForCorridor.amount.toLocaleString('es-CL')} {minAmountForCorridor.currency}
+                </span>
+                {' '}(~USD {minAmountForCorridor.usd.toLocaleString('es-CL')})
+              </span>
+            </div>
+          )}
+
+          {status === 'error' && !belowMinimum && (
             error?.includes('Corredor no disponible') ? (
               <div className="flex items-center gap-3">
                 <div

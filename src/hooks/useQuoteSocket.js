@@ -26,11 +26,12 @@ const BACKOFF_MS  = [1000, 2000, 4000, 8000, 16000, 30000]
 const MAX_RETRIES = 5
 
 export function useQuoteSocket(originAmount, destinationCountry, corridorId) {
-  const [quote,     setQuote]     = useState(null)
-  const [status,    setStatus]    = useState('connecting')
-  const [error,     setError]     = useState(null)
-  const [isStale,   setIsStale]   = useState(false)
-  const [countdown, setCountdown] = useState(null)
+  const [quote,      setQuote]      = useState(null)
+  const [status,     setStatus]     = useState('connecting')
+  const [error,      setError]      = useState(null)
+  const [errorMeta,  setErrorMeta]  = useState(null) // { code, min, currency } para BELOW_MINIMUM
+  const [isStale,    setIsStale]    = useState(false)
+  const [countdown,  setCountdown]  = useState(null)
 
   const wsRef       = useRef(null)
   const retries     = useRef(0)
@@ -122,9 +123,11 @@ export function useQuoteSocket(originAmount, destinationCountry, corridorId) {
           setStatus('connected')
           setIsStale(false)
           setError(null)
+          setErrorMeta(null)
           if (q.quoteExpiresAt) startCountdown(q.quoteExpiresAt)
         } else if (msg.type === 'error' || msg.type === 'quote_error') {
           setError(msg.message ?? 'Error del servidor de cotizaciones.')
+          setErrorMeta(msg.code ? { code: msg.code, min: msg.min ?? null, currency: msg.currency ?? null } : null)
           setStatus('error')
         }
       } catch {
@@ -227,5 +230,5 @@ export function useQuoteSocket(originAmount, destinationCountry, corridorId) {
     }
   }, [originAmount, connect])
 
-  return { quote, status, error, isStale, countdown, reconnect }
+  return { quote, status, error, errorMeta, isStale, countdown, reconnect }
 }
