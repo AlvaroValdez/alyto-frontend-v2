@@ -441,16 +441,22 @@ export default function Step1Amount({ initialData, onNext }) {
   const { quote, status, error, errorMeta, isStale, countdown, reconnect } =
     useQuoteSocket(rawAmount || null, selectedCountry?.code || null, selectedCountry?.corridorId || null)
 
-  // ── Mínimo owlPay — calculado client-side desde datos del corredor ─────────
-  // Valida en la moneda origen; muestra siempre el mínimo en USD para evitar
-  // ambigüedad con el separador de miles en es-CL (5.586 = 5,586 BOB).
+  // ── Mínimo owlPay — calculado con la tasa real del quote Harbor ─────────────
+  // Para BOB: usa quote.exchangeRate (1 BOB = X USD) cuando está disponible —
+  // es la única tasa que refleja el rate real de Harbor (mercado, no ASFI).
+  // Si aún no hay quote, muestra solo el mínimo en USD sin equivalente BOB.
   const minAmountForCorridor = (() => {
     if (selectedCountry?.payoutMethod !== 'owlPay') return null
     const usdMin = selectedCountry?.minAmountUSD
     if (!usdMin) return null
     if (origin.currency === 'BOB') {
-      const rate = bobRateInfo?.rate ?? 9.31
-      return { amount: Math.ceil(usdMin * rate), currency: 'BOB', usd: usdMin }
+      // quote.exchangeRate = 1 BOB en USD (ej. 0.0770) → minBOB = usdMin / rate
+      const liveRate = quote?.exchangeRate
+      if (liveRate && liveRate > 0) {
+        return { amount: Math.ceil(usdMin / liveRate), currency: 'BOB', usd: usdMin }
+      }
+      // Sin quote aún — solo mostramos USD, sin equivalente BOB (evita mostrar valor incorrecto)
+      return { amount: null, currency: 'BOB', usd: usdMin }
     }
     if (origin.currency === 'USD') {
       return { amount: usdMin, currency: 'USD', usd: usdMin }
@@ -462,6 +468,7 @@ export default function Step1Amount({ initialData, onNext }) {
   })()
 
   const belowMinimum = minAmountForCorridor !== null &&
+    minAmountForCorridor.amount !== null &&
     rawAmount > 0 &&
     rawAmount < minAmountForCorridor.amount
 
@@ -704,7 +711,7 @@ export default function Step1Amount({ initialData, onNext }) {
                 <span className="font-semibold">
                   USD {minAmountForCorridor.usd.toLocaleString('es-CL')}
                 </span>
-                {minAmountForCorridor.currency !== 'USD' && (
+                {minAmountForCorridor.currency !== 'USD' && minAmountForCorridor.amount !== null && (
                   <span className="font-normal opacity-70">
                     {' '}(≈ {formatDestAmount(minAmountForCorridor.amount, minAmountForCorridor.currency)})
                   </span>
