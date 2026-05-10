@@ -28,9 +28,9 @@ import { LEGAL_TERMS, ENTITY_NAMES, ENTITY_JURISDICTIONS } from '../../utils/leg
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
-const WHATSAPP_SUPPORT = `https://wa.me/${
-  import.meta.env.VITE_SUPPORT_WHATSAPP ?? '56988321490'
-}?text=Necesito%20ayuda%20con%20mi%20verificaci%C3%B3n%20Alyto`
+const WHATSAPP_SUPPORT = import.meta.env.VITE_SUPPORT_WHATSAPP
+  ? `https://wa.me/${import.meta.env.VITE_SUPPORT_WHATSAPP.replace(/\D/g, '')}?text=Necesito%20ayuda%20con%20mi%20verificaci%C3%B3n%20Alyto`
+  : null
 
 // ── Estado: Intro ─────────────────────────────────────────────────────────────
 
@@ -282,16 +282,18 @@ function RejectedState({ onRetry }) {
         >
           Intentar de nuevo
         </button>
-        <a
-          href={WHATSAPP_SUPPORT}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full py-4 rounded-2xl font-semibold text-[0.9375rem] text-[#0F172A] flex items-center justify-center gap-2 transition-colors"
-          style={{ background: 'white', border: '1px solid #E2E8F0' }}
-        >
-          <MessageCircle size={18} />
-          Contactar soporte
-        </a>
+        {WHATSAPP_SUPPORT && (
+          <a
+            href={WHATSAPP_SUPPORT}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-4 rounded-2xl font-semibold text-[0.9375rem] text-[#0F172A] flex items-center justify-center gap-2 transition-colors"
+            style={{ background: 'white', border: '1px solid #E2E8F0' }}
+          >
+            <MessageCircle size={18} />
+            Contactar soporte
+          </a>
+        )}
       </div>
     </div>
   )

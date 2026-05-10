@@ -17,12 +17,15 @@ import { getTransactionDetail, updateTransactionStatus, getTransactionComprobant
 
 const STATUS_STYLES = {
   initiated:        { bg: '#1D346140', text: '#8AB4F8',  label: 'Iniciada'         },
-  payin_pending:    { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'Pay-in pend.'     },
+  payin_pending:    { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'Pay-in pendiente' },
   payin_confirmed:  { bg: '#22C55E1A', text: '#22C55E',  label: 'Payin confirmado' },
   payin_completed:  { bg: '#22C55E1A', text: '#22C55E',  label: 'Pay-in OK'        },
   in_transit:       { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'En tránsito'      },
-  payout_pending:   { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'Payout pend.'     },
-  completed:        { bg: '#22C55E1A', text: '#22C55E',  label: 'Completada'       },
+  payout_pending:          { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'Payout pend.'     },
+  payout_pending_usdc_send:{ bg: '#F59E0B1A', text: '#F59E0B',  label: 'Enviando USDC'    },
+  harbor_source_received:  { bg: '#3B82F61A', text: '#3B82F6',  label: 'USDC recibido'    },
+  payout_sent:             { bg: '#C4CBD81A', text: '#C4CBD8',  label: 'Enviado'           },
+  completed:               { bg: '#22C55E1A', text: '#22C55E',  label: 'Completada'       },
   failed:           { bg: '#EF44441A', text: '#F87171',  label: 'Fallida'          },
   refunded:         { bg: '#EF44441A', text: '#F87171',  label: 'Reembolsada'      },
 }
@@ -36,7 +39,8 @@ const STATUS_LABELS = {
   initiated: 'Iniciada', payin_pending: 'Pay-in pendiente',
   payin_confirmed: 'Payin confirmado', payin_completed: 'Pay-in completado',
   in_transit: 'En tránsito', payout_pending: 'Payout pendiente',
-  completed: 'Completada', failed: 'Fallida', refunded: 'Reembolsada',
+  payout_pending_usdc_send: 'Enviando USDC', harbor_source_received: 'USDC recibido',
+  payout_sent: 'Enviado', completed: 'Completada', failed: 'Fallida', refunded: 'Reembolsada',
 }
 
 // Statuses que requieren confirmación manual (SRL Bolivia o SpA→BO manual)
