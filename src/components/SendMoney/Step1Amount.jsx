@@ -60,10 +60,31 @@ function flagUrl(code) {
   return `https://flagcdn.com/w80/${code}.png`
 }
 
+// Nombres de moneda por código ISO — para el subtítulo del picker
+const CURRENCY_NAMES = {
+  AED: 'Dírham Emiratí',   ARS: 'Peso Argentino',   AUD: 'Dólar Australiano',
+  BOB: 'Boliviano',        BRL: 'Real Brasileño',   CAD: 'Dólar Canadiense',
+  CLP: 'Peso Chileno',     CNY: 'Yuan Chino',       COP: 'Peso Colombiano',
+  CRC: 'Colón Costaricc.',  DOP: 'Peso Dominicano',  EUR: 'Euro',
+  GBP: 'Libra Esterlina',  GTQ: 'Quetzal',          HKD: 'Dólar HK',
+  HTG: 'Gourde',           INR: 'Rupia India',       JPY: 'Yen Japonés',
+  KRW: 'Won Coreano',      MXN: 'Peso Mexicano',    NGN: 'Naira Nigeriana',
+  PEN: 'Sol Peruano',      PLN: 'Zloty',             PYG: 'Guaraní',
+  SGD: 'Dólar Singapur',   USD: 'Dólar Americano',  UYU: 'Peso Uruguayo',
+}
+
 /** Convierte la lista de corredores en opciones de destino únicas.
  *  Deduplica por (destinationCountry + destinationCurrency) para permitir
- *  múltiples corredores al mismo país con diferente moneda (ej. bo-cn y bo-cn-usd). */
+ *  múltiples corredores al mismo país con diferente moneda (ej. bo-cn y bo-cn-usd).
+ *  Cuando hay más de un corredor al mismo país, añade la moneda al nombre
+ *  para distinguirlos: "China" vs "China (USD)". */
 function corridorsToCountries(corridors) {
+  // Contar cuántos corredores distintos hay por código de país
+  const countryCount = {}
+  for (const c of corridors) {
+    if (c.destinationCountry) countryCount[c.destinationCountry] = (countryCount[c.destinationCountry] ?? 0) + 1
+  }
+
   const seen = new Set()
   const result = []
   for (const c of corridors) {
@@ -72,16 +93,18 @@ function corridorsToCountries(corridors) {
     const key      = `${code}:${currency}`
     if (!code || seen.has(key)) continue
     seen.add(key)
-    const info = COUNTRY_INFO[code] ?? {}
+    const info        = COUNTRY_INFO[code] ?? {}
+    const baseName    = info.name ?? code
+    const multiCorridor = (countryCount[code] ?? 1) > 1
     result.push({
       code,
       corridorId:   c.corridorId,
-      name:         info.name         ?? code,
+      name:         multiCorridor ? `${baseName} (${currency})` : baseName,
       currency:     currency || (info.currency ?? '—'),
-      currencyName: info.currencyName  ?? '',
-      flagCode:     info.flagCode      ?? code.toLowerCase(),
-      payoutMethod: c.payoutMethod     ?? null,
-      minAmountUSD: c.minAmountUSD     ?? null,
+      currencyName: CURRENCY_NAMES[currency] ?? CURRENCY_NAMES[info.currency] ?? '',
+      flagCode:     info.flagCode ?? code.toLowerCase(),
+      payoutMethod: c.payoutMethod  ?? null,
+      minAmountUSD: c.minAmountUSD  ?? null,
     })
   }
   return result
@@ -473,7 +496,7 @@ export default function Step1Amount({ initialData, onNext }) {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col gap-5 px-4 pb-4">
+    <div className="flex flex-col gap-5 px-4 pb-28">
 
       {/* ── Título ── */}
       <div>

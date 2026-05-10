@@ -161,7 +161,7 @@ export default function SendMoneyPage() {
       )}
 
       {/* ── Contenido del paso activo ── */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide pt-2">
+      <div className="flex-1 pt-2">
         {step === 1 && (
           <Step1Amount
             initialData={stepData}
