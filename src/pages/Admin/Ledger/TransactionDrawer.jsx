@@ -214,7 +214,7 @@ function PayinManualBanner({ tx, onConfirmed }) {
             ✅ Pago confirmado
           </p>
           <p className="text-[0.75rem] text-[#8A96B8] mt-0.5">
-            Payout disparado automáticamente a Vita Wallet.
+            Payout iniciado automáticamente.
           </p>
         </div>
       </div>
@@ -586,6 +586,43 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
                 />
               )}
 
+              {/* ── Banner USDC pendiente de envío (Harbor off-ramp) ─── */}
+              {tx.status === 'payout_pending_usdc_send' && tx.harborTransfer?.instructionAddress && (
+                <div className="mb-5 p-4 rounded-2xl border border-[#F59E0B40] bg-[#F59E0B08] space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg leading-none">⚡</span>
+                    <p className="text-[0.875rem] font-bold text-[#F59E0B]">
+                      Acción requerida — Enviar USDC a Harbor
+                    </p>
+                  </div>
+                  <div className="space-y-1.5 pl-1">
+                    <p className="text-[0.8125rem] text-[#8A96B8]">
+                      Enviar exactamente:
+                    </p>
+                    <p className="text-[1.25rem] font-extrabold text-white tabular-nums">
+                      {tx.harborTransfer.usdcAmountRequired} USDC
+                    </p>
+                    <p className="text-[0.6875rem] text-[#4E5A7A]">
+                      Red: {tx.harborTransfer.instructionChain ?? 'Stellar'}
+                      {tx.harborTransfer.instructionMemo ? ` · Memo: ${tx.harborTransfer.instructionMemo}` : ''}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[#0F162880] border border-[#F59E0B30]">
+                    <p className="text-[0.625rem] font-semibold text-[#F59E0B] uppercase tracking-wider mb-1">
+                      Dirección destino
+                    </p>
+                    <p className="text-[0.8125rem] font-mono text-white break-all">
+                      {tx.harborTransfer.instructionAddress}
+                    </p>
+                  </div>
+                  {tx.harborTransfer.expiresAt && (
+                    <p className="text-[0.75rem] text-[#F87171]">
+                      ⏰ Expira: {new Date(tx.harborTransfer.expiresAt).toLocaleString('es-CL')}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* ── 1. Flujo de pago (timeline) ─────────────────────────── */}
               <SectionTitle icon={ArrowRight}>Flujo de pago</SectionTitle>
               <Timeline ipnLog={tx.ipnLog} />
@@ -617,6 +654,33 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
               {tx.stellarTxId && (
                 <div className="mt-3">
                   <Field label="Stellar TXID" value={tx.stellarTxId} mono />
+                </div>
+              )}
+
+              {/* ── Harbor Transfer (owlPay off-ramp) ────────────────────── */}
+              {tx.harborTransfer?.transferId && (
+                <div className="mt-4 p-4 rounded-2xl border border-[#F59E0B40] bg-[#F59E0B08]">
+                  <p className="text-[0.6875rem] font-bold text-[#F59E0B] uppercase tracking-wider mb-3">
+                    Harbor Transfer · USDC Off-ramp
+                  </p>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <Field label="Transfer ID" value={tx.harborTransfer.transferId} mono />
+                    <Field label="Estado Harbor" value={tx.harborTransfer.status ?? '—'} dim />
+                    <Field label="USDC requerido" value={tx.harborTransfer.usdcAmountRequired != null ? `${tx.harborTransfer.usdcAmountRequired} USDC` : null} />
+                    <Field label="Red / Chain" value={tx.harborTransfer.instructionChain ?? '—'} dim />
+                    <Field label="Memo" value={tx.harborTransfer.instructionMemo ?? null} mono />
+                    <Field label="Vence" value={tx.harborTransfer.expiresAt ? new Date(tx.harborTransfer.expiresAt).toLocaleString('es-CL') : null} dim />
+                  </div>
+                  {tx.harborTransfer.instructionAddress && (
+                    <div className="mt-2.5">
+                      <p className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1">
+                        Dirección USDC destino
+                      </p>
+                      <p className="text-[0.8125rem] font-mono text-[#F59E0B] break-all leading-relaxed">
+                        {tx.harborTransfer.instructionAddress}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
