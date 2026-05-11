@@ -86,8 +86,13 @@ const SRL_CORRIDORS = [
   { value: 'bo-br',  label: 'Bolivia → Brasil' },
   { value: 'bo-co',  label: 'Bolivia → Colombia' },
   { value: 'bo-mx',  label: 'Bolivia → México' },
-  { value: 'bo-ae',  label: 'Bolivia → Emiratos' },
+  { value: 'bo-ae',  label: 'Bolivia → Emiratos Árabes' },
   { value: 'bo-ng',  label: 'Bolivia → Nigeria' },
+  { value: 'bo-gb',  label: 'Bolivia → Reino Unido' },
+  { value: 'bo-jp',  label: 'Bolivia → Japón' },
+  { value: 'bo-sg',  label: 'Bolivia → Singapur' },
+  { value: 'bo-hk',  label: 'Bolivia → Hong Kong' },
+  { value: 'bo-in',  label: 'Bolivia → India' },
   { value: 'global', label: 'Global' },
 ]
 

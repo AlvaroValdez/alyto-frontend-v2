@@ -53,6 +53,11 @@ const COUNTRY_INFO = {
   JP: { name: 'Japón',             currency: 'JPY', currencyName: 'Yen Japonés',         flagCode: 'jp' },
   IN: { name: 'India',             currency: 'INR', currencyName: 'Rupia India',         flagCode: 'in' },
   SG: { name: 'Singapur',          currency: 'SGD', currencyName: 'Dólar de Singapur',   flagCode: 'sg' },
+  HK: { name: 'Hong Kong',         currency: 'HKD', currencyName: 'Dólar HK',             flagCode: 'hk' },
+  NG: { name: 'Nigeria',           currency: 'NGN', currencyName: 'Naira Nigeriana',       flagCode: 'ng' },
+  HT: { name: 'Haití',             currency: 'HTG', currencyName: 'Gourde',                flagCode: 'ht' },
+  SV: { name: 'El Salvador',       currency: 'USD', currencyName: 'Dólar Americano',       flagCode: 'sv' },
+  PL: { name: 'Polonia',           currency: 'PLN', currencyName: 'Zloty',                 flagCode: 'pl' },
 }
 
 /** URL de bandera desde flagcdn.com (imágenes reales circulares) */
