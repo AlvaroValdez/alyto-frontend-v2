@@ -175,6 +175,68 @@ export const OWLPAY_FORMS = {
     ],
   },
 
+  IN: {
+    title: 'Datos del beneficiario en India',
+    fields: [
+      {
+        key: 'beneficiary_name',
+        label: 'Nombre completo',
+        type: 'text',
+        placeholder: 'Ej: Rahul Sharma',
+        required: true,
+        maxLength: 140,
+      },
+      {
+        key: 'account_holder_name',
+        label: 'Titular de la cuenta',
+        type: 'text',
+        placeholder: 'Nombre como aparece en el banco',
+        required: true,
+        maxLength: 140,
+      },
+      {
+        key: 'in_account_number',
+        label: 'Número de cuenta bancaria',
+        type: 'text',
+        placeholder: 'Ej: 012345678901',
+        required: true,
+        maxLength: 18,
+      },
+      {
+        key: 'in_ifsc_code',
+        label: 'Código IFSC',
+        type: 'text',
+        placeholder: 'Ej: HDFC0001234',
+        required: true,
+        pattern: '^[A-Z]{4}0[A-Z0-9]{6}$',
+        hint: '11 caracteres: 4 letras + 0 + 6 alfanuméricos',
+        maxLength: 11,
+      },
+      {
+        key: 'transfer_purpose',
+        label: 'Propósito de la transferencia',
+        type: 'select',
+        required: true,
+        options: [
+          { value: 'FAMILY_MAINTENANCE',      label: 'Manutención familiar' },
+          { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
+          { value: 'SALARY',                  label: 'Salario' },
+          { value: 'EDUCATION',               label: 'Educación' },
+          { value: 'BUSINESS_EXPENSES',       label: 'Gastos de negocio' },
+          { value: 'EXPORTED_GOODS',          label: 'Bienes exportados' },
+          { value: 'OTHER',                   label: 'Otro' },
+        ],
+      },
+      {
+        key: 'is_self_transfer',
+        label: '¿Es una transferencia a tu propia cuenta?',
+        type: 'toggle',
+        required: true,
+        default: false,
+      },
+    ],
+  },
+
   NG: {
     title: 'Datos del beneficiario en Nigeria',
     fields: [

@@ -33,6 +33,16 @@ const PHONE_PREFIXES = {
 
 const HARBOR_DEST_CURRENCY = {
   CN: 'CNY',
+  IN: 'INR',
+  BR: 'BRL',
+  MX: 'MXN',
+  AE: 'AED',
+  GB: 'GBP',
+  JP: 'JPY',
+  SG: 'SGD',
+  HK: 'HKD',
+  NG: 'NGN',
+  EU: 'EUR',
 }
 
 // Fallback si el endpoint Harbor falla (para que el flujo no se rompa en dev)
