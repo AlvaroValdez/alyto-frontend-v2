@@ -131,7 +131,8 @@ export default function AdminLayout() {
   }
 
   // ── Vita balance banner ──────────────────────────────────────────────────
-  const [alertBanner, setAlertBanner]       = useState({ alerts: [], balances: {} })
+  const [alertBanner,     setAlertBanner]     = useState({ alerts: [], balances: {} })
+  const [stellarBanner,   setStellarBanner]   = useState({ usdc: null, publicKey: null })
   const [bannerDismissed, setBannerDismissed] = useState(false)
 
   useEffect(() => {
@@ -140,6 +141,10 @@ export default function AdminLayout() {
         const level = data.alerts?.some(a => a.level === 'critical') ? 'critical' : 'warning'
         setAlertBanner({ level, alerts: data.alerts ?? [], balances: data.balances ?? {} })
       })
+      .catch(() => {})
+
+    request('/admin/stellar/balance?entity=SRL')
+      .then(data => setStellarBanner({ usdc: data.balance?.usdc ?? 0, publicKey: data.publicKey }))
       .catch(() => {})
   }, [])
 
@@ -333,54 +338,96 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        {/* Banner de saldos Vita — siempre visible */}
+        {/* Banner de saldos — Vita + Stellar SRL, siempre visible */}
         {showBanner && (() => {
-          const hasAlerts = alertBanner.alerts?.length > 0
-          const isCrit    = alertBanner.alerts?.some(a => a.level === 'critical')
-          const bg        = isCrit ? '#7F1D1D' : hasAlerts ? '#78350F' : '#1A2340'
-          const border    = isCrit ? '#EF444455' : hasAlerts ? '#F59E0B55' : '#26305055'
+          const hasAlerts  = alertBanner.alerts?.length > 0
+          const isCrit     = alertBanner.alerts?.some(a => a.level === 'critical')
+          const bg         = isCrit ? '#7F1D1D' : hasAlerts ? '#78350F' : '#1A2340'
+          const border     = isCrit ? '#EF444455' : hasAlerts ? '#F59E0B55' : '#26305055'
           const labelColor = isCrit ? '#FCA5A5' : hasAlerts ? '#FCD34D' : '#8A96B8'
-          const Icon      = isCrit ? AlertCircle : hasAlerts ? AlertTriangle : CheckCircle2
+          const Icon       = isCrit ? AlertCircle : hasAlerts ? AlertTriangle : CheckCircle2
           const THRESHOLDS = {
-            USD:  parseInt(import.meta.env.VITE_ALERT_THRESHOLD_USD  || '500', 10),
-            CLP:  parseInt(import.meta.env.VITE_ALERT_THRESHOLD_CLP  || '500000', 10),
-            USDT: parseInt(import.meta.env.VITE_ALERT_THRESHOLD_USDT || '500', 10),
-            USDC: parseInt(import.meta.env.VITE_ALERT_THRESHOLD_USDC || '500', 10),
+            USD:  parseInt(import.meta.env.VITE_ALERT_THRESHOLD_USD  || '500',     10),
+            CLP:  parseInt(import.meta.env.VITE_ALERT_THRESHOLD_CLP  || '500000',  10),
+            USDT: parseInt(import.meta.env.VITE_ALERT_THRESHOLD_USDT || '500',     10),
+            USDC: parseInt(import.meta.env.VITE_ALERT_THRESHOLD_USDC || '500',     10),
             COP:  parseInt(import.meta.env.VITE_ALERT_THRESHOLD_COP  || '2000000', 10),
           }
           const fmt = (n, cur) =>
             cur === 'CLP' || cur === 'COP'
               ? `$${Number(n).toLocaleString('es-CL', { maximumFractionDigits: 0 })}`
               : `$${Number(n).toFixed(2)}`
+
+          // Stellar SRL
+          const stellarUsdc      = stellarBanner.usdc
+          const stellarLoaded    = stellarUsdc !== null
+          const stellarThreshold = 500
+          const stellarOk        = stellarLoaded && stellarUsdc >= stellarThreshold
+          const stellarLow       = stellarLoaded && stellarUsdc > 0 && stellarUsdc < stellarThreshold
+          const stellarEmpty     = stellarLoaded && stellarUsdc === 0
+          const stellarColor     = stellarEmpty || stellarLow ? '#F87171' : '#22C55E'
+
           return (
-            <div
-              className="flex items-center justify-between gap-3 px-6 py-3"
-              style={{ background: bg, borderBottom: `1px solid ${border}` }}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <Icon size={15} style={{ color: labelColor, flexShrink: 0 }} />
-                <p className="text-[0.8125rem] font-semibold flex flex-wrap items-baseline gap-x-1" style={{ color: labelColor }}>
-                  <span>Vita —&nbsp;</span>
-                  {['USD', 'CLP', 'USDT', 'USDC', 'COP'].map((cur, i) => {
-                    const bal   = alertBanner.balances?.[cur.toLowerCase()] ?? 0
-                    const isOk  = bal >= (THRESHOLDS[cur] ?? 0)
-                    return (
-                      <span key={cur}>
-                        {i > 0 && <span className="mx-2 opacity-30">|</span>}
-                        <strong>{cur}</strong>{' '}
-                        <span style={{ color: isOk ? '#22C55E' : '#F87171' }}>{fmt(bal, cur)}</span>
-                      </span>
-                    )
-                  })}
-                  {hasAlerts && <span className="ml-2 opacity-80">— revisa el fondeo</span>}
+            <div style={{ background: bg, borderBottom: `1px solid ${border}` }}>
+              {/* Fila 1: Vita */}
+              <div className="flex items-center justify-between gap-3 px-6 py-2.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Icon size={14} style={{ color: labelColor, flexShrink: 0 }} />
+                  <p className="text-[0.8125rem] font-semibold flex flex-wrap items-baseline gap-x-1" style={{ color: labelColor }}>
+                    <span>Vita —&nbsp;</span>
+                    {['USD', 'CLP', 'USDT', 'USDC', 'COP'].map((cur, i) => {
+                      const bal  = alertBanner.balances?.[cur.toLowerCase()] ?? 0
+                      const isOk = bal >= (THRESHOLDS[cur] ?? 0)
+                      return (
+                        <span key={cur}>
+                          {i > 0 && <span className="mx-2 opacity-30">|</span>}
+                          <strong>{cur}</strong>{' '}
+                          <span style={{ color: isOk ? '#22C55E' : '#F87171' }}>{fmt(bal, cur)}</span>
+                        </span>
+                      )
+                    })}
+                    {hasAlerts && <span className="ml-2 opacity-80">— revisa el fondeo</span>}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setBannerDismissed(true)}
+                  className="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+                >
+                  <X size={14} style={{ color: labelColor }} />
+                </button>
+              </div>
+
+              {/* Divisor */}
+              <div style={{ height: '1px', background: `${border}` }} />
+
+              {/* Fila 2: Stellar SRL */}
+              <div className="flex items-center gap-2 px-6 py-2.5">
+                <span className="text-base leading-none flex-shrink-0">⚡</span>
+                <p className="text-[0.8125rem] font-semibold flex flex-wrap items-baseline gap-x-2" style={{ color: '#8AB4F8' }}>
+                  <span>Stellar SRL —&nbsp;</span>
+                  <span>
+                    <strong>USDC</strong>{' '}
+                    {!stellarLoaded
+                      ? <span style={{ color: '#4E5A7A' }}>cargando...</span>
+                      : <span style={{ color: stellarColor }}>
+                          {Number(stellarUsdc).toFixed(2)}
+                        </span>
+                    }
+                  </span>
+                  {stellarEmpty && <span style={{ color: '#F87171', opacity: 0.9 }}>— wallet vacía, fondea antes del próximo payout</span>}
+                  {stellarLow   && <span style={{ color: '#FBBF24', opacity: 0.9 }}>— saldo bajo, considera fondear</span>}
+                  {stellarOk    && <span style={{ color: '#22C55E', opacity: 0.7 }}>✓</span>}
+                  {stellarBanner.publicKey && (
+                    <button
+                      onClick={() => navigate('/admin/funding')}
+                      className="ml-2 text-[0.75rem] underline underline-offset-2 opacity-60 hover:opacity-100 transition-opacity"
+                      style={{ color: '#8AB4F8' }}
+                    >
+                      ver fondeo →
+                    </button>
+                  )}
                 </p>
               </div>
-              <button
-                onClick={() => setBannerDismissed(true)}
-                className="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
-              >
-                <X size={14} style={{ color: labelColor }} />
-              </button>
             </div>
           )
         })()}
