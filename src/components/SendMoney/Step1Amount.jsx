@@ -455,12 +455,13 @@ export default function Step1Amount({ initialData, onNext }) {
     const usdMin = selectedCountry?.minAmountUSD
     if (!usdMin) return null
     if (origin.currency === 'BOB') {
-      // quote.exchangeRate = 1 BOB en USD (ej. 0.0770) → minBOB = usdMin / rate
-      const liveRate = quote?.exchangeRate
-      if (liveRate && liveRate > 0) {
-        return { amount: Math.ceil(usdMin / liveRate), currency: 'BOB', usd: usdMin }
+      // bobPerUsdc = cuántos BOB vale 1 USDC (≈ BOB/USD, ej. 9.31)
+      // minBOB = minAmountUSD × bobPerUsdc
+      const bobPerUsdc = quote?.bobPerUsdc
+      if (bobPerUsdc && bobPerUsdc > 0) {
+        return { amount: Math.ceil(usdMin * bobPerUsdc), currency: 'BOB', usd: usdMin }
       }
-      // Sin quote aún — solo mostramos USD, sin equivalente BOB (evita mostrar valor incorrecto)
+      // Sin quote aún — solo mostramos USD, sin equivalente BOB
       return { amount: null, currency: 'BOB', usd: usdMin }
     }
     if (origin.currency === 'USD') {
