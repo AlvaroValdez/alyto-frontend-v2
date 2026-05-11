@@ -30,7 +30,8 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { fetchAdminUsers, fetchAdminLedger } from '../services/api'
 import { getAdminNotificationTypes, sendAdminNotification } from '../services/adminService'
-import VitaBalanceWidget from './Admin/VitaBalanceWidget'
+import VitaBalanceWidget    from './Admin/VitaBalanceWidget'
+import StellarBalanceWidget from './Admin/StellarBalanceWidget'
 
 // ── Constantes de diseño ────────────────────────────────────────────────────
 
@@ -610,6 +611,11 @@ export default function AdminDashboard() {
           {/* ── Saldo Vita + alertas de liquidez ─────────────────────── */}
           <div className="mb-4">
             <VitaBalanceWidget />
+          </div>
+
+          {/* ── Saldo Stellar SRL (USDC live) ────────────────────────── */}
+          <div className="mb-4">
+            <StellarBalanceWidget entity="SRL" />
           </div>
 
           {/* ── Acceso rápido al Ledger ───────────────────────────────── */}

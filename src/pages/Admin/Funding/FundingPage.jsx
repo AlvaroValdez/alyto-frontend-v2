@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Plus, RefreshCw, X, AlertTriangle, CheckCircle2,
   Loader, Filter, TrendingUp, Wallet, Calendar,
-  Edit2, BarChart3, ArrowRight, Zap, Clock,
+  Edit2, BarChart3, ArrowRight, Zap, Clock, Copy, ExternalLink,
 } from 'lucide-react'
 import {
   getFundingBalances,
@@ -646,6 +646,7 @@ function USDCForecastWidget() {
   const [forecast, setForecast] = useState(null)
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState(null)
+  const [copied,   setCopied]   = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -659,6 +660,13 @@ function USDCForecastWidget() {
       setLoading(false)
     }
   }, [entity])
+
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   useEffect(() => { load() }, [load])
 
@@ -829,6 +837,59 @@ function USDCForecastWidget() {
                 </div>
               </div>
             )}
+
+            {/* Dirección pública + Stellar Expert + Lab */}
+            <div
+              className="flex flex-wrap items-center gap-2 px-3 py-2.5 rounded-xl"
+              style={{ background: '#0F1628', border: '1px solid #263050' }}
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-0.5">
+                  Wallet Stellar {entity} · {forecast.stellar?.publicKey ? 'dirección para fondear' : 'dirección'}
+                </p>
+                <p className="text-[0.75rem] font-mono text-[#C4CBD8] truncate" title={forecast.stellar?.publicKey}>
+                  {forecast.stellar?.publicKey ?? '—'}
+                </p>
+              </div>
+              {forecast.stellar?.publicKey && (
+                <button
+                  onClick={() => handleCopy(forecast.stellar.publicKey)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[0.75rem] font-semibold flex-shrink-0 transition-all active:scale-90"
+                  style={{
+                    background: copied ? '#22C55E1A' : '#1A2340',
+                    border: `1px solid ${copied ? '#22C55E40' : '#263050'}`,
+                    color: copied ? '#22C55E' : '#8A96B8',
+                  }}
+                >
+                  {copied ? <CheckCircle2 size={12} /> : <Copy size={12} />}
+                  {copied ? 'Copiado' : 'Copiar'}
+                </button>
+              )}
+              {forecast.stellar?.stellarExpertUrl && (
+                <a
+                  href={forecast.stellar.stellarExpertUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[0.75rem] font-semibold flex-shrink-0 transition-all hover:opacity-80"
+                  style={{ background: '#1A2340', border: '1px solid #263050', color: '#8AB4F8' }}
+                >
+                  <ExternalLink size={12} />
+                  Stellar Expert
+                </a>
+              )}
+              {forecast.stellar?.publicKey && (
+                <a
+                  href={`https://laboratory.stellar.org/account?accountId=${forecast.stellar.publicKey}&network=${forecast.stellar?.network ?? 'testnet'}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[0.75rem] font-semibold flex-shrink-0 transition-all hover:opacity-80"
+                  style={{ background: '#1A2340', border: '1px solid #263050', color: '#C4CBD8' }}
+                >
+                  <ExternalLink size={12} />
+                  Stellar Lab
+                </a>
+              )}
+            </div>
 
             {/* Footer: generatedAt */}
             <p className="text-[0.625rem] text-[#4E5A7A] text-right">
