@@ -220,6 +220,16 @@ export function listFundings(params = {}) {
   return request(`/admin/funding${query ? `?${query}` : ''}`)
 }
 
+/**
+ * Previsión USDC en tiempo real: balance Stellar live vs compromisos en vuelo
+ * vs transacciones bloqueadas por liquidez insuficiente.
+ * @param {'SRL'|'LLC'} entity
+ * @returns {Promise<{ alertLevel, stellar, committed, availableNow, pendingFunding, gap, fundingNeeded, recommendation }>}
+ */
+export function getUSDCForecast(entity = 'SRL') {
+  return request(`/admin/funding/forecast?entity=${entity}`)
+}
+
 // ── Tasas de cambio ────────────────────────────────────────────────────────────
 
 /**

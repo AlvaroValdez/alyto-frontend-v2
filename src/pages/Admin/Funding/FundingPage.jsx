@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Plus, RefreshCw, X, AlertTriangle, CheckCircle2,
   Loader, Filter, TrendingUp, Wallet, Calendar,
-  Edit2, BarChart3, ArrowRight,
+  Edit2, BarChart3, ArrowRight, Zap, Clock,
 } from 'lucide-react'
 import {
   getFundingBalances,
@@ -21,6 +21,7 @@ import {
   updateExchangeRate,
   getCLPBOBRate,
   updateCLPBOBRate,
+  getUSDCForecast,
 } from '../../../services/adminService'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -632,6 +633,214 @@ function CLPBOBRatePanel({ onToast }) {
   )
 }
 
+// ── USDCForecastWidget ────────────────────────────────────────────────────────
+
+const ALERT_COLORS = {
+  ok:       { border: '#22C55E40', bg: '#22C55E0A', text: '#22C55E', icon: '✅' },
+  warning:  { border: '#FBBF2440', bg: '#F59E0B0F', text: '#FBBF24', icon: '⚠️' },
+  critical: { border: '#EF444440', bg: '#EF44441A', text: '#EF4444', icon: '🚨' },
+}
+
+function USDCForecastWidget() {
+  const [entity,   setEntity]   = useState('SRL')
+  const [forecast, setForecast] = useState(null)
+  const [loading,  setLoading]  = useState(true)
+  const [error,    setError]    = useState(null)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await getUSDCForecast(entity)
+      setForecast(data)
+    } catch (err) {
+      setError(err.message || 'Error al cargar forecast USDC')
+    } finally {
+      setLoading(false)
+    }
+  }, [entity])
+
+  useEffect(() => { load() }, [load])
+
+  const alert = ALERT_COLORS[forecast?.alertLevel ?? 'ok']
+
+  return (
+    <div
+      className="rounded-2xl overflow-hidden"
+      style={{ background: '#1A2340', border: `1px solid ${loading || !forecast ? '#263050' : alert.border}` }}
+    >
+      {/* Header */}
+      <div
+        className="flex items-center justify-between px-5 py-3.5"
+        style={{ borderBottom: '1px solid #263050' }}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-xl bg-[#8AB4F81A] border border-[#8AB4F833] flex items-center justify-center">
+            <Zap size={13} className="text-[#8AB4F8]" />
+          </div>
+          <div>
+            <p className="text-[0.9375rem] font-bold text-white">Previsión USDC en tiempo real</p>
+            <p className="text-[0.6875rem] text-[#4E5A7A]">Balance Stellar live · compromisos · txs en espera</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Selector entidad */}
+          <select
+            value={entity}
+            onChange={e => setEntity(e.target.value)}
+            className="rounded-xl px-2.5 py-1.5 text-[0.8125rem] text-white border border-[#263050] bg-[#0F1628] focus:outline-none focus:border-[#C4CBD8] transition-colors appearance-none cursor-pointer"
+          >
+            <option value="SRL">🇧🇴 SRL</option>
+            <option value="LLC">🌐 LLC</option>
+          </select>
+          <button
+            onClick={load}
+            disabled={loading}
+            className="w-7 h-7 rounded-xl bg-[#1F2B4D] border border-[#263050] flex items-center justify-center hover:border-[#C4CBD833] text-[#4E5A7A] hover:text-white transition-colors disabled:opacity-40"
+            title="Refrescar"
+          >
+            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="px-5 py-5">
+        {error ? (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
+            <AlertTriangle size={13} className="text-[#F87171] flex-shrink-0" />
+            <p className="text-[0.8125rem] text-[#F87171]">{error}</p>
+          </div>
+        ) : loading ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              {[1, 2, 3].map(i => <div key={i} className="h-20 rounded-2xl bg-[#263050] animate-pulse" />)}
+            </div>
+            <div className="h-10 rounded-xl bg-[#263050] animate-pulse" />
+          </div>
+        ) : forecast ? (
+          <div className="space-y-4">
+
+            {/* Tres métricas */}
+            <div className="grid grid-cols-3 gap-4">
+              {/* Stellar balance */}
+              <div className="rounded-2xl p-4 flex flex-col gap-1.5" style={{ background: '#0F1628', border: '1px solid #263050' }}>
+                <p className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider">Stellar live</p>
+                <p className="text-[1.5rem] font-extrabold tabular-nums text-[#8AB4F8] leading-none">
+                  {formatAmount(forecast.stellar?.balance ?? 0)}
+                </p>
+                <p className="text-[0.6875rem] text-[#4E5A7A]">USDC en wallet</p>
+              </div>
+
+              {/* Comprometido */}
+              <div className="rounded-2xl p-4 flex flex-col gap-1.5" style={{ background: '#0F1628', border: '1px solid #263050' }}>
+                <p className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider">Comprometido</p>
+                <p className="text-[1.5rem] font-extrabold tabular-nums text-[#FBBF24] leading-none">
+                  {formatAmount(forecast.committed?.amount ?? 0)}
+                </p>
+                <p className="text-[0.6875rem] text-[#4E5A7A]">
+                  {forecast.committed?.count ?? 0} pago{forecast.committed?.count !== 1 ? 's' : ''} in-flight
+                </p>
+              </div>
+
+              {/* Disponible ahora */}
+              <div
+                className="rounded-2xl p-4 flex flex-col gap-1.5"
+                style={{ background: alert.bg, border: `1px solid ${alert.border}` }}
+              >
+                <p className="text-[0.625rem] font-semibold uppercase tracking-wider" style={{ color: alert.text }}>
+                  Disponible ahora
+                </p>
+                <p className="text-[1.5rem] font-extrabold tabular-nums leading-none" style={{ color: alert.text }}>
+                  {formatAmount(forecast.availableNow ?? 0)}
+                </p>
+                <p className="text-[0.6875rem]" style={{ color: alert.text, opacity: 0.7 }}>USDC para nuevos pagos</p>
+              </div>
+            </div>
+
+            {/* Banner de alerta / recomendación */}
+            {forecast.recommendation && (
+              <div
+                className="flex items-start gap-3 px-4 py-3 rounded-xl"
+                style={{ background: alert.bg, border: `1px solid ${alert.border}` }}
+              >
+                <span className="text-base leading-none flex-shrink-0 mt-0.5">{alert.icon}</span>
+                <p className="text-[0.8125rem] font-semibold" style={{ color: alert.text }}>
+                  {forecast.recommendation}
+                </p>
+              </div>
+            )}
+
+            {/* Tabla de txs en pending_funding */}
+            {forecast.pendingFunding?.count > 0 && (
+              <div>
+                <p className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-2">
+                  Pagos bloqueados esperando fondeo ({forecast.pendingFunding.count})
+                </p>
+                <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #263050' }}>
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr style={{ background: '#0F1628', borderBottom: '1px solid #263050' }}>
+                        {['Transacción', 'USDC needed', 'País / corredor', 'Esperando'].map(h => (
+                          <th key={h} className="text-left px-4 py-2.5 text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider whitespace-nowrap">
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {forecast.pendingFunding.transactions.map((tx, i) => (
+                        <tr
+                          key={tx.id ?? i}
+                          className="border-b border-[#26305040] last:border-0 hover:bg-[#0F162840] transition-colors"
+                        >
+                          <td className="px-4 py-3">
+                            <p className="text-[0.8125rem] font-mono text-[#C4CBD8] truncate max-w-[180px]">{tx.id}</p>
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="text-[0.9rem] font-bold tabular-nums text-[#EF4444]">
+                              ${formatAmount(tx.usdcNeeded)}
+                            </p>
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="text-[0.8125rem] text-white">{tx.country ?? '—'}</p>
+                            <p className="text-[0.6875rem] text-[#4E5A7A] truncate max-w-[120px]">{tx.corridor ?? ''}</p>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1.5 text-[#8A96B8]">
+                              <Clock size={11} />
+                              <span className="text-[0.75rem]">{timeAgo(tx.waitingSince)}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {/* Totalizador */}
+                  <div
+                    className="flex items-center justify-between px-4 py-2.5"
+                    style={{ borderTop: '1px solid #263050', background: '#0F1628' }}
+                  >
+                    <p className="text-[0.6875rem] text-[#4E5A7A]">Total necesario</p>
+                    <p className="text-[0.875rem] font-bold tabular-nums text-[#EF4444]">
+                      ${formatAmount(forecast.pendingFunding.needed)} USDC
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Footer: generatedAt */}
+            <p className="text-[0.625rem] text-[#4E5A7A] text-right">
+              Actualizado {forecast.generatedAt ? formatDate(forecast.generatedAt) : '—'}
+            </p>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
 // ── BalanceCard ───────────────────────────────────────────────────────────────
 
 function BalanceCard({ entity, balance, loading }) {
@@ -1145,6 +1354,9 @@ export default function FundingPage() {
           ))}
         </div>
       </div>
+
+      {/* ── SECCIÓN 2: Previsión USDC live ── */}
+      <USDCForecastWidget />
 
       {/* ── SECCIÓN 3: Historial ── */}
       <div className="rounded-2xl overflow-hidden" style={{ background: '#1A2340', border: '1px solid #263050' }}>
