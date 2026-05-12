@@ -92,7 +92,7 @@ export default function AppLayout() {
         {/* Área principal — ocupa todo en mobile, el resto en desktop */}
         <div
           style={{
-            flex:          1,
+            flex:          '1 0 auto',
             display:       'flex',
             flexDirection: 'column',
             minWidth:      0,
@@ -232,7 +232,7 @@ export default function AppLayout() {
               detrás del bottom nav flotante (nav ~56px + 16px bottom + margen)
               Desktop: paddingBottom normal
           */}
-          <main className="flex-1">
+          <main style={{ flex: '1 0 auto' }}>
             <div className="pb-nav-safe lg:max-w-[1200px] lg:mx-auto lg:px-7 lg:pt-7">
               <Outlet />
             </div>

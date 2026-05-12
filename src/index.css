@@ -11,11 +11,7 @@
     padding: 0;
   }
 
-  html {
-    height: 100%;
-  }
-
-  body, #root {
+  html, body, #root {
     min-height: 100%;
   }
 

@@ -19,7 +19,7 @@ export default function Step6Success({ stepData, onReset }) {
   const { transactionId, originAmount, destinationCountry, beneficiary, quote } = stepData
 
   return (
-    <div className="flex flex-col items-center gap-6 px-4 pb-6 pt-4">
+    <div className="flex flex-col items-center gap-6 px-4 pb-28 pt-4">
 
       {/* ── Ícono de éxito animado ── */}
       <div className="relative">
