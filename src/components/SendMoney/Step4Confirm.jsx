@@ -37,6 +37,100 @@ function maskAccount(accountNumber) {
   return `****${s.slice(-4)}`
 }
 
+const PIX_KEY_TYPE_LABELS = {
+  cpf: 'CPF', email: 'Email', phone: 'Teléfono celular',
+  random: 'Chave aleatória', account: 'Cuenta bancaria',
+}
+
+function BeneficiaryRows({ beneficiary = {}, destinationCountry }) {
+  const get = (key) => beneficiary[key] ?? null
+
+  const bankName = get('bank_name') || get('bankName') || get('bank_code') || null
+
+  switch (destinationCountry) {
+    case 'BR': {
+      const pixType  = get('pix_key_type')
+      const pixKey   = get('br_pix_key')
+      return (
+        <>
+          {pixType && <Row label="Tipo de chave PIX" value={PIX_KEY_TYPE_LABELS[pixType] ?? pixType} />}
+          {pixKey  && <Row label="Chave PIX" value={pixKey} />}
+          {bankName && <Row label="Banco" value={bankName} />}
+        </>
+      )
+    }
+    case 'MX': {
+      const clabe = get('mx_clabe')
+      return (
+        <>
+          {clabe    && <Row label="CLABE" value={maskAccount(clabe)} />}
+          {bankName && <Row label="Banco" value={bankName} />}
+        </>
+      )
+    }
+    case 'GB': {
+      const sortCode  = get('sort_code')
+      const acctNum   = get('account_number')
+      return (
+        <>
+          {sortCode && <Row label="Sort Code" value={sortCode} />}
+          {acctNum  && <Row label="Cuenta" value={maskAccount(acctNum)} />}
+          {bankName && <Row label="Banco" value={bankName} />}
+        </>
+      )
+    }
+    case 'US': {
+      const routing  = get('routing_number')
+      const acctNum  = get('account_number')
+      const acctType = get('account_type')
+      return (
+        <>
+          {routing  && <Row label="Routing (ABA)" value={maskAccount(routing)} />}
+          {acctNum  && <Row label="Cuenta" value={maskAccount(acctNum)} />}
+          {acctType && <Row label="Tipo de cuenta" value={acctType === 'checking' ? 'Checking' : 'Savings'} />}
+          {bankName && <Row label="Banco" value={bankName} />}
+        </>
+      )
+    }
+    case 'AE': {
+      const iban = get('iban') || get('account_number')
+      return (
+        <>
+          {iban     && <Row label="IBAN" value={maskAccount(iban)} />}
+          {bankName && <Row label="Banco" value={bankName} />}
+        </>
+      )
+    }
+    case 'SG':
+    case 'JP':
+    case 'HK': {
+      const acctNum   = get('account_number')
+      const swiftCode = get('swift_code')
+      return (
+        <>
+          {acctNum   && <Row label="Cuenta" value={maskAccount(acctNum)} />}
+          {swiftCode && <Row label="SWIFT / BIC" value={swiftCode} />}
+          {bankName  && <Row label="Banco" value={bankName} />}
+        </>
+      )
+    }
+    default: {
+      const acctNum   = get('account_number') || get('accountNumber') || get('account_bank')
+      const swiftCode = get('swift_code')
+      const docType   = get('documentType') || get('beneficiary_document_type') || ''
+      const docId     = get('documentId')   || get('beneficiary_document_number') || get('document_number')
+      return (
+        <>
+          {bankName  && <Row label="Banco" value={bankName} />}
+          {acctNum   && <Row label="Cuenta" value={maskAccount(acctNum)} />}
+          {swiftCode && <Row label="SWIFT / BIC" value={swiftCode} />}
+          {docId     && <Row label="Documento" value={`${docType} ${docId}`.trim()} />}
+        </>
+      )
+    }
+  }
+}
+
 function Row({ label, value, valueClass = 'text-[#0D1F3C] text-[0.9375rem]' }) {
   return (
     <div className="flex justify-between items-center py-2.5">
@@ -404,27 +498,7 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
           }
         />
         <Row label="País" value={COUNTRY_NAMES[destinationCountry] || destinationCountry} />
-        <Row
-          label="Banco"
-          value={
-            beneficiary?.bankName ||
-            beneficiary?.bank_name ||
-            beneficiary?.bank_code ||
-            '—'
-          }
-        />
-        {(beneficiary?.accountNumber || beneficiary?.account_bank) && (
-          <Row
-            label="Cuenta"
-            value={maskAccount(beneficiary.accountNumber ?? beneficiary.account_bank)}
-          />
-        )}
-        {(beneficiary?.documentId || beneficiary?.beneficiary_document_number) && (
-          <Row
-            label="Documento"
-            value={`${beneficiary?.documentType ?? beneficiary?.beneficiary_document_type ?? ''} ${beneficiary?.documentId ?? beneficiary?.beneficiary_document_number}`.trim()}
-          />
-        )}
+        <BeneficiaryRows beneficiary={beneficiary} destinationCountry={destinationCountry} />
         <Row label="Método de pago" value={payinMethodLabel} valueClass="text-[#0D1F3C] text-[0.8125rem]" />
       </div>
 
