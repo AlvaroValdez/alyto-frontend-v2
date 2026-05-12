@@ -82,7 +82,7 @@ export default function AppLayout() {
       {/* ══════════════════════════════════════════════════════════════
           LAYOUT PRINCIPAL — un solo Outlet, responsive con CSS
           ══════════════════════════════════════════════════════════════ */}
-      <div style={{ minHeight: '100vh', background: 'var(--color-bg-app)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ background: 'var(--color-bg-app)' }}>
 
         {/* SideNavBar — solo desktop (≥ 1024px), position:fixed */}
         <div className="hidden lg:block">
@@ -90,15 +90,7 @@ export default function AppLayout() {
         </div>
 
         {/* Área principal — ocupa todo en mobile, el resto en desktop */}
-        <div
-          style={{
-            flex:          '1 0 auto',
-            display:       'flex',
-            flexDirection: 'column',
-            minWidth:      0,
-          }}
-          className="lg:ml-[240px]"
-        >
+        <div className="lg:ml-[240px]">
           {/* ── HEADER ───────────────────────────────────────────────── */}
           <header
             style={{
@@ -112,7 +104,6 @@ export default function AppLayout() {
               position:       'sticky',
               top:            0,
               zIndex:         40,
-              flexShrink:     0,
             }}
           >
             {/* Logo (mobile) | Título de página (desktop) */}
@@ -227,12 +218,7 @@ export default function AppLayout() {
           </header>
 
           {/* ── CONTENIDO ─────────────────────────────────────────────── */}
-          {/*
-              Mobile: paddingBottom 108 para que el contenido no quede
-              detrás del bottom nav flotante (nav ~56px + 16px bottom + margen)
-              Desktop: paddingBottom normal
-          */}
-          <main style={{ flex: '1 0 auto' }}>
+          <main>
             <div className="pb-nav-safe lg:max-w-[1200px] lg:mx-auto lg:px-7 lg:pt-7">
               <Outlet />
             </div>
