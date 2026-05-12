@@ -408,7 +408,7 @@ export default function Step1Amount({ initialData, onNext }) {
       .then(res => {
         if (cancelled) return
         const rates   = res.rates ?? res ?? []
-        const bobUsdt = rates.find(r => r.pair === 'BOB/USDT' || r.pair === 'BOB/USDC')
+        const bobUsdt = rates.find(r => ['BOB-USDT','BOB-USDC','BOB/USDT','BOB/USDC'].includes(r.pair))
         if (bobUsdt) setBobRateInfo(bobUsdt)
       })
       .catch(() => { /* opcional — no bloquea la cotización */ })
