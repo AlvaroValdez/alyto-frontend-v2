@@ -176,7 +176,9 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
         providerQuoteId:   q.providerQuoteId   ?? null,
         rateExpiresAt:     q.rateExpiresAt     ?? null,
         ...(contactId                         ? { contactId }    : {}),
-        ...(q.owlPayMethod ?? owlPayMethod    ? { owlPayMethod: q.owlPayMethod ?? owlPayMethod } : {}),
+        ...((q.owlPayMethod ?? owlPayMethod) && (q.owlPayMethod ?? owlPayMethod) !== 'null'
+          ? { owlPayMethod: q.owlPayMethod ?? owlPayMethod }
+          : {}),
         ...(q.harborQuoteId ?? harborQuoteId  ? { harborQuoteId: q.harborQuoteId ?? harborQuoteId } : {}),
       })
       // Guardar transactionId para PaymentSuccessPage (destino del redirect de Fintoc)
