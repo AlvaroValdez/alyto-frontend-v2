@@ -398,7 +398,7 @@ export const OWLPAY_FORMS = {
         ],
       },
       {
-        key: 'pix_key',
+        key: 'br_pix_key',
         label: 'Chave PIX',
         type: 'text',
         placeholder: 'Ingresa la chave PIX del beneficiario',
@@ -451,7 +451,7 @@ export const OWLPAY_FORMS = {
         maxLength: 140,
       },
       {
-        key: 'clabe',
+        key: 'mx_clabe',
         label: 'CLABE interbancaria',
         type: 'text',
         placeholder: 'Ej: 646180157000000004',
