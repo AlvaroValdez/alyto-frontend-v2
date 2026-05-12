@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { Bell, Shield } from 'lucide-react'
+import { Bell, Shield, LogOut } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { fetchUnreadCount } from '../../services/api'
 import { useInactivityTimeout } from '../../hooks/useInactivityTimeout'
@@ -187,6 +187,26 @@ export default function AppLayout() {
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
+              </button>
+
+              {/* Cerrar sesión */}
+              <button
+                onClick={handleLogout}
+                aria-label="Cerrar sesión"
+                style={{
+                  width:          38,
+                  height:         38,
+                  borderRadius:   '50%',
+                  background:     'var(--color-bg-elevated)',
+                  border:         '1px solid var(--color-border)',
+                  display:        'flex',
+                  alignItems:     'center',
+                  justifyContent: 'center',
+                  cursor:         'pointer',
+                  flexShrink:     0,
+                }}
+              >
+                <LogOut size={16} style={{ color: '#64748B' }} />
               </button>
 
               {/* Inicial de perfil */}
