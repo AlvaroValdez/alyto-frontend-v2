@@ -299,6 +299,79 @@ export const OWLPAY_FORMS = {
     ],
   },
 
+  EU: {
+    title: 'Datos del beneficiario en Europa (SEPA)',
+    fields: [
+      {
+        key: 'beneficiary_name',
+        label: 'Nombre completo',
+        type: 'text',
+        placeholder: 'Ej: Hans Müller',
+        required: true,
+        maxLength: 140,
+      },
+      {
+        key: 'account_holder_name',
+        label: 'Titular de la cuenta',
+        type: 'text',
+        placeholder: 'Nombre como aparece en el banco',
+        required: true,
+        maxLength: 140,
+      },
+      {
+        key: 'iban',
+        label: 'IBAN',
+        type: 'text',
+        placeholder: 'Ej: DE89370400440532013000',
+        required: true,
+        pattern: '^[A-Z]{2}\\d{2}[A-Z0-9]{1,30}$',
+        hint: 'Código IBAN del banco europeo (15–34 caracteres)',
+        maxLength: 34,
+      },
+      {
+        key: 'bic',
+        label: 'BIC / SWIFT',
+        type: 'text',
+        placeholder: 'Ej: DEUTDEDB',
+        required: true,
+        pattern: '^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$',
+        hint: '8 u 11 caracteres en mayúsculas',
+        maxLength: 11,
+      },
+      {
+        key: 'bank_name',
+        label: 'Nombre del banco',
+        type: 'text',
+        placeholder: 'Ej: Deutsche Bank',
+        required: false,
+        maxLength: 140,
+      },
+      {
+        key: 'transfer_purpose',
+        label: 'Propósito de la transferencia',
+        type: 'select',
+        required: true,
+        options: [
+          { value: 'FAMILY_MAINTENANCE',      label: 'Manutención familiar' },
+          { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
+          { value: 'SALARY',                  label: 'Salario' },
+          { value: 'EDUCATION',               label: 'Educación' },
+          { value: 'BUSINESS_EXPENSES',       label: 'Gastos de negocio' },
+          { value: 'ADVISOR_FEES',            label: 'Honorarios profesionales' },
+          { value: 'PROPERTY_RENTAL',         label: 'Alquiler de propiedad' },
+          { value: 'OTHER',                   label: 'Otro' },
+        ],
+      },
+      {
+        key: 'is_self_transfer',
+        label: 'Esta cuenta me pertenece',
+        type: 'toggle',
+        required: false,
+        default: false,
+      },
+    ],
+  },
+
 };
 
 // Para países OwlPay sin configuración específica aún
