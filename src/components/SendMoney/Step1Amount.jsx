@@ -109,7 +109,8 @@ function corridorsToCountries(corridors) {
       currencyName: CURRENCY_NAMES[currency] ?? CURRENCY_NAMES[info.currency] ?? '',
       flagCode:     info.flagCode ?? code.toLowerCase(),
       payoutMethod: c.payoutMethod  ?? null,
-      minAmountUSD: c.minAmountUSD  ?? null,
+      minAmountUSD:    c.minAmountUSD    ?? null,
+      minAmountOrigin: c.minAmountOrigin ?? null,
     })
   }
   result.sort((a, b) => a.name.localeCompare(b.name, 'es'))
@@ -468,7 +469,10 @@ export default function Step1Amount({ initialData, onNext }) {
       return { amount: usdMin, currency: 'USD', usd: usdMin }
     }
     if (origin.currency === 'CLP') {
-      return { amount: Math.ceil(usdMin * 960), currency: 'CLP', usd: usdMin }
+      // Usa minAmountOrigin pre-calculado por el backend (dinámico con tasa CLP-USDT)
+      // Fallback: usdMin × 966 (tasa CLP/USD desde .env)
+      const clpMin = selectedCountry?.minAmountOrigin ?? Math.ceil(usdMin * 966)
+      return { amount: clpMin, currency: 'CLP', usd: usdMin }
     }
     return null
   })()
