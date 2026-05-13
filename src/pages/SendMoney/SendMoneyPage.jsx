@@ -156,7 +156,7 @@ export default function SendMoneyPage() {
       {/* ── Step Indicator (no se muestra en success) ── */}
       {!isSuccess && (
         <div className="flex-shrink-0">
-          <StepIndicator currentStep={step} skipStep2={!!stepData._skipStep2} />
+          <StepIndicator currentStep={step} skipStep2={true} />
         </div>
       )}
 

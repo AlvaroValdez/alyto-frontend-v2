@@ -171,6 +171,18 @@ function ManualPayinScreen({ stepData }) {
                     className="w-[160px] h-[160px] rounded-xl bg-white p-1.5 object-contain"
                   />
                   <span className="text-[0.75rem] text-[#4A5568] font-medium">{qr.label}</span>
+                  <button
+                    onClick={() => {
+                      const a = document.createElement('a')
+                      a.href = qr.imageBase64
+                      a.download = `qr-${qr.label ?? 'pago'}-${transactionId ?? i}.png`
+                      a.click()
+                    }}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#E2E8F0] text-[0.75rem] text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#0D1F3C33] transition-colors"
+                  >
+                    <Download size={12} />
+                    Descargar
+                  </button>
                 </div>
               ))}
             </div>
