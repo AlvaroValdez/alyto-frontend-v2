@@ -48,14 +48,73 @@ const HARBOR_DEST_CURRENCY = {
 // Fallback si el endpoint Harbor falla (para que el flujo no se rompa en dev)
 const FALLBACK_HARBOR_METHODS = {
   CN: [
-    { method: 'CIPS', rate: 6.54, deliveryLabel: '1 día hábil', recommended: true },
-    { method: 'WIRE', rate: 5.10, deliveryLabel: '1-3 días',    recommended: false },
+    { method: 'CIPS', rate: null, deliveryLabel: '1 día hábil', recommended: true },
+    { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: false },
+  ],
+  EU: [
+    { method: 'SEPA', rate: null, deliveryLabel: '1 día hábil', recommended: true },
+    { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: false },
+  ],
+  GB: [
+    { method: 'FPS',  rate: null, deliveryLabel: 'Mismo día',   recommended: true },
+    { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: false },
+  ],
+  NG: [
+    { method: 'BANK_TRANSFER', rate: null, deliveryLabel: '1-2 días', recommended: true },
+  ],
+  BR: [
+    { method: 'PIX',  rate: null, deliveryLabel: 'Inmediato',   recommended: true },
+    { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: false },
+  ],
+  MX: [
+    { method: 'SPEI', rate: null, deliveryLabel: 'Mismo día',   recommended: true },
+    { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: false },
+  ],
+  AE: [
+    { method: 'AANI', rate: null, deliveryLabel: 'Mismo día',   recommended: true },
+    { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: false },
+  ],
+  HK: [
+    { method: 'CHATS', rate: null, deliveryLabel: 'Mismo día',  recommended: true },
+    { method: 'WIRE',  rate: null, deliveryLabel: '1-3 días',   recommended: false },
+  ],
+  JP: [
+    { method: 'FTS',  rate: null, deliveryLabel: '1 día hábil', recommended: true },
+    { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: false },
+  ],
+  SG: [
+    { method: 'BANK_TRANSFER', rate: null, deliveryLabel: '1 día hábil', recommended: true },
+    { method: 'WIRE',          rate: null, deliveryLabel: '1-3 días',    recommended: false },
+  ],
+  IN: [
+    { method: 'IMPS', rate: null, deliveryLabel: 'Inmediato',   recommended: true },
+    { method: 'NEFT', rate: null, deliveryLabel: 'Mismo día',   recommended: false },
+    { method: 'RTGS', rate: null, deliveryLabel: 'Mismo día',   recommended: false },
+  ],
+  US: [
+    { method: 'ACH',     rate: null, deliveryLabel: '1-2 días', recommended: true },
+    { method: 'FEDWIRE', rate: null, deliveryLabel: 'Mismo día', recommended: false },
   ],
 }
 
 const METHOD_DISPLAY_NAMES = {
-  CIPS: 'CIPS',
-  WIRE: 'International Wire',
+  CIPS:          'CIPS (Sistema Interbancario)',
+  WIRE:          'Transferencia Internacional',
+  SEPA:          'SEPA (Europa)',
+  FPS:           'Faster Payments',
+  PIX:           'PIX',
+  SPEI:          'SPEI',
+  AANI:          'AANI',
+  CHATS:         'CHATS',
+  FTS:           'Furikomi',
+  BANK_TRANSFER: 'Transferencia Bancaria',
+  IMPS:          'IMPS',
+  NEFT:          'NEFT',
+  RTGS:          'RTGS',
+  ACH:           'ACH',
+  ACH_PUSH:      'ACH Push',
+  FEDWIRE:       'Fedwire',
+  NEQUI:         'Nequi',
 }
 
 // Normaliza la respuesta del backend Harbor (paymentMethod / exchangeRate /
