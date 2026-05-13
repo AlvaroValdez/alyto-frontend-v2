@@ -856,28 +856,6 @@ export default function Step1Amount({ initialData, onNext }) {
 
               <div className="my-3 border-t border-[#E2E8F0]" />
 
-              {/* Tasa BOB/USDT — solo para corredores Bolivia */}
-              {activeCurrency === 'BOB' && bobRateInfo && (
-                <div className="mb-3 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[0.75rem] text-[#94A3B8]">Tasa usada:</span>
-                    <span className="text-[0.8125rem] font-semibold text-[#1D3461]">
-                      1 {bobRateInfo.pair?.split('/')[1] ?? 'USDT'} = {Number(bobRateInfo.rate).toFixed(2)} BOB
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {isBobRateStale(bobRateInfo.updatedAt) ? (
-                      <span className="text-[0.6875rem] font-semibold px-2 py-0.5 rounded-full bg-[#F59E0B0F] border border-[#FBBF2430] text-[#FBBF24]">
-                        ⚠️ Tasa desactualizada
-                      </span>
-                    ) : (
-                      <span className="text-[0.6875rem] text-[#94A3B8]">
-                        {bobRateInfo.source ?? 'Binance P2P'} · {timeAgoShort(bobRateInfo.updatedAt)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
 
               {/* Pie */}
               {status === 'expired' ? (
