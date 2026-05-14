@@ -56,8 +56,10 @@ const FALLBACK_HARBOR_METHODS = {
     { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: false },
   ],
   EU: [
-    { method: 'SEPA', rate: null, deliveryLabel: '1 día hábil', recommended: true },
-    { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: false },
+    // SEPA deshabilitado por bug Harbor (ver SUPPORTED_HARBOR_METHODS).
+    // Cuando Harbor arregle el schema/banking partner mismatch, reactivar:
+    //   { method: 'SEPA', rate: null, deliveryLabel: '1 día hábil', recommended: true },
+    { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: true },
   ],
   GB: [
     // SRL no tiene acceso a GB en Harbor — requiere LLC activado en MSA.
@@ -102,9 +104,17 @@ const FALLBACK_HARBOR_METHODS = {
 // Filtro de seguridad: métodos Harbor que el formulario actual sabe capturar.
 // Si Harbor live devuelve un método no listado aquí, se omite del selector.
 // Valores verificados contra el schema real de Harbor.
+//
+// ⚠️ BUG HARBOR — EU SEPA: el endpoint /v2/transfers/quotes/:id/requirements
+// devuelve schema { account_holder_name, account_number } con
+// additionalProperties:false, pero la implementación real del transfer
+// rechaza con error 3004 "required property 'SWIFT_CODE' not found".
+// Discrepancia entre schema documentado y banking partner backend.
+// SEPA removido temporalmente — usuarios EU usan WIRE (rate menor).
+// TODO: revertir cuando OwlPay arregle el bug (ticket pendiente con OwlPay support).
 const SUPPORTED_HARBOR_METHODS = {
   CN: ['CIPS', 'WIRE'],
-  EU: ['SEPA', 'WIRE'],                          // backend branches por método
+  EU: ['WIRE'],                                  // SEPA deshabilitado (bug Harbor)
   GB: ['FPS'],                                   // form no captura SWIFT (WIRE no soportado)
   NG: ['BANK-TRANSFER'],                         // hyphen, no underscore
   BR: ['PIX'],                                   // form solo PIX
