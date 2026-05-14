@@ -302,17 +302,68 @@ export const OWLPAY_FORMS = {
   EU: {
     title: 'Datos del beneficiario en Europa (SEPA)',
     fields: [
+      // ── Datos del beneficiario ──
       {
         key: 'beneficiary_name',
         label: 'Nombre completo',
+        section: 'Datos del beneficiario',
         type: 'text',
         placeholder: 'Ej: Hans Müller',
         required: true,
         maxLength: 140,
       },
       {
+        key: 'beneficiary_dob',
+        label: 'Fecha de nacimiento',
+        section: 'Datos del beneficiario',
+        type: 'date',
+        required: true,
+        hint: 'Requerido por regulación europea (AML)',
+      },
+      {
+        key: 'beneficiary_id_doc_number',
+        label: 'Número de pasaporte o documento de identidad',
+        section: 'Datos del beneficiario',
+        type: 'text',
+        required: true,
+        maxLength: 50,
+        hint: 'Requerido por regulación europea (AML)',
+      },
+
+      // ── Dirección del beneficiario ──
+      {
+        key: 'street',
+        label: 'Calle y número',
+        section: 'Dirección',
+        type: 'text',
+        placeholder: 'Ej: Hauptstraße 15',
+        required: true,
+        maxLength: 200,
+      },
+      {
+        key: 'city',
+        label: 'Ciudad',
+        section: 'Dirección',
+        type: 'text',
+        placeholder: 'Ej: Berlín',
+        required: true,
+        maxLength: 80,
+      },
+      {
+        key: 'postal_code',
+        label: 'Código postal',
+        section: 'Dirección',
+        type: 'text',
+        placeholder: 'Ej: 10115',
+        required: true,
+        maxLength: 10,
+      },
+
+      // ── Datos bancarios ──
+      {
         key: 'account_holder_name',
         label: 'Titular de la cuenta',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Nombre como aparece en el banco',
         required: true,
@@ -321,6 +372,7 @@ export const OWLPAY_FORMS = {
       {
         key: 'iban',
         label: 'IBAN',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: DE89370400440532013000',
         required: true,
@@ -331,6 +383,7 @@ export const OWLPAY_FORMS = {
       {
         key: 'bic',
         label: 'BIC / SWIFT',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: DEUTDEDB',
         required: true,
@@ -341,6 +394,7 @@ export const OWLPAY_FORMS = {
       {
         key: 'bank_name',
         label: 'Nombre del banco',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: Deutsche Bank',
         required: false,
