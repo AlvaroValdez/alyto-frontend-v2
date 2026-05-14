@@ -25,6 +25,8 @@ export default function AppLayout() {
   const location = useLocation()
   const navigate  = useNavigate()
 
+  const [loggingOut, setLoggingOut] = useState(false)
+
   const firstName = user?.firstName ?? ''
   const role      = user?.role      ?? ''
   const initials  = firstName ? firstName.charAt(0).toUpperCase() : '?'
@@ -61,13 +63,15 @@ export default function AppLayout() {
     }
   }, [user])
 
-  const handleLogout = useCallback(() => {
-    logout()
+  const handleLogout = useCallback(async () => {
+    setLoggingOut(true)
+    await logout()
     navigate('/login?logout=1', { replace: true })
   }, [logout, navigate])
 
-  const handleInactivityLogout = useCallback(() => {
-    logout()
+  const handleInactivityLogout = useCallback(async () => {
+    setLoggingOut(true)
+    await logout()
     navigate('/login', {
       replace: true,
       state: { message: 'Tu sesión fue cerrada por inactividad.' },
@@ -250,6 +254,32 @@ export default function AppLayout() {
       <div className="lg:hidden">
         <BottomNavBar user={user} />
       </div>
+
+      {/* ── OVERLAY DE CIERRE DE SESIÓN ──────────────────────────────── */}
+      {loggingOut && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(255,255,255,0.85)',
+            backdropFilter: 'blur(6px)',
+          }}
+        >
+          <div
+            style={{
+              width: 48, height: 48, borderRadius: '50%',
+              border: '3px solid #E2E8F0',
+              borderTopColor: '#1D3461',
+              animation: 'spin 0.7s linear infinite',
+              marginBottom: 16,
+            }}
+          />
+          <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#1D3461', margin: 0 }}>
+            Cerrando sesión…
+          </p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
 
       {/* ── MODAL DE INACTIVIDAD ──────────────────────────────────────── */}
       {showInactivityModal && (

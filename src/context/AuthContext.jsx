@@ -173,7 +173,9 @@ export function AuthProvider({ children }) {
     return data
   }, [])
 
-  /** logout() — revoca la sesión server-side y limpia el estado local. */
+  /** logout() — revoca la sesión server-side y limpia el estado local.
+   *  No navega — el caller (AppLayout) maneja la redirección vía useNavigate.
+   */
   const logout = useCallback(async () => {
     window.Fintoc?.destroy?.()
     try {
@@ -184,9 +186,6 @@ export function AuthProvider({ children }) {
       localStorage.removeItem(TOKEN_KEY)
       setUser(null)
       Sentry.setUser(null)
-      // window.location.replace — AuthProvider lives outside <BrowserRouter>
-      // so useNavigate is unavailable here. replace() avoids a history entry.
-      window.location.replace('/login')
     }
   }, [])
 
