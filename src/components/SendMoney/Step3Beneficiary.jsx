@@ -46,7 +46,10 @@ const HARBOR_DEST_CURRENCY = {
   US: 'USD',
 }
 
-// Fallback si el endpoint Harbor falla (para que el flujo no se rompa en dev)
+// Fallback si el endpoint Harbor falla (para que el flujo no se rompa en dev).
+// Valores de `method` verificados vía Harbor API real (ver
+// scripts/inspect-harbor-all-schemas.js en backend). Nota: Harbor usa
+// 'BANK-TRANSFER' con guion, no underscore.
 const FALLBACK_HARBOR_METHODS = {
   CN: [
     { method: 'CIPS', rate: null, deliveryLabel: '1 día hábil', recommended: true },
@@ -57,85 +60,82 @@ const FALLBACK_HARBOR_METHODS = {
     { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: false },
   ],
   GB: [
+    // SRL no tiene acceso a GB en Harbor — requiere LLC activado en MSA.
     { method: 'FPS',  rate: null, deliveryLabel: 'Mismo día',   recommended: true },
-    { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: false },
   ],
   NG: [
-    { method: 'BANK_TRANSFER', rate: null, deliveryLabel: '1-2 días', recommended: true },
+    { method: 'BANK-TRANSFER', rate: null, deliveryLabel: '1-2 días', recommended: true },
   ],
   BR: [
-    // PIX único — el form de BR (owlPayForms.js) solo captura br_pix_key.
-    // Si Harbor live ofrece WIRE para BR en el futuro, agregar form fields.
     { method: 'PIX',  rate: null, deliveryLabel: 'Inmediato',   recommended: true },
   ],
   MX: [
     { method: 'SPEI', rate: null, deliveryLabel: 'Mismo día',   recommended: true },
-    { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: false },
   ],
   AE: [
-    { method: 'AANI', rate: null, deliveryLabel: 'Mismo día',   recommended: true },
-    { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: false },
+    { method: 'FTS',           rate: null, deliveryLabel: 'Mismo día',   recommended: true },
+    { method: 'AANI',          rate: null, deliveryLabel: 'Mismo día',   recommended: false },
+    { method: 'BANK-TRANSFER', rate: null, deliveryLabel: '1-2 días',    recommended: false },
   ],
   HK: [
     { method: 'CHATS', rate: null, deliveryLabel: 'Mismo día',  recommended: true },
     { method: 'WIRE',  rate: null, deliveryLabel: '1-3 días',   recommended: false },
   ],
   JP: [
-    { method: 'FTS',  rate: null, deliveryLabel: '1 día hábil', recommended: true },
-    { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: false },
+    // SRL no tiene acceso a JP en Harbor — requiere LLC activado en MSA.
+    { method: 'BANK-TRANSFER', rate: null, deliveryLabel: '1 día hábil', recommended: true },
   ],
   SG: [
-    { method: 'BANK_TRANSFER', rate: null, deliveryLabel: '1 día hábil', recommended: true },
-    { method: 'WIRE',          rate: null, deliveryLabel: '1-3 días',    recommended: false },
+    { method: 'BANK-TRANSFER', rate: null, deliveryLabel: '1 día hábil', recommended: true },
   ],
   IN: [
     { method: 'IMPS', rate: null, deliveryLabel: 'Inmediato',   recommended: true },
-    { method: 'NEFT', rate: null, deliveryLabel: 'Mismo día',   recommended: false },
-    { method: 'RTGS', rate: null, deliveryLabel: 'Mismo día',   recommended: false },
   ],
   US: [
-    { method: 'ACH',     rate: null, deliveryLabel: '1-2 días', recommended: true },
-    { method: 'FEDWIRE', rate: null, deliveryLabel: 'Mismo día', recommended: false },
+    { method: 'ACH_PUSH',      rate: null, deliveryLabel: '1-2 días',   recommended: true },
+    { method: 'DOMESTIC_WIRE', rate: null, deliveryLabel: 'Mismo día',  recommended: false },
+    { method: 'FEDWIRE',       rate: null, deliveryLabel: 'Mismo día',  recommended: false },
+    { method: 'WIRE',          rate: null, deliveryLabel: '1-3 días',   recommended: false },
   ],
 }
 
 // Filtro de seguridad: métodos Harbor que el formulario actual sabe capturar.
-// Si Harbor live devuelve un método no listado aquí, se omite del selector
-// (evita que el usuario seleccione un método cuyos campos el form no tiene).
-// Mantener sincronizado con OWLPAY_FORMS en owlPayForms.js.
+// Si Harbor live devuelve un método no listado aquí, se omite del selector.
+// Valores verificados contra el schema real de Harbor.
 const SUPPORTED_HARBOR_METHODS = {
-  CN: ['CIPS', 'WIRE'],            // ambos usan SWIFT — form captura SWIFT
-  EU: ['SEPA', 'WIRE'],            // backend branches por método
-  GB: ['FPS'],                     // form no captura swift_code (WIRE requiere SWIFT)
-  NG: ['BANK_TRANSFER'],
-  BR: ['PIX'],                     // form solo captura br_pix_key
-  MX: ['SPEI'],                    // form solo captura mx_clabe
-  AE: ['AANI', 'WIRE'],            // ambos IBAN-based — form captura IBAN
-  HK: ['CHATS', 'WIRE'],           // ambos SWIFT — form captura SWIFT
-  JP: ['FTS', 'WIRE'],             // ambos SWIFT — form captura SWIFT
-  SG: ['BANK_TRANSFER', 'WIRE'],   // ambos SWIFT — form captura SWIFT
-  IN: ['IMPS', 'NEFT', 'RTGS'],    // todos IFSC-based
-  US: ['ACH', 'FEDWIRE'],          // ambos routing_number
+  CN: ['CIPS', 'WIRE'],
+  EU: ['SEPA', 'WIRE'],                          // backend branches por método
+  GB: ['FPS'],                                   // form no captura SWIFT (WIRE no soportado)
+  NG: ['BANK-TRANSFER'],                         // hyphen, no underscore
+  BR: ['PIX'],                                   // form solo PIX
+  MX: ['SPEI'],                                  // form solo CLABE
+  AE: ['FTS', 'AANI', 'BANK-TRANSFER'],          // 3 métodos válidos en schema AE
+  HK: ['CHATS', 'WIRE'],                         // form captura bank_code (CHATS) y SWIFT (WIRE)
+  JP: ['BANK-TRANSFER'],                         // schema asumido (SRL sin acceso)
+  SG: ['BANK-TRANSFER'],                         // hyphen
+  IN: ['IMPS'],                                  // único método verificado
+  US: ['ACH_PUSH', 'DOMESTIC_WIRE', 'FEDWIRE', 'WIRE'],  // 4 métodos US (mismo payout schema)
 }
 
 const METHOD_DISPLAY_NAMES = {
-  CIPS:          'CIPS (Sistema Interbancario)',
-  WIRE:          'Transferencia Internacional',
-  SEPA:          'SEPA (Europa)',
-  FPS:           'Faster Payments',
-  PIX:           'PIX',
-  SPEI:          'SPEI',
-  AANI:          'AANI',
-  CHATS:         'CHATS',
-  FTS:           'Furikomi',
-  BANK_TRANSFER: 'Transferencia Bancaria',
-  IMPS:          'IMPS',
-  NEFT:          'NEFT',
-  RTGS:          'RTGS',
-  ACH:           'ACH',
-  ACH_PUSH:      'ACH Push',
-  FEDWIRE:       'Fedwire',
-  NEQUI:         'Nequi',
+  CIPS:            'CIPS (Sistema Interbancario)',
+  WIRE:            'Transferencia Internacional',
+  SEPA:            'SEPA (Europa)',
+  FPS:             'Faster Payments',
+  PIX:             'PIX',
+  SPEI:            'SPEI',
+  AANI:            'AANI',
+  FTS:             'FTS (Funds Transfer System)',
+  CHATS:           'CHATS',
+  'BANK-TRANSFER': 'Transferencia Bancaria',
+  BANK_TRANSFER:   'Transferencia Bancaria',
+  IMPS:            'IMPS',
+  NEFT:            'NEFT',
+  RTGS:            'RTGS',
+  ACH_PUSH:        'ACH Push',
+  DOMESTIC_WIRE:   'Wire Doméstico',
+  FEDWIRE:         'Fedwire',
+  NEQUI:           'Nequi',
 }
 
 // Normaliza la respuesta del backend Harbor (paymentMethod / exchangeRate /

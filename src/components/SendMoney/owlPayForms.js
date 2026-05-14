@@ -1,19 +1,76 @@
 /**
  * owlPayForms.js — Configuración estática de formularios OwlPay por país de destino.
  *
- * Estos son los campos que se muestran AL USUARIO — simples y en español.
- * El backend mapea estos valores al schema de Harbor en buildOwlPayBeneficiary().
+ * Todos los campos están alineados al schema oficial de Harbor, validado vía
+ * GET /v2/transfers/quotes/:id/requirements (ver scripts/inspect-harbor-all-schemas.js
+ * en el repo backend). Todos los schemas Harbor usan additionalProperties:false
+ * — campos extra producen error 2005.
  *
- * NO usar el schema dinámico de Harbor en el frontend. Toda la traducción
- * Harbor-schema → campos de usuario ocurre en el backend.
+ * Estos son los campos que se muestran AL USUARIO — simples y en español.
+ * El backend (buildOwlPayBeneficiary + buildPayoutInstrument) mapea estos valores
+ * al payload exacto que Harbor espera.
  */
+
+// transfer_purpose: subset utilitario del enum oficial Harbor.
+// Enum completo en scripts/inspect-harbor-all-schemas.js. Estos cubren los casos
+// más comunes para nuestros usuarios sin abrumar la UX.
+const TRANSFER_PURPOSE_OPTIONS = [
+  { value: 'FAMILY_MAINTENANCE',       label: 'Manutención familiar' },
+  { value: 'TRANSFER_TO_OWN_ACCOUNT',  label: 'Transferencia a cuenta propia' },
+  { value: 'SALARY',                   label: 'Salario' },
+  { value: 'EDUCATION',                label: 'Educación' },
+  { value: 'MEDICAL_TREATMENT',        label: 'Tratamiento médico' },
+  { value: 'TRAVEL',                   label: 'Viaje' },
+  { value: 'PROPERTY_RENTAL',          label: 'Alquiler de propiedad' },
+  { value: 'ADVISOR_FEES',             label: 'Honorarios profesionales' },
+  { value: 'DONATIONS',                label: 'Donaciones' },
+  { value: 'EXPORTED_GOODS',           label: 'Bienes exportados' },
+  { value: 'GENERAL_GOODS_OFFLINE',    label: 'Bienes generales' },
+]
+
+// Campos de dirección comunes (Harbor beneficiary_address).
+// Para todos los países excepto EU: required `street`; postal_code es nullable.
+// Para EU: postal_code también es required.
+const addressFields = ({ postalRequired = false, countryName = '' } = {}) => ([
+  {
+    key: 'street',
+    label: 'Calle y número',
+    section: 'Dirección del beneficiario',
+    type: 'text',
+    placeholder: 'Calle, número, complemento',
+    required: true,
+    maxLength: 200,
+  },
+  {
+    key: 'city',
+    label: 'Ciudad',
+    section: 'Dirección del beneficiario',
+    type: 'text',
+    placeholder: countryName ? `Ej: capital de ${countryName}` : 'Ciudad',
+    required: false,
+    maxLength: 80,
+  },
+  {
+    key: 'postal_code',
+    label: 'Código postal',
+    section: 'Dirección del beneficiario',
+    type: 'text',
+    placeholder: 'Código postal',
+    required: postalRequired,
+    maxLength: 20,
+  },
+])
 
 export const OWLPAY_FORMS = {
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CN — China (CIPS, WIRE)
+  // Schema verificado: payout requires account_holder_name, bank_name,
+  //   account_number, swift_code. benef requires name + address (street, country).
+  // ═══════════════════════════════════════════════════════════════════════════
   CN: {
     title: 'Datos del beneficiario en China',
     fields: [
-      // ── Datos del beneficiario ──
       {
         key: 'beneficiary_name',
         label: 'Nombre completo',
@@ -23,79 +80,8 @@ export const OWLPAY_FORMS = {
         required: true,
         maxLength: 140,
       },
-      {
-        key: 'beneficiary_dob',
-        label: 'Fecha de nacimiento',
-        section: 'Datos del beneficiario',
-        type: 'date',
-        required: false,
-      },
-      {
-        key: 'beneficiary_id_doc_number',
-        label: 'Número de documento',
-        section: 'Datos del beneficiario',
-        type: 'text',
-        required: false,
-        maxLength: 50,
-      },
-
-      // ── Dirección ──
-      {
-        key: 'street',
-        label: 'Calle',
-        section: 'Dirección',
-        type: 'text',
-        placeholder: 'Ej: 123 Nanjing Road',
-        required: true,
-        maxLength: 200,
-      },
-      {
-        key: 'city',
-        label: 'Ciudad',
-        section: 'Dirección',
-        type: 'text',
-        placeholder: 'Ej: Shanghai',
-        required: true,
-        maxLength: 80,
-      },
-      {
-        key: 'state_province',
-        label: 'Provincia',
-        section: 'Dirección',
-        type: 'select',
-        required: true,
-        options: [
-          { value: 'AH', label: 'Anhui' },          { value: 'BJ', label: 'Beijing' },
-          { value: 'CQ', label: 'Chongqing' },      { value: 'FJ', label: 'Fujian' },
-          { value: 'GD', label: 'Guangdong' },      { value: 'GS', label: 'Gansu' },
-          { value: 'GX', label: 'Guangxi' },        { value: 'GZ', label: 'Guizhou' },
-          { value: 'HA', label: 'Henan' },          { value: 'HB', label: 'Hubei' },
-          { value: 'HE', label: 'Hebei' },          { value: 'HI', label: 'Hainan' },
-          { value: 'HL', label: 'Heilongjiang' },   { value: 'HN', label: 'Hunan' },
-          { value: 'JL', label: 'Jilin' },          { value: 'JS', label: 'Jiangsu' },
-          { value: 'JX', label: 'Jiangxi' },        { value: 'LN', label: 'Liaoning' },
-          { value: 'NM', label: 'Inner Mongolia' }, { value: 'NX', label: 'Ningxia' },
-          { value: 'QH', label: 'Qinghai' },        { value: 'SC', label: 'Sichuan' },
-          { value: 'SD', label: 'Shandong' },       { value: 'SH', label: 'Shanghai' },
-          { value: 'SN', label: 'Shaanxi' },        { value: 'SX', label: 'Shanxi' },
-          { value: 'TJ', label: 'Tianjin' },        { value: 'XJ', label: 'Xinjiang' },
-          { value: 'XZ', label: 'Tibet' },          { value: 'YN', label: 'Yunnan' },
-          { value: 'ZJ', label: 'Zhejiang' },
-        ],
-      },
-      {
-        key: 'postal_code',
-        label: 'Código postal',
-        section: 'Dirección',
-        type: 'text',
-        placeholder: 'Ej: 200000',
-        required: true,
-        pattern: '^\\d{6}$',
-        hint: '6 dígitos',
-        maxLength: 6,
-      },
-
-      // ── Datos bancarios ──
+      ...addressFields({ countryName: 'China' }),
+      // Datos bancarios
       {
         key: 'account_holder_name',
         label: 'Titular de la cuenta',
@@ -110,7 +96,7 @@ export const OWLPAY_FORMS = {
         label: 'Nombre del banco',
         section: 'Datos bancarios',
         type: 'text',
-        placeholder: 'ej. Industrial and Commercial Bank of China',
+        placeholder: 'Ej: Industrial and Commercial Bank of China',
         required: true,
         maxLength: 140,
       },
@@ -128,46 +114,22 @@ export const OWLPAY_FORMS = {
         label: 'Código SWIFT / BIC',
         section: 'Datos bancarios',
         type: 'text',
-        placeholder: 'ej. ICBKCNBJ',
+        placeholder: 'Ej: ICBKCNBJXXX',
         required: true,
         pattern: '^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$',
         hint: '8 u 11 caracteres en mayúsculas',
         maxLength: 11,
       },
-
-      // ── Propósito de la transferencia ──
       {
         key: 'transfer_purpose',
         label: 'Propósito de la transferencia',
-        section: 'Propósito de la transferencia',
         type: 'select',
         required: true,
-        options: [
-          { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
-          { value: 'FAMILY_MAINTENANCE',      label: 'Manutención familiar' },
-          { value: 'EDUCATION',               label: 'Educación' },
-          { value: 'MEDICAL_TREATMENT',       label: 'Tratamiento médico' },
-          { value: 'HOTEL',                   label: 'Hotel' },
-          { value: 'TRAVEL',                  label: 'Viaje' },
-          { value: 'REPAYMENT_OF_LOANS',      label: 'Pago de préstamos' },
-          { value: 'TAX_PAYMENT',             label: 'Pago de impuestos' },
-          { value: 'PURCHASE_PROPERTY',       label: 'Compra de propiedad' },
-          { value: 'PROPERTY_RENTAL',         label: 'Alquiler de propiedad' },
-          { value: 'INSURANCE_PREMIUM',       label: 'Prima de seguro' },
-          { value: 'SALARY',                  label: 'Salario' },
-          { value: 'ADVERTISING',             label: 'Publicidad' },
-          { value: 'ROYALTY_FEES',            label: 'Regalías' },
-          { value: 'ADVISOR_FEES',            label: 'Honorarios de asesor' },
-          { value: 'CONSTRUCTION',            label: 'Construcción' },
-          { value: 'TRANSPORTATION',          label: 'Transporte' },
-          { value: 'EXPORTED_GOODS',          label: 'Bienes exportados' },
-          { value: 'GENERAL_GOODS_OFFLINE',   label: 'Bienes generales' },
-        ],
+        options: TRANSFER_PURPOSE_OPTIONS,
       },
       {
         key: 'is_self_transfer',
         label: 'Esta cuenta me pertenece',
-        section: 'Propósito de la transferencia',
         type: 'toggle',
         required: false,
         default: false,
@@ -175,36 +137,64 @@ export const OWLPAY_FORMS = {
     ],
   },
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // IN — India (IMPS)
+  // Schema verificado: payout requires bank_code (IFSC) + account_number (only!).
+  //   benef requires name + email + address + phone + dob + id_doc (TODOS).
+  // NO incluye account_holder_name en payout — es solo para nuestro UX.
+  // ═══════════════════════════════════════════════════════════════════════════
   IN: {
     title: 'Datos del beneficiario en India',
     fields: [
       {
         key: 'beneficiary_name',
         label: 'Nombre completo',
+        section: 'Datos del beneficiario',
         type: 'text',
         placeholder: 'Ej: Rahul Sharma',
         required: true,
         maxLength: 140,
       },
       {
-        key: 'account_holder_name',
-        label: 'Titular de la cuenta',
+        key: 'beneficiary_dob',
+        label: 'Fecha de nacimiento',
+        section: 'Datos del beneficiario',
+        type: 'date',
+        required: true,
+        hint: 'Requerido por India IMPS (AML)',
+      },
+      {
+        key: 'beneficiary_id_doc_number',
+        label: 'Número de documento (PAN / Aadhaar)',
+        section: 'Datos del beneficiario',
         type: 'text',
-        placeholder: 'Nombre como aparece en el banco',
+        required: true,
+        maxLength: 50,
+      },
+      {
+        key: 'beneficiary_email',
+        label: 'Email del beneficiario',
+        section: 'Datos del beneficiario',
+        type: 'email',
+        placeholder: 'beneficiario@ejemplo.com',
         required: true,
         maxLength: 140,
       },
       {
-        key: 'in_account_number',
-        label: 'Número de cuenta bancaria',
+        key: 'beneficiary_phone_number',
+        label: 'Teléfono del beneficiario',
+        section: 'Datos del beneficiario',
         type: 'text',
-        placeholder: 'Ej: 012345678901',
+        placeholder: 'Ej: +91 98765 43210',
         required: true,
-        maxLength: 18,
+        hint: 'Incluir prefijo internacional (+91 para India)',
+        maxLength: 25,
       },
+      ...addressFields({ countryName: 'India' }),
       {
-        key: 'in_ifsc_code',
+        key: 'bank_code',
         label: 'Código IFSC',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: HDFC0001234',
         required: true,
@@ -213,44 +203,53 @@ export const OWLPAY_FORMS = {
         maxLength: 11,
       },
       {
+        key: 'account_number',
+        label: 'Número de cuenta bancaria',
+        section: 'Datos bancarios',
+        type: 'text',
+        placeholder: 'Ej: 012345678901',
+        required: true,
+        maxLength: 18,
+      },
+      {
         key: 'transfer_purpose',
         label: 'Propósito de la transferencia',
         type: 'select',
         required: true,
-        options: [
-          { value: 'FAMILY_MAINTENANCE',      label: 'Manutención familiar' },
-          { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
-          { value: 'SALARY',                  label: 'Salario' },
-          { value: 'EDUCATION',               label: 'Educación' },
-          { value: 'BUSINESS_EXPENSES',       label: 'Gastos de negocio' },
-          { value: 'EXPORTED_GOODS',          label: 'Bienes exportados' },
-          { value: 'OTHER',                   label: 'Otro' },
-        ],
+        options: TRANSFER_PURPOSE_OPTIONS,
       },
       {
         key: 'is_self_transfer',
-        label: '¿Es una transferencia a tu propia cuenta?',
+        label: 'Esta cuenta me pertenece',
         type: 'toggle',
-        required: true,
+        required: false,
         default: false,
       },
     ],
   },
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // NG — Nigeria (BANK-TRANSFER)
+  // Schema verificado: payout requires account_holder_name, bank_name,
+  //   account_number. benef requires name + address.
+  // ═══════════════════════════════════════════════════════════════════════════
   NG: {
     title: 'Datos del beneficiario en Nigeria',
     fields: [
       {
         key: 'beneficiary_name',
         label: 'Nombre completo',
+        section: 'Datos del beneficiario',
         type: 'text',
         placeholder: 'Ej: Chidi Okeke',
         required: true,
         maxLength: 140,
       },
+      ...addressFields({ countryName: 'Nigeria' }),
       {
         key: 'account_holder_name',
         label: 'Titular de la cuenta',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Nombre como aparece en el banco',
         required: true,
@@ -259,6 +258,7 @@ export const OWLPAY_FORMS = {
       {
         key: 'bank_name',
         label: 'Banco',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: Zenith Bank',
         required: true,
@@ -267,11 +267,12 @@ export const OWLPAY_FORMS = {
       {
         key: 'account_number',
         label: 'Número de cuenta (NUBAN)',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: '10 dígitos',
         required: true,
         pattern: '^\\d{10}$',
-        hint: '10 dígitos exactos',
+        hint: '10 dígitos exactos (NUBAN)',
         maxLength: 10,
       },
       {
@@ -279,32 +280,27 @@ export const OWLPAY_FORMS = {
         label: 'Propósito de la transferencia',
         type: 'select',
         required: true,
-        options: [
-          { value: 'FAMILY_MAINTENANCE',    label: 'Manutención familiar' },
-          { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
-          { value: 'SALARY',                label: 'Salario' },
-          { value: 'DONATIONS',             label: 'Donaciones' },
-          { value: 'EDUCATION',             label: 'Educación' },
-          { value: 'BUSINESS_EXPENSES',     label: 'Gastos de negocio' },
-          { value: 'OTHER',                 label: 'Otro' },
-        ],
+        options: TRANSFER_PURPOSE_OPTIONS,
       },
       {
         key: 'is_self_transfer',
-        label: '¿Es una transferencia a tu propia cuenta?',
+        label: 'Esta cuenta me pertenece',
         type: 'toggle',
-        required: true,
+        required: false,
         default: false,
       },
     ],
   },
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EU — Europa (SEPA, WIRE)
+  // Schema verificado: SEPA payout = { account_holder_name, account_number(IBAN) }
+  //   WIRE payout = + { bank_name, swift_code }. benef requires name + address.
+  //   beneficiary_address requires street, country, postal_code.
+  // ═══════════════════════════════════════════════════════════════════════════
   EU: {
     title: 'Datos del beneficiario en Europa (SEPA)',
     fields: [
-      // ── Datos del beneficiario ──
-      // Harbor EU schema: beneficiary_info solo acepta beneficiary_name + beneficiary_address
-      // (additionalProperties:false → beneficiary_dob/id_doc serían rechazados)
       {
         key: 'beneficiary_name',
         label: 'Nombre completo',
@@ -314,40 +310,7 @@ export const OWLPAY_FORMS = {
         required: true,
         maxLength: 140,
       },
-
-      // ── Dirección del beneficiario ──
-      // Harbor required: street, country, postal_code. city/state_province nullable.
-      {
-        key: 'street',
-        label: 'Calle y número',
-        section: 'Dirección',
-        type: 'text',
-        placeholder: 'Ej: Hauptstraße 15',
-        required: true,
-        maxLength: 200,
-      },
-      {
-        key: 'city',
-        label: 'Ciudad',
-        section: 'Dirección',
-        type: 'text',
-        placeholder: 'Ej: Berlín',
-        required: false,
-        maxLength: 80,
-      },
-      {
-        key: 'postal_code',
-        label: 'Código postal',
-        section: 'Dirección',
-        type: 'text',
-        placeholder: 'Ej: 10115',
-        required: true,
-        maxLength: 20,
-      },
-
-      // ── Datos bancarios ──
-      // SEPA payout_instrument: { account_holder_name, account_number(IBAN) }
-      // WIRE payout_instrument añade: bank_name, swift_code(BIC)
+      ...addressFields({ postalRequired: true, countryName: 'Europa' }),
       {
         key: 'account_holder_name',
         label: 'Titular de la cuenta',
@@ -376,7 +339,7 @@ export const OWLPAY_FORMS = {
         placeholder: 'Ej: DEUTDEDB',
         required: false,
         pattern: '^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$',
-        hint: 'Solo necesario si seleccionas Transferencia Internacional (WIRE)',
+        hint: 'Solo necesario para Transferencia Internacional (WIRE)',
         maxLength: 11,
       },
       {
@@ -386,7 +349,7 @@ export const OWLPAY_FORMS = {
         type: 'text',
         placeholder: 'Ej: Deutsche Bank',
         required: false,
-        hint: 'Solo necesario si seleccionas Transferencia Internacional (WIRE)',
+        hint: 'Solo necesario para Transferencia Internacional (WIRE)',
         maxLength: 140,
       },
       {
@@ -394,18 +357,7 @@ export const OWLPAY_FORMS = {
         label: 'Propósito de la transferencia',
         type: 'select',
         required: true,
-        // Valores del enum oficial Harbor (validados vía GET /requirements)
-        options: [
-          { value: 'FAMILY_MAINTENANCE',      label: 'Manutención familiar' },
-          { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
-          { value: 'SALARY',                  label: 'Salario' },
-          { value: 'EDUCATION',               label: 'Educación' },
-          { value: 'ADVISOR_FEES',            label: 'Honorarios profesionales' },
-          { value: 'PROPERTY_RENTAL',         label: 'Alquiler de propiedad' },
-          { value: 'MEDICAL_TREATMENT',       label: 'Tratamiento médico' },
-          { value: 'TRAVEL',                  label: 'Viaje' },
-          { value: 'DONATIONS',               label: 'Donaciones' },
-        ],
+        options: TRANSFER_PURPOSE_OPTIONS,
       },
       {
         key: 'is_self_transfer',
@@ -417,53 +369,72 @@ export const OWLPAY_FORMS = {
     ],
   },
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // BR — Brasil (PIX)
+  // Schema verificado: payout requires br_cpf (^\d{11}$). Allowed extras:
+  //   phone_number, email, br_pix_evp. benef requires name + address.
+  // ═══════════════════════════════════════════════════════════════════════════
   BR: {
     title: 'Datos del beneficiario en Brasil',
-    hint: 'El beneficiario recibirá el dinero vía PIX — instantáneo a cualquier banco brasileño.',
+    hint: 'El beneficiario recibe vía PIX — instantáneo a cualquier banco brasileño.',
     fields: [
       {
         key: 'beneficiary_name',
         label: 'Nombre completo',
+        section: 'Datos del beneficiario',
         type: 'text',
         placeholder: 'Ej: João Silva',
         required: true,
         maxLength: 140,
       },
+      ...addressFields({ countryName: 'Brasil' }),
       {
-        key: 'pix_key_type',
-        label: 'Tipo de chave PIX',
-        type: 'select',
+        key: 'br_cpf',
+        label: 'CPF del beneficiario',
+        section: 'Datos PIX',
+        type: 'text',
+        placeholder: 'Ej: 12345678901',
         required: true,
-        options: [
-          { value: 'cpf',     label: 'CPF (documento de identidad)' },
-          { value: 'email',   label: 'Email' },
-          { value: 'phone',   label: 'Teléfono celular' },
-          { value: 'random',  label: 'Chave aleatória' },
-          { value: 'account', label: 'Cuenta bancaria' },
-        ],
+        pattern: '^\\d{11}$',
+        hint: '11 dígitos sin puntos ni guiones — requerido por Harbor para AML',
+        maxLength: 11,
       },
       {
-        key: 'br_pix_key',
-        label: 'Chave PIX',
+        key: 'br_pix_evp',
+        label: 'Chave PIX aleatória (EVP) — opcional',
+        section: 'Chave PIX alternativa',
         type: 'text',
-        placeholder: 'Ingresa la chave PIX del beneficiario',
-        required: true,
-        maxLength: 77,
-        hint: 'CPF: 000.000.000-00 · Email · +55 11 99999-9999 · UUID',
+        placeholder: 'Ej: 71f76d4f-c0e4-4f6b-acaf-...',
+        required: false,
+        hint: 'Si el beneficiario usa una chave aleatória en vez de CPF',
+        maxLength: 50,
+      },
+      {
+        key: 'email',
+        label: 'Email del beneficiario (chave PIX) — opcional',
+        section: 'Chave PIX alternativa',
+        type: 'email',
+        placeholder: 'beneficiario@email.com',
+        required: false,
+        maxLength: 140,
+      },
+      {
+        key: 'phone_number',
+        label: 'Teléfono del beneficiario (chave PIX) — opcional',
+        section: 'Chave PIX alternativa',
+        type: 'text',
+        placeholder: 'Ej: +5511999999999',
+        required: false,
+        pattern: '^\\+[1-9]\\d{1,14}$',
+        hint: 'Formato E.164 (con + y código país)',
+        maxLength: 16,
       },
       {
         key: 'transfer_purpose',
         label: 'Propósito de la transferencia',
         type: 'select',
         required: true,
-        options: [
-          { value: 'FAMILY_MAINTENANCE',      label: 'Manutención familiar' },
-          { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
-          { value: 'SALARY',                  label: 'Salario' },
-          { value: 'EDUCATION',               label: 'Educación' },
-          { value: 'BUSINESS_EXPENSES',       label: 'Gastos de negocio' },
-          { value: 'OTHER',                   label: 'Otro' },
-        ],
+        options: TRANSFER_PURPOSE_OPTIONS,
       },
       {
         key: 'is_self_transfer',
@@ -475,6 +446,11 @@ export const OWLPAY_FORMS = {
     ],
   },
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MX — México (SPEI)
+  // Schema verificado: payout requires mx_clabe (^[0-9]{18}$) — ÚNICO campo.
+  //   benef requires name + address + dob + id_doc (TODOS).
+  // ═══════════════════════════════════════════════════════════════════════════
   MX: {
     title: 'Datos del beneficiario en México',
     hint: 'La transferencia llega vía SPEI — el sistema interbancario instantáneo de México.',
@@ -482,22 +458,34 @@ export const OWLPAY_FORMS = {
       {
         key: 'beneficiary_name',
         label: 'Nombre completo',
+        section: 'Datos del beneficiario',
         type: 'text',
         placeholder: 'Ej: María García',
         required: true,
         maxLength: 140,
       },
       {
-        key: 'account_holder_name',
-        label: 'Titular de la cuenta',
-        type: 'text',
-        placeholder: 'Nombre como aparece en el banco',
+        key: 'beneficiary_dob',
+        label: 'Fecha de nacimiento',
+        section: 'Datos del beneficiario',
+        type: 'date',
         required: true,
-        maxLength: 140,
+        hint: 'Requerido por SPEI (AML)',
       },
+      {
+        key: 'beneficiary_id_doc_number',
+        label: 'Número de documento (CURP o RFC)',
+        section: 'Datos del beneficiario',
+        type: 'text',
+        placeholder: 'Ej: CURP de 18 caracteres',
+        required: true,
+        maxLength: 50,
+      },
+      ...addressFields({ countryName: 'México' }),
       {
         key: 'mx_clabe',
         label: 'CLABE interbancaria',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: 646180157000000004',
         required: true,
@@ -506,26 +494,11 @@ export const OWLPAY_FORMS = {
         maxLength: 18,
       },
       {
-        key: 'bank_name',
-        label: 'Banco (opcional)',
-        type: 'text',
-        placeholder: 'Ej: BBVA México, Banamex',
-        required: false,
-        maxLength: 140,
-      },
-      {
         key: 'transfer_purpose',
         label: 'Propósito de la transferencia',
         type: 'select',
         required: true,
-        options: [
-          { value: 'FAMILY_MAINTENANCE',      label: 'Manutención familiar' },
-          { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
-          { value: 'SALARY',                  label: 'Salario' },
-          { value: 'EDUCATION',               label: 'Educación' },
-          { value: 'BUSINESS_EXPENSES',       label: 'Gastos de negocio' },
-          { value: 'OTHER',                   label: 'Otro' },
-        ],
+        options: TRANSFER_PURPOSE_OPTIONS,
       },
       {
         key: 'is_self_transfer',
@@ -537,55 +510,72 @@ export const OWLPAY_FORMS = {
     ],
   },
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // AE — Emiratos Árabes (FTS, AANI, BANK-TRANSFER)
+  // Schema verificado: payout requires account_holder_name, phone_number
+  //   (^\+971[0-9]{8,9}$), swift_code, account_number (IBAN).
+  //   NO incluye bank_name. benef requires name + address.
+  // ═══════════════════════════════════════════════════════════════════════════
   AE: {
     title: 'Datos del beneficiario en Emiratos Árabes',
     fields: [
       {
         key: 'beneficiary_name',
         label: 'Nombre completo',
+        section: 'Datos del beneficiario',
         type: 'text',
         placeholder: 'Ej: Ahmed Al Rashidi',
         required: true,
         maxLength: 140,
       },
+      ...addressFields({ countryName: 'Emiratos Árabes' }),
       {
         key: 'account_holder_name',
         label: 'Titular de la cuenta',
+        section: 'Datos bancarios',
         type: 'text',
         required: true,
         maxLength: 140,
+      },
+      {
+        key: 'phone_number',
+        label: 'Teléfono del beneficiario',
+        section: 'Datos bancarios',
+        type: 'text',
+        placeholder: 'Ej: +971501234567',
+        required: true,
+        pattern: '^\\+971[0-9]{8,9}$',
+        hint: 'Formato UAE: +971 seguido de 8 o 9 dígitos',
+        maxLength: 14,
       },
       {
         key: 'iban',
         label: 'IBAN',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: AE070331234567890123456',
         required: true,
-        pattern: '^AE\\d{21}$',
-        hint: '23 caracteres — empieza con AE',
-        maxLength: 23,
+        pattern: '^[A-Z]{2}\\d{2}[A-Z0-9]{11,30}$',
+        hint: 'IBAN UAE — empieza con AE seguido de 21 caracteres',
+        maxLength: 30,
       },
       {
-        key: 'bank_name',
-        label: 'Banco (opcional)',
+        key: 'swift_code',
+        label: 'SWIFT / BIC',
+        section: 'Datos bancarios',
         type: 'text',
-        placeholder: 'Ej: Emirates NBD, ADCB',
-        required: false,
-        maxLength: 140,
+        placeholder: 'Ej: EBILAEAD',
+        required: true,
+        pattern: '^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$',
+        hint: '8 u 11 caracteres en mayúsculas',
+        maxLength: 11,
       },
       {
         key: 'transfer_purpose',
         label: 'Propósito de la transferencia',
         type: 'select',
         required: true,
-        options: [
-          { value: 'FAMILY_MAINTENANCE',      label: 'Manutención familiar' },
-          { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
-          { value: 'SALARY',                  label: 'Salario' },
-          { value: 'BUSINESS_EXPENSES',       label: 'Gastos de negocio' },
-          { value: 'EXPORTED_GOODS',          label: 'Bienes exportados' },
-          { value: 'OTHER',                   label: 'Otro' },
-        ],
+        options: TRANSFER_PURPOSE_OPTIONS,
       },
       {
         key: 'is_self_transfer',
@@ -597,20 +587,27 @@ export const OWLPAY_FORMS = {
     ],
   },
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GB — Reino Unido (FPS) — corredor no activo para SRL, requiere LLC
+  // Schema asumido basado en UK Faster Payments standard.
+  // ═══════════════════════════════════════════════════════════════════════════
   GB: {
     title: 'Datos del beneficiario en Reino Unido',
     fields: [
       {
         key: 'beneficiary_name',
         label: 'Nombre completo',
+        section: 'Datos del beneficiario',
         type: 'text',
         placeholder: 'Ej: James Smith',
         required: true,
         maxLength: 140,
       },
+      ...addressFields({ countryName: 'Reino Unido' }),
       {
         key: 'account_holder_name',
         label: 'Titular de la cuenta',
+        section: 'Datos bancarios',
         type: 'text',
         required: true,
         maxLength: 140,
@@ -618,6 +615,7 @@ export const OWLPAY_FORMS = {
       {
         key: 'sort_code',
         label: 'Sort Code',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: 20-00-00',
         required: true,
@@ -628,6 +626,7 @@ export const OWLPAY_FORMS = {
       {
         key: 'account_number',
         label: 'Número de cuenta',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: 12345678',
         required: true,
@@ -636,26 +635,11 @@ export const OWLPAY_FORMS = {
         maxLength: 8,
       },
       {
-        key: 'bank_name',
-        label: 'Banco (opcional)',
-        type: 'text',
-        placeholder: 'Ej: Barclays, HSBC, Lloyds',
-        required: false,
-        maxLength: 140,
-      },
-      {
         key: 'transfer_purpose',
         label: 'Propósito de la transferencia',
         type: 'select',
         required: true,
-        options: [
-          { value: 'FAMILY_MAINTENANCE',      label: 'Manutención familiar' },
-          { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
-          { value: 'SALARY',                  label: 'Salario' },
-          { value: 'EDUCATION',               label: 'Educación' },
-          { value: 'BUSINESS_EXPENSES',       label: 'Gastos de negocio' },
-          { value: 'OTHER',                   label: 'Otro' },
-        ],
+        options: TRANSFER_PURPOSE_OPTIONS,
       },
       {
         key: 'is_self_transfer',
@@ -667,21 +651,28 @@ export const OWLPAY_FORMS = {
     ],
   },
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // JP — Japón (BANK-TRANSFER) — corredor no activo para SRL, requiere LLC
+  // Schema asumido similar a SG (BANK-TRANSFER estándar SWIFT).
+  // ═══════════════════════════════════════════════════════════════════════════
   JP: {
     title: 'Datos del beneficiario en Japón',
     fields: [
       {
         key: 'beneficiary_name',
         label: 'Nombre completo (en romaji)',
+        section: 'Datos del beneficiario',
         type: 'text',
         placeholder: 'Ej: Tanaka Hiroshi',
         required: true,
         maxLength: 140,
         hint: 'Usar letras latinas (romaji), no kanji',
       },
+      ...addressFields({ countryName: 'Japón' }),
       {
         key: 'account_holder_name',
         label: 'Titular de la cuenta (en romaji)',
+        section: 'Datos bancarios',
         type: 'text',
         required: true,
         maxLength: 140,
@@ -689,6 +680,7 @@ export const OWLPAY_FORMS = {
       {
         key: 'bank_name',
         label: 'Banco',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: MUFG Bank, Sumitomo Mitsui',
         required: true,
@@ -697,6 +689,7 @@ export const OWLPAY_FORMS = {
       {
         key: 'account_number',
         label: 'Número de cuenta',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: 1234567',
         required: true,
@@ -705,6 +698,7 @@ export const OWLPAY_FORMS = {
       {
         key: 'swift_code',
         label: 'SWIFT / BIC',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: BOTKJPJT',
         required: true,
@@ -717,14 +711,7 @@ export const OWLPAY_FORMS = {
         label: 'Propósito de la transferencia',
         type: 'select',
         required: true,
-        options: [
-          { value: 'FAMILY_MAINTENANCE',      label: 'Manutención familiar' },
-          { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
-          { value: 'SALARY',                  label: 'Salario' },
-          { value: 'BUSINESS_EXPENSES',       label: 'Gastos de negocio' },
-          { value: 'EXPORTED_GOODS',          label: 'Bienes exportados' },
-          { value: 'OTHER',                   label: 'Otro' },
-        ],
+        options: TRANSFER_PURPOSE_OPTIONS,
       },
       {
         key: 'is_self_transfer',
@@ -736,20 +723,28 @@ export const OWLPAY_FORMS = {
     ],
   },
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SG — Singapur (BANK-TRANSFER)
+  // Schema verificado: payout requires account_holder_name, bank_name,
+  //   account_number, swift_code. benef requires name + address.
+  // ═══════════════════════════════════════════════════════════════════════════
   SG: {
     title: 'Datos del beneficiario en Singapur',
     fields: [
       {
         key: 'beneficiary_name',
         label: 'Nombre completo',
+        section: 'Datos del beneficiario',
         type: 'text',
         placeholder: 'Ej: Lee Wei Ming',
         required: true,
         maxLength: 140,
       },
+      ...addressFields({ countryName: 'Singapur' }),
       {
         key: 'account_holder_name',
         label: 'Titular de la cuenta',
+        section: 'Datos bancarios',
         type: 'text',
         required: true,
         maxLength: 140,
@@ -757,6 +752,7 @@ export const OWLPAY_FORMS = {
       {
         key: 'bank_name',
         label: 'Banco',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: DBS Bank, OCBC, UOB',
         required: true,
@@ -765,6 +761,7 @@ export const OWLPAY_FORMS = {
       {
         key: 'account_number',
         label: 'Número de cuenta',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: 1234567890',
         required: true,
@@ -773,6 +770,7 @@ export const OWLPAY_FORMS = {
       {
         key: 'swift_code',
         label: 'SWIFT / BIC',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: DBSSSGSG',
         required: true,
@@ -784,13 +782,7 @@ export const OWLPAY_FORMS = {
         label: 'Propósito de la transferencia',
         type: 'select',
         required: true,
-        options: [
-          { value: 'FAMILY_MAINTENANCE',      label: 'Manutención familiar' },
-          { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
-          { value: 'SALARY',                  label: 'Salario' },
-          { value: 'BUSINESS_EXPENSES',       label: 'Gastos de negocio' },
-          { value: 'OTHER',                   label: 'Otro' },
-        ],
+        options: TRANSFER_PURPOSE_OPTIONS,
       },
       {
         key: 'is_self_transfer',
@@ -802,20 +794,29 @@ export const OWLPAY_FORMS = {
     ],
   },
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HK — Hong Kong (CHATS, WIRE)
+  // Schema verificado: CHATS adds bank_code (^\d{3}$) requerido.
+  //   WIRE no incluye bank_code. benef requires name + address.
+  // bank_code de FE se envía siempre; BE lo omite si método es WIRE.
+  // ═══════════════════════════════════════════════════════════════════════════
   HK: {
     title: 'Datos del beneficiario en Hong Kong',
     fields: [
       {
         key: 'beneficiary_name',
         label: 'Nombre completo',
+        section: 'Datos del beneficiario',
         type: 'text',
         placeholder: 'Ej: Chan Tai Man',
         required: true,
         maxLength: 140,
       },
+      ...addressFields({ countryName: 'Hong Kong' }),
       {
         key: 'account_holder_name',
         label: 'Titular de la cuenta',
+        section: 'Datos bancarios',
         type: 'text',
         required: true,
         maxLength: 140,
@@ -823,14 +824,27 @@ export const OWLPAY_FORMS = {
       {
         key: 'bank_name',
         label: 'Banco',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: HSBC HK, Hang Seng Bank',
         required: true,
         maxLength: 140,
       },
       {
+        key: 'bank_code',
+        label: 'Código de banco (HK Clearing Code)',
+        section: 'Datos bancarios',
+        type: 'text',
+        placeholder: 'Ej: 004 (HSBC), 012 (BOC HK)',
+        required: true,
+        pattern: '^\\d{3}$',
+        hint: '3 dígitos — requerido para CHATS (instantáneo)',
+        maxLength: 3,
+      },
+      {
         key: 'account_number',
         label: 'Número de cuenta',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: 123-456789-001',
         required: true,
@@ -839,6 +853,7 @@ export const OWLPAY_FORMS = {
       {
         key: 'swift_code',
         label: 'SWIFT / BIC',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: HSBCHKHHHKH',
         required: true,
@@ -850,13 +865,7 @@ export const OWLPAY_FORMS = {
         label: 'Propósito de la transferencia',
         type: 'select',
         required: true,
-        options: [
-          { value: 'FAMILY_MAINTENANCE',      label: 'Manutención familiar' },
-          { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
-          { value: 'BUSINESS_EXPENSES',       label: 'Gastos de negocio' },
-          { value: 'EXPORTED_GOODS',          label: 'Bienes exportados' },
-          { value: 'OTHER',                   label: 'Otro' },
-        ],
+        options: TRANSFER_PURPOSE_OPTIONS,
       },
       {
         key: 'is_self_transfer',
@@ -868,28 +877,48 @@ export const OWLPAY_FORMS = {
     ],
   },
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // US — Estados Unidos (ACH_PUSH, DOMESTIC_WIRE, FEDWIRE, WIRE)
+  // Schema verificado (todos los métodos comparten payout schema):
+  //   payout requires account_holder_name, bank_name, account_number, routing_number.
+  //   benef requires name (ACH_PUSH solo) o name + address (otros).
+  // NO existe account_type en el schema — removido.
+  // ═══════════════════════════════════════════════════════════════════════════
   US: {
     title: 'Datos del beneficiario en Estados Unidos',
-    hint: 'La transferencia llega vía ACH — el sistema bancario electrónico de EEUU (2-5 días hábiles).',
+    hint: 'La transferencia llega vía ACH (2-5 días) o FEDWIRE (mismo día).',
     fields: [
       {
         key: 'beneficiary_name',
         label: 'Nombre completo',
+        section: 'Datos del beneficiario',
         type: 'text',
         placeholder: 'Ej: John Smith',
         required: true,
         maxLength: 140,
       },
+      ...addressFields({ countryName: 'Estados Unidos' }),
       {
         key: 'account_holder_name',
         label: 'Titular de la cuenta',
+        section: 'Datos bancarios',
         type: 'text',
+        required: true,
+        maxLength: 140,
+      },
+      {
+        key: 'bank_name',
+        label: 'Banco',
+        section: 'Datos bancarios',
+        type: 'text',
+        placeholder: 'Ej: Chase, Bank of America, Wells Fargo',
         required: true,
         maxLength: 140,
       },
       {
         key: 'routing_number',
         label: 'Routing Number (ABA)',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: 021000021',
         required: true,
@@ -900,42 +929,18 @@ export const OWLPAY_FORMS = {
       {
         key: 'account_number',
         label: 'Número de cuenta',
+        section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: 123456789',
         required: true,
         maxLength: 17,
       },
       {
-        key: 'account_type',
-        label: 'Tipo de cuenta',
-        type: 'select',
-        required: true,
-        options: [
-          { value: 'checking', label: 'Checking (corriente)' },
-          { value: 'savings',  label: 'Savings (ahorro)' },
-        ],
-      },
-      {
-        key: 'bank_name',
-        label: 'Banco (opcional)',
-        type: 'text',
-        placeholder: 'Ej: Chase, Bank of America, Wells Fargo',
-        required: false,
-        maxLength: 140,
-      },
-      {
         key: 'transfer_purpose',
         label: 'Propósito de la transferencia',
         type: 'select',
         required: true,
-        options: [
-          { value: 'FAMILY_MAINTENANCE',      label: 'Manutención familiar' },
-          { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
-          { value: 'SALARY',                  label: 'Salario' },
-          { value: 'EDUCATION',               label: 'Educación' },
-          { value: 'BUSINESS_EXPENSES',       label: 'Gastos de negocio' },
-          { value: 'OTHER',                   label: 'Otro' },
-        ],
+        options: TRANSFER_PURPOSE_OPTIONS,
       },
       {
         key: 'is_self_transfer',
@@ -947,22 +952,49 @@ export const OWLPAY_FORMS = {
     ],
   },
 
-};
+}
 
-// Para países OwlPay sin configuración específica aún
+// Para países OwlPay sin configuración específica (fallback genérico).
+// Asume SWIFT-based bank transfer estándar.
 export const GENERIC_OWLPAY_FORM = {
   title: 'Datos del beneficiario',
   fields: [
     {
       key: 'beneficiary_name',
       label: 'Nombre completo',
+      section: 'Datos del beneficiario',
       type: 'text',
       required: true,
       maxLength: 140,
     },
     {
+      key: 'street',
+      label: 'Calle y número',
+      section: 'Dirección',
+      type: 'text',
+      required: true,
+      maxLength: 200,
+    },
+    {
+      key: 'city',
+      label: 'Ciudad',
+      section: 'Dirección',
+      type: 'text',
+      required: false,
+      maxLength: 80,
+    },
+    {
+      key: 'postal_code',
+      label: 'Código postal',
+      section: 'Dirección',
+      type: 'text',
+      required: false,
+      maxLength: 20,
+    },
+    {
       key: 'account_holder_name',
       label: 'Titular de la cuenta',
+      section: 'Datos bancarios',
       type: 'text',
       required: true,
       maxLength: 140,
@@ -970,6 +1002,7 @@ export const GENERIC_OWLPAY_FORM = {
     {
       key: 'bank_name',
       label: 'Banco',
+      section: 'Datos bancarios',
       type: 'text',
       required: true,
       maxLength: 140,
@@ -977,6 +1010,7 @@ export const GENERIC_OWLPAY_FORM = {
     {
       key: 'account_number',
       label: 'Número de cuenta',
+      section: 'Datos bancarios',
       type: 'text',
       required: true,
       maxLength: 34,
@@ -984,6 +1018,7 @@ export const GENERIC_OWLPAY_FORM = {
     {
       key: 'swift_code',
       label: 'SWIFT / BIC',
+      section: 'Datos bancarios',
       type: 'text',
       required: false,
       maxLength: 11,
@@ -993,22 +1028,14 @@ export const GENERIC_OWLPAY_FORM = {
       label: 'Propósito de la transferencia',
       type: 'select',
       required: true,
-      options: [
-        { value: 'FAMILY_MAINTENANCE',    label: 'Manutención familiar' },
-        { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
-        { value: 'SALARY',                label: 'Salario' },
-        { value: 'DONATIONS',             label: 'Donaciones' },
-        { value: 'EDUCATION',             label: 'Educación' },
-        { value: 'BUSINESS_EXPENSES',     label: 'Gastos de negocio' },
-        { value: 'OTHER',                 label: 'Otro' },
-      ],
+      options: TRANSFER_PURPOSE_OPTIONS,
     },
     {
       key: 'is_self_transfer',
-      label: '¿Cuenta propia?',
+      label: 'Esta cuenta me pertenece',
       type: 'toggle',
-      required: true,
+      required: false,
       default: false,
     },
   ],
-};
+}
