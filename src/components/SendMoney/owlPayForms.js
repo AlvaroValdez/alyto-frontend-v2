@@ -29,9 +29,11 @@ const TRANSFER_PURPOSE_OPTIONS = [
 ]
 
 // Campos de dirección comunes (Harbor beneficiary_address).
-// Para todos los países excepto EU: required `street`; postal_code es nullable.
-// Para EU: postal_code también es required.
-const addressFields = ({ postalRequired = false, countryName = '' } = {}) => ([
+// IMPORTANTE: el schema endpoint de Harbor dice que solo street + country son
+// required, PERO la implementación real verifica también city, state_province
+// y postal_code (validado vía scripts/audit-harbor-end-to-end.js). Por eso
+// los pedimos como required en el formulario.
+const addressFields = ({ countryName = '', stateProvinceLabel = 'Estado / Provincia' } = {}) => ([
   {
     key: 'street',
     label: 'Calle y número',
@@ -47,7 +49,16 @@ const addressFields = ({ postalRequired = false, countryName = '' } = {}) => ([
     section: 'Dirección del beneficiario',
     type: 'text',
     placeholder: countryName ? `Ej: capital de ${countryName}` : 'Ciudad',
-    required: false,
+    required: true,
+    maxLength: 80,
+  },
+  {
+    key: 'state_province',
+    label: stateProvinceLabel,
+    section: 'Dirección del beneficiario',
+    type: 'text',
+    placeholder: 'Si no aplica, escribir el código de país (HK, SG, etc.)',
+    required: false,  // BE auto-fills con country code si no se provee
     maxLength: 80,
   },
   {
@@ -56,7 +67,7 @@ const addressFields = ({ postalRequired = false, countryName = '' } = {}) => ([
     section: 'Dirección del beneficiario',
     type: 'text',
     placeholder: 'Código postal',
-    required: postalRequired,
+    required: true,
     maxLength: 20,
   },
 ])
@@ -310,7 +321,7 @@ export const OWLPAY_FORMS = {
         required: true,
         maxLength: 140,
       },
-      ...addressFields({ postalRequired: true, countryName: 'Europa' }),
+      ...addressFields({ countryName: 'Europa' }),
       {
         key: 'account_holder_name',
         label: 'Titular de la cuenta',
@@ -393,10 +404,10 @@ export const OWLPAY_FORMS = {
         label: 'CPF del beneficiario',
         section: 'Datos PIX',
         type: 'text',
-        placeholder: 'Ej: 12345678901',
+        placeholder: 'Ej: 12345678909',
         required: true,
         pattern: '^\\d{11}$',
-        hint: '11 dígitos sin puntos ni guiones — requerido por Harbor para AML',
+        hint: 'CPF real (11 dígitos sin puntos ni guiones). Harbor valida con algoritmo oficial brasileño — CPFs ficticios serán rechazados.',
         maxLength: 11,
       },
       {
@@ -830,17 +841,8 @@ export const OWLPAY_FORMS = {
         required: true,
         maxLength: 140,
       },
-      {
-        key: 'bank_code',
-        label: 'Código de banco (HK Clearing Code)',
-        section: 'Datos bancarios',
-        type: 'text',
-        placeholder: 'Ej: 004 (HSBC), 012 (BOC HK)',
-        required: true,
-        pattern: '^\\d{3}$',
-        hint: '3 dígitos — requerido para CHATS (instantáneo)',
-        maxLength: 3,
-      },
+      // bank_code (HK Clearing Code) removido: CHATS no disponible para
+      // nuestro customer en sandbox. Reactivar cuando Harbor habilite CHATS.
       {
         key: 'account_number',
         label: 'Número de cuenta',

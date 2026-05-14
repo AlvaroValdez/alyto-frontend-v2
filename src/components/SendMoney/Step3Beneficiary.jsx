@@ -80,8 +80,9 @@ const FALLBACK_HARBOR_METHODS = {
     { method: 'BANK-TRANSFER', rate: null, deliveryLabel: '1-2 días',    recommended: false },
   ],
   HK: [
-    { method: 'CHATS', rate: null, deliveryLabel: 'Mismo día',  recommended: true },
-    { method: 'WIRE',  rate: null, deliveryLabel: '1-3 días',   recommended: false },
+    // CHATS removido — solo WIRE disponible para nuestro customer en sandbox.
+    // Reactivar si Harbor habilita CHATS para AV Finance LLC (requiere amendment).
+    { method: 'WIRE',  rate: null, deliveryLabel: '1-3 días',   recommended: true },
   ],
   JP: [
     // SRL no tiene acceso a JP en Harbor — requiere LLC activado en MSA.
@@ -120,7 +121,7 @@ const SUPPORTED_HARBOR_METHODS = {
   BR: ['PIX'],                                   // form solo PIX
   MX: ['SPEI'],                                  // form solo CLABE
   AE: ['FTS', 'AANI', 'BANK-TRANSFER'],          // 3 métodos válidos en schema AE
-  HK: ['CHATS', 'WIRE'],                         // form captura bank_code (CHATS) y SWIFT (WIRE)
+  HK: ['WIRE'],                                  // CHATS no disponible para nuestro customer (sandbox solo retorna WIRE)
   JP: ['BANK-TRANSFER'],                         // schema asumido (SRL sin acceso)
   SG: ['BANK-TRANSFER'],                         // hyphen
   IN: ['IMPS'],                                  // único método verificado
