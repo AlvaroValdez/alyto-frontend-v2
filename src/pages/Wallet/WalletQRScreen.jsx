@@ -544,9 +544,19 @@ function TabPagar() {
         className="relative rounded-2xl overflow-hidden flex items-center justify-center bg-[#F1F5F9] border border-[#E2E8F0]"
         style={{ aspectRatio: '1/1' }}
       >
-        {scanning ? (
+        {/*
+          Video siempre en el DOM para que videoRef.current esté disponible
+          cuando startCamera() lo necesita (antes de setScanning(true)).
+        */}
+        <video
+          ref={videoRef}
+          className={`absolute inset-0 w-full h-full object-cover ${scanning ? '' : 'hidden'}`}
+          playsInline
+          muted
+        />
+
+        {scanning && (
           <>
-            <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" playsInline muted />
             {/* Marco de escaneo */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="w-48 h-48 border-2 border-[#233E58] rounded-2xl opacity-80" />
@@ -558,7 +568,9 @@ function TabPagar() {
               <X size={14} className="text-[#64748B]" />
             </button>
           </>
-        ) : (
+        )}
+
+        {!scanning && (
           <button
             onClick={startCamera}
             className="flex flex-col items-center gap-3 py-12"
@@ -570,6 +582,7 @@ function TabPagar() {
             <p className="text-[0.75rem] text-[#94A3B8]">Apunta al QR Alyto</p>
           </button>
         )}
+
         {/* Canvas oculto para jsQR */}
         <canvas ref={canvasRef} className="hidden" />
       </div>
