@@ -303,6 +303,8 @@ export const OWLPAY_FORMS = {
     title: 'Datos del beneficiario en Europa (SEPA)',
     fields: [
       // ── Datos del beneficiario ──
+      // Harbor EU schema: beneficiary_info solo acepta beneficiary_name + beneficiary_address
+      // (additionalProperties:false → beneficiary_dob/id_doc serían rechazados)
       {
         key: 'beneficiary_name',
         label: 'Nombre completo',
@@ -312,25 +314,9 @@ export const OWLPAY_FORMS = {
         required: true,
         maxLength: 140,
       },
-      {
-        key: 'beneficiary_dob',
-        label: 'Fecha de nacimiento',
-        section: 'Datos del beneficiario',
-        type: 'date',
-        required: true,
-        hint: 'Requerido por regulación europea (AML)',
-      },
-      {
-        key: 'beneficiary_id_doc_number',
-        label: 'Número de pasaporte o documento de identidad',
-        section: 'Datos del beneficiario',
-        type: 'text',
-        required: true,
-        maxLength: 50,
-        hint: 'Requerido por regulación europea (AML)',
-      },
 
       // ── Dirección del beneficiario ──
+      // Harbor required: street, country, postal_code. city/state_province nullable.
       {
         key: 'street',
         label: 'Calle y número',
@@ -346,7 +332,7 @@ export const OWLPAY_FORMS = {
         section: 'Dirección',
         type: 'text',
         placeholder: 'Ej: Berlín',
-        required: true,
+        required: false,
         maxLength: 80,
       },
       {
@@ -356,10 +342,12 @@ export const OWLPAY_FORMS = {
         type: 'text',
         placeholder: 'Ej: 10115',
         required: true,
-        maxLength: 10,
+        maxLength: 20,
       },
 
       // ── Datos bancarios ──
+      // SEPA payout_instrument: { account_holder_name, account_number(IBAN) }
+      // WIRE payout_instrument añade: bank_name, swift_code(BIC)
       {
         key: 'account_holder_name',
         label: 'Titular de la cuenta',
@@ -376,7 +364,7 @@ export const OWLPAY_FORMS = {
         type: 'text',
         placeholder: 'Ej: DE89370400440532013000',
         required: true,
-        pattern: '^[A-Z]{2}\\d{2}[A-Z0-9]{1,30}$',
+        pattern: '^[A-Z]{2}\\d{2}[A-Z0-9]{11,30}$',
         hint: 'Código IBAN del banco europeo (15–34 caracteres)',
         maxLength: 34,
       },
@@ -386,9 +374,9 @@ export const OWLPAY_FORMS = {
         section: 'Datos bancarios',
         type: 'text',
         placeholder: 'Ej: DEUTDEDB',
-        required: true,
+        required: false,
         pattern: '^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$',
-        hint: '8 u 11 caracteres en mayúsculas',
+        hint: 'Solo necesario si seleccionas Transferencia Internacional (WIRE)',
         maxLength: 11,
       },
       {
@@ -398,6 +386,7 @@ export const OWLPAY_FORMS = {
         type: 'text',
         placeholder: 'Ej: Deutsche Bank',
         required: false,
+        hint: 'Solo necesario si seleccionas Transferencia Internacional (WIRE)',
         maxLength: 140,
       },
       {
@@ -405,15 +394,17 @@ export const OWLPAY_FORMS = {
         label: 'Propósito de la transferencia',
         type: 'select',
         required: true,
+        // Valores del enum oficial Harbor (validados vía GET /requirements)
         options: [
           { value: 'FAMILY_MAINTENANCE',      label: 'Manutención familiar' },
           { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
           { value: 'SALARY',                  label: 'Salario' },
           { value: 'EDUCATION',               label: 'Educación' },
-          { value: 'BUSINESS_EXPENSES',       label: 'Gastos de negocio' },
           { value: 'ADVISOR_FEES',            label: 'Honorarios profesionales' },
           { value: 'PROPERTY_RENTAL',         label: 'Alquiler de propiedad' },
-          { value: 'OTHER',                   label: 'Otro' },
+          { value: 'MEDICAL_TREATMENT',       label: 'Tratamiento médico' },
+          { value: 'TRAVEL',                  label: 'Viaje' },
+          { value: 'DONATIONS',               label: 'Donaciones' },
         ],
       },
       {
