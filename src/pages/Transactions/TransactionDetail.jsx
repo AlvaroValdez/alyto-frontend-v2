@@ -735,18 +735,28 @@ export default function TransactionDetail() {
           )}
 
           {/* ── Banner: monto actualizado por Harbor (rateHistory) ── */}
+          {/* Severidad por diffPercent:                                  */}
+          {/*   > 0       → gris (favorable, recibe más)                  */}
+          {/*   -0.5..0   → no muestra (cambio insignificante)            */}
+          {/*   -5..-0.5  → amber (cambio leve por tasa de mercado)       */}
+          {/*   < -5      → rojo prominente (drop severo — investigar)    */}
           {tx.rateHistory?.length > 0 && (() => {
             const last       = tx.rateHistory[tx.rateHistory.length - 1]
+            const diffPct    = Number(last.diffPercent ?? 0)
+            if (Math.abs(diffPct) < 0.5) return null  // skip changes insignificantes
+
             const isPositive = (last.difference ?? 0) > 0
+            const isSevere   = !isPositive && diffPct < -5
             const finalAmt   = formatAmount(last.newAmount,      tx.destinationCurrency)
             const prevAmt    = formatAmount(last.previousAmount, tx.destinationCurrency)
+            const pctLabel   = `${diffPct > 0 ? '+' : ''}${diffPct.toFixed(2)}%`
 
             if (isPositive) {
               return (
                 <div className="flex items-start gap-3 rounded-2xl px-4 py-3.5 border bg-[#64748B0D] border-[#64748B26]">
                   <TrendingUp size={16} className="text-[#64748B] flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-[0.875rem] font-semibold text-[#0D1F3C]">Monto final ajustado</p>
+                    <p className="text-[0.875rem] font-semibold text-[#0D1F3C]">Monto final ajustado · {pctLabel}</p>
                     <p className="text-[0.75rem] text-[#4A5568] mt-0.5 leading-relaxed">
                       Recibirás <span className="font-medium">{finalAmt}</span> (estimado: {prevAmt}).
                       {' '}La tasa fue favorable al procesar.
@@ -756,11 +766,37 @@ export default function TransactionDetail() {
               )
             }
 
+            // Drop severo (>5%): banner rojo prominente
+            if (isSevere) {
+              return (
+                <div
+                  className="flex items-start gap-3 rounded-2xl px-4 py-4 border-2"
+                  style={{ background: '#EF44440D', borderColor: '#EF4444' }}
+                >
+                  <TrendingDown size={20} className="text-[#EF4444] flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-[0.9375rem] font-bold text-[#EF4444]">
+                      ⚠️ Monto ajustado significativamente · {pctLabel}
+                    </p>
+                    <p className="text-[0.8125rem] text-[#0D1F3C] mt-1 leading-relaxed">
+                      Recibiste <span className="font-bold">{finalAmt}</span>{' '}
+                      en lugar del estimado <span className="line-through text-[#94A3B8]">{prevAmt}</span>.
+                    </p>
+                    <p className="text-[0.75rem] text-[#4A5568] mt-1.5 leading-relaxed">
+                      La tasa cambió al procesar tu envío. Si crees que es un error, contacta soporte
+                      con tu ID de transacción.
+                    </p>
+                  </div>
+                </div>
+              )
+            }
+
+            // Drop leve (0.5%–5%): amber estándar
             return (
               <div className="flex items-start gap-3 rounded-2xl px-4 py-3.5 border bg-[#F59E0B0D] border-[#F59E0B33]">
                 <TrendingDown size={16} className="text-[#F59E0B] flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-[0.875rem] font-semibold text-[#0D1F3C]">Monto actualizado</p>
+                  <p className="text-[0.875rem] font-semibold text-[#0D1F3C]">Monto actualizado · {pctLabel}</p>
                   <p className="text-[0.75rem] text-[#4A5568] mt-0.5 leading-relaxed">
                     El monto final es <span className="font-medium">{finalAmt}</span> (estimado: {prevAmt}).
                     {' '}La tasa de mercado varió al procesar tu envío.
