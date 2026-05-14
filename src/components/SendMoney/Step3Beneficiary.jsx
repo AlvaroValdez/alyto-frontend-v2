@@ -80,13 +80,15 @@ const FALLBACK_HARBOR_METHODS = {
     { method: 'BANK-TRANSFER', rate: null, deliveryLabel: '1-2 días',    recommended: false },
   ],
   HK: [
-    // CHATS removido — solo WIRE disponible para nuestro customer en sandbox.
-    // Reactivar si Harbor habilita CHATS para AV Finance LLC (requiere amendment).
-    { method: 'WIRE',  rate: null, deliveryLabel: '1-3 días',   recommended: true },
+    // Per doc oficial Harbor: bo-hk usa CHATS rail. Sandbox solo retorna WIRE;
+    // en producción aparece CHATS también.
+    { method: 'CHATS', rate: null, deliveryLabel: 'Mismo día',  recommended: true },
+    { method: 'WIRE',  rate: null, deliveryLabel: '1-3 días',   recommended: false },
   ],
   JP: [
-    // SRL no tiene acceso a JP en Harbor — requiere LLC activado en MSA.
-    { method: 'BANK-TRANSFER', rate: null, deliveryLabel: '1 día hábil', recommended: true },
+    // Per doc oficial Harbor: bo-jp es Active para SRL (rail Wire).
+    // Sandbox retorna 3018 — limitación de testing, NO de producción.
+    { method: 'WIRE', rate: null, deliveryLabel: '1-3 días', recommended: true },
   ],
   SG: [
     { method: 'BANK-TRANSFER', rate: null, deliveryLabel: '1 día hábil', recommended: true },
@@ -121,8 +123,8 @@ const SUPPORTED_HARBOR_METHODS = {
   BR: ['PIX'],                                   // form solo PIX
   MX: ['SPEI'],                                  // form solo CLABE
   AE: ['FTS', 'AANI', 'BANK-TRANSFER'],          // 3 métodos válidos en schema AE
-  HK: ['WIRE'],                                  // CHATS no disponible para nuestro customer (sandbox solo retorna WIRE)
-  JP: ['BANK-TRANSFER'],                         // schema asumido (SRL sin acceso)
+  HK: ['CHATS', 'WIRE'],                         // doc oficial: CHATS rail principal; sandbox solo retorna WIRE pero prod tendrá CHATS
+  JP: ['WIRE'],                                  // doc oficial: Active para SRL (rail Wire); sandbox limitado
   SG: ['BANK-TRANSFER'],                         // hyphen
   IN: ['IMPS'],                                  // único método verificado
   US: ['ACH_PUSH', 'DOMESTIC_WIRE', 'FEDWIRE', 'WIRE'],  // 4 métodos US (mismo payout schema)

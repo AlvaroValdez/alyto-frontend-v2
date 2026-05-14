@@ -841,8 +841,17 @@ export const OWLPAY_FORMS = {
         required: true,
         maxLength: 140,
       },
-      // bank_code (HK Clearing Code) removido: CHATS no disponible para
-      // nuestro customer en sandbox. Reactivar cuando Harbor habilite CHATS.
+      {
+        key: 'bank_code',
+        label: 'HK Clearing Code (3 dígitos)',
+        section: 'Datos bancarios',
+        type: 'text',
+        placeholder: 'Ej: 004 (HSBC), 012 (BOC HK), 024 (Hang Seng)',
+        required: false,  // BE enforce required solo si paymentMethod === 'CHATS'
+        pattern: '^\\d{3}$',
+        hint: 'Requerido si seleccionas CHATS (instantáneo). No necesario para WIRE.',
+        maxLength: 3,
+      },
       {
         key: 'account_number',
         label: 'Número de cuenta',
