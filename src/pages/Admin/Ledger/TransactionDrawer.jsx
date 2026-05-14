@@ -586,6 +586,48 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
                 />
               )}
 
+              {/* ── Banner FALLO técnico (admin-facing failureReason) ─── */}
+              {tx.status === 'failed' && tx.failureReason && (
+                <div className="mb-5 p-4 rounded-2xl border border-[#EF444440] bg-[#EF44440A] space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg leading-none">⚠️</span>
+                    <p className="text-[0.875rem] font-bold text-[#EF4444]">
+                      Transferencia fallida {tx.failureCategory ? `· ${tx.failureCategory}` : ''}
+                    </p>
+                  </div>
+                  <div className="space-y-2 pl-1">
+                    <div>
+                      <p className="text-[0.625rem] font-semibold text-[#8A96B8] uppercase tracking-wider mb-0.5">
+                        Detalle técnico (admin)
+                      </p>
+                      <p className="text-[0.8125rem] text-white break-words">
+                        {tx.failureReason}
+                      </p>
+                    </div>
+                    {tx.userFailureReason && (
+                      <div>
+                        <p className="text-[0.625rem] font-semibold text-[#8A96B8] uppercase tracking-wider mb-0.5">
+                          Mensaje mostrado al usuario
+                        </p>
+                        <p className="text-[0.8125rem] text-[#CBD5E1]">
+                          {tx.userFailureReason}
+                        </p>
+                        {tx.userFailureAction && (
+                          <p className="text-[0.75rem] text-[#94A3B8] mt-1 italic">
+                            → {tx.userFailureAction}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {tx.failureRetryable && (
+                      <p className="text-[0.6875rem] text-[#22C55E]">
+                        ✓ El usuario puede reintentar tras corregir los datos
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* ── Banner USDC pendiente de envío (Harbor off-ramp) ─── */}
               {tx.status === 'payout_pending_usdc_send' && tx.harborTransfer?.instructionAddress && (
                 <div className="mb-5 p-4 rounded-2xl border border-[#F59E0B40] bg-[#F59E0B08] space-y-3">

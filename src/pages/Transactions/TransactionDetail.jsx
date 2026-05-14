@@ -667,6 +667,51 @@ export default function TransactionDetail() {
             )}
           </div>
 
+          {/* ── 1c. DETALLE DEL FALLO — solo si failed con info user-facing ── */}
+          {isFailed && tx.failure?.reason && (
+            <div className="bg-white rounded-2xl p-5 border" style={{ borderColor: '#EF444433' }}>
+              <div className="flex items-start gap-3 mb-3">
+                <XCircle size={20} className="text-[#EF4444] flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-[0.875rem] font-bold text-[#0D1F3C] mb-1">
+                    ¿Qué pasó con tu transferencia?
+                  </p>
+                  <p className="text-[0.8125rem] text-[#4A5568] leading-relaxed">
+                    {tx.failure.reason}
+                  </p>
+                </div>
+              </div>
+
+              {tx.failure.action && (
+                <div className="rounded-xl px-4 py-3 mb-3" style={{ background: '#F8FAFC', borderLeft: '3px solid #233E58' }}>
+                  <p className="text-[0.6875rem] uppercase tracking-wider font-bold text-[#64748B] mb-1">
+                    Cómo resolverlo
+                  </p>
+                  <p className="text-[0.8125rem] text-[#0D1F3C] leading-relaxed">
+                    {tx.failure.action}
+                  </p>
+                </div>
+              )}
+
+              {tx.failure.retryable && (
+                <button
+                  onClick={() => {
+                    // Pre-rellenar con el país destino y volver al flujo de envío
+                    try {
+                      sessionStorage.setItem('alyto_retry_destination', tx.destinationCountry ?? '')
+                    } catch { /* sessionStorage puede fallar en modo privado */ }
+                    navigate('/send')
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[0.875rem] font-semibold transition-colors"
+                  style={{ background: '#233E58', color: 'white' }}
+                >
+                  <RefreshCw size={15} />
+                  Reintentar con datos corregidos
+                </button>
+              )}
+            </div>
+          )}
+
           {/* ── 1b. INSTRUCCIONES PAYIN MANUAL (Bolivia) ─────────────────── */}
           {isManualPending && (
             <div className="bg-white rounded-2xl p-5 border border-[#FBBF2430]">
