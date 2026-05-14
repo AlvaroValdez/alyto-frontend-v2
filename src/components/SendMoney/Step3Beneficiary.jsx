@@ -18,6 +18,7 @@ import { useAuth }                  from '../../context/AuthContext'
 import { createContact }            from '../../services/api'
 import ContactPicker                from '../Contacts/ContactPicker'
 import { OWLPAY_FORMS, GENERIC_OWLPAY_FORM } from './owlPayForms'
+import { runFieldValidator, ibanCountry } from './formValidators'
 
 // ── Prefijos de teléfono por país ─────────────────────────────────────────────
 
@@ -259,7 +260,7 @@ function LoadingSkeleton() {
 
 // ── Validación por campo ──────────────────────────────────────────────────────
 
-function validateField(field, value) {
+function validateField(field, value, ctx = {}) {
   // Normalise: booleans stringify to 'true'/'false' which are never empty
   const raw = value === true ? 'true' : value === false ? 'false' : (value ?? '')
   const v   = String(raw).trim()
@@ -283,6 +284,17 @@ function validateField(field, value) {
         if (!new RegExp(field.pattern).test(v)) return field.hint ?? 'Formato inválido'
       } catch { /* invalid regex in config — skip */ }
     }
+
+    // Validators avanzados por field key (IBAN mod-97, CPF mod-11, CLABE,
+    // SWIFT, postal por país, etc.) — atrapan errores antes que Harbor.
+    const enrichedCtx = {
+      country:         ctx.country,
+      paymentMethod:   ctx.paymentMethod,
+      addressCountry:  ibanCountry(ctx.values?.iban) ?? ctx.country,
+      expectedCountry: ctx.country && ctx.country !== 'EU' ? ctx.country : null,
+    }
+    const customErr = runFieldValidator(field.key, v, enrichedCtx)
+    if (customErr) return customErr
   }
 
   return null
@@ -610,16 +622,23 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
     setTouched(prev => ({ ...prev, [key]: true }))
   }
 
+  // Contexto cross-field para validators (IBAN, postal por país, etc.)
+  const validatorCtx = useMemo(() => ({
+    country:       destinationCountry,
+    values,
+    paymentMethod: selectedPaymentMethod,
+  }), [destinationCountry, values, selectedPaymentMethod])
+
   function getError(field) {
     if (!touched[field.key]) return null
-    return validateField(field, values[field.key])
+    return validateField(field, values[field.key], validatorCtx)
   }
 
   const allValid = useMemo(() => {
-    if (!activeFields.every(f => !validateField(f, values[f.key]))) return false
+    if (!activeFields.every(f => !validateField(f, values[f.key], validatorCtx))) return false
     if (usesHarborMethods && !selectedPaymentMethod) return false
     return true
-  }, [activeFields, values, usesHarborMethods, selectedPaymentMethod])
+  }, [activeFields, values, usesHarborMethods, selectedPaymentMethod, validatorCtx])
 
   async function handleNext() {
     if (!allValid) {
