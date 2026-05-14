@@ -43,6 +43,7 @@ const HARBOR_DEST_CURRENCY = {
   HK: 'HKD',
   NG: 'NGN',
   EU: 'EUR',
+  US: 'USD',
 }
 
 // Fallback si el endpoint Harbor falla (para que el flujo no se rompa en dev)
@@ -63,8 +64,9 @@ const FALLBACK_HARBOR_METHODS = {
     { method: 'BANK_TRANSFER', rate: null, deliveryLabel: '1-2 días', recommended: true },
   ],
   BR: [
+    // PIX único — el form de BR (owlPayForms.js) solo captura br_pix_key.
+    // Si Harbor live ofrece WIRE para BR en el futuro, agregar form fields.
     { method: 'PIX',  rate: null, deliveryLabel: 'Inmediato',   recommended: true },
-    { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: false },
   ],
   MX: [
     { method: 'SPEI', rate: null, deliveryLabel: 'Mismo día',   recommended: true },
@@ -95,6 +97,25 @@ const FALLBACK_HARBOR_METHODS = {
     { method: 'ACH',     rate: null, deliveryLabel: '1-2 días', recommended: true },
     { method: 'FEDWIRE', rate: null, deliveryLabel: 'Mismo día', recommended: false },
   ],
+}
+
+// Filtro de seguridad: métodos Harbor que el formulario actual sabe capturar.
+// Si Harbor live devuelve un método no listado aquí, se omite del selector
+// (evita que el usuario seleccione un método cuyos campos el form no tiene).
+// Mantener sincronizado con OWLPAY_FORMS en owlPayForms.js.
+const SUPPORTED_HARBOR_METHODS = {
+  CN: ['CIPS', 'WIRE'],            // ambos usan SWIFT — form captura SWIFT
+  EU: ['SEPA', 'WIRE'],            // backend branches por método
+  GB: ['FPS'],                     // form no captura swift_code (WIRE requiere SWIFT)
+  NG: ['BANK_TRANSFER'],
+  BR: ['PIX'],                     // form solo captura br_pix_key
+  MX: ['SPEI'],                    // form solo captura mx_clabe
+  AE: ['AANI', 'WIRE'],            // ambos IBAN-based — form captura IBAN
+  HK: ['CHATS', 'WIRE'],           // ambos SWIFT — form captura SWIFT
+  JP: ['FTS', 'WIRE'],             // ambos SWIFT — form captura SWIFT
+  SG: ['BANK_TRANSFER', 'WIRE'],   // ambos SWIFT — form captura SWIFT
+  IN: ['IMPS', 'NEFT', 'RTGS'],    // todos IFSC-based
+  US: ['ACH', 'FEDWIRE'],          // ambos routing_number
 }
 
 const METHOD_DISPLAY_NAMES = {
@@ -471,7 +492,10 @@ export default function Step3Beneficiary({ destinationCountry, onNext }) {
     const source = (Array.isArray(harborMethodsRaw) && harborMethodsRaw.length > 0)
       ? harborMethodsRaw
       : (FALLBACK_HARBOR_METHODS[destinationCountry] ?? [])
-    return source.map(normalizeHarborMethod)
+    const normalized = source.map(normalizeHarborMethod)
+    const supported  = SUPPORTED_HARBOR_METHODS[destinationCountry] ?? null
+    if (!supported) return normalized
+    return normalized.filter(m => supported.includes(m.method))
   }, [usesHarborMethods, harborMethodsRaw, destinationCountry])
 
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null)
