@@ -30,7 +30,7 @@ export default function AuthLayout() {
             textTransform: 'uppercase',
           }}
         >
-          Wallet 2.0
+          Plataforma Financiera Multientidad
         </p>
       </div>
 
