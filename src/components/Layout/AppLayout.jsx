@@ -33,7 +33,7 @@ export default function AppLayout() {
 
   const pageTitle = Object.entries(PAGE_TITLES).find(([path]) =>
     location.pathname === path || location.pathname.startsWith(path + '/')
-  )?.[1] ?? 'Alyto'
+  )?.[1] ?? 'Alyto Wallet 2.0'
 
   const [unreadCount, setUnreadCount] = useState(0)
 

@@ -43,17 +43,30 @@ export default function SplashScreen({ isLoading }) {
         pointerEvents: fadeOut ? 'none' : 'auto',
       }}
     >
-      {/* ── Logo ── */}
+      {/* ── Logo + versión ── */}
       <div
         style={{
           animation: 'splashLogoIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
         }}
       >
         <img
           src="/assets/LogoAlyto.png"
-          alt="Alyto"
+          alt="Alyto Wallet 2.0"
           style={{ height: 48, width: 'auto', objectFit: 'contain' }}
         />
+        <span
+          style={{
+            fontSize:      '0.6875rem',
+            fontWeight:    700,
+            color:         '#1D3461',
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            opacity:       0.55,
+          }}
+        >
+          Wallet 2.0
+        </span>
       </div>
 
       {/* ── Anillo teal animado ── */}

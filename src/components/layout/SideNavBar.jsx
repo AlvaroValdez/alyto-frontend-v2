@@ -47,12 +47,23 @@ export default function SideNavBar({ user, onLogout }) {
       }}
     >
       {/* Logo */}
-      <div style={{ padding: '24px 20px 20px' }}>
+      <div style={{ padding: '24px 20px 20px', display: 'flex', flexDirection: 'column', gap: 4 }}>
         <img
           src="/assets/LogoAlyto.png"
-          alt="Alyto"
+          alt="Alyto Wallet 2.0"
           style={{ height: 32, width: 'auto', objectFit: 'contain' }}
         />
+        <span
+          style={{
+            fontSize:      '0.625rem',
+            fontWeight:    700,
+            color:         'var(--color-text-muted)',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+          }}
+        >
+          Wallet 2.0
+        </span>
       </div>
 
       <div style={{ height: 1, background: 'var(--color-border)', margin: '0 20px' }} />

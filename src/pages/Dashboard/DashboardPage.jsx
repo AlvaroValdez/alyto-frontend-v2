@@ -240,7 +240,7 @@ export default function DashboardPage() {
         >
           <p style={{ fontSize: '2rem', marginBottom: 8 }}>🚀</p>
           <p style={{ fontSize: 'var(--font-md)', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: 4 }}>
-            Bienvenido a Alyto
+            Bienvenido a Alyto Wallet 2.0
           </p>
           <p style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)' }}>
             Realiza tu primera transferencia hoy

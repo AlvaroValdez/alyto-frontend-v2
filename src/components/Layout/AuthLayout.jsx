@@ -30,7 +30,7 @@ export default function AuthLayout() {
             textTransform: 'uppercase',
           }}
         >
-          Plataforma Financiera
+          Wallet 2.0
         </p>
       </div>
 
