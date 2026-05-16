@@ -7,14 +7,15 @@
  *   - USDC: saldo en USDC, depósito Stellar directo, conversión BOB→USDC
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
+import jsQR from 'jsqr'
 import {
   ArrowLeft, Wallet, ArrowDownToLine, ArrowUpRight,
   ArrowRightLeft, AlertCircle, CheckCircle2, Clock,
   ChevronLeft, ChevronRight, X, Loader2, Copy, CheckCheck, QrCode,
-  RefreshCw, Info, Upload, Building2,
+  RefreshCw, Info, Upload, Building2, Mail, Camera, CameraOff,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { request, requestFormData } from '../../services/api'
@@ -426,21 +427,53 @@ function DepositModal({ open, onClose, onSuccess }) {
   )
 }
 
-// ── Modal Enviar BOB ──────────────────────────────────────────────────────────
+// ── Modal Enviar BOB — dos métodos: email o escanear QR ──────────────────────
 
 function SendModal({ open, onClose, onSuccess, balanceAvailable }) {
-  const [email, setEmail]         = useState('')
-  const [amount, setAmount]       = useState('')
-  const [description, setDescription] = useState('')
-  const [step, setStep]           = useState(1)
-  const [loading, setLoading]     = useState(false)
-  const [error, setError]         = useState('')
-  const [done, setDone]           = useState(false)
+  const [tab, setTab]           = useState('email')  // 'email' | 'qr'
+  const [done, setDone]         = useState(false)
+  const [doneInfo, setDoneInfo] = useState({ recipient: '', amount: '' })
 
-  function handleClose() {
-    setEmail(''); setAmount(''); setDescription(''); setStep(1)
-    setError(''); setDone(false); onClose()
+  // Email tab
+  const [email, setEmail]             = useState('')
+  const [amount, setAmount]           = useState('')
+  const [description, setDescription] = useState('')
+  const [step, setStep]               = useState(1)
+  const [loading, setLoading]         = useState(false)
+  const [error, setError]             = useState('')
+
+  // QR tab
+  const [scanning,  setScanning]  = useState(false)
+  const [camError,  setCamError]  = useState(null)
+  const [preview,   setPreview]   = useState(null)
+  const [qrAmount,  setQrAmount]  = useState('')
+  const [payError,  setPayError]  = useState(null)
+  const [paying,    setPaying]    = useState(false)
+  const videoRef  = useRef(null)
+  const canvasRef = useRef(null)
+  const streamRef = useRef(null)
+  const rafRef    = useRef(null)
+
+  const stopCamera = useCallback(() => {
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+    if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null }
+    setScanning(false)
+  }, [])
+
+  useEffect(() => { if (!open) stopCamera() }, [open, stopCamera])
+  useEffect(() => { if (tab !== 'qr') stopCamera() }, [tab, stopCamera])
+
+  function resetAll() {
+    stopCamera()
+    setTab('email'); setDone(false); setDoneInfo({ recipient: '', amount: '' })
+    setEmail(''); setAmount(''); setDescription(''); setStep(1); setError('')
+    setScanning(false); setCamError(null); setPreview(null)
+    setQrAmount(''); setPayError(null); setPaying(false)
   }
+
+  function handleClose() { resetAll(); onClose() }
+
+  // ── Email handlers ────────────────────────────────────────────────────────
 
   function handleContinue(e) {
     e.preventDefault(); setError('')
@@ -457,6 +490,7 @@ function SendModal({ open, onClose, onSuccess, balanceAvailable }) {
         method: 'POST',
         body: JSON.stringify({ recipientEmail: email, amount: Number(amount), description }),
       })
+      setDoneInfo({ recipient: email, amount: formatBOB(Number(amount)) })
       setDone(true); onSuccess?.()
     } catch (err) {
       setError(err.message ?? 'Error al procesar el envío.')
@@ -465,8 +499,70 @@ function SendModal({ open, onClose, onSuccess, balanceAvailable }) {
     }
   }
 
+  // ── QR handlers ───────────────────────────────────────────────────────────
+
+  async function startCamera() {
+    setCamError(null); setPreview(null); setPayError(null)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      streamRef.current = stream
+      if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play() }
+      setScanning(true)
+      scanLoop()
+    } catch {
+      setCamError('No se pudo acceder a la cámara. Verifica los permisos en tu navegador.')
+    }
+  }
+
+  function scanLoop() {
+    const tick = () => {
+      const video = videoRef.current; const canvas = canvasRef.current
+      if (!video || !canvas || !streamRef.current) return
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(video, 0, 0)
+        const img = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const code = jsQR(img.data, img.width, img.height)
+        if (code?.data) { stopCamera(); handleQrDetected(code.data); return }
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+  }
+
+  async function handleQrDetected(raw) {
+    try {
+      const data = await request(`/wallet/qr/preview?qrContent=${encodeURIComponent(raw)}`)
+      setPreview({ ...data, _rawContent: raw })
+    } catch (err) {
+      setPayError(err.message || 'QR no reconocido como QR Alyto.')
+    }
+  }
+
+  async function handleQrPay() {
+    if (!preview) return
+    const payAmt = preview.amount > 0 ? preview.amount : Number(qrAmount)
+    if (!payAmt || payAmt < 1) { setPayError('Ingresa un monto válido.'); return }
+    if (payAmt > balanceAvailable) { setPayError(`Saldo insuficiente. Disponible: ${formatBOB(balanceAvailable)}.`); return }
+    setPaying(true); setPayError(null)
+    try {
+      const body = { qrContent: preview._rawContent }
+      if (!(preview.amount > 0)) body.amount = Number(qrAmount)
+      await request('/wallet/qr/scan', { method: 'POST', body: JSON.stringify(body) })
+      setDoneInfo({ recipient: preview.recipientName || preview.recipientEmail || 'Destinatario', amount: formatBOB(payAmt) })
+      setDone(true); onSuccess?.()
+    } catch (err) {
+      setPayError(err.message || 'Error al procesar el pago.')
+    } finally {
+      setPaying(false)
+    }
+  }
+
   return (
     <Modal open={open} onClose={handleClose} title="Enviar BOB">
+
+      {/* ── Pantalla de éxito (ambos tabs) ── */}
       {done ? (
         <div className="text-center py-4 space-y-4">
           <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{ background: '#22C55E1A' }}>
@@ -474,51 +570,206 @@ function SendModal({ open, onClose, onSuccess, balanceAvailable }) {
           </div>
           <div>
             <p className="text-[#0F172A] font-bold text-[1rem]">Envío completado</p>
-            <p className="text-[#64748B] text-[0.875rem] mt-1">{formatBOB(Number(amount))} enviados a {email}</p>
+            <p className="text-[#64748B] text-[0.875rem] mt-1">{doneInfo.amount} enviados a {doneInfo.recipient}</p>
           </div>
           <button onClick={handleClose} className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white" style={{ background: '#233E58' }}>Cerrar</button>
         </div>
-      ) : step === 1 ? (
-        <form onSubmit={handleContinue} className="space-y-4">
-          <div>
-            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Email del destinatario</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="usuario@email.com"
-              className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none" />
-            <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Solo usuarios Bolivia (SRL) registrados en Alyto.</p>
-          </div>
-          <div>
-            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Monto (BOB)</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-semibold text-sm">Bs.</span>
-              <input type="number" min={1} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0"
-                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none" />
-            </div>
-            <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Disponible: {formatBOB(balanceAvailable)}</p>
-          </div>
-          <div>
-            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Descripción (opcional)</label>
-            <input type="text" value={description} onChange={e => setDescription(e.target.value)} maxLength={100}
-              placeholder="Ej. Pago alquiler"
-              className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none" />
-          </div>
-          {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>}
-          <button type="submit" className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white" style={{ background: '#233E58' }}>Continuar</button>
-        </form>
       ) : (
-        <div className="space-y-4">
-          <div className="bg-[#F8FAFC] rounded-2xl p-4 border border-[#E2E8F0] space-y-3">
-            <div className="flex justify-between"><span className="text-[0.75rem] text-[#64748B]">Para</span><span className="text-[0.875rem] font-semibold text-[#0F172A]">{email}</span></div>
-            <div className="flex justify-between"><span className="text-[0.75rem] text-[#64748B]">Monto</span><span className="text-[0.875rem] font-bold text-[#233E58]">{formatBOB(Number(amount))}</span></div>
-            {description && <div className="flex justify-between"><span className="text-[0.75rem] text-[#64748B]">Descripción</span><span className="text-[0.875rem] text-[#0F172A]">{description}</span></div>}
-          </div>
-          {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>}
-          <div className="flex gap-3">
-            <button onClick={() => setStep(1)} className="flex-1 py-3.5 rounded-2xl font-semibold text-[0.9375rem] text-[#64748B]" style={{ border: '1.5px solid #E2E8F0' }}>Volver</button>
-            <button onClick={handleConfirm} disabled={loading} className="flex-1 py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white disabled:opacity-40" style={{ background: '#233E58' }}>
-              {loading ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Confirmar envío'}
+        <>
+          {/* ── Tabs ── */}
+          <div className="flex rounded-xl overflow-hidden border border-[#E2E8F0] mb-5">
+            <button
+              onClick={() => setTab('email')}
+              className={`flex-1 py-2.5 text-[0.875rem] font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                tab === 'email' ? 'bg-[#233E58] text-white' : 'text-[#64748B] hover:bg-[#F8FAFC]'
+              }`}
+            >
+              <Mail size={14} /> Por email
+            </button>
+            <button
+              onClick={() => setTab('qr')}
+              className={`flex-1 py-2.5 text-[0.875rem] font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                tab === 'qr' ? 'bg-[#233E58] text-white' : 'text-[#64748B] hover:bg-[#F8FAFC]'
+              }`}
+            >
+              <QrCode size={14} /> Escanear QR
             </button>
           </div>
-        </div>
+
+          {/* ── Tab email ── */}
+          {tab === 'email' && (
+            step === 1 ? (
+              <form onSubmit={handleContinue} className="space-y-4">
+                <div>
+                  <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Email del destinatario</label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="usuario@email.com"
+                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none" />
+                  <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Solo usuarios Bolivia (SRL) registrados en Alyto.</p>
+                </div>
+                <div>
+                  <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Monto (BOB)</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-semibold text-sm">Bs.</span>
+                    <input type="number" min={1} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0"
+                      className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none" />
+                  </div>
+                  <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Disponible: {formatBOB(balanceAvailable)}</p>
+                </div>
+                <div>
+                  <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Descripción (opcional)</label>
+                  <input type="text" value={description} onChange={e => setDescription(e.target.value)} maxLength={100}
+                    placeholder="Ej. Pago alquiler"
+                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none" />
+                </div>
+                {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>}
+                <button type="submit" className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white" style={{ background: '#233E58' }}>Continuar</button>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-[#F8FAFC] rounded-2xl p-4 border border-[#E2E8F0] space-y-3">
+                  <div className="flex justify-between"><span className="text-[0.75rem] text-[#64748B]">Para</span><span className="text-[0.875rem] font-semibold text-[#0F172A]">{email}</span></div>
+                  <div className="flex justify-between"><span className="text-[0.75rem] text-[#64748B]">Monto</span><span className="text-[0.875rem] font-bold text-[#233E58]">{formatBOB(Number(amount))}</span></div>
+                  {description && <div className="flex justify-between"><span className="text-[0.75rem] text-[#64748B]">Descripción</span><span className="text-[0.875rem] text-[#0F172A]">{description}</span></div>}
+                </div>
+                {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>}
+                <div className="flex gap-3">
+                  <button onClick={() => setStep(1)} className="flex-1 py-3.5 rounded-2xl font-semibold text-[0.9375rem] text-[#64748B]" style={{ border: '1.5px solid #E2E8F0' }}>Volver</button>
+                  <button onClick={handleConfirm} disabled={loading} className="flex-1 py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white disabled:opacity-40" style={{ background: '#233E58' }}>
+                    {loading ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Confirmar envío'}
+                  </button>
+                </div>
+              </div>
+            )
+          )}
+
+          {/* ── Tab QR ── */}
+          {tab === 'qr' && (
+            <div className="space-y-4">
+              <canvas ref={canvasRef} className="hidden" />
+
+              {!preview ? (
+                <>
+                  {/* Área de cámara */}
+                  <div className="relative bg-black rounded-2xl overflow-hidden" style={{ aspectRatio: '1', maxHeight: '260px' }}>
+                    <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
+                    {scanning && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="w-44 h-44 relative">
+                          <div className="absolute top-0 left-0 w-7 h-7 border-t-4 border-l-4 border-white rounded-tl-lg" />
+                          <div className="absolute top-0 right-0 w-7 h-7 border-t-4 border-r-4 border-white rounded-tr-lg" />
+                          <div className="absolute bottom-0 left-0 w-7 h-7 border-b-4 border-l-4 border-white rounded-bl-lg" />
+                          <div className="absolute bottom-0 right-0 w-7 h-7 border-b-4 border-r-4 border-white rounded-br-lg" />
+                        </div>
+                      </div>
+                    )}
+                    {!scanning && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                        <QrCode size={44} className="text-white/40" />
+                        <p className="text-white/60 text-[0.875rem]">Cámara inactiva</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {camError && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{camError}</p>}
+                  {payError && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{payError}</p>}
+
+                  {!scanning ? (
+                    <button
+                      onClick={startCamera}
+                      className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white"
+                      style={{ background: '#233E58' }}
+                    >
+                      <Camera size={18} /> Activar cámara
+                    </button>
+                  ) : (
+                    <button
+                      onClick={stopCamera}
+                      className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-[0.9375rem] text-[#64748B]"
+                      style={{ border: '1.5px solid #E2E8F0' }}
+                    >
+                      <CameraOff size={18} /> Detener cámara
+                    </button>
+                  )}
+
+                  <p className="text-center text-[0.6875rem] text-[#94A3B8]">
+                    Escanea el QR de otro usuario Alyto para enviarle BOB al instante
+                  </p>
+                </>
+              ) : (
+                /* Preview post-scan */
+                <div className="space-y-4">
+                  <div className="bg-[#F0FDF4] border border-[#22C55E33] rounded-2xl px-4 py-3 flex items-center gap-2 mb-1">
+                    <CheckCircle2 size={16} className="text-[#22C55E] flex-shrink-0" />
+                    <p className="text-[0.8125rem] font-semibold text-[#22C55E]">QR Alyto detectado</p>
+                  </div>
+
+                  <div className="bg-[#F8FAFC] rounded-2xl p-4 border border-[#E2E8F0] space-y-3">
+                    {preview.recipientName && (
+                      <div className="flex justify-between">
+                        <span className="text-[0.75rem] text-[#64748B]">Destinatario</span>
+                        <span className="text-[0.875rem] font-semibold text-[#0F172A]">{preview.recipientName}</span>
+                      </div>
+                    )}
+                    {preview.recipientEmail && (
+                      <div className="flex justify-between">
+                        <span className="text-[0.75rem] text-[#64748B]">Email</span>
+                        <span className="text-[0.8125rem] text-[#0F172A]">{preview.recipientEmail}</span>
+                      </div>
+                    )}
+                    {preview.amount > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-[0.75rem] text-[#64748B]">Monto solicitado</span>
+                        <span className="text-[0.875rem] font-bold text-[#233E58]">{formatBOB(preview.amount)}</span>
+                      </div>
+                    )}
+                    {preview.description && (
+                      <div className="flex justify-between">
+                        <span className="text-[0.75rem] text-[#64748B]">Concepto</span>
+                        <span className="text-[0.875rem] text-[#0F172A]">{preview.description}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Monto libre si el QR es de tipo depósito sin monto fijo */}
+                  {!(preview.amount > 0) && (
+                    <div>
+                      <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Monto a enviar (BOB)</label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-semibold text-sm">Bs.</span>
+                        <input
+                          type="number" min={1} value={qrAmount}
+                          onChange={e => setQrAmount(e.target.value)} placeholder="0"
+                          className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none"
+                        />
+                      </div>
+                      <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Disponible: {formatBOB(balanceAvailable)}</p>
+                    </div>
+                  )}
+
+                  {payError && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{payError}</p>}
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setPreview(null); setPayError(null); setQrAmount('') }}
+                      className="flex-1 py-3.5 rounded-2xl font-semibold text-[0.9375rem] text-[#64748B]"
+                      style={{ border: '1.5px solid #E2E8F0' }}
+                    >
+                      Escanear otro
+                    </button>
+                    <button
+                      onClick={handleQrPay}
+                      disabled={paying}
+                      className="flex-1 py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white disabled:opacity-40"
+                      style={{ background: '#233E58' }}
+                    >
+                      {paying ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Confirmar'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
     </Modal>
   )
