@@ -14,6 +14,7 @@ import html2canvas                                   from 'html2canvas'
 import {
   ArrowLeft,
   CheckCircle,
+  CheckCircle2,
   Clock,
   RefreshCw,
   XCircle,
@@ -29,6 +30,9 @@ import {
   Share2,
   TrendingUp,
   TrendingDown,
+  Upload,
+  Paperclip,
+  Loader2,
 } from 'lucide-react'
 
 // ── QR helpers ────────────────────────────────────────────────────────────────
@@ -203,7 +207,7 @@ function PaymentInstructionsModal({ tx, onClose }) {
   )
 }
 import { fetchTransactionDetail } from '../../services/transactionsService.js'
-import { getPaymentQR }           from '../../services/paymentsService.js'
+import { getPaymentQR, uploadComprobante } from '../../services/paymentsService.js'
 import { downloadBusinessInvoice } from '../../services/api.js'
 import { useAuth }                 from '../../context/AuthContext.jsx'
 
@@ -412,6 +416,13 @@ export default function TransactionDetail() {
   const [downloadingB2B, setDownloadingB2B] = useState(false)
 
   const comprobanteRef = useRef(null)
+  const fileInputRef   = useRef(null)
+
+  const [proofFile,    setProofFile]    = useState(null)
+  const [proofPreview, setProofPreview] = useState(null)
+  const [uploading,    setUploading]    = useState(false)
+  const [uploadDone,   setUploadDone]   = useState(false)
+  const [uploadError,  setUploadError]  = useState(null)
 
   const supportWhatsApp = import.meta.env.VITE_SUPPORT_WHATSAPP
   const supportEmail    = 'soporte@alyto.app'
@@ -430,6 +441,39 @@ export default function TransactionDetail() {
   }, [transactionId])
 
   useEffect(() => { loadDetail() }, [loadDetail])
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('El archivo supera el límite de 5MB.')
+      return
+    }
+    setProofFile(file)
+    setUploadError(null)
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = (ev) => setProofPreview(ev.target.result)
+      reader.readAsDataURL(file)
+    } else {
+      setProofPreview(null)
+    }
+  }
+
+  const handleComprobanteUpload = async () => {
+    if (!proofFile || !tx?.transactionId) return
+    setUploading(true)
+    setUploadError(null)
+    try {
+      await uploadComprobante(tx.transactionId, proofFile)
+      setUploadDone(true)
+      setTimeout(() => loadDetail(), 2500)
+    } catch (err) {
+      setUploadError(err.message || 'Error al subir el comprobante.')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   function handleCopy() {
     if (!navigator.clipboard) return
@@ -557,8 +601,6 @@ export default function TransactionDetail() {
 
   const cfg      = STATUS_CONFIG[tx.status] ?? { label: tx.status, color: 'var(--color-text-secondary)', bg: '#64748B1A' }
   const isFailed = tx.status === 'failed' || tx.status === 'refunded' || tx.status === 'expired'
-  const isManualPending = tx.payinMethod === 'manual' &&
-    (tx.status === 'initiated' || tx.status === 'payin_pending')
 
   // Monto destino: si viene 0/null del server, estimar desde tasa
   const effectiveDestAmount = (tx.destinationAmount && tx.destinationAmount > 0)
@@ -713,14 +755,97 @@ export default function TransactionDetail() {
           )}
 
           {/* ── 1b. INSTRUCCIONES PAYIN MANUAL (Bolivia) ─────────────────── */}
-          {isManualPending && (
+
+          {/* initiated: usuario aún no subió comprobante */}
+          {tx.payinMethod === 'manual' && tx.status === 'initiated' && (
+            <div className="bg-white rounded-2xl p-5 border border-[#233E5830]">
+              <div className="flex items-start gap-3 mb-4">
+                <span className="text-xl flex-shrink-0">📎</span>
+                <div>
+                  <p className="text-[0.875rem] font-bold text-[#0D1F3C]">Sube tu comprobante de pago</p>
+                  <p className="text-[0.8125rem] text-[#4A5568] mt-0.5">
+                    ¿Ya realizaste la transferencia? Adjunta el comprobante para que podamos verificarla.
+                  </p>
+                </div>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+
+              {!uploadDone ? (
+                <>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex flex-col items-center justify-center gap-2 py-5 rounded-xl border-2 border-dashed border-[#E2E8F0] hover:border-[#233E5860] transition-colors mb-3"
+                  >
+                    {proofPreview ? (
+                      <img src={proofPreview} alt="Vista previa" className="h-24 object-contain rounded-lg" />
+                    ) : proofFile ? (
+                      <div className="flex items-center gap-2 text-[#4A5568]">
+                        <Paperclip size={16} />
+                        <span className="text-[0.8125rem]">{proofFile.name}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload size={20} className="text-[#94A3B8]" />
+                        <span className="text-[0.8125rem] text-[#94A3B8]">Toca para seleccionar archivo</span>
+                        <span className="text-[0.6875rem] text-[#CBD5E1]">JPG, PNG o PDF · máx. 5MB</span>
+                      </>
+                    )}
+                  </button>
+
+                  {uploadError && (
+                    <p className="text-[0.75rem] text-[#EF4444] mb-3">{uploadError}</p>
+                  )}
+
+                  {proofFile && (
+                    <button
+                      onClick={handleComprobanteUpload}
+                      disabled={uploading}
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[0.875rem] font-semibold transition-colors disabled:opacity-60 mb-3"
+                      style={{ background: '#233E58', color: 'white' }}
+                    >
+                      {uploading
+                        ? <><Loader2 size={15} className="animate-spin" /> Subiendo...</>
+                        : <><Upload size={15} /> Subir comprobante</>
+                      }
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-[#22C55E1A] mb-3">
+                  <CheckCircle2 size={16} className="text-[#22C55E]" />
+                  <span className="text-[0.875rem] font-semibold text-[#22C55E]">
+                    Comprobante enviado. Verificando...
+                  </span>
+                </div>
+              )}
+
+              <button
+                onClick={() => setShowPaymentInstructions(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#E2E8F0] text-[#4A5568] text-[0.8125rem] hover:text-[#0D1F3C] transition-colors"
+              >
+                <span>🏦</span>
+                Ver instrucciones de pago
+              </button>
+            </div>
+          )}
+
+          {/* payin_pending: comprobante recibido, esperando verificación admin */}
+          {tx.payinMethod === 'manual' && tx.status === 'payin_pending' && (
             <div className="bg-white rounded-2xl p-5 border border-[#FBBF2430]">
               <div className="flex items-start gap-3 mb-4">
                 <span className="text-xl flex-shrink-0">⏳</span>
                 <div>
                   <p className="text-[0.875rem] font-bold text-[#FBBF24]">Verificando tu pago</p>
                   <p className="text-[0.8125rem] text-[#4A5568] mt-0.5">
-                    Estamos verificando tu transferencia. Te notificaremos cuando sea confirmada.
+                    Recibimos tu comprobante. Estamos verificando tu transferencia.
+                    Te notificaremos cuando sea confirmada.
                   </p>
                 </div>
               </div>
