@@ -756,58 +756,58 @@ export default function TransactionDetail() {
 
           {/* ── 1b. INSTRUCCIONES PAYIN MANUAL (Bolivia) ─────────────────── */}
 
-          {/* initiated: usuario aún no subió comprobante */}
+          {/* initiated: usuario aún no subió comprobante — tarjeta prominente */}
           {tx.payinMethod === 'manual' && tx.status === 'initiated' && (
-            <div className="bg-white rounded-2xl p-5 border border-[#233E5830]">
-              <div className="flex items-start gap-3 mb-4">
-                <span className="text-xl flex-shrink-0">📎</span>
-                <div>
-                  <p className="text-[0.875rem] font-bold text-[#0D1F3C]">Sube tu comprobante de pago</p>
-                  <p className="text-[0.8125rem] text-[#4A5568] mt-0.5">
-                    ¿Ya realizaste la transferencia? Adjunta el comprobante para que podamos verificarla.
-                  </p>
+            <div className="rounded-2xl overflow-hidden" style={{ border: '2px solid #EF444460' }}>
+              {/* Header de acción requerida */}
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#EF444420]" style={{ background: '#EF44440A' }}>
+                <div className="flex items-center gap-2">
+                  <span className="text-base">⚠️</span>
+                  <p className="text-[0.875rem] font-bold text-[#EF4444]">Acción requerida</p>
                 </div>
+                <span className="text-[0.625rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#EF44441A] text-[#EF4444]">
+                  Pendiente
+                </span>
               </div>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,application/pdf"
-                onChange={handleFileChange}
-                className="hidden"
-              />
+              <div className="bg-white px-5 py-4 flex flex-col gap-3">
+                <p className="text-[0.8125rem] text-[#0D1F3C] leading-relaxed">
+                  Ya realizaste tu transferencia a AV Finance SRL?{' '}
+                  <span className="font-semibold">Sube el comprobante para que procesemos tu envío.</span>
+                  {' '}Sin comprobante la operación no avanzará.
+                </p>
 
-              {!uploadDone ? (
-                <>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full flex flex-col items-center justify-center gap-2 py-5 rounded-xl border-2 border-dashed border-[#E2E8F0] hover:border-[#233E5860] transition-colors mb-3"
-                  >
-                    {proofPreview ? (
-                      <img src={proofPreview} alt="Vista previa" className="h-24 object-contain rounded-lg" />
-                    ) : proofFile ? (
-                      <div className="flex items-center gap-2 text-[#4A5568]">
-                        <Paperclip size={16} />
-                        <span className="text-[0.8125rem]">{proofFile.name}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload size={20} className="text-[#94A3B8]" />
-                        <span className="text-[0.8125rem] text-[#94A3B8]">Toca para seleccionar archivo</span>
-                        <span className="text-[0.6875rem] text-[#CBD5E1]">JPG, PNG o PDF · máx. 5MB</span>
-                      </>
-                    )}
-                  </button>
+                <input ref={fileInputRef} type="file" accept="image/*,application/pdf" onChange={handleFileChange} className="hidden" />
 
-                  {uploadError && (
-                    <p className="text-[0.75rem] text-[#EF4444] mb-3">{uploadError}</p>
-                  )}
+                {!uploadDone ? (
+                  <>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full flex flex-col items-center justify-center gap-2 py-5 rounded-xl transition-colors"
+                      style={{ border: '2px dashed #EF444440', background: proofFile || proofPreview ? 'transparent' : '#EF44440A' }}
+                    >
+                      {proofPreview ? (
+                        <img src={proofPreview} alt="Vista previa" className="h-24 object-contain rounded-lg" />
+                      ) : proofFile ? (
+                        <div className="flex items-center gap-2 text-[#4A5568]">
+                          <Paperclip size={16} />
+                          <span className="text-[0.8125rem]">{proofFile.name}</span>
+                        </div>
+                      ) : (
+                        <>
+                          <Upload size={22} className="text-[#EF4444]" />
+                          <span className="text-[0.8125rem] font-semibold text-[#EF4444]">Toca para adjuntar comprobante</span>
+                          <span className="text-[0.6875rem] text-[#94A3B8]">JPG, PNG o PDF · máx. 5MB</span>
+                        </>
+                      )}
+                    </button>
 
-                  {proofFile && (
+                    {uploadError && <p className="text-[0.75rem] text-[#EF4444]">{uploadError}</p>}
+
                     <button
                       onClick={handleComprobanteUpload}
-                      disabled={uploading}
-                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[0.875rem] font-semibold transition-colors disabled:opacity-60 mb-3"
+                      disabled={!proofFile || uploading}
+                      className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-[0.875rem] font-bold transition-colors disabled:opacity-40"
                       style={{ background: '#233E58', color: 'white' }}
                     >
                       {uploading
@@ -815,24 +815,21 @@ export default function TransactionDetail() {
                         : <><Upload size={15} /> Subir comprobante</>
                       }
                     </button>
-                  )}
-                </>
-              ) : (
-                <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-[#22C55E1A] mb-3">
-                  <CheckCircle2 size={16} className="text-[#22C55E]" />
-                  <span className="text-[0.875rem] font-semibold text-[#22C55E]">
-                    Comprobante enviado. Verificando...
-                  </span>
-                </div>
-              )}
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-[#22C55E1A]">
+                    <CheckCircle2 size={16} className="text-[#22C55E]" />
+                    <span className="text-[0.875rem] font-semibold text-[#22C55E]">Comprobante enviado. Verificando...</span>
+                  </div>
+                )}
 
-              <button
-                onClick={() => setShowPaymentInstructions(true)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#E2E8F0] text-[#4A5568] text-[0.8125rem] hover:text-[#0D1F3C] transition-colors"
-              >
-                <span>🏦</span>
-                Ver instrucciones de pago
-              </button>
+                <button
+                  onClick={() => setShowPaymentInstructions(true)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#E2E8F0] text-[#4A5568] text-[0.8125rem] hover:text-[#0D1F3C] transition-colors"
+                >
+                  <span>🏦</span> Ver instrucciones de pago
+                </button>
+              </div>
             </div>
           )}
 

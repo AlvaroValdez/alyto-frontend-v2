@@ -144,12 +144,21 @@ function ManualPayinScreen({ stepData }) {
   return (
     <div className="flex flex-col gap-5 px-4 pb-28">
 
-      {/* Título */}
-      <div>
-        <h2 className="text-[1.125rem] font-bold text-[#0D1F3C]">Instrucciones de pago</h2>
-        <p className="text-[0.8125rem] text-[#4A5568] mt-0.5">
-          Escanea el QR o realiza una transferencia bancaria.
-        </p>
+      {/* ── Indicador de 2 pasos ── */}
+      <div className="flex items-center gap-2">
+        {/* Paso 1 */}
+        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.75rem] font-bold ${
+          !uploadDone ? 'bg-[#0D1F3C] text-white' : 'bg-[#E2E8F0] text-[#94A3B8] line-through'
+        }`}>
+          {!uploadDone ? '1' : <CheckCheck size={12} />} Transfiere
+        </div>
+        <div className="h-px flex-1 bg-[#E2E8F0]" />
+        {/* Paso 2 */}
+        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.75rem] font-bold ${
+          uploadDone ? 'bg-[#22C55E] text-white' : 'bg-[#F0F2F7] text-[#94A3B8]'
+        }`}>
+          {uploadDone ? <CheckCheck size={12} /> : '2'} Comprobante
+        </div>
       </div>
 
       {/* ── Sección QR ── */}
@@ -278,26 +287,14 @@ function ManualPayinScreen({ stepData }) {
         </div>
       </div>
 
-      {/* Tiempo de verificación */}
-      <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-white border border-[#E2E8F0]">
-        <Clock size={14} className="text-[#4A5568] flex-shrink-0" />
-        <p className="text-[0.8125rem] text-[#4A5568]">
-          Tu pago será verificado en{' '}
-          <span className="text-[#0D1F3C] font-semibold">2–4 horas hábiles</span>.
-          Te notificaremos cuando sea confirmado.
-        </p>
-      </div>
-
-      {/* ── Subir comprobante ── */}
+      {/* ── Paso 2: Comprobante (obligatorio) ── */}
       {uploadDone ? (
         <div className="flex flex-col items-center gap-3 p-5 rounded-2xl bg-[#22C55E0A] border border-[#22C55E33]">
           <CheckCircle2 size={28} className="text-[#22C55E]" />
           <div className="text-center">
-            <p className="text-[0.9375rem] font-bold text-[#22C55E]">
-              ✅ Comprobante recibido
-            </p>
+            <p className="text-[0.9375rem] font-bold text-[#22C55E]">Comprobante recibido</p>
             <p className="text-[0.8125rem] text-[#4A5568] mt-1">
-              Verificaremos tu pago en 2–4 horas hábiles.
+              Verificaremos tu pago y notificaremos cuando sea confirmado.
             </p>
           </div>
           <button
@@ -308,47 +305,46 @@ function ManualPayinScreen({ stepData }) {
           </button>
         </div>
       ) : (
-        <div className="rounded-2xl bg-white border border-[#E2E8F0] overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-[#E2E8F0]">
-            <Paperclip size={15} className="text-[#0D1F3C] flex-shrink-0" />
-            <p className="text-[0.875rem] font-bold text-[#0D1F3C]">¿Ya realizaste el pago?</p>
+        <div className="rounded-2xl overflow-hidden" style={{ border: '2px solid #0D1F3C33' }}>
+          {/* Header obligatorio */}
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#E2E8F0]" style={{ background: '#0D1F3C08' }}>
+            <div className="flex items-center gap-2.5">
+              <Paperclip size={15} className="text-[#0D1F3C] flex-shrink-0" />
+              <p className="text-[0.875rem] font-bold text-[#0D1F3C]">Paso 2: Sube tu comprobante</p>
+            </div>
+            <span className="text-[0.625rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#EF44441A] text-[#EF4444]">
+              Obligatorio
+            </span>
           </div>
 
-          <div className="px-5 py-4 flex flex-col gap-3">
-            <p className="text-[0.8125rem] text-[#4A5568]">
-              Sube tu comprobante para agilizar la verificación.
+          <div className="px-5 py-4 flex flex-col gap-3 bg-white">
+            <p className="text-[0.8125rem] text-[#4A5568] leading-relaxed">
+              Ya realizaste el pago? Adjunta el comprobante de tu transferencia.{' '}
+              <span className="font-semibold text-[#0D1F3C]">
+                Sin comprobante tu operación no será procesada.
+              </span>
             </p>
 
             {/* Preview si es imagen */}
             {proofPreview && (
               <div className="rounded-xl overflow-hidden border border-[#E2E8F0]">
-                <img
-                  src={proofPreview}
-                  alt="Vista previa del comprobante"
-                  className="w-full max-h-48 object-contain bg-[#0D1F3C]"
-                />
+                <img src={proofPreview} alt="Vista previa del comprobante" className="w-full max-h-48 object-contain bg-[#F0F2F7]" />
               </div>
             )}
 
             {/* Nombre del archivo PDF */}
             {proofFile && !proofPreview && (
-              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#0D1F3C] border border-[#E2E8F0]">
-                <Paperclip size={14} className="text-[#0D1F3C] flex-shrink-0" />
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#F0F2F7] border border-[#E2E8F0]">
+                <Paperclip size={14} className="text-[#4A5568] flex-shrink-0" />
                 <span className="text-[0.8125rem] text-[#0D1F3C] truncate">{proofFile.name}</span>
               </div>
             )}
 
             {/* Selector de archivo */}
-            <label className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-dashed border-[#0D1F3C33] text-[0.875rem] text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#0D1F3C50] transition-colors cursor-pointer">
+            <label className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl border-2 border-dashed border-[#0D1F3C33] text-[0.875rem] text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#0D1F3C60] transition-colors cursor-pointer">
               <Upload size={15} />
-              {proofFile ? 'Cambiar archivo' : 'Seleccionar archivo'}
-              <input
-                type="file"
-                accept="image/jpeg,image/png,application/pdf"
-                className="hidden"
-                onChange={handleFileChange}
-              />
+              {proofFile ? 'Cambiar archivo' : 'Seleccionar comprobante'}
+              <input type="file" accept="image/jpeg,image/png,application/pdf" className="hidden" onChange={handleFileChange} />
             </label>
 
             <p className="text-[0.6875rem] text-[#94A3B8] -mt-1">JPG, PNG o PDF — máx. 5MB</p>
@@ -363,11 +359,11 @@ function ManualPayinScreen({ stepData }) {
             <button
               onClick={handleUpload}
               disabled={!proofFile || uploading}
-              className="w-full py-3 rounded-xl text-[0.875rem] font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full py-3.5 rounded-xl text-[0.875rem] font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               style={{
-                background:  proofFile && !uploading ? '#0D1F3C' : '#0D1F3C40',
-                color:       '#FFFFFF',
-                boxShadow:   proofFile && !uploading ? '0 4px 20px rgba(13,31,60,0.25)' : 'none',
+                background: proofFile && !uploading ? '#0D1F3C' : '#0D1F3C30',
+                color: '#FFFFFF',
+                boxShadow: proofFile && !uploading ? '0 4px_20px_rgba(13,31,60,0.25)' : 'none',
               }}
             >
               {uploading
@@ -375,6 +371,13 @@ function ManualPayinScreen({ stepData }) {
                 : <><Upload size={14} /> Enviar comprobante</>
               }
             </button>
+
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#F59E0B0A] border border-[#F59E0B22]">
+              <Clock size={13} className="text-[#F59E0B] flex-shrink-0" />
+              <p className="text-[0.6875rem] text-[#4A5568]">
+                Si no subes el comprobante, la operación quedará pendiente y podrías perder la tasa de cambio actual.
+              </p>
+            </div>
           </div>
         </div>
       )}
