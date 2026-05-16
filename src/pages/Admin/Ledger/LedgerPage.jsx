@@ -48,14 +48,14 @@ const ENTITY_STYLES = {
 }
 
 const VALID_STATUSES = [
-  'pending', 'initiated', 'payin_pending', 'payin_confirmed', 'payin_completed',
+  'pending', 'initiated', 'pending_comprobante', 'payin_pending', 'payin_confirmed', 'payin_completed',
   'processing', 'in_transit', 'payout_pending', 'payout_sent',
   'payout_pending_usdc_send', 'payout_in_transit', 'pending_funding',
   'completed', 'failed', 'refunded',
 ]
 
 const STATUS_LABELS = {
-  pending: 'Pendiente', initiated: 'Iniciada', payin_pending: 'Pay-in pendiente',
+  pending: 'Pendiente', initiated: 'Iniciada', pending_comprobante: 'Sin comprobante', payin_pending: 'Pay-in pendiente',
   payin_confirmed: 'Pay-in confirmado', payin_completed: 'Pay-in completado',
   processing: 'Procesando', in_transit: 'En tránsito',
   payout_pending: 'Payout pendiente', payout_sent: 'Enviado',

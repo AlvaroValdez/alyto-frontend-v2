@@ -215,6 +215,7 @@ import { useAuth }                 from '../../context/AuthContext.jsx'
 
 const STATUS_CONFIG = {
   initiated:                      { label: 'Iniciada',                color: 'var(--color-text-secondary)', bg: '#64748B1A' },
+  pending_comprobante:            { label: 'Incompleto',              color: '#F59E0B',                     bg: '#F59E0B1A' },
   pending_customer_transfer_start:{ label: 'Preparando envío',        color: 'var(--color-text-secondary)', bg: '#64748B1A' },
   transfer_initiated:             { label: 'Transferencia iniciada',   color: 'var(--color-text-secondary)', bg: '#64748B1A' },
   payin_pending:                  { label: 'Comprobante recibido',    color: 'var(--color-text-secondary)', bg: '#64748B1A' },
@@ -245,8 +246,8 @@ const STATUS_CONFIG = {
 const TIMELINE_STEPS = [
   {
     label:      'Pago recibido',
-    doneWhen:   s => !['initiated', 'pending_customer_transfer_start', 'transfer_initiated', 'payin_pending'].includes(s) && s !== 'failed' && s !== 'refunded' && s !== 'expired',
-    activeWhen: s => ['initiated', 'pending_customer_transfer_start', 'transfer_initiated', 'payin_pending'].includes(s),
+    doneWhen:   s => !['initiated', 'pending_comprobante', 'pending_customer_transfer_start', 'transfer_initiated', 'payin_pending'].includes(s) && s !== 'failed' && s !== 'refunded' && s !== 'expired',
+    activeWhen: s => ['initiated', 'pending_comprobante', 'pending_customer_transfer_start', 'transfer_initiated', 'payin_pending'].includes(s),
   },
   {
     label:      'En proceso',
@@ -756,8 +757,8 @@ export default function TransactionDetail() {
 
           {/* ── 1b. INSTRUCCIONES PAYIN MANUAL (Bolivia) ─────────────────── */}
 
-          {/* initiated: usuario aún no subió comprobante — tarjeta prominente */}
-          {tx.payinMethod === 'manual' && tx.status === 'initiated' && (
+          {/* pending_comprobante: usuario aún no subió comprobante — tarjeta prominente */}
+          {tx.payinMethod === 'manual' && (tx.status === 'pending_comprobante' || tx.status === 'initiated') && (
             <div className="rounded-2xl overflow-hidden" style={{ border: '2px solid #EF444460' }}>
               {/* Header de acción requerida */}
               <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#EF444420]" style={{ background: '#EF44440A' }}>

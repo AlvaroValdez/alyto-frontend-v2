@@ -24,6 +24,7 @@ import { fetchTransactions as apiFetchTransactions } from '../services/transacti
 // Statuses que indican una transacción en vuelo — activan el auto-refresh
 const ACTIVE_STATUSES = new Set([
   'initiated',
+  'pending_comprobante',
   'payin_pending',
   'payin_confirmed',
   'payin_completed',

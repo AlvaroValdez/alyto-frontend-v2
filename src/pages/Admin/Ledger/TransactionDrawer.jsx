@@ -31,12 +31,12 @@ const STATUS_STYLES = {
 }
 
 const VALID_STATUSES = [
-  'initiated', 'payin_pending', 'payin_confirmed', 'payin_completed',
+  'initiated', 'pending_comprobante', 'payin_pending', 'payin_confirmed', 'payin_completed',
   'in_transit', 'payout_pending', 'completed', 'failed', 'refunded',
 ]
 
 const STATUS_LABELS = {
-  initiated: 'Iniciada', payin_pending: 'Pay-in pendiente',
+  initiated: 'Iniciada', pending_comprobante: 'Sin comprobante', payin_pending: 'Pay-in pendiente',
   payin_confirmed: 'Payin confirmado', payin_completed: 'Pay-in completado',
   in_transit: 'En tránsito', payout_pending: 'Payout pendiente',
   payout_pending_usdc_send: 'Enviando USDC', harbor_source_received: 'USDC recibido',
@@ -44,7 +44,7 @@ const STATUS_LABELS = {
 }
 
 // Statuses que requieren confirmación manual (SRL Bolivia o SpA→BO manual)
-const MANUAL_PAYIN_PENDING = new Set(['initiated', 'payin_pending'])
+const MANUAL_PAYIN_PENDING = new Set(['initiated', 'pending_comprobante', 'payin_pending'])
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

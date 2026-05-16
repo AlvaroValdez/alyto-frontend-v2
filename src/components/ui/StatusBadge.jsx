@@ -2,6 +2,7 @@ import Badge from './Badge'
 
 const STATUS_MAP = {
   initiated:                      { variant: 'pending', label: 'Iniciada'               },
+  pending_comprobante:            { variant: 'warning', label: 'Incompleto'              },
   pending_customer_transfer_start:{ variant: 'pending', label: 'Preparando envío'        },
   transfer_initiated:             { variant: 'pending', label: 'Transferencia iniciada'  },
   payin_pending:                  { variant: 'pending', label: 'Comprobante recibido'    },

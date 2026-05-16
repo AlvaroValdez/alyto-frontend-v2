@@ -29,7 +29,7 @@ const TABS = [
 ]
 
 const IN_PROGRESS_STATUSES = new Set([
-  'initiated', 'pending_customer_transfer_start', 'transfer_initiated',
+  'initiated', 'pending_comprobante', 'pending_customer_transfer_start', 'transfer_initiated',
   'payin_pending', 'payin_confirmed', 'fintoc_payin_confirmed', 'manual_payin_confirmed',
   'payin_completed', 'harbor_source_received', 'processing', 'in_transit',
   'pending_funding', 'pending_funding_usdc',
@@ -39,6 +39,7 @@ const IN_PROGRESS_STATUSES = new Set([
 
 const STATUS_CONFIG = {
   initiated:                      { label: 'Iniciada',                color: '#94A3B8', bg: '#94A3B81A',  Icon: Clock       },
+  pending_comprobante:            { label: 'Incompleto',              color: '#F59E0B', bg: '#F59E0B1A',  Icon: Clock       },
   pending_customer_transfer_start:{ label: 'Preparando envío',        color: '#94A3B8', bg: '#94A3B81A',  Icon: Clock       },
   transfer_initiated:             { label: 'Transferencia iniciada',   color: '#94A3B8', bg: '#94A3B81A',  Icon: Clock       },
   payin_pending:                  { label: 'Comprobante recibido',    color: '#94A3B8', bg: '#94A3B81A',  Icon: Clock       },
