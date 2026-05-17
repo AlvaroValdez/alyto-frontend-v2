@@ -167,21 +167,21 @@ export default function AnalyticsPage() {
             <KpiCard
               icon={DollarSign}
               label="Volumen total"
-              value={global.totalVolume != null ? `$${fmt(global.totalVolume)}` : '—'}
+              value={global.totalVolumeCLP != null ? `$${fmt(global.totalVolumeCLP)}` : '—'}
               sub="origen"
               color="#C4CBD8"
             />
             <KpiCard
               icon={TrendingUp}
               label="Ganancia total"
-              value={global.totalProfit != null ? `$${fmt(global.totalProfit)}` : '—'}
+              value={global.totalRevenueCLP != null ? `$${fmt(global.totalRevenueCLP)}` : '—'}
               sub="origen"
               color="#22C55E"
             />
             <KpiCard
               icon={Percent}
               label="Fee efectivo promedio"
-              value={global.avgFeePercent != null ? `${global.avgFeePercent.toFixed(2)}%` : '—'}
+              value={global.avgRevenuePercent != null ? `${Number(global.avgRevenuePercent).toFixed(2)}%` : '—'}
               sub="sobre volumen"
               color="#FBBF24"
             />
@@ -258,12 +258,12 @@ export default function AnalyticsPage() {
                         </td>
                         <td className="px-5 py-4">
                           <p className="text-[0.8125rem] font-semibold text-[#22C55E] tabular-nums">
-                            {row.profit != null ? `$${fmt(row.profit)}` : '—'}
+                            {row.revenue != null ? `$${fmt(row.revenue)}` : '—'}
                           </p>
                         </td>
                         <td className="px-5 py-4">
                           <p className="text-[0.8125rem] font-semibold text-[#FBBF24] tabular-nums">
-                            {row.avgFeePercent != null ? `${row.avgFeePercent.toFixed(2)}%` : '—'}
+                            {row.revenuePercent != null ? `${Number(row.revenuePercent).toFixed(2)}%` : '—'}
                           </p>
                         </td>
                       </tr>
