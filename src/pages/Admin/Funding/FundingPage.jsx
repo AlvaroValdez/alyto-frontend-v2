@@ -29,9 +29,9 @@ import {
 const ENTITIES = ['SRL', 'SpA', 'LLC']
 
 const ENTITY_META = {
-  SRL: { label: 'AV Finance SRL', flag: '🇧🇴', currency: 'BOB', color: '#22C55E' },
-  SpA: { label: 'AV Finance SpA', flag: '🇨🇱', currency: 'CLP', color: '#C4CBD8' },
-  LLC: { label: 'AV Finance LLC', flag: '🌐',  currency: 'USD', color: '#8AB4F8' },
+  SRL: { label: 'AV Finance SRL', flag: '🇧🇴', currency: 'BOB', digitalCurrency: 'USDC', color: '#22C55E' },
+  SpA: { label: 'AV Finance SpA', flag: '🇨🇱', currency: 'CLP', digitalCurrency: 'USD',  color: '#C4CBD8' },
+  LLC: { label: 'AV Finance LLC', flag: '🌐',  currency: 'USD', digitalCurrency: 'USD',  color: '#8AB4F8' },
 }
 
 const FUNDING_TYPES = ['Binance P2P', 'Transferencia bancaria', 'Stellar', 'Otro']
@@ -904,9 +904,10 @@ function USDCForecastWidget() {
 
 // ── BalanceCard ───────────────────────────────────────────────────────────────
 
-function BalanceCard({ entity, balance, loading }) {
-  const meta   = ENTITY_META[entity]
-  const status = statusForBalance(balance ?? 0)
+function BalanceCard({ entity, balanceData, loading }) {
+  const meta      = ENTITY_META[entity]
+  const available = balanceData?.available ?? null
+  const status    = statusForBalance(available ?? 0)
 
   return (
     <div
@@ -934,9 +935,11 @@ function BalanceCard({ entity, balance, loading }) {
       ) : (
         <div>
           <p className="text-[1.875rem] font-extrabold tabular-nums leading-none" style={{ color: status.color }}>
-            ${formatAmount(balance ?? 0)}
+            {formatAmount(available ?? 0)} {meta.digitalCurrency}
           </p>
-          <p className="text-[0.75rem] text-[#8A96B8] mt-1">USDC disponible</p>
+          <p className="text-[0.75rem] text-[#8A96B8] mt-1">
+            fondeado: {formatAmount(balanceData?.totalFundedUSD ?? 0)} · pagado: {formatAmount(balanceData?.totalPaidOut ?? 0)}
+          </p>
         </div>
       )}
     </div>
@@ -1297,7 +1300,9 @@ function FundingHistoryTable({ fundings, loading }) {
                 <td className="py-3 pr-4">
                   <span className="text-[0.75rem] font-bold px-2 py-0.5 rounded-full bg-[#C4CBD81A] text-[#C4CBD8]">{f.asset}</span>
                 </td>
-                <td className="py-3 pr-4 text-[0.9rem] font-bold text-[#22C55E] tabular-nums whitespace-nowrap">${formatAmount(f.amount)}</td>
+                <td className="py-3 pr-4 text-[0.9rem] font-bold text-[#22C55E] tabular-nums whitespace-nowrap">
+                  {formatAmount(f.amount)} <span className="text-[0.75rem] font-semibold text-[#8A96B8]">{f.asset}</span>
+                </td>
                 <td className="py-3 pr-4 text-[0.8125rem] text-white tabular-nums whitespace-nowrap">
                   {f.usdEquivalent != null ? `$${formatAmount(f.usdEquivalent)}` : '—'}
                 </td>
@@ -1411,7 +1416,7 @@ export default function FundingPage() {
         </p>
         <div className="grid grid-cols-3 gap-4">
           {ENTITIES.map(entity => (
-            <BalanceCard key={entity} entity={entity} balance={balances[entity]} loading={balLoading} />
+            <BalanceCard key={entity} entity={entity} balanceData={balances[entity]} loading={balLoading} />
           ))}
         </div>
       </div>
@@ -1460,9 +1465,9 @@ export default function FundingPage() {
               {fundings.length} operación{fundings.length !== 1 ? 'es' : ''}
             </p>
             <p className="text-[0.75rem] text-[#8A96B8]">
-              Total fondeado:{' '}
+              Total USD equiv.:{' '}
               <span className="text-[#22C55E] font-bold">
-                ${formatAmount(fundings.reduce((acc, f) => acc + (Number(f.amount) || 0), 0))} USDC
+                ${formatAmount(fundings.reduce((acc, f) => acc + (Number(f.usdEquivalent) || 0), 0))}
               </span>
             </p>
           </div>
