@@ -908,6 +908,7 @@ function BalanceCard({ entity, balanceData, loading }) {
   const meta      = ENTITY_META[entity]
   const available = balanceData?.available ?? null
   const status    = statusForBalance(available ?? 0)
+  const fromStellar = balanceData?.source === 'stellar'
 
   return (
     <div
@@ -937,8 +938,8 @@ function BalanceCard({ entity, balanceData, loading }) {
           <p className="text-[1.875rem] font-extrabold tabular-nums leading-none" style={{ color: status.color }}>
             {formatAmount(available ?? 0)} {meta.digitalCurrency}
           </p>
-          <p className="text-[0.75rem] text-[#8A96B8] mt-1">
-            fondeado: {formatAmount(balanceData?.totalFundedUSD ?? 0)} · pagado: {formatAmount(balanceData?.totalPaidOut ?? 0)}
+          <p className="text-[0.625rem] text-[#4E5A7A] mt-1">
+            {fromStellar ? '🔗 Balance Stellar live' : `fondeado: ${formatAmount(balanceData?.totalFundedUSD ?? 0)} · pagado: ${formatAmount(balanceData?.totalPaidOut ?? 0)}`}
           </p>
         </div>
       )}
