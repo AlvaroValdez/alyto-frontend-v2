@@ -509,8 +509,16 @@ function AnalyticsModal({ corridor, onClose }) {
   useEffect(() => { load() }, [load])
 
   const fmt = (n) => n != null ? n.toLocaleString('es-CL') : '—'
-  const analytics = data?.analytics
-  const breakdown = analytics?.breakdown ?? {}
+  const analytics = data ? {
+    count:  data.volume?.completedTransactions ?? 0,
+    volume: data.volume?.totalOriginAmount     ?? 0,
+    profit: data.revenue?.totalRevenue         ?? 0,
+  } : null
+  const breakdown = {
+    spread:          data?.revenue?.totalSpread          ?? null,
+    fixedFee:        data?.revenue?.totalFixedFees       ?? null,
+    profitRetention: data?.revenue?.totalProfitRetention ?? null,
+  }
 
   const title = `${countryFlag(corridor.originCountry)} ${corridor.originCurrency} → ${countryFlag(corridor.destinationCountry)} ${corridor.destinationCurrency} — Rentabilidad`
 

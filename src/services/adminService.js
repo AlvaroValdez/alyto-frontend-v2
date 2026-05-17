@@ -187,7 +187,7 @@ export function getTransactionComprobante(transactionId) {
  * @returns {Promise<{ SRL: number, SpA: number, LLC: number }>}
  */
 export function getFundingBalances() {
-  return request('/admin/funding/balances')
+  return request('/admin/funding/balance')
 }
 
 /**

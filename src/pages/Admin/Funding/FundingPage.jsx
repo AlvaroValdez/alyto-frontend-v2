@@ -1339,7 +1339,7 @@ export default function FundingPage() {
     setBalLoading(true)
     try {
       const data = await getFundingBalances()
-      setBalances(data)
+      setBalances(data.balance ?? data)
     } catch { /* silencioso */ } finally { setBalLoading(false) }
   }, [])
 
