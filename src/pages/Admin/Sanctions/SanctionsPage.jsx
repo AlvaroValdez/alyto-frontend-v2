@@ -64,7 +64,7 @@ function AddSanctionModal({ onClose, onAdded }) {
         aliases:         form.aliases.split('\n').map(s => s.trim()).filter(Boolean),
         documentNumbers: form.documentNumbers.split('\n').map(s => s.trim()).filter(Boolean),
       }
-      await request('POST', '/admin/sanctions', body)
+      await request('/admin/sanctions', { method: 'POST', body: JSON.stringify(body) })
       onAdded()
       onClose()
     } catch (err) {
@@ -224,7 +224,7 @@ function ScreenModal({ onClose }) {
     setError(null)
     setResult(null)
     try {
-      const data = await request('POST', '/admin/sanctions/screen', form)
+      const data = await request('/admin/sanctions/screen', { method: 'POST', body: JSON.stringify(form) })
       setResult(data)
     } catch (err) {
       setError(err.message || 'Error en el screening.')
@@ -339,7 +339,7 @@ export default function SanctionsPage() {
       if (type)        params.set('type',       type)
       if (activeFilter !== '') params.set('active', activeFilter)
 
-      const data = await request('GET', `/admin/sanctions?${params}`)
+      const data = await request(`/admin/sanctions?${params}`)
       setEntries(data.entries ?? [])
       setTotal(data.pagination?.total ?? 0)
     } catch (err) {
@@ -354,7 +354,7 @@ export default function SanctionsPage() {
   async function handleRemove(entryId, fullName) {
     if (!window.confirm(`¿Desactivar la entrada "${fullName}"? La operación es reversible desde la base de datos.`)) return
     try {
-      await request('DELETE', `/admin/sanctions/${entryId}`)
+      await request(`/admin/sanctions/${entryId}`, { method: 'DELETE' })
       load()
     } catch (err) {
       alert(err.message || 'Error al desactivar.')

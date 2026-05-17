@@ -77,7 +77,7 @@ function DetalleDrawer({ reclamoId, onClose, onUpdate }) {
     async function load() {
       setLoading(true)
       try {
-        const data = await request('GET', `/admin/reclamos/${reclamoId}`)
+        const data = await request(`/admin/reclamos/${reclamoId}`)
         setReclamo(data)
         setForm(prev => ({ ...prev, status: data.status }))
       } catch {
@@ -99,7 +99,7 @@ function DetalleDrawer({ reclamoId, onClose, onUpdate }) {
     }
     setSaving(true)
     try {
-      await request('PATCH', `/admin/reclamos/${reclamoId}`, { body: form })
+      await request(`/admin/reclamos/${reclamoId}`, { method: 'PATCH', body: JSON.stringify(form) })
       onUpdate()
       onClose()
     } catch (err) {
@@ -339,7 +339,7 @@ export default function ReclamosAdminPage() {
 
   const fetchVencimientos = useCallback(async () => {
     try {
-      const data = await request('GET', '/admin/reclamos/vencimientos')
+      const data = await request('/admin/reclamos/vencimientos')
       setVencimientos(data.vencimientos ?? [])
     } catch { /* silencioso */ }
   }, [])
@@ -350,7 +350,7 @@ export default function ReclamosAdminPage() {
       const params = new URLSearchParams({ page: p, limit: 20 })
       if (filters.status) params.set('status', filters.status)
       if (filters.tipo)   params.set('tipo',   filters.tipo)
-      const data = await request('GET', `/admin/reclamos?${params}`)
+      const data = await request(`/admin/reclamos?${params}`)
       setReclamos(data.reclamos ?? [])
       setTotalPages(data.pagination?.totalPages ?? 1)
       setPage(p)
