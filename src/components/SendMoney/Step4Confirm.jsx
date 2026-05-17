@@ -227,10 +227,10 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
   const fees = quote?.fees || {}
 
   const effectiveQuote = liveQuote ?? quote
-  const wasUpdated = liveQuote != null &&
-    (quote?.destinationAmount ?? 0) > 0 &&
-    Math.abs((liveQuote.destinationAmount ?? 0) - (quote?.destinationAmount ?? 0))
-      / (quote?.destinationAmount ?? 1) > 0.005
+  const rateDiff = liveQuote != null && (quote?.destinationAmount ?? 0) > 0
+    ? (liveQuote.destinationAmount - quote.destinationAmount) / quote.destinationAmount
+    : 0
+  const wasUpdated = Math.abs(rateDiff) > 0.02   // solo mostrar si cambio > 2%
 
   const costoEnvio =
     (fees.alytoCSpread || 0) +
@@ -432,10 +432,10 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
               <Info size={13} className="mt-0.5 flex-shrink-0" style={{ color: '#F59E0B' }} />
               <div>
                 <p className="text-[0.75rem] font-medium" style={{ color: '#92400E' }}>
-                  Monto ajustado al tipo de cambio en vivo
+                  Tasa actualizada ({rateDiff > 0 ? '+' : ''}{(rateDiff * 100).toFixed(1)}% desde tu cotización)
                 </p>
                 <p className="text-[0.7rem] mt-0.5" style={{ color: '#A16207' }}>
-                  Referencial WS: {Number(quote?.destinationAmount || 0).toLocaleString('es-CL')} {quote?.destinationCurrency || ''} · Confirmado: {Number(effectiveQuote?.destinationAmount || 0).toLocaleString('es-CL')} {effectiveQuote?.destinationCurrency || ''}
+                  El monto que ves arriba ya refleja la tasa vigente — es lo que recibirá el beneficiario.
                 </p>
               </div>
             </div>
