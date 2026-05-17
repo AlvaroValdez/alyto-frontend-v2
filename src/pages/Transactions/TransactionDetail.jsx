@@ -414,6 +414,7 @@ export default function TransactionDetail() {
   const [copiedTxid, setCopiedTxid] = useState(false)
   const [showPaymentInstructions, setShowPaymentInstructions] = useState(false)
   const [sharing, setSharing] = useState(false)
+  const [shareMsg, setShareMsg] = useState('')
   const [downloadingB2B, setDownloadingB2B] = useState(false)
 
   const comprobanteRef = useRef(null)
@@ -504,33 +505,39 @@ export default function TransactionDetail() {
     })
   }
 
-  async function handleShareImage() {
+  async function handleShareWhatsApp() {
     if (!comprobanteRef.current || sharing) return
     setSharing(true)
+    setShareMsg('')
     try {
       const canvas = await captureComprobante()
       const blob = await new Promise((resolve, reject) => {
-        canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob returned null')), 'image/png')
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob null')), 'image/png')
       })
       const filename = `comprobante-alyto-${tx.transactionId}.png`
       const file = new File([blob], filename, { type: 'image/png' })
+
+      // 1. Web Share API con archivos (iOS Safari, Android Chrome — requiere HTTPS)
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          title: 'Comprobante Alyto',
-          text:  `Transferencia ${tx.transactionId}`,
-          files: [file],
-        })
-      } else {
-        // Fallback: descargar imagen directamente (desktop sin Web Share API)
-        const url = URL.createObjectURL(blob)
-        const a   = document.createElement('a')
-        a.href     = url
-        a.download = filename
-        a.click()
-        URL.revokeObjectURL(url)
+        await navigator.share({ files: [file], title: 'Comprobante Alyto' })
+        return
       }
+
+      // 2. Fallback: descargar imagen + abrir WhatsApp para que el usuario la adjunte
+      const url = URL.createObjectURL(blob)
+      const a   = document.createElement('a')
+      a.href     = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
+      setShareMsg('Imagen guardada — ábrela desde WhatsApp para compartirla')
+      setTimeout(() => setShareMsg(''), 5000)
     } catch (err) {
-      console.error('[Share] Error compartiendo comprobante:', err.message)
+      if (err.name !== 'AbortError') {
+        console.error('[WhatsApp] Error compartiendo comprobante:', err.message)
+        setShareMsg('No se pudo compartir. Usa "Guardar" y envíala desde tu galería.')
+        setTimeout(() => setShareMsg(''), 5000)
+      }
     } finally {
       setSharing(false)
     }
@@ -1135,7 +1142,7 @@ export default function TransactionDetail() {
             {/* Botones — FUERA del ref: no aparecen en la imagen capturada */}
             <div className="flex gap-2 mt-3">
               <button
-                onClick={handleShareImage}
+                onClick={handleShareWhatsApp}
                 disabled={sharing}
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all active:scale-95 disabled:opacity-60"
                 style={{ background: '#25D366', color: 'white' }}
@@ -1161,6 +1168,13 @@ export default function TransactionDetail() {
                 <Printer size={15} />
               </button>
             </div>
+
+            {/* Toast fallback WhatsApp */}
+            {shareMsg && (
+              <p className="mt-2 text-center text-[0.75rem] text-[#4A5568] bg-[#F1F5F9] rounded-xl px-3 py-2">
+                {shareMsg}
+              </p>
+            )}
           </div>
 
           {/* ── 5. COMPROBANTE BLOCKCHAIN — solo si completada ────────────── */}

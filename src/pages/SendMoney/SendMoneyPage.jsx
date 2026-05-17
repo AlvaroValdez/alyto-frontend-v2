@@ -108,11 +108,11 @@ export default function SendMoneyPage() {
     resetFlow()
   }
 
-  function handleLeaveConfirm() {
+  function handleLeaveConfirm(destination = '/transactions') {
     blockingRef.current = false
     resetFlow()
     setShowLeaveWarning(false)
-    navigate('/transactions')
+    navigate(destination)
   }
 
   function handleLeaveDismiss() {
@@ -140,16 +140,12 @@ export default function SendMoneyPage() {
             {STEP_TITLES[step]}
           </span>
 
-          {step < 5 ? (
-            <button
-              onClick={handleCancel}
-              className="w-9 h-9 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#1D3461] transition-all"
-            >
-              <X size={18} />
-            </button>
-          ) : (
-            <div className="w-9" />
-          )}
+          <button
+            onClick={handleCancel}
+            className="w-9 h-9 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#1D3461] transition-all"
+          >
+            <X size={18} />
+          </button>
         </div>
       )}
 
@@ -222,26 +218,60 @@ export default function SendMoneyPage() {
             <div className="w-10 h-1 rounded-full bg-[#E2E8F0] mx-auto mb-5" />
 
             <div className="flex flex-col items-center text-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-[#F59E0B1A] flex items-center justify-center">
-                <AlertTriangle size={26} className="text-[#F59E0B]" />
-              </div>
 
               <div>
-                <h3 className="text-[1.0625rem] font-bold text-[#0D1F3C] mb-2">
-                  Tu transferencia está esperando pago
+                <h3 className="text-[1.0625rem] font-bold text-[#0D1F3C] mb-1.5">
+                  ¿Abandonar la transferencia?
                 </h3>
                 <p className="text-[0.8125rem] text-[#4A5568] leading-relaxed">
-                  La transferencia fue creada y está pendiente de pago. Si sales ahora,
-                  encuéntrala en <strong className="text-[#0D1F3C]">Mis transferencias</strong> para completarla cuando quieras.
+                  Si sales ahora, <strong className="text-[#0D1F3C]">perderás los siguientes beneficios:</strong>
                 </p>
-                {stepData.transactionId && (
-                  <p className="text-[0.6875rem] text-[#94A3B8] mt-2 font-mono">
-                    ID: {stepData.transactionId.slice(0, 8)}…{stepData.transactionId.slice(-6)}
-                  </p>
-                )}
               </div>
 
-              <div className="w-full flex flex-col gap-2.5 mt-1">
+              {/* Chips de beneficios que se pierden */}
+              <div className="flex gap-3 w-full justify-center">
+                {/* Chip: tasa bloqueada */}
+                {stepData.quote?.exchangeRate && (
+                  <div className="flex-1 flex flex-col items-center gap-1.5 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-[#1D34611A] flex items-center justify-center">
+                      <span className="text-[1.1rem]">🔒</span>
+                    </div>
+                    <p className="text-[0.6875rem] font-semibold text-[#0D1F3C] leading-tight">
+                      Tasa<br />bloqueada
+                    </p>
+                    <p className="text-[0.625rem] text-[#4A5568] font-mono leading-tight">
+                      1 {stepData.quote.originCurrency} ={' '}
+                      {Number(stepData.quote.exchangeRate).toFixed(4)}{' '}
+                      {stepData.quote.destinationCurrency}
+                    </p>
+                  </div>
+                )}
+                {/* Chip: cotización vigente */}
+                <div className="flex-1 flex flex-col items-center gap-1.5 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-[#F59E0B1A] flex items-center justify-center">
+                    <span className="text-[1.1rem]">⏱️</span>
+                  </div>
+                  <p className="text-[0.6875rem] font-semibold text-[#0D1F3C] leading-tight">
+                    Cotización<br />vigente
+                  </p>
+                  <p className="text-[0.625rem] text-[#4A5568] leading-tight">
+                    Puede cambiar<br />al volver
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-[0.75rem] text-[#4A5568] leading-relaxed -mt-1">
+                La operación quedará como <strong className="text-[#0D1F3C]">Incompleta</strong>.
+                Encuéntrala en <strong className="text-[#0D1F3C]">Mis transferencias</strong> para completarla.
+              </p>
+
+              {stepData.transactionId && (
+                <p className="text-[0.6875rem] text-[#94A3B8] -mt-2 font-mono">
+                  ID: {stepData.transactionId.slice(0, 8)}…{stepData.transactionId.slice(-6)}
+                </p>
+              )}
+
+              <div className="w-full flex flex-col gap-2.5">
                 <button
                   onClick={handleLeaveDismiss}
                   className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] bg-[#0D1F3C] text-white"
@@ -249,10 +279,16 @@ export default function SendMoneyPage() {
                   Continuar con el pago
                 </button>
                 <button
-                  onClick={handleLeaveConfirm}
+                  onClick={() => handleLeaveConfirm('/transactions')}
                   className="w-full py-3 rounded-2xl font-semibold text-[0.875rem] text-[#4A5568] border border-[#E2E8F0]"
                 >
                   Ver mis transferencias
+                </button>
+                <button
+                  onClick={() => handleLeaveConfirm('/')}
+                  className="w-full py-2.5 rounded-2xl font-semibold text-[0.8125rem] text-[#94A3B8]"
+                >
+                  Ir al inicio
                 </button>
               </div>
             </div>
