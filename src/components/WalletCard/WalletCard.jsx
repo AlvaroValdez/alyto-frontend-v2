@@ -41,11 +41,15 @@ export default function WalletCard({ bobBalance = 0, usdcBalance = 0, stellarAdd
   return (
     <div className="px-4 mb-4">
       <div
-        className="relative overflow-hidden rounded-[20px] w-full"
+        className="relative overflow-hidden rounded-[20px] w-full transition-all duration-500"
         style={{
-          background:    'linear-gradient(135deg, #0D1F3C 0%, #1E3A5F 60%, #233E58 100%)',
+          background:    showUSDC
+            ? 'linear-gradient(135deg, #0D4A36 0%, #1D9E75 60%, #17875F 100%)'
+            : 'linear-gradient(135deg, #0D1F3C 0%, #1E3A5F 60%, #233E58 100%)',
           aspectRatio:   '1.6 / 1',
-          boxShadow:     '0 8px 32px rgba(13,31,60,0.45), 0 2px 8px rgba(13,31,60,0.25)',
+          boxShadow:     showUSDC
+            ? '0 8px 32px rgba(29,158,117,0.35), 0 2px 8px rgba(29,158,117,0.20)'
+            : '0 8px 32px rgba(13,31,60,0.45), 0 2px 8px rgba(13,31,60,0.25)',
         }}
       >
         {/* Subtle grid overlay */}
