@@ -117,7 +117,7 @@ export default function WalletCard({ bobBalance = 0, usdcBalance = 0, stellarAdd
             >
               <RefreshCw size={11} className="text-white/70" />
               <span className="text-[0.6875rem] font-semibold text-white/80">
-                {showUSDC ? 'Ver en BOB' : 'Ver en USDC'}
+                {showUSDC ? 'Ver BOB' : 'Ver USDC'}
               </span>
             </button>
 
