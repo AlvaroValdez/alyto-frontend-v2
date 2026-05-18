@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Loader2, AlertCircle, ChevronDown, ChevronUp, Clock, RefreshCw, Info, CheckCircle2 } from 'lucide-react'
-import { initPayment, fetchHarborQuote } from '../../services/paymentsService'
+import { initPayment, fetchHarborQuote, getQuote } from '../../services/paymentsService'
 import { useAuth } from '../../context/AuthContext'
 import Sentry from '../../services/sentry.js'
 
@@ -154,6 +154,9 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
   const [quoteError, setQuoteError]     = useState(null)
   const quoteFetchedRef                 = useRef(false)
 
+  // Modal que aparece cuando la tasa varió >0.5% al momento de confirmar
+  const [rateModal, setRateModal] = useState(null) // { freshQuote, rateDiff } | null
+
   // Step3 guarda los datos bajo la key "beneficiaryData" (campos dinámicos de Vita)
   const {
     quote, originAmount, destinationCountry, payinMethod,
@@ -248,16 +251,11 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
     owlpay:  'OwlPay Harbor',
   }[payinMethod] || payinMethod || '—'
 
-  async function handleConfirm() {
-    if (!confirmed) return
+  // Ejecuta el pago con la cotización indicada (Vita fresca, Harbor live, o estimado WS)
+  async function executePayment(q) {
     setLoading(true)
     setError(null)
-
     try {
-      // liveQuote = quote Harbor real (rateConfidence:'exact') si el fetch tuvo éxito.
-      // Tiene prioridad sobre quote (estimado WS) para todos los campos de rate.
-      const q = liveQuote ?? quote
-
       const res = await initPayment({
         corridorId:        quote.corridorId,
         originAmount,
@@ -269,28 +267,22 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
         rateSource:        q.rateSource        ?? null,
         providerQuoteId:   q.providerQuoteId   ?? null,
         rateExpiresAt:     q.rateExpiresAt     ?? null,
-        ...(contactId                         ? { contactId }    : {}),
+        ...(contactId ? { contactId } : {}),
         ...((q.owlPayMethod ?? owlPayMethod) && (q.owlPayMethod ?? owlPayMethod) !== 'null'
           ? { owlPayMethod: q.owlPayMethod ?? owlPayMethod }
           : {}),
-        ...(q.harborQuoteId ?? harborQuoteId  ? { harborQuoteId: q.harborQuoteId ?? harborQuoteId } : {}),
+        ...(q.harborQuoteId ?? harborQuoteId ? { harborQuoteId: q.harborQuoteId ?? harborQuoteId } : {}),
       })
-      // Guardar transactionId para PaymentSuccessPage (destino del redirect de Fintoc)
       if (res.transactionId) {
         sessionStorage.setItem('lastTransactionId', res.transactionId)
       }
-
       onNext({
-        transactionId: res.transactionId,
-        // Algunos backends retornan widgetUrl en lugar de payinUrl (Fintoc)
-        payinUrl: res.payinUrl || res.widgetUrl || res.widgetToken,
-        // Solo sobreescribir payinMethod si el backend lo retorna explícitamente;
-        // de lo contrario preservar el valor ya guardado en stepData (ej. 'fintoc' del skip)
+        transactionId:     res.transactionId,
+        payinUrl:          res.payinUrl || res.widgetUrl || res.widgetToken,
         ...(res.payinMethod ? { payinMethod: res.payinMethod } : {}),
-        // Instrucciones y QR para pagos manuales (Bolivia)
         payinInstructions: res.paymentInstructions ?? null,
-        paymentQR:         res.paymentQR         ?? null,
-        paymentQRStatic:   res.paymentQRStatic   ?? [],
+        paymentQR:         res.paymentQR           ?? null,
+        paymentQRStatic:   res.paymentQRStatic     ?? [],
       })
     } catch (err) {
       Sentry.captureException(err, {
@@ -301,6 +293,43 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleConfirm() {
+    if (!confirmed) return
+
+    const isOwlPay = quote?.payoutMethod === 'owlPay'
+
+    if (!isOwlPay) {
+      // Opción C: re-cotizar en el momento de confirmar (corredores Vita)
+      setLoading(true)
+      setError(null)
+      let freshQ = null
+      try {
+        freshQ = await getQuote(originAmount, destinationCountry)
+      } catch {
+        // Re-cotización falló — continuar con cotización original para no bloquear al usuario
+      }
+
+      if (freshQ) {
+        const oldDest = quote?.destinationAmount ?? 0
+        const newDest = freshQ.destinationAmount ?? 0
+        const diff    = oldDest > 0 ? (newDest - oldDest) / oldDest : 0
+
+        if (Math.abs(diff) > 0.005) {
+          // Tasa varió >0.5% — mostrar modal de confirmación
+          setLoading(false)
+          setRateModal({ freshQuote: freshQ, rateDiff: diff })
+          return
+        }
+      }
+
+      await executePayment(freshQ ?? quote)
+      return
+    }
+
+    // Harbor: usar liveQuote obtenido al montar el componente
+    await executePayment(liveQuote ?? quote)
   }
 
   return (
@@ -547,8 +576,65 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
         }`}
       >
         {(loading || quoteLoading) && <Loader2 size={18} className="animate-spin" />}
-        {loading ? 'Procesando...' : quoteLoading ? 'Verificando tasa...' : quoteExpired ? 'Cotización vencida' : 'Confirmar y pagar'}
+        {loading ? 'Verificando tasa...' : quoteLoading ? 'Verificando tasa...' : quoteExpired ? 'Cotización vencida' : 'Confirmar y pagar'}
       </button>
+
+      {/* ── Modal: tasa cambió >0.5% al confirmar ── */}
+      {rateModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.45)' }}
+          onClick={() => setRateModal(null)}
+        >
+          <div
+            className="w-full max-w-md bg-white rounded-t-3xl px-5 pt-6 pb-10"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-[1rem] font-bold text-[#0D1F3C] mb-1">Tasa actualizada</h3>
+            <p className="text-[0.8125rem] text-[#4A5568] mb-4">
+              La tasa de cambio varió desde tu cotización inicial.
+            </p>
+
+            <div className="bg-[#F8FAFC] rounded-xl px-4 py-3 mb-5 space-y-2.5">
+              <div className="flex justify-between text-[0.8125rem]">
+                <span className="text-[#4A5568]">Cotización anterior</span>
+                <span className="text-[#94A3B8] line-through">
+                  ~{Math.round(quote?.destinationAmount ?? 0).toLocaleString('es-CL')}{' '}
+                  {quote?.destinationCurrency}
+                </span>
+              </div>
+              <div className="flex justify-between text-[0.8125rem]">
+                <span className="text-[#4A5568]">Nueva cotización</span>
+                <span className="font-bold text-[#0D1F3C]">
+                  ~{Math.round(rateModal.freshQuote?.destinationAmount ?? 0).toLocaleString('es-CL')}{' '}
+                  {rateModal.freshQuote?.destinationCurrency}
+                </span>
+              </div>
+              <div className="flex justify-between text-[0.75rem]">
+                <span className="text-[#94A3B8]">Variación</span>
+                <span className={rateModal.rateDiff >= 0 ? 'text-[#22C55E] font-semibold' : 'text-[#EF4444] font-semibold'}>
+                  {rateModal.rateDiff >= 0 ? '+' : ''}{(rateModal.rateDiff * 100).toFixed(2)}%
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRateModal(null)}
+                className="flex-1 py-3.5 rounded-2xl text-[0.875rem] font-semibold text-[#4A5568] bg-[#F1F5F9] active:scale-[0.98]"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => { setRateModal(null); executePayment(rateModal.freshQuote) }}
+                className="flex-1 py-3.5 rounded-2xl text-[0.875rem] font-bold text-white bg-[#0D1F3C] active:scale-[0.98]"
+              >
+                Aceptar nueva tasa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
