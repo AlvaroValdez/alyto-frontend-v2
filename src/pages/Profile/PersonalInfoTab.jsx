@@ -152,7 +152,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-1.5 bg-[#1D3461] text-[#0D1F3C] text-[0.8125rem] font-bold px-3 py-1.5 rounded-lg disabled:opacity-60 transition-opacity"
+              className="flex items-center gap-1.5 bg-[#1D3461] text-white text-[0.8125rem] font-bold px-3 py-1.5 rounded-lg disabled:opacity-60 transition-opacity"
             >
               {saving ? (
                 <Loader2 size={13} className="animate-spin" />
@@ -243,23 +243,17 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
               </div>
             </div>
 
-            {/* Moneda */}
+            {/* Moneda — solo lectura, determinada por jurisdicción */}
             <div className="px-4 py-3">
               <label className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
                 Moneda preferida
               </label>
-              <div className="relative">
-                <select
-                  value={form.preferredCurrency}
-                  onChange={e => handleChange('preferredCurrency', e.target.value)}
-                  className="w-full appearance-none bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
-                >
-                  {CURRENCIES.map(c => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
-                </select>
-                <DollarSign size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
+              <div className="flex items-center gap-2 bg-[#F0F2F7] border border-[#E2E8F0] rounded-xl px-3 py-2.5">
+                <DollarSign size={14} className="text-[#94A3B8]" />
+                <span className="text-[0.9375rem] text-[#94A3B8] flex-1">{form.preferredCurrency}</span>
+                <Lock size={12} className="text-[#94A3B8]" />
               </div>
+              <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Determinada por tu jurisdicción de registro.</p>
             </div>
           </div>
         ) : (

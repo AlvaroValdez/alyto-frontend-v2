@@ -19,13 +19,13 @@ export default function KycStatusCard({ kycStatus }) {
   // ── approved ──────────────────────────────────────────────────────────────
   if (kycStatus === 'approved') {
     return (
-      <div className="mx-4 mb-4 rounded-2xl border border-[#1D346133] bg-[#233E580D] px-4 py-3.5 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-[#1D34611A] flex items-center justify-center flex-shrink-0">
-          <CheckCircle size={18} className="text-[#1D3461]" />
+      <div className="mx-4 mb-4 rounded-2xl border border-[#22C55E33] bg-[#22C55E0D] px-4 py-3.5 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-[#22C55E1A] flex items-center justify-center flex-shrink-0">
+          <CheckCircle size={18} className="text-[#16A34A]" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[0.875rem] font-semibold text-[#1D3461] leading-tight">
-            Identidad verificada
+          <p className="text-[0.875rem] font-semibold text-[#16A34A] leading-tight">
+            Identidad verificada ✓
           </p>
           <p className="text-[0.75rem] text-[#4A5568] mt-0.5">
             Tu cuenta está habilitada para enviar dinero

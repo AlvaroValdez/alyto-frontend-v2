@@ -542,7 +542,7 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
           />
           <div
             className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-              confirmed ? 'bg-[#0D1F3C] border-[#0D1F3C]' : 'bg-transparent border-[#E2E8F0]'
+              confirmed ? 'bg-[#0D1F3C] border-[#0D1F3C]' : 'bg-white border-[#94A3B8] hover:border-[#0D1F3C]'
             }`}
           >
             {confirmed && (

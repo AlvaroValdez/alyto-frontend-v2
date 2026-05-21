@@ -43,11 +43,11 @@ function NotStartedState({ navigate }) {
   const benefits = [
     'Tickets hasta $50.000 USD por transacción',
     'Corredores globales: USD, EUR, CNY, BRL, MXN, AED',
-    'Tasa FX transparente sin márgenes ocultos',
+    'Comisiones transparentes desde 0.5% sin cargos ocultos',
     'Soporte prioritario dedicado',
   ]
   const requirements = [
-    'RUT/NIT de la empresa',
+    'NIT de la empresa',
     'Escritura de constitución',
     'CI del representante legal',
   ]

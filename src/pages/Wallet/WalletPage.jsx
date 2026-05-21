@@ -974,12 +974,12 @@ function ConvertModal({ open, onClose, onSuccess, bobBalance }) {
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="Convertir BOB → USDC">
+    <Modal open={open} onClose={handleClose} title="Convertir BOB a USDC">
       {result ? (
         <div className="space-y-4">
           <div className="text-center py-2">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: '#F59E0B1A' }}>
-              <ArrowRightLeft size={28} className="text-[#F59E0B]" />
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: '#22C55E1A' }}>
+              <ArrowRightLeft size={28} className="text-[#22C55E]" />
             </div>
             <p className="text-[#0F172A] font-bold text-[1rem]">Solicitud enviada</p>
           </div>
@@ -989,12 +989,12 @@ function ConvertModal({ open, onClose, onSuccess, bobBalance }) {
               <span className="text-[0.875rem] font-bold text-[#F87171]">- {formatBOB(result.bobAmount)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[0.75rem] text-[#64748B]">Crédito USDC estimado</span>
+              <span className="text-[0.75rem] text-[#64748B]">Recibirás USDC</span>
               <span className="text-[0.875rem] font-bold text-[#22C55E]">≈ {formatUSDC(result.usdcAmount)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[0.75rem] text-[#64748B]">Tasa</span>
-              <span className="text-[0.875rem] text-[#0F172A]">{result.bobPerUsdc?.toFixed(4)} BOB / 1 USDC</span>
+              <span className="text-[0.75rem] text-[#64748B]">Tipo de cambio</span>
+              <span className="text-[0.875rem] text-[#0F172A]">{result.bobPerUsdc?.toFixed(2)} BOB = 1 USDC</span>
             </div>
           </div>
           <p className="text-[0.75rem] text-[#64748B] text-center">El equipo Alyto confirmará la conversión en <span className="text-[#0F172A] font-semibold">1-4 horas hábiles</span>.</p>
@@ -1002,21 +1002,26 @@ function ConvertModal({ open, onClose, onSuccess, bobBalance }) {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Saldo disponible prominente */}
+          <div className="rounded-2xl px-4 py-3 flex items-center justify-between"
+            style={{ background: '#233E580D', border: '1px solid #233E5820' }}>
+            <span className="text-[0.75rem] text-[#64748B]">Saldo disponible en BOB</span>
+            <span className="text-[1rem] font-bold text-[#233E58]">{formatBOB(bobBalance)}</span>
+          </div>
           <div className="rounded-2xl px-4 py-3 flex items-start gap-3"
-            style={{ background: '#233E581A', border: '1px solid #233E5833' }}>
-            <Info size={15} className="text-[#233E58] mt-0.5 flex-shrink-0" />
-            <p className="text-[0.75rem] text-[#233E58] leading-relaxed">
-              Convierte BOB de tu wallet al equivalente en USDC. La tasa es la tasa Alyto vigente.
+            style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+            <Info size={15} className="text-[#94A3B8] mt-0.5 flex-shrink-0" />
+            <p className="text-[0.75rem] text-[#64748B] leading-relaxed">
+              Convierte tus Bolivianos (BOB) a USDC al tipo de cambio Alyto vigente. Mínimo Bs. 50.
             </p>
           </div>
           <div>
-            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Monto a convertir (BOB)</label>
+            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">¿Cuántos BOB quieres convertir?</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-semibold text-sm">Bs.</span>
               <input type="number" min={50} value={amount} onChange={e => setAmount(e.target.value)} placeholder="100"
                 className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none" />
             </div>
-            <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Mínimo Bs. 50. Disponible: {formatBOB(bobBalance)}</p>
           </div>
           {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>}
           <button type="submit" disabled={loading || !amount}
