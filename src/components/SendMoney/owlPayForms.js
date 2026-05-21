@@ -69,7 +69,7 @@ const addressFields = ({ countryName = '', stateProvinceLabel = 'Estado / Provin
     placeholder: 'Código postal',
     required: true,
     maxLength: 20,
-    hint: 'Formato exacto del país del beneficiario. Ej: DE/FR/ES/IT 5 dígitos; NL 4 dígitos+2 letras; GB alfanum; US 5 o 9 dígitos. Harbor valida estrictamente.',
+    hint: 'Formato exacto del país del beneficiario. Ej: DE/FR/ES/IT 5 dígitos; NL 4 dígitos+2 letras; GB alfanum; US 5 o 9 dígitos.',
   },
 ])
 
@@ -408,7 +408,7 @@ export const OWLPAY_FORMS = {
         placeholder: 'Ej: 12345678909',
         required: true,
         pattern: '^\\d{11}$',
-        hint: 'CPF real (11 dígitos sin puntos ni guiones). Harbor valida con algoritmo oficial brasileño — CPFs ficticios serán rechazados.',
+        hint: 'CPF real (11 dígitos sin puntos ni guiones). Se valida con el algoritmo oficial brasileño — CPFs ficticios serán rechazados.',
         maxLength: 11,
       },
       {

@@ -246,9 +246,9 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
 
   const payinMethodLabel = {
     fintoc:  'Fintoc — Transferencia bancaria',
-    vita:    'Vita Wallet',
+    vita:    'Pago digital',
     manual:  'Transferencia bancaria manual',
-    owlpay:  'OwlPay Harbor',
+    owlpay:  'Transferencia internacional',
   }[payinMethod] || payinMethod || '—'
 
   // Ejecuta el pago con la cotización indicada (Vita fresca, Harbor live, o estimado WS)
@@ -450,7 +450,7 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
             <div className="flex justify-end mt-1">
               <span className="text-[0.6875rem] text-[#94A3B8] flex items-center gap-1">
                 <Loader2 size={11} className="animate-spin" />
-                Verificando tasa Harbor...
+                Verificando tasa de cambio...
               </span>
             </div>
           )}
