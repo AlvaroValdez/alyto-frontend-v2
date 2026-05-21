@@ -4,7 +4,7 @@ import { Home, Wallet, ArrowUpRight, Users, User, ArrowLeftRight, FileText } fro
 // Nav items por entidad legal
 const NAV_SRL = [
   { icon: Home,            label: 'Inicio',        to: '/dashboard'    },
-  { icon: Wallet,          label: 'Activos',        to: '/wallet'       },
+  { icon: Wallet,          label: 'Wallet',         to: '/wallet'       },
   { icon: ArrowUpRight,    label: 'Enviar',         to: '/send'         },
   { icon: ArrowLeftRight,  label: 'Movimientos',    to: '/transactions' },
   { icon: User,            label: 'Perfil',         to: '/profile'      },

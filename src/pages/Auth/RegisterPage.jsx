@@ -28,6 +28,12 @@ const ENTITY_INFO = {
   LLC: { label: 'AV Finance LLC',  detail: 'Global',  currency: 'USD', flag: '🌐'  },
 }
 
+const CURRENCY_DISPLAY = {
+  BOB: 'Bs. (Bolivianos)',
+  CLP: 'CLP (Pesos Chilenos)',
+  USD: 'USD (Dólares)',
+}
+
 // Prefijos de países más comunes
 const PHONE_PREFIXES = [
   { code: '+56', flag: '🇨🇱', label: 'CL' },
@@ -56,21 +62,31 @@ function getTermsMeta(country) {
 
 function StrengthBar({ password }) {
   if (!password.length) return null
+  const label      = password.length >= 12 ? 'Muy segura'
+    : password.length >= 8  ? 'Segura'
+    : password.length >= 4  ? 'Regular'
+    : 'Débil'
+  const labelColor = password.length >= 12 ? '#1D3461'
+    : password.length >= 8  ? '#94A3B8'
+    : '#EF4444'
   return (
-    <div className="flex gap-1 mt-1">
-      {[...Array(4)].map((_, i) => (
-        <div
-          key={i}
-          className="h-1 flex-1 rounded-full transition-colors duration-200"
-          style={{
-            background: password.length >= (i + 1) * 3
-              ? password.length >= 12 ? '#1D3461'
-                : password.length >= 8  ? '#94A3B8'
-                : '#EF4444'
-              : 'var(--color-border)',
-          }}
-        />
-      ))}
+    <div className="mt-1.5 space-y-1">
+      <div className="flex gap-1">
+        {[...Array(4)].map((_, i) => (
+          <div
+            key={i}
+            className="h-1 flex-1 rounded-full transition-colors duration-200"
+            style={{
+              background: password.length >= (i + 1) * 3
+                ? password.length >= 12 ? '#1D3461'
+                  : password.length >= 8  ? '#94A3B8'
+                  : '#EF4444'
+                : 'var(--color-border)',
+            }}
+          />
+        ))}
+      </div>
+      <p className="text-[0.6875rem] font-semibold" style={{ color: labelColor }}>{label}</p>
     </div>
   )
 }
@@ -414,7 +430,7 @@ export default function RegisterPage() {
                 <label className={LABEL_CLASS}>Nombre <span className="text-[#EF4444]">*</span></label>
                 <input
                   type="text" name="firstName" value={form.firstName}
-                  onChange={handleChange} placeholder="Juan"
+                  onChange={handleChange} placeholder="Ej.: Juan"
                   className={INPUT_CLASS}
                 />
               </div>
@@ -422,7 +438,7 @@ export default function RegisterPage() {
                 <label className={LABEL_CLASS}>Apellido</label>
                 <input
                   type="text" name="lastName" value={form.lastName}
-                  onChange={handleChange} placeholder="Pérez"
+                  onChange={handleChange} placeholder="Ej.: Pérez"
                   className={INPUT_CLASS}
                 />
               </div>
@@ -489,7 +505,7 @@ export default function RegisterPage() {
                         Operarás con {ei.label} ({ei.detail}) · {ei.currency}
                       </p>
                       <p className="text-[0.6875rem] text-[#4A5568] mt-0.5">
-                        Tu moneda de origen será <span className="text-[#1D3461] font-semibold">{ei.currency}</span>
+                        Tu moneda de origen será <span className="text-[#1D3461] font-semibold">{CURRENCY_DISPLAY[ei.currency] ?? ei.currency}</span>
                       </p>
                     </div>
                   </div>

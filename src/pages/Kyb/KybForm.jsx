@@ -35,28 +35,38 @@ const COUNTRIES = [
 ]
 
 const COMPANY_TYPES = [
-  { value: 'SRL', label: 'Sociedad de Responsabilidad Limitada (SRL)' },
-  { value: 'SA',  label: 'Sociedad Anónima (SA)' },
-  { value: 'SpA', label: 'Sociedad por Acciones (SpA)' },
-  { value: 'LLC', label: 'Limited Liability Company (LLC)' },
-  { value: 'LLP', label: 'Limited Liability Partnership (LLP)' },
-  { value: 'IND', label: 'Empresa Individual' },
+  { value: 'SRL',  label: 'Sociedad de Responsabilidad Limitada (SRL)' },
+  { value: 'SA',   label: 'Sociedad Anónima (SA)' },
+  { value: 'SAM',  label: 'Sociedad Anónima Mixta (SAM)' },
+  { value: 'UNIP', label: 'Empresa Unipersonal' },
+  { value: 'COOP', label: 'Cooperativa' },
+  { value: 'ASC',  label: 'Asociación Civil / Fundación' },
+  { value: 'SpA',  label: 'Sociedad por Acciones (SpA)' },
+  { value: 'LLC',  label: 'Limited Liability Company (LLC)' },
+  { value: 'LLP',  label: 'Limited Liability Partnership (LLP)' },
   { value: 'OTHER', label: 'Otro' },
 ]
 
 const INDUSTRIES = [
   { value: 'trade',     label: 'Comercio internacional' },
   { value: 'import',    label: 'Importación / Exportación' },
+  { value: 'retail',    label: 'Comercio minorista / Mercado' },
   { value: 'tech',      label: 'Tecnología' },
   { value: 'finance',   label: 'Servicios financieros' },
   { value: 'mining',    label: 'Minería' },
+  { value: 'hydro',     label: 'Hidrocarburos / Gas / Petróleo' },
   { value: 'agro',      label: 'Agricultura / Agroindustria' },
+  { value: 'livestock', label: 'Ganadería / Pecuaria' },
   { value: 'construct', label: 'Construcción' },
-  { value: 'manuf',     label: 'Manufactura' },
+  { value: 'manuf',     label: 'Manufactura / Industria' },
+  { value: 'textil',    label: 'Textil / Confecciones' },
   { value: 'transport', label: 'Transporte / Logística' },
-  { value: 'retail',    label: 'Comercio minorista' },
+  { value: 'tourism',   label: 'Turismo / Hostelería' },
+  { value: 'gastro',    label: 'Gastronomía / Restaurantes' },
   { value: 'health',    label: 'Salud' },
   { value: 'education', label: 'Educación' },
+  { value: 'craft',     label: 'Artesanía / Manufactura local' },
+  { value: 'telecom',   label: 'Telecomunicaciones' },
   { value: 'other',     label: 'Otro' },
 ]
 
@@ -76,6 +86,7 @@ const VOLUMES = [
 ]
 
 const SRL_CORRIDORS = [
+  { value: 'global', label: 'Global (todos los destinos)' },
   { value: 'bo-us',  label: 'Bolivia → EEUU' },
   { value: 'bo-cn',  label: 'Bolivia → China' },
   { value: 'bo-cl',  label: 'Bolivia → Chile' },
@@ -93,10 +104,10 @@ const SRL_CORRIDORS = [
   { value: 'bo-sg',  label: 'Bolivia → Singapur' },
   { value: 'bo-hk',  label: 'Bolivia → Hong Kong' },
   { value: 'bo-in',  label: 'Bolivia → India' },
-  { value: 'global', label: 'Global' },
 ]
 
 const SPA_CORRIDORS = [
+  { value: 'global', label: 'Global (todos los destinos)' },
   { value: 'cl-us',  label: 'Chile → EEUU' },
   { value: 'cl-cn',  label: 'Chile → China' },
   { value: 'cl-eu',  label: 'Chile → Europa' },
@@ -105,11 +116,10 @@ const SPA_CORRIDORS = [
   { value: 'cl-co',  label: 'Chile → Colombia' },
   { value: 'cl-mx',  label: 'Chile → México' },
   { value: 'cl-pe',  label: 'Chile → Perú' },
-  { value: 'global', label: 'Global' },
 ]
 
 const DOCS_SCHEMA = [
-  { key: 'docTaxId',          label: 'RUT/NIT de la empresa',     required: true  },
+  { key: 'docTaxId',          label: 'NIT de la empresa',          required: true  },
   { key: 'docConstitution',   label: 'Escritura de constitución', required: true  },
   { key: 'docRepId',          label: 'CI del representante legal', required: true  },
   { key: 'docDomicile',       label: 'Comprobante de domicilio',  required: false },
@@ -187,7 +197,7 @@ function Step1({ form, onChange }) {
       </div>
 
       <div>
-        <label className={labelCls}>RUT / NIT *</label>
+        <label className={labelCls}>NIT *</label>
         <input
           className={inputCls}
           placeholder="123456789"
@@ -251,13 +261,24 @@ function Step1({ form, onChange }) {
 
       <div>
         <label className={labelCls}>Teléfono corporativo *</label>
-        <input
-          className={inputCls}
-          placeholder="+591 2 123 4567"
-          type="tel"
-          value={form.phone}
-          onChange={e => onChange('phone', e.target.value)}
-        />
+        <div className="flex gap-2">
+          <select
+            className={`${selectCls} min-w-[90px] w-auto`}
+            value={form.phonePrefix ?? '+591'}
+            onChange={e => onChange('phonePrefix', e.target.value)}
+          >
+            {['+591','+56','+1','+54','+57','+52','+55','+51'].map(p => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
+          <input
+            className={`${inputCls} flex-1`}
+            placeholder="2 123 4567"
+            type="tel"
+            value={form.phone}
+            onChange={e => onChange('phone', e.target.value)}
+          />
+        </div>
       </div>
 
       <div>

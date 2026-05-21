@@ -83,6 +83,11 @@ export default function SendMoneyPage() {
     return () => resetFlow()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Volver al inicio de la pantalla en cada cambio de paso
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [step])
+
   function handleBack() {
     if (hasPendingTx) {
       setShowLeaveWarning(true)

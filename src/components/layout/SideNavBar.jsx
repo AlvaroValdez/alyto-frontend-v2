@@ -11,7 +11,7 @@ const NAV_COMMON = [
 
 const NAV_SRL = [
   { icon: Home,           label: 'Dashboard',      to: '/dashboard'    },
-  { icon: Wallet,         label: 'Activos BOB',    to: '/wallet'       },
+  { icon: Wallet,         label: 'Wallet',         to: '/wallet'       },
   { icon: ArrowUpRight,   label: 'Enviar',          to: '/send'         },
   { icon: ArrowLeftRight, label: 'Transferencias',  to: '/transactions' },
   { icon: User,           label: 'Perfil',          to: '/profile'      },

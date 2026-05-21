@@ -878,9 +878,10 @@ export default function Step1Amount({ initialData, onNext }) {
                     <span className="text-[0.75rem]">{quote.estimatedDelivery || '1 día hábil'}</span>
                   </div>
                   {countdown !== null && (
-                    <div className="flex items-center gap-1 text-[0.6875rem] text-[#94A3B8]">
-                      <span>Cotización válida</span>
-                      <span className={`font-mono font-semibold ${countdown <= 30 ? 'text-[#F59E0B]' : 'text-[#1D3461]'}`}>
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${countdown <= 30 ? 'bg-[#FEF3C71A] border border-[#F59E0B33]' : 'bg-[#1D34611A] border border-[#1D346133]'}`}>
+                      <Clock size={12} className={countdown <= 30 ? 'text-[#F59E0B]' : 'text-[#1D3461]'} />
+                      <span className="text-[0.6875rem] text-[#64748B]">Válida</span>
+                      <span className={`text-[0.9375rem] font-bold font-mono tabular-nums ${countdown <= 30 ? 'text-[#F59E0B]' : 'text-[#1D3461]'}`}>
                         {formatCountdown(countdown)}
                       </span>
                     </div>

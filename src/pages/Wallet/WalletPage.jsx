@@ -31,10 +31,10 @@ function formatBOB(amount) {
 }
 
 function formatUSDC(amount) {
-  if (amount == null) return '0.000000 USDC'
+  if (amount == null) return '0.00 USDC'
   return `${new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 6,
+    maximumFractionDigits: 2,
   }).format(amount)} USDC`
 }
 
