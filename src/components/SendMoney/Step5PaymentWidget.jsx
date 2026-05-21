@@ -72,6 +72,12 @@ function ManualPayinScreen({ stepData }) {
   const [uploadDone,   setUploadDone]   = useState(false)
   const [uploadError,  setUploadError]  = useState(null)
 
+  const showQRSection = qrLoading || !!qrSrc || staticQRs.length > 0
+  const [payTab, setPayTab] = useState(() =>
+    (qrLoading || !!toQrSrc(paymentQR) || (Array.isArray(paymentQRStatic) && paymentQRStatic.some(q => q.imageBase64)))
+      ? 'qr' : 'transfer'
+  )
+
   // Cargar QR del backend si no vino en stepData
   useEffect(() => {
     if (paymentQR || !transactionId) return
@@ -139,21 +145,17 @@ function ManualPayinScreen({ stepData }) {
     }
   }
 
-  const showQRSection = qrLoading || !!qrSrc || staticQRs.length > 0
-
   return (
     <div className="flex flex-col gap-5 px-4 pb-28">
 
       {/* ── Indicador de 2 pasos ── */}
       <div className="flex items-center gap-2">
-        {/* Paso 1 */}
         <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.75rem] font-bold ${
           !uploadDone ? 'bg-[#0D1F3C] text-white' : 'bg-[#E2E8F0] text-[#94A3B8] line-through'
         }`}>
-          {!uploadDone ? '1' : <CheckCheck size={12} />} Transfiere
+          {!uploadDone ? '1' : <CheckCheck size={12} />} Paga
         </div>
         <div className="h-px flex-1 bg-[#E2E8F0]" />
-        {/* Paso 2 */}
         <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.75rem] font-bold ${
           uploadDone ? 'bg-[#22C55E] text-white' : 'bg-[#F0F2F7] text-[#94A3B8]'
         }`}>
@@ -161,15 +163,35 @@ function ManualPayinScreen({ stepData }) {
         </div>
       </div>
 
-      {/* ── Sección QR ── */}
-      {showQRSection && (
-        <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 flex flex-col items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">📱</span>
-            <p className="text-[0.875rem] font-bold text-[#0D1F3C]">Paga con QR</p>
-          </div>
+      {/* ── Pestañas QR / Transferencia ── */}
+      <div className="flex gap-1 p-1 rounded-2xl bg-[#F1F5F9] border border-[#E2E8F0]">
+        {showQRSection && (
+          <button
+            onClick={() => setPayTab('qr')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[0.8125rem] font-semibold transition-all ${
+              payTab === 'qr'
+                ? 'bg-[#0D1F3C] text-white shadow-sm'
+                : 'text-[#64748B] hover:text-[#0D1F3C]'
+            }`}
+          >
+            <span>📱</span> Pagar con QR
+          </button>
+        )}
+        <button
+          onClick={() => setPayTab('transfer')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[0.8125rem] font-semibold transition-all ${
+            payTab === 'transfer'
+              ? 'bg-[#0D1F3C] text-white shadow-sm'
+              : 'text-[#64748B] hover:text-[#0D1F3C]'
+          }`}
+        >
+          <span>🏦</span> Transferencia
+        </button>
+      </div>
 
-          {/* QR estáticos subidos por admin (Tigo Money, Banco Bisa, etc.) */}
+      {/* ── Contenido: pestaña QR ── */}
+      {payTab === 'qr' && showQRSection && (
+        <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 flex flex-col items-center gap-4">
           {staticQRs.length > 0 && (
             <div className={`w-full ${staticQRs.length > 1 ? 'grid grid-cols-2 gap-3' : 'flex justify-center'}`}>
               {staticQRs.map((qr, i) => (
@@ -189,15 +211,13 @@ function ManualPayinScreen({ stepData }) {
                     }}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#E2E8F0] text-[0.75rem] text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#0D1F3C33] transition-colors"
                   >
-                    <Download size={12} />
-                    Descargar
+                    <Download size={12} /> Descargar
                   </button>
                 </div>
               ))}
             </div>
           )}
 
-          {/* QR dinámico (datos de transferencia bancaria) — solo si no hay estáticos */}
           {staticQRs.length === 0 && (
             qrLoading ? (
               <div className="w-[200px] h-[200px] rounded-2xl bg-[#E2E8F0] animate-pulse" />
@@ -212,8 +232,7 @@ function ManualPayinScreen({ stepData }) {
                   onClick={downloadQR}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#E2E8F0] text-[0.8125rem] text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#0D1F3C33] transition-colors"
                 >
-                  <Download size={13} />
-                  Descargar QR
+                  <Download size={13} /> Descargar QR
                 </button>
               </>
             ) : null
@@ -225,67 +244,59 @@ function ManualPayinScreen({ stepData }) {
         </div>
       )}
 
-      {/* Separador "O transfiere manualmente" */}
-      {showQRSection && (
-        <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-[#E2E8F0]" />
-          <span className="text-[0.75rem] text-[#94A3B8] flex-shrink-0">O transfiere manualmente</span>
-          <div className="h-px flex-1 bg-[#E2E8F0]" />
-        </div>
-      )}
-
-      {/* ── Card de datos bancarios ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden">
-        <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-[#E2E8F0]">
-          <span className="text-xl">🏦</span>
-          <p className="text-[0.875rem] font-bold text-[#0D1F3C]">Transferencia bancaria</p>
-        </div>
-        <div className="px-5 py-1">
-          <InfoRow label="Banco"   value={bank.bankName     ?? 'Banco Bisa'} />
-          <InfoRow label="Titular" value={bank.accountHolder ?? bank.holder ?? 'AV Finance SRL'} />
-          <InfoRow label="Cuenta"  value={bank.accountNumber ?? '—'} mono />
-          <InfoRow label="Tipo"    value={bank.accountType   ?? 'Cuenta Corriente'} />
-          <InfoRow
-            label="Monto"
-            value={`Bs ${Number(originAmount ?? 0).toLocaleString('es-CL')} ${currency}`}
-            highlight
-          />
-        </div>
-
-        {/* Referencia copiable */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-[#E2E8F0]">
-          <div className="min-w-0">
-            <p className="text-[0.625rem] font-semibold text-[#94A3B8] uppercase tracking-wider mb-0.5">
-              Referencia (copiar en el concepto)
-            </p>
-            <p className="text-[0.75rem] font-mono font-semibold text-[#0D1F3C] truncate">
-              {transactionId ?? '—'}
-            </p>
+      {/* ── Contenido: pestaña Transferencia ── */}
+      {payTab === 'transfer' && (
+        <>
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden">
+            <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-[#E2E8F0]">
+              <span className="text-xl">🏦</span>
+              <p className="text-[0.875rem] font-bold text-[#0D1F3C]">Datos de transferencia</p>
+            </div>
+            <div className="px-5 py-1">
+              <InfoRow label="Banco"   value={bank.bankName     ?? 'Banco Bisa'} />
+              <InfoRow label="Titular" value={bank.accountHolder ?? bank.holder ?? 'AV Finance SRL'} />
+              <InfoRow label="Cuenta"  value={bank.accountNumber ?? '—'} mono />
+              <InfoRow label="Tipo"    value={bank.accountType   ?? 'Cuenta Corriente'} />
+              <InfoRow
+                label="Monto"
+                value={`Bs ${Number(originAmount ?? 0).toLocaleString('es-CL')} ${currency}`}
+                highlight
+              />
+            </div>
+            <div className="flex items-center justify-between px-5 py-3 border-t border-[#E2E8F0]">
+              <div className="min-w-0">
+                <p className="text-[0.625rem] font-semibold text-[#94A3B8] uppercase tracking-wider mb-0.5">
+                  Referencia (incluir en el concepto)
+                </p>
+                <p className="text-[0.75rem] font-mono font-semibold text-[#0D1F3C] truncate">
+                  {transactionId ?? '—'}
+                </p>
+              </div>
+              <button
+                onClick={copyRef}
+                className="ml-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] hover:border-[#0D1F3C33] transition-colors text-[0.75rem] text-[#4A5568] hover:text-[#0D1F3C] flex-shrink-0"
+              >
+                {copiedRef
+                  ? <><CheckCheck size={12} className="text-[#22C55E]" /> Copiado</>
+                  : <><Copy size={12} /> Copiar</>
+                }
+              </button>
+            </div>
           </div>
-          <button
-            onClick={copyRef}
-            className="ml-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] hover:border-[#0D1F3C33] transition-colors text-[0.75rem] text-[#4A5568] hover:text-[#0D1F3C] flex-shrink-0"
-          >
-            {copiedRef
-              ? <><CheckCheck size={12} className="text-[#22C55E]" /> Copiado</>
-              : <><Copy size={12} /> Copiar</>
-            }
-          </button>
-        </div>
-      </div>
 
-      {/* Warning referencia */}
-      <div className="flex items-start gap-2.5 px-4 py-3.5 rounded-2xl bg-[#F59E0B0F] border border-[#F59E0B33]">
-        <span className="text-base flex-shrink-0 leading-none mt-0.5">⚠️</span>
-        <div>
-          <p className="text-[0.8125rem] font-semibold text-[#FBBF24] leading-tight">
-            Incluye el número de referencia
-          </p>
-          <p className="text-[0.75rem] text-[#4A5568] mt-0.5">
-            Escribe el ID de transacción en el concepto de tu transferencia para que podamos identificar tu pago.
-          </p>
-        </div>
-      </div>
+          <div className="flex items-start gap-2.5 px-4 py-3.5 rounded-2xl bg-[#F59E0B0F] border border-[#F59E0B33]">
+            <span className="text-base flex-shrink-0 leading-none mt-0.5">⚠️</span>
+            <div>
+              <p className="text-[0.8125rem] font-semibold text-[#FBBF24] leading-tight">
+                Incluye el número de referencia
+              </p>
+              <p className="text-[0.75rem] text-[#4A5568] mt-0.5">
+                Escribe el ID de transacción en el concepto de tu transferencia para que podamos identificar tu pago.
+              </p>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ── Paso 2: Comprobante (obligatorio) ── */}
       {uploadDone ? (
