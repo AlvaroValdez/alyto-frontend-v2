@@ -449,10 +449,11 @@ function SendModal({ open, onClose, onSuccess, balanceAvailable }) {
   const [qrAmount,  setQrAmount]  = useState('')
   const [payError,  setPayError]  = useState(null)
   const [paying,    setPaying]    = useState(false)
-  const videoRef  = useRef(null)
-  const canvasRef = useRef(null)
-  const streamRef = useRef(null)
-  const rafRef    = useRef(null)
+  const videoRef    = useRef(null)
+  const canvasRef   = useRef(null)
+  const streamRef   = useRef(null)
+  const rafRef      = useRef(null)
+  const fileInputRef = useRef(null)
 
   const stopCamera = useCallback(() => {
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
@@ -504,7 +505,9 @@ function SendModal({ open, onClose, onSuccess, balanceAvailable }) {
   async function startCamera() {
     setCamError(null); setPreview(null); setPayError(null)
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 640 }, aspectRatio: { ideal: 1 } },
+      })
       streamRef.current = stream
       if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play() }
       setScanning(true)
@@ -512,6 +515,26 @@ function SendModal({ open, onClose, onSuccess, balanceAvailable }) {
     } catch {
       setCamError('No se pudo acceder a la cámara. Verifica los permisos en tu navegador.')
     }
+  }
+
+  async function handleFileSelect(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    setCamError(null); setPayError(null)
+    const img = new Image()
+    img.onload = () => {
+      const canvas = canvasRef.current
+      canvas.width = img.width
+      canvas.height = img.height
+      canvas.getContext('2d').drawImage(img, 0, 0)
+      const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height)
+      const code = jsQR(imageData.data, imageData.width, imageData.height)
+      if (code?.data) { handleQrDetected(code.data) }
+      else { setCamError('No se encontró un QR Alyto en la imagen seleccionada.') }
+      URL.revokeObjectURL(img.src)
+    }
+    img.src = URL.createObjectURL(file)
   }
 
   function scanLoop() {
@@ -673,23 +696,33 @@ function SendModal({ open, onClose, onSuccess, balanceAvailable }) {
                   {camError && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{camError}</p>}
                   {payError && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{payError}</p>}
 
-                  {!scanning ? (
+                  <div className="flex gap-3">
+                    {!scanning ? (
+                      <button
+                        onClick={startCamera}
+                        className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white"
+                        style={{ background: '#233E58' }}
+                      >
+                        <Camera size={18} /> Activar cámara
+                      </button>
+                    ) : (
+                      <button
+                        onClick={stopCamera}
+                        className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-[0.9375rem] text-[#64748B]"
+                        style={{ border: '1.5px solid #E2E8F0' }}
+                      >
+                        <CameraOff size={18} /> Detener cámara
+                      </button>
+                    )}
                     <button
-                      onClick={startCamera}
-                      className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white"
-                      style={{ background: '#233E58' }}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-[0.9375rem] text-[#233E58]"
+                      style={{ border: '1.5px solid #233E58' }}
                     >
-                      <Camera size={18} /> Activar cámara
+                      <Upload size={18} /> Galería
                     </button>
-                  ) : (
-                    <button
-                      onClick={stopCamera}
-                      className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-[0.9375rem] text-[#64748B]"
-                      style={{ border: '1.5px solid #E2E8F0' }}
-                    >
-                      <CameraOff size={18} /> Detener cámara
-                    </button>
-                  )}
+                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
 
                   <p className="text-center text-[0.6875rem] text-[#94A3B8]">
                     Escanea el QR de otro usuario Alyto para enviarle BOB al instante
