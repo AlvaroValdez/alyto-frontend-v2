@@ -576,6 +576,97 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
                 />
               )}
 
+              {/* ── Beneficiario ─────────────────────────────────────────── */}
+              {tx.beneficiary && Object.keys(tx.beneficiary).length > 0 && (() => {
+                const df  = tx.beneficiary.dynamicFields ?? {}
+                const ben = { ...tx.beneficiary, ...df }
+                const benType = ben.type ?? df.type
+
+                // Nombre: Vita usa first+last; Harbor usa beneficiary_name o company_name
+                const fullName = [ben.beneficiary_first_name ?? ben.firstName, ben.beneficiary_last_name ?? ben.lastName]
+                  .filter(Boolean).join(' ') || ben.beneficiary_name || ben.company_name || null
+
+                // Banco: Vita usa bank_code; Harbor usa bank_name
+                const bankDisplay = ben.bank_name ?? ben.bank_code ?? ben.bankCode ?? ben.beneficiary_bank ?? null
+
+                // Cuenta: Vita usa account_bank; Harbor usa account_number
+                const accountDisplay = ben.account_bank ?? ben.accountBank ?? ben.account_number ?? ben.beneficiary_account_number ?? null
+
+                const accountTypeDisplay = ben.account_type_bank ?? ben.accountType ?? ben.beneficiary_account_type ?? null
+                const swiftDisplay  = ben.swift_bic ?? ben.swift_code ?? null
+                const bsbDisplay    = ben.routing_number ?? null
+                const docDisplay    = ben.beneficiary_document_number ?? ben.documentNumber ?? ben.beneficiary_document ?? null
+                const docTypeDisplay = ben.beneficiary_document_type ?? ben.documentType ?? null
+
+                return (
+                  <>
+                    <SectionTitle icon={User}>Beneficiario</SectionTitle>
+
+                    {/* Bolivia manual (bank_data / qr_image) */}
+                    {benType === 'bank_data' || benType === 'qr_image' ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <Field label="Nombre" value={fullName} />
+                          <Field label="CI Bolivia" value={docDisplay} mono />
+                          <Field label="Teléfono" value={ben.beneficiary_phone ?? ben.phone} dim />
+                          <Field label="Tipo pago" value={benType === 'bank_data' ? 'Cuenta bancaria' : 'QR de cobro'} dim />
+                        </div>
+                        {benType === 'bank_data' && (
+                          <div className="p-3 rounded-xl bg-[#1A2340] border border-[#263050] grid grid-cols-2 gap-3">
+                            <Field label="Banco" value={bankDisplay} />
+                            <Field label="Tipo cuenta" value={accountTypeDisplay} dim />
+                            <Field label="N° cuenta" value={accountDisplay} mono />
+                          </div>
+                        )}
+                        {benType === 'qr_image' && (ben.qr_image ?? df.qr_image) && (
+                          <div className="p-3 rounded-xl bg-[#1A2340] border border-[#263050] flex flex-col items-center gap-2">
+                            <p className="text-[0.75rem] text-[#4E5A7A] font-semibold uppercase tracking-wider">QR del beneficiario</p>
+                            <img src={ben.qr_image ?? df.qr_image} alt="QR beneficiario"
+                              className="w-[180px] h-[180px] rounded-xl bg-white p-1.5 object-contain" />
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* Vita / Harbor — todos los campos disponibles */
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <Field label="Nombre" value={fullName} />
+                          <Field label="Email" value={ben.beneficiary_email ?? ben.email} dim />
+                          {docDisplay && <Field label="Documento" value={docTypeDisplay ? `${docTypeDisplay} ${docDisplay}` : docDisplay} dim />}
+                          <Field label="País destino" value={ben.beneficiary_country ?? tx.destinationCountry} dim />
+                          {(ben.city ?? ben.beneficiary_city) && <Field label="Ciudad" value={ben.city ?? ben.beneficiary_city} dim />}
+                          {(ben.state ?? ben.state_province) && <Field label="Provincia/Estado" value={ben.state ?? ben.state_province} dim />}
+                          {(ben.zipcode ?? ben.postal_code) && <Field label="Código postal" value={ben.zipcode ?? ben.postal_code} dim />}
+                          {ben.phone && <Field label="Teléfono" value={ben.phone} dim />}
+                          {(ben.beneficiary_address ?? ben.street) && (
+                            <div className="col-span-2">
+                              <Field label="Dirección" value={ben.beneficiary_address ?? ben.street} dim />
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-3 rounded-xl bg-[#1A2340] border border-[#263050] grid grid-cols-2 gap-3">
+                          {bankDisplay    && <Field label="Banco"       value={bankDisplay}        />}
+                          {accountDisplay && <Field label="N° cuenta"   value={accountDisplay} mono />}
+                          {accountTypeDisplay && <Field label="Tipo cuenta" value={accountTypeDisplay} dim />}
+                          {swiftDisplay   && <Field label="SWIFT / BIC" value={swiftDisplay}   mono />}
+                          {bsbDisplay     && <Field label="Código BSB"  value={bsbDisplay}     mono />}
+                          {ben.account_holder_name && ben.account_holder_name !== fullName && (
+                            <Field label="Titular cuenta" value={ben.account_holder_name} dim />
+                          )}
+                        </div>
+                        {(ben.purpose ?? ben.transfer_purpose) && (
+                          <div className="p-2 rounded-lg bg-[#1A2340] border border-[#263050] grid grid-cols-2 gap-2">
+                            <Field label="Propósito" value={ben.purpose ?? ben.transfer_purpose} dim />
+                            {ben.purpose_comentary && <Field label="Comentario" value={ben.purpose_comentary} dim />}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <Divider />
+                  </>
+                )
+              })()}
+
               {/* ── Banner payin manual (SRL Bolivia o SpA→BO manual) ── */}
               {MANUAL_PAYIN_PENDING.has(tx.status)
                 && (tx.legalEntity === 'SRL' || (tx.legalEntity === 'SpA' && tx.destinationCountry === 'BO'))
@@ -727,60 +818,6 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
               )}
 
               <Divider />
-
-              {/* ── 3. Beneficiario ───────────────────────────────────────── */}
-              {tx.beneficiary && Object.keys(tx.beneficiary).length > 0 && (() => {
-                // Resolver datos del beneficiario: dynamicFields (Bolivia) o campos directos (Vita)
-                const df = tx.beneficiary.dynamicFields ?? {}
-                const ben = { ...tx.beneficiary, ...df }
-                const benType = ben.type ?? df.type
-                return (
-                  <>
-                    <SectionTitle icon={User}>Beneficiario</SectionTitle>
-
-                    {/* Bolivia manual beneficiary (bank_data / qr_image) */}
-                    {benType === 'bank_data' || benType === 'qr_image' ? (
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
-                          <Field label="Nombre" value={[ben.beneficiary_first_name ?? ben.firstName, ben.beneficiary_last_name ?? ben.lastName].filter(Boolean).join(' ')} />
-                          <Field label="CI Bolivia" value={ben.beneficiary_document ?? ben.beneficiary_document_number ?? ben.documentNumber} mono />
-                          <Field label="Teléfono" value={ben.beneficiary_phone ?? ben.phone} dim />
-                          <Field label="Tipo pago" value={benType === 'bank_data' ? 'Cuenta bancaria' : 'QR de cobro'} dim />
-                        </div>
-                        {benType === 'bank_data' && (
-                          <div className="p-3 rounded-xl bg-[#1A2340] border border-[#263050] grid grid-cols-2 gap-3">
-                            <Field label="Banco" value={ben.beneficiary_bank ?? ben.bankCode} />
-                            <Field label="Tipo cuenta" value={ben.beneficiary_account_type ?? ben.accountType} dim />
-                            <Field label="N° cuenta" value={ben.beneficiary_account_number ?? ben.accountBank} mono />
-                          </div>
-                        )}
-                        {benType === 'qr_image' && (ben.qr_image ?? df.qr_image) && (
-                          <div className="p-3 rounded-xl bg-[#1A2340] border border-[#263050] flex flex-col items-center gap-2">
-                            <p className="text-[0.75rem] text-[#4E5A7A] font-semibold uppercase tracking-wider">QR del beneficiario</p>
-                            <img
-                              src={ben.qr_image ?? df.qr_image}
-                              alt="QR beneficiario"
-                              className="w-[180px] h-[180px] rounded-xl bg-white p-1.5 object-contain"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      /* Vita-style beneficiary */
-                      <div className="grid grid-cols-2 gap-3">
-                        <Field label="Nombre" value={[ben.beneficiary_first_name ?? ben.firstName, ben.beneficiary_last_name ?? ben.lastName].filter(Boolean).join(' ')} />
-                        <Field label="Email" value={ben.beneficiary_email ?? ben.email} dim />
-                        <Field label="Banco" value={ben.beneficiary_bank ?? ben.bankCode} dim />
-                        <Field label="Cuenta" value={ben.beneficiary_account_number ?? ben.accountBank} mono />
-                        <Field label="Tipo cuenta" value={ben.beneficiary_account_type ?? ben.accountType} dim />
-                        <Field label="Documento" value={(ben.beneficiary_document ?? ben.documentNumber) ? `${ben.beneficiary_document_type ?? ben.documentType ?? ''} ${ben.beneficiary_document ?? ben.documentNumber}` : null} dim />
-                        <Field label="País" value={ben.beneficiary_country ?? tx.destinationCountry} dim />
-                      </div>
-                    )}
-                    <Divider />
-                  </>
-                )
-              })()}
 
               {/* ── 4. Usuario ────────────────────────────────────────────── */}
               {tx.userId && (
