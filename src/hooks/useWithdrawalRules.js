@@ -20,9 +20,15 @@ const CACHE_TTL_MS     = 30 * 60 * 1000  // 30 minutos
 
 // ── Helpers de caché sessionStorage ──────────────────────────────────────────
 
-function loadFromCache(countryCode) {
+function cacheKey(countryCode, corridorId) {
+  return corridorId
+    ? `${CACHE_KEY_PREFIX}${countryCode}_${corridorId}`
+    : `${CACHE_KEY_PREFIX}${countryCode}`
+}
+
+function loadFromCache(countryCode, corridorId) {
   try {
-    const raw = sessionStorage.getItem(`${CACHE_KEY_PREFIX}${countryCode}`)
+    const raw = sessionStorage.getItem(cacheKey(countryCode, corridorId))
     if (!raw) return null
     const parsed = JSON.parse(raw)
     if (Date.now() - (parsed.cachedAt ?? 0) > CACHE_TTL_MS) return null
@@ -36,10 +42,10 @@ function loadFromCache(countryCode) {
   }
 }
 
-function saveToCache(countryCode, fields, payoutMethod) {
+function saveToCache(countryCode, corridorId, fields, payoutMethod) {
   try {
     sessionStorage.setItem(
-      `${CACHE_KEY_PREFIX}${countryCode}`,
+      cacheKey(countryCode, corridorId),
       JSON.stringify({ fields, payoutMethod, cachedAt: Date.now() }),
     )
   } catch { /* sessionStorage lleno o no disponible */ }
@@ -49,9 +55,10 @@ function saveToCache(countryCode, fields, payoutMethod) {
 
 /**
  * @param {string|null} countryCode  ISO alpha-2 del país destino (ej. 'CO', 'PE')
+ * @param {string|null} [corridorId] ID de corredor cuando hay más de uno por país (ej. 'bo-cn-usd')
  * @returns {{ rules: Array, payoutMethod: string|null, loading: boolean, error: string|null, refetch: Function }}
  */
-export function useWithdrawalRules(countryCode) {
+export function useWithdrawalRules(countryCode, corridorId = null) {
   const [rules,        setRules]        = useState([])
   const [payoutMethod, setPayoutMethod] = useState(null)
   const [loading,      setLoading]      = useState(false)
@@ -60,7 +67,7 @@ export function useWithdrawalRules(countryCode) {
   // Ref para cancelar fetchs en vuelo si el país cambia o el componente desmonta
   const abortRef = useRef(null)
 
-  const fetchRules = useCallback(async (code) => {
+  const fetchRules = useCallback(async (code, corrId) => {
     if (!code) {
       setRules([])
       setPayoutMethod(null)
@@ -69,8 +76,8 @@ export function useWithdrawalRules(countryCode) {
       return
     }
 
-    // Revisar caché primero
-    const cached = loadFromCache(code)
+    // Revisar caché primero (keyed por país + corridorId para evitar mezcla)
+    const cached = loadFromCache(code, corrId)
     if (cached) {
       setRules(cached.fields)
       setPayoutMethod(cached.payoutMethod)
@@ -87,11 +94,11 @@ export function useWithdrawalRules(countryCode) {
     setError(null)
 
     try {
-      const data = await getWithdrawalRules(code, abortRef.current.signal)
+      const data = await getWithdrawalRules(code, abortRef.current.signal, corrId)
       // Backend returns { destCountry, payoutMethod, fields } OR a legacy array.
       const fields = Array.isArray(data) ? data : (data?.fields ?? [])
       const pm     = Array.isArray(data) ? 'vitaWallet' : (data?.payoutMethod ?? 'vitaWallet')
-      saveToCache(code, fields, pm)
+      saveToCache(code, corrId, fields, pm)
       setRules(fields)
       setPayoutMethod(pm)
       setError(null)
@@ -104,24 +111,24 @@ export function useWithdrawalRules(countryCode) {
     }
   }, [])
 
-  // Recargar cuando cambia el país
+  // Recargar cuando cambia el país o el corridorId
   useEffect(() => {
     setRules([])
     setPayoutMethod(null)
-    fetchRules(countryCode)
+    fetchRules(countryCode, corridorId)
 
     return () => {
       if (abortRef.current) abortRef.current.abort()
     }
-  }, [countryCode, fetchRules])
+  }, [countryCode, corridorId, fetchRules])
 
   // Refetch manual (botón "Reintentar")
   const refetch = useCallback(() => {
     if (!countryCode) return
     // Borrar caché para forzar una llamada fresca
-    try { sessionStorage.removeItem(`${CACHE_KEY_PREFIX}${countryCode}`) } catch { /* ignorar */ }
-    fetchRules(countryCode)
-  }, [countryCode, fetchRules])
+    try { sessionStorage.removeItem(cacheKey(countryCode, corridorId)) } catch { /* ignorar */ }
+    fetchRules(countryCode, corridorId)
+  }, [countryCode, corridorId, fetchRules])
 
   return { rules, payoutMethod, loading, error, refetch }
 }

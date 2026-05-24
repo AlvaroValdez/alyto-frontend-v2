@@ -103,6 +103,7 @@ const POSTAL_CODE_PATTERNS = {
   HK: { regex: /^.{0,20}$/,                      hint: 'HK no usa código postal estándar' },
   AE: { regex: /^.{0,20}$/,                      hint: 'UAE no usa código postal estándar' },
   NG: { regex: /^\d{6}$/,                        hint: '6 dígitos (ej. 100001 Lagos)' },
+  AU: { regex: /^\d{4}$/,                        hint: '4 dígitos (ej. 2000 Sydney)' },
 }
 
 export function validatePostalCode(postal, countryCode) {
@@ -172,6 +173,15 @@ export function validateRoutingNumber(value) {
   return null
 }
 
+// ─── BSB Australia ──────────────────────────────────────────────────────────
+// Bank State Branch: exactamente 6 dígitos numéricos (puede venir como XX-XXXX)
+export function validateBSB(value) {
+  if (!value) return 'Código BSB es requerido'
+  const clean = value.replace(/[- ]/g, '')
+  if (!/^\d{6}$/.test(clean)) return 'BSB inválido (6 dígitos, ej. 062000 o 06-2000)'
+  return null
+}
+
 // ─── IFSC code India ────────────────────────────────────────────────────────
 export function validateIFSC(value) {
   if (!value) return 'Código IFSC es requerido'
@@ -219,12 +229,14 @@ export const FIELD_VALIDATORS = {
   br_cpf:                    validateCPF,
   beneficiary_id_doc_number_br: validateCPF,
   postal_code:               (v, ctx) => validatePostalCode(v, ctx?.addressCountry ?? null),
+  zipcode:                   (v, ctx) => validatePostalCode(v, ctx?.country ?? null),
   swift_code:                validateSwiftBIC,
+  swift_bic:                 validateSwiftBIC,
   bic:                       validateSwiftBIC,
   phone_number:              (v, ctx) => ctx?.country === 'AE' ? validateUAEPhone(v) : validatePhoneE164(v),
   beneficiary_phone_number:  validatePhoneE164,
   sort_code:                 validateSortCode,
-  routing_number:            validateRoutingNumber,
+  routing_number:            (v, ctx) => ctx?.country === 'AU' ? validateBSB(v) : validateRoutingNumber(v),
   bank_code:                 (v, ctx) => ctx?.country === 'IN' ? validateIFSC(v) : null,  // HK bank_code es 3 dígitos
   in_ifsc_code:              validateIFSC,
   mx_clabe:                  validateCLABE,

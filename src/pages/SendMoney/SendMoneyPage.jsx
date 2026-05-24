@@ -182,6 +182,7 @@ export default function SendMoneyPage() {
         {step === 3 && (
           <Step3Beneficiary
             destinationCountry={stepData.destinationCountry}
+            corridorId={stepData.corridorId ?? null}
             onNext={(data) => nextStep(data)}
           />
         )}

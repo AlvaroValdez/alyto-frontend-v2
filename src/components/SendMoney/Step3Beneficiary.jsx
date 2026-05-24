@@ -185,19 +185,54 @@ function normalizeHarborMethod(m, index) {
 // ── Traducción de nombres de campo Vita → español (solo para formularios Vita) ──
 
 const FIELD_LABELS = {
-  beneficiary_name:          'Nombre completo del beneficiario',
-  beneficiary_dob:           'Fecha de nacimiento',
-  beneficiary_id_doc_number: 'Número de documento',
-  street:                    'Dirección',
-  city:                      'Ciudad',
-  state_province:            'Provincia / Estado',
-  postal_code:               'Código postal',
-  account_holder_name:       'Nombre del titular de la cuenta',
-  bank_name:                 'Nombre del banco',
-  account_number:            'Número de cuenta',
-  swift_code:                'Código SWIFT / BIC',
-  transfer_purpose:          'Propósito de la transferencia',
-  is_self_transfer:          '¿Transferencia a cuenta propia?',
+  beneficiary_name:            'Nombre completo del beneficiario',
+  beneficiary_first_name:      'Nombre',
+  beneficiary_last_name:       'Apellidos',
+  company_name:                'Nombre de empresa',
+  beneficiary_dob:             'Fecha de nacimiento',
+  beneficiary_id_doc_number:   'Número de documento',
+  beneficiary_document_type:   'Tipo de documento',
+  beneficiary_document_number: 'Número de documento',
+  beneficiary_email:           'Correo electrónico',
+  beneficiary_address:         'Dirección',
+  beneficiary_type:            'Tipo de beneficiario',
+  street:                      'Dirección',
+  city:                        'Ciudad',
+  state:                       'Estado / Provincia',
+  state_province:              'Provincia / Estado',
+  postal_code:                 'Código postal',
+  zipcode:                     'Código postal',
+  phone:                       'Teléfono',
+  account_holder_name:         'Nombre del titular de la cuenta',
+  account_type_bank:           'Tipo de cuenta',
+  account_bank:                'Número de cuenta',
+  bank_name:                   'Nombre del banco',
+  account_number:              'Número de cuenta',
+  routing_number:              'Número de ruta',
+  swift_code:                  'Código SWIFT / BIC',
+  swift_bic:                   'Código SWIFT / BIC',
+  transfer_purpose:            'Propósito de la transferencia',
+  purpose:                     'Propósito del pago',
+  purpose_comentary:           'Comentario (opcional)',
+  is_self_transfer:            '¿Transferencia a cuenta propia?',
+}
+
+// Códigos de propósito para corredores Vita AU y CN-USD — compliance: nunca "remesa"
+const PURPOSE_CODE_LABELS = {
+  ISSAVG: 'Ahorros personales',
+  ISGDDS: 'Pago de bienes',
+  ISSCVE: 'Pago de servicios',
+  EPDISP: 'Disposición de fondos',
+  ISSTDY: 'Estudios',
+  EPPROP: 'Compra de propiedad',
+  EPFAMT: 'Transferencia familiar',
+  EPREMT: 'Transferencia internacional',
+  ISTAXS: 'Pago de impuestos',
+  EPIVST: 'Inversión',
+  ISPAYR: 'Nómina / salario',
+  ISSUPP: 'Pago a proveedor',
+  ISMDCS: 'Gastos médicos',
+  EPTOUR: 'Turismo y viajes',
 }
 
 // Opciones para transfer_purpose en formularios Vita (OwlPay usa las opciones del form config)
@@ -306,7 +341,10 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
   const { key, label, type, required, options, placeholder } = field
 
   // OwlPay forms already have Spanish labels; Vita forms use FIELD_LABELS translations
-  const displayLabel = FIELD_LABELS[key] ?? label
+  // routing_number en Australia es BSB (6 dígitos), no ABA de EEUU
+  const displayLabel = (key === 'routing_number' && countryCode === 'AU')
+    ? 'Número BSB'
+    : (FIELD_LABELS[key] ?? label)
 
   const baseInput = `w-full bg-white border rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0D1F3C]
     placeholder:text-[#94A3B8] focus:outline-none transition-all`
@@ -315,9 +353,12 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
 
   // For OwlPay forms: options come from the config (non-empty arrays).
   // For Vita forms: fall back to hardcoded lists for known special keys.
+  // purpose codes get compliance-safe Spanish labels (EPREMT → no "remesa").
   const resolvedOptions =
     (Array.isArray(options) && options.length > 0)
-      ? options
+      ? key === 'purpose'
+          ? options.map(opt => ({ ...opt, label: PURPOSE_CODE_LABELS[opt.value] ?? opt.label }))
+          : options
       : (key === 'transfer_purpose'                        ? TRANSFER_PURPOSE_OPTIONS :
          key === 'state_province' && countryCode === 'CN'  ? CN_PROVINCE_OPTIONS      : null)
 
@@ -491,8 +532,8 @@ function PaymentMethodSelector({
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
-export default function Step3Beneficiary({ destinationCountry, onNext }) {
-  const { rules, payoutMethod, loading, error: loadError, refetch } = useWithdrawalRules(destinationCountry)
+export default function Step3Beneficiary({ destinationCountry, corridorId, onNext }) {
+  const { rules, payoutMethod, loading, error: loadError, refetch } = useWithdrawalRules(destinationCountry, corridorId)
   const { user } = useAuth()
 
   // ── OwlPay: form config estático por país ──────────────────────────────────

@@ -110,8 +110,9 @@ export function getSRLPayinInstructions() {
  *   when: {key: string, value: string}|null
  * }>>}
  */
-export function getWithdrawalRules(countryCode, signal) {
-  return request(`/payments/withdrawal-rules/${countryCode}`, { signal })
+export function getWithdrawalRules(countryCode, signal, corridorId) {
+  const qs = corridorId ? `?corridorId=${encodeURIComponent(corridorId)}` : ''
+  return request(`/payments/withdrawal-rules/${countryCode}${qs}`, { signal })
 }
 
 /**
