@@ -16,6 +16,7 @@ import {
   ArrowRightLeft, AlertCircle, CheckCircle2, Clock,
   ChevronLeft, ChevronRight, X, Loader2, Copy, CheckCheck, QrCode,
   RefreshCw, Info, Upload, Building2, Mail, Camera, CameraOff,
+  Download,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { request, requestFormData } from '../../services/api'
@@ -100,6 +101,188 @@ function TxStatusBadge({ status }) {
       style={{ background: s.bg, color: s.text }}>
       {s.label}
     </span>
+  )
+}
+
+// ── Sparkline ─────────────────────────────────────────────────────────────────
+
+function Sparkline({ data, width = 96, height = 32, id = 'bob' }) {
+  if (!data || data.length < 2) return null
+  const values = data.map(d => d.balance ?? 0)
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const range = (max - min) || 1
+  const pad = 2
+  const pts = values.map((v, i) => ({
+    x: (i / (values.length - 1)) * width,
+    y: pad + (1 - (v - min) / range) * (height - pad * 2),
+  }))
+  const line = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  const fill = [`M0,${height}`, ...pts.map(p => `L${p.x.toFixed(1)},${p.y.toFixed(1)}`), `L${width},${height}`, 'Z'].join(' ')
+  const isUp  = values[values.length - 1] >= values[0]
+  const c     = isUp ? '#22C55E' : '#F87171'
+  const pct   = values[0] === 0 ? null : ((values[values.length - 1] - values[0]) / values[0] * 100)
+  return (
+    <div className="flex flex-col items-end gap-0.5">
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ display: 'block', overflow: 'visible' }}>
+        <defs>
+          <linearGradient id={`sg-${id}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={c} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={c} stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        <path d={fill} fill={`url(#sg-${id})`} />
+        <polyline points={line} fill="none" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="2.5" fill={c} />
+      </svg>
+      {pct !== null && Math.abs(pct) >= 0.01 && (
+        <span className="text-[0.5625rem] font-bold" style={{ color: c }}>
+          {isUp ? '+' : ''}{pct.toFixed(1)}%
+        </span>
+      )}
+    </div>
+  )
+}
+
+// ── Daily Limit Bar ────────────────────────────────────────────────────────────
+
+function DailyLimitBar({ label, used, limit }) {
+  const pct       = limit > 0 ? Math.min(100, (used / limit) * 100) : 0
+  const barColor  = pct > 80 ? '#F87171' : pct > 60 ? '#F59E0B' : 'rgba(255,255,255,0.65)'
+  return (
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[0.5625rem] font-semibold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.55)' }}>{label}</span>
+        <span className="text-[0.5625rem] font-bold" style={{ color: pct > 60 ? barColor : 'rgba(255,255,255,0.65)' }}>
+          {formatBOB(used).replace('Bs. ', '')} / {(limit / 1000).toFixed(0)}K
+        </span>
+      </div>
+      <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.12)' }}>
+        <div className="h-full rounded-full transition-all duration-700"
+          style={{ width: `${pct}%`, background: barColor }} />
+      </div>
+    </div>
+  )
+}
+
+// ── Filter Chips ───────────────────────────────────────────────────────────────
+
+function FilterChips({ filters, active, onChange, accent = '#233E58' }) {
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      {filters.map(f => (
+        <button
+          key={f.key}
+          onClick={() => onChange(f.key)}
+          className="flex-shrink-0 text-[0.75rem] font-semibold px-3.5 py-1.5 rounded-full transition-all"
+          style={active === f.key
+            ? { background: accent, color: 'white', boxShadow: `0 2px 8px ${accent}40` }
+            : { background: '#F1F5F9', color: '#64748B' }
+          }
+        >
+          {f.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ── Quick QR Sheet ─────────────────────────────────────────────────────────────
+
+function QuickQRSheet({ open, onClose }) {
+  const [qrData,  setQrData]  = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState(null)
+  const [copied,  setCopied]  = useState(false)
+
+  useEffect(() => {
+    if (!open || qrData) return
+    setLoading(true); setError(null)
+    request('/wallet/qr/generate', { method: 'POST', body: JSON.stringify({ type: 'p2p' }) })
+      .then(d => setQrData(d))
+      .catch(e => setError(e.message || 'Error al generar el QR.'))
+      .finally(() => setLoading(false))
+  }, [open, qrData])
+
+  function handleClose() { setQrData(null); onClose() }
+
+  function copyId() {
+    if (!qrData?.qrId) return
+    navigator.clipboard.writeText(qrData.qrId)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  if (!open) return null
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-end justify-center"
+      style={{ background: '#0F162880' }}
+      onClick={e => { if (e.target === e.currentTarget) handleClose() }}>
+      <div className="w-full max-w-[430px] bg-white rounded-t-3xl overflow-hidden"
+        style={{ border: '1px solid #E2E8F0', borderBottom: 'none', boxShadow: '0 -8px 40px rgba(0,0,0,0.15)' }}>
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 rounded-full bg-[#E2E8F0]" />
+        </div>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-3 pb-4">
+          <div>
+            <h3 className="text-[1rem] font-bold text-[#0F172A]">Mi QR de cobro</h3>
+            <p className="text-[0.75rem] text-[#64748B] mt-0.5">Muéstralo para recibir BOB al instante</p>
+          </div>
+          <button onClick={handleClose}
+            className="w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ background: '#F1F5F9' }}>
+            <X size={16} className="text-[#64748B]" />
+          </button>
+        </div>
+
+        <div className="px-6 pb-8">
+          {loading && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 size={32} className="animate-spin text-[#233E58]" />
+            </div>
+          )}
+          {error && (
+            <div className="flex items-center gap-2 bg-[#EF44441A] rounded-xl px-4 py-3 mb-4">
+              <AlertCircle size={15} className="text-[#F87171] flex-shrink-0" />
+              <p className="text-[0.8125rem] text-[#F87171]">{error}</p>
+            </div>
+          )}
+          {qrData && !loading && (
+            <div className="flex flex-col items-center gap-4">
+              {/* QR code */}
+              <div className="p-3.5 rounded-2xl bg-white"
+                style={{ border: '2.5px solid #1D3461', boxShadow: '0 4px 32px rgba(29,52,97,0.12)' }}>
+                <img src={qrData.qrBase64} alt="Mi QR Alyto" className="w-52 h-52 object-contain block" />
+              </div>
+              {/* ID copiable */}
+              <div className="flex items-center gap-2 bg-[#F8FAFC] rounded-xl px-3.5 py-2.5 border border-[#E2E8F0] w-full">
+                <QrCode size={14} className="text-[#94A3B8] flex-shrink-0" />
+                <span className="flex-1 text-[0.75rem] font-mono text-[#0F172A] truncate">{qrData.qrId}</span>
+                <button onClick={copyId}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: '#233E581A', border: '1px solid #233E5833' }}>
+                  {copied ? <CheckCheck size={12} className="text-[#22C55E]" /> : <Copy size={12} className="text-[#233E58]" />}
+                </button>
+              </div>
+              {qrData.expiresAt && (
+                <p className="text-[0.6875rem] text-[#94A3B8] flex items-center gap-1.5">
+                  <Clock size={11} />
+                  Válido hasta {new Date(qrData.expiresAt).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              )}
+              <button onClick={handleClose}
+                className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white"
+                style={{ background: '#233E58' }}>
+                Cerrar
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
   )
 }
 
@@ -1036,7 +1219,7 @@ function USDCDepositModal({ open, onClose, instructions }) {
 
 // ── Modal Convertir BOB → USDC ─────────────────────────────────────────────────
 
-function ConvertModal({ open, onClose, onSuccess, bobBalance }) {
+function ConvertModal({ open, onClose, onSuccess, bobBalance, rate }) {
   const [amount, setAmount]   = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult]   = useState(null)
@@ -1108,6 +1291,15 @@ function ConvertModal({ open, onClose, onSuccess, bobBalance }) {
               Convierte tus Bolivianos (BOB) a USDC al tipo de cambio Alyto vigente. Mínimo Bs. 50.
             </p>
           </div>
+          {rate && (
+            <div className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5"
+              style={{ background: '#22C55E0D', border: '1px solid #22C55E22' }}>
+              <ArrowRightLeft size={13} className="text-[#22C55E]" />
+              <span className="text-[0.8125rem] font-semibold text-[#22C55E]">
+                Tipo de cambio: 1 USDC = Bs. {rate.toFixed(2)}
+              </span>
+            </div>
+          )}
           <div>
             <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">¿Cuántos BOB quieres convertir?</label>
             <div className="relative">
@@ -1228,6 +1420,18 @@ export default function WalletPage() {
   const [showUSDCDeposit, setShowUSDCDeposit] = useState(false)
   const [showConvert, setShowConvert]         = useState(false)
 
+  // New state — improvements
+  const [bobHistory,        setBobHistory]        = useState([])
+  const [usdcHistory,       setUsdcHistory]       = useState([])
+  const [dailyLimits,       setDailyLimits]       = useState(null)
+  const [usdcRate,          setUsdcRate]          = useState(null)
+  const [bobTxFilter,       setBobTxFilter]       = useState('all')
+  const [usdcTxFilter,      setUsdcTxFilter]      = useState('all')
+  const [copiedMemo,        setCopiedMemo]        = useState(false)
+  const [showQuickQR,       setShowQuickQR]       = useState(false)
+  const [exportBobLoading,  setExportBobLoading]  = useState(false)
+  const [exportUsdcLoading, setExportUsdcLoading] = useState(false)
+
   // Guard — solo SRL
   useEffect(() => {
     if (user && user.legalEntity !== 'SRL') {
@@ -1246,10 +1450,11 @@ export default function WalletPage() {
     }
   }, [])
 
-  const fetchTxs = useCallback(async (page = 1) => {
+  const fetchTxs = useCallback(async (page = 1, filter = 'all') => {
     setTxLoading(true)
     try {
-      const data = await request(`/wallet/transactions?page=${page}&limit=10`)
+      const typeParam = filter !== 'all' ? `&type=${filter}` : ''
+      const data = await request(`/wallet/transactions?page=${page}&limit=10${typeParam}`)
       setTxs(data.transactions ?? [])
       setTxTotal(data.pagination?.total ?? 0)
     } catch { /* silencioso */ } finally {
@@ -1269,16 +1474,62 @@ export default function WalletPage() {
     }
   }, [])
 
-  const fetchUSDCTxs = useCallback(async (page = 1) => {
+  const fetchUSDCTxs = useCallback(async (page = 1, filter = 'all') => {
     setUsdcTxLoading(true)
     try {
-      const data = await request(`/wallet/usdc/transactions?page=${page}&limit=10`)
+      const typeParam = filter !== 'all' ? `&type=${filter}` : ''
+      const data = await request(`/wallet/usdc/transactions?page=${page}&limit=10${typeParam}`)
       setUsdcTxs(data.transactions ?? [])
       setUsdcTxTotal(data.pagination?.total ?? 0)
     } catch { /* silencioso */ } finally {
       setUsdcTxLoading(false)
     }
   }, [])
+
+  const fetchBobHistory = useCallback(async () => {
+    try {
+      const data = await request('/wallet/balance-history?days=7&currency=BOB')
+      setBobHistory(data.history ?? [])
+    } catch { /* silencioso */ }
+  }, [])
+
+  const fetchUsdcHistory = useCallback(async () => {
+    try {
+      const data = await request('/wallet/balance-history?days=7&currency=USDC')
+      setUsdcHistory(data.history ?? [])
+    } catch { /* silencioso */ }
+  }, [])
+
+  const fetchDailyLimits = useCallback(async () => {
+    try {
+      const data = await request('/wallet/daily-limits')
+      setDailyLimits(data)
+    } catch { /* silencioso */ }
+  }, [])
+
+  const fetchUSDCRate = useCallback(async () => {
+    try {
+      const data = await request('/wallet/usdc/rate')
+      setUsdcRate(data.rate ?? null)
+    } catch { /* silencioso */ }
+  }, [])
+
+  async function exportCSV(currency) {
+    const setLoading = currency === 'BOB' ? setExportBobLoading : setExportUsdcLoading
+    setLoading(true)
+    try {
+      const res = await request(`/wallet/export?currency=${currency}`)
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `movimientos_${currency.toLowerCase()}_${new Date().toISOString().slice(0, 7)}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch { /* silencioso */ } finally {
+      setLoading(false)
+    }
+  }
 
   async function openUSDCDeposit() {
     setShowUSDCDeposit(true)
@@ -1296,13 +1547,28 @@ export default function WalletPage() {
   // ── Effects ─────────────────────────────────────────────────────────────────
 
   useEffect(() => { fetchWallet() }, [fetchWallet])
-  useEffect(() => { fetchTxs(txPage) }, [fetchTxs, txPage])
+  useEffect(() => { fetchTxs(txPage, bobTxFilter) }, [fetchTxs, txPage, bobTxFilter])
   useEffect(() => { fetchWalletUSDC() }, [fetchWalletUSDC])
-  useEffect(() => { fetchUSDCTxs(usdcTxPage) }, [fetchUSDCTxs, usdcTxPage])
+  useEffect(() => { fetchUSDCTxs(usdcTxPage, usdcTxFilter) }, [fetchUSDCTxs, usdcTxPage, usdcTxFilter])
+  useEffect(() => { fetchBobHistory() }, [fetchBobHistory])
+  useEffect(() => { fetchUsdcHistory() }, [fetchUsdcHistory])
+  useEffect(() => { fetchDailyLimits() }, [fetchDailyLimits])
+  useEffect(() => { fetchUSDCRate() }, [fetchUSDCRate])
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchWallet(); fetchWalletUSDC()
+      }
+    }, 30000)
+    return () => clearInterval(id)
+  }, [fetchWallet, fetchWalletUSDC])
 
   function handleRefresh() {
-    fetchWallet(); fetchTxs(txPage)
-    fetchWalletUSDC(); fetchUSDCTxs(usdcTxPage)
+    fetchWallet(); fetchTxs(txPage, bobTxFilter)
+    fetchWalletUSDC(); fetchUSDCTxs(usdcTxPage, usdcTxFilter)
+    fetchBobHistory(); fetchUsdcHistory()
+    fetchDailyLimits(); fetchUSDCRate()
   }
 
   const txPages     = Math.ceil(txTotal / 10)
@@ -1373,7 +1639,10 @@ export default function WalletPage() {
                 <p className="text-[0.6875rem] font-medium uppercase tracking-widest text-white/70 mb-1">Saldo disponible</p>
                 <p className="text-[2.5rem] font-extrabold text-white leading-none tracking-tight">{formatBOB(bobAvailable)}</p>
               </div>
-              <StatusBadge status={wallet?.status ?? 'active'} />
+              <div className="flex flex-col items-end gap-2">
+                <StatusBadge status={wallet?.status ?? 'active'} />
+                {bobHistory.length >= 2 && <Sparkline data={bobHistory} id="bob" width={80} height={28} />}
+              </div>
             </div>
 
             {(wallet?.balanceReserved > 0 || wallet?.balanceFrozen > 0) && (
@@ -1398,7 +1667,7 @@ export default function WalletPage() {
                 {[
                   { label: 'Cargar',    icon: ArrowDownToLine, action: () => setShowDeposit(true),   primary: true  },
                   { label: 'Enviar',    icon: ArrowUpRight,    action: () => setShowSend(true),       primary: false },
-                  { label: 'QR',        icon: QrCode,          action: () => navigate('/wallet/qr'), primary: false },
+                  { label: 'QR',        icon: QrCode,          action: () => setShowQuickQR(true),  primary: false },
                   { label: 'Retirar',   icon: Wallet,          action: () => setShowWithdraw(true),  primary: false },
                 ].map(({ label, icon: Icon, action, primary }) => (
                   <button key={label} onClick={action}
@@ -1421,13 +1690,46 @@ export default function WalletPage() {
                 </p>
               </div>
             )}
+
+            {dailyLimits && (
+              <div className="mt-4 pt-4 flex items-center gap-3"
+                style={{ borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                <DailyLimitBar label="Envíos hoy" used={dailyLimits.send?.used ?? 0} limit={dailyLimits.send?.limit ?? 5000} />
+                <div className="self-stretch w-px" style={{ background: 'rgba(255,255,255,0.2)' }} />
+                <DailyLimitBar label="Retiros hoy" used={dailyLimits.withdrawal?.used ?? 0} limit={dailyLimits.withdrawal?.limit ?? 10000} />
+              </div>
+            )}
           </div>
 
           {/* Historial BOB */}
           <div className="px-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[1rem] font-bold text-[#0F172A]">Movimientos BOB</h2>
-              {txLoading && <Loader2 size={14} className="animate-spin text-[#64748B]" />}
+              <div className="flex items-center gap-2">
+                {txLoading && <Loader2 size={14} className="animate-spin text-[#64748B]" />}
+                <button onClick={() => exportCSV('BOB')} disabled={exportBobLoading}
+                  title="Exportar CSV"
+                  className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40"
+                  style={{ background: '#F1F5F9' }}>
+                  {exportBobLoading
+                    ? <Loader2 size={14} className="animate-spin text-[#64748B]" />
+                    : <Download size={14} className="text-[#64748B]" />}
+                </button>
+              </div>
+            </div>
+            <div className="mb-3">
+              <FilterChips
+                filters={[
+                  { key: 'all',        label: 'Todos'     },
+                  { key: 'deposit',    label: 'Depósitos' },
+                  { key: 'send',       label: 'Envíos'    },
+                  { key: 'withdrawal', label: 'Retiros'   },
+                  { key: 'receive',    label: 'Recibidos' },
+                ]}
+                active={bobTxFilter}
+                onChange={f => { setBobTxFilter(f); setTxPage(1) }}
+                accent="#233E58"
+              />
             </div>
             <TxList txs={txs} txLoading={txLoading} txPages={txPages} txPage={txPage} setTxPage={setTxPage} currency="BOB" />
           </div>
@@ -1473,7 +1775,10 @@ export default function WalletPage() {
                   </p>
                 )}
               </div>
-              <StatusBadge status={walletUSDC?.status ?? 'active'} />
+              <div className="flex flex-col items-end gap-2">
+                <StatusBadge status={walletUSDC?.status ?? 'active'} />
+                {usdcHistory.length >= 2 && <Sparkline data={usdcHistory} id="usdc" width={80} height={28} />}
+              </div>
             </div>
 
             {!usdcLoading && walletUSDC?.balanceReserved > 0 && (
@@ -1485,30 +1790,52 @@ export default function WalletPage() {
 
             {/* Stellar address/memo hint */}
             {!usdcLoading && walletUSDC?.stellarMemo && (
-              <div className="mt-4 pt-3 border-t border-white/20">
-                <p className="text-[0.6875rem] text-white/60 mb-0.5">Tu memo Stellar</p>
-                <p className="text-[0.9375rem] font-mono font-bold text-white">{walletUSDC.stellarMemo}</p>
+              <div className="mt-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                <p className="text-[0.6875rem] text-white/60 mb-1">Tu memo Stellar</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[0.9375rem] font-mono font-bold text-white flex-1">{walletUSDC.stellarMemo}</p>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(walletUSDC.stellarMemo)
+                      setCopiedMemo(true)
+                      setTimeout(() => setCopiedMemo(false), 2000)
+                    }}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)' }}>
+                    {copiedMemo
+                      ? <CheckCheck size={14} className="text-[#22C55E]" />
+                      : <Copy size={14} className="text-white" />}
+                  </button>
+                </div>
               </div>
             )}
 
             {/* Botones de acción USDC */}
             {(walletUSDC?.status ?? 'active') === 'active' && (
-              <div className="flex gap-3 mt-5">
-                {[
-                  { label: 'Depositar',  icon: ArrowDownToLine, action: openUSDCDeposit,             primary: true  },
-                  { label: 'Convertir',  icon: ArrowRightLeft,  action: () => setShowConvert(true),  primary: false },
-                ].map(({ label, icon: Icon, action, primary }) => (
-                  <button key={label} onClick={action}
-                    className="flex-1 flex flex-col items-center gap-2 py-3.5 rounded-2xl transition-all active:scale-95"
-                    style={{
-                      background: primary ? 'white' : 'rgba(255,255,255,0.18)',
-                      border:     primary ? 'none'  : '1px solid rgba(255,255,255,0.3)',
-                    }}>
-                    <Icon size={20} style={{ color: primary ? '#0D4A36' : 'white' }} />
-                    <span className="text-[0.75rem] font-semibold" style={{ color: primary ? '#0D4A36' : 'white' }}>{label}</span>
-                  </button>
-                ))}
-              </div>
+              <>
+                <div className="flex gap-3 mt-5">
+                  {[
+                    { label: 'Depositar',  icon: ArrowDownToLine, action: openUSDCDeposit,             primary: true  },
+                    { label: 'Convertir',  icon: ArrowRightLeft,  action: () => setShowConvert(true),  primary: false },
+                  ].map(({ label, icon: Icon, action, primary }) => (
+                    <button key={label} onClick={action}
+                      className="flex-1 flex flex-col items-center gap-2 py-3.5 rounded-2xl transition-all active:scale-95"
+                      style={{
+                        background: primary ? 'white' : 'rgba(255,255,255,0.18)',
+                        border:     primary ? 'none'  : '1px solid rgba(255,255,255,0.3)',
+                      }}>
+                      <Icon size={20} style={{ color: primary ? '#0D4A36' : 'white' }} />
+                      <span className="text-[0.75rem] font-semibold" style={{ color: primary ? '#0D4A36' : 'white' }}>{label}</span>
+                    </button>
+                  ))}
+                </div>
+                {usdcRate && (
+                  <div className="mt-3 flex items-center justify-center gap-1.5">
+                    <ArrowRightLeft size={11} className="text-white/50" />
+                    <span className="text-[0.6875rem] text-white/60">1 USDC = Bs. {usdcRate.toFixed(2)}</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -1516,7 +1843,29 @@ export default function WalletPage() {
           <div className="px-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[1rem] font-bold text-[#0F172A]">Movimientos USDC</h2>
-              {usdcTxLoading && <Loader2 size={14} className="animate-spin text-[#64748B]" />}
+              <div className="flex items-center gap-2">
+                {usdcTxLoading && <Loader2 size={14} className="animate-spin text-[#64748B]" />}
+                <button onClick={() => exportCSV('USDC')} disabled={exportUsdcLoading}
+                  title="Exportar CSV"
+                  className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40"
+                  style={{ background: '#F1F5F9' }}>
+                  {exportUsdcLoading
+                    ? <Loader2 size={14} className="animate-spin text-[#64748B]" />
+                    : <Download size={14} className="text-[#64748B]" />}
+                </button>
+              </div>
+            </div>
+            <div className="mb-3">
+              <FilterChips
+                filters={[
+                  { key: 'all',          label: 'Todos'        },
+                  { key: 'usdc_deposit', label: 'Depósitos'    },
+                  { key: 'bob_to_usdc',  label: 'Conversiones' },
+                ]}
+                active={usdcTxFilter}
+                onChange={f => { setUsdcTxFilter(f); setUsdcTxPage(1) }}
+                accent="#0D6E52"
+              />
             </div>
             <TxList txs={usdcTxs} txLoading={usdcTxLoading} txPages={usdcTxPages} txPage={usdcTxPage} setTxPage={setUsdcTxPage} currency="USDC" />
           </div>
@@ -1539,7 +1888,10 @@ export default function WalletPage() {
         onClose={() => setShowConvert(false)}
         onSuccess={handleRefresh}
         bobBalance={bobAvailable}
+        rate={usdcRate}
       />
+
+      <QuickQRSheet open={showQuickQR} onClose={() => setShowQuickQR(false)} />
     </div>
   )
 }
