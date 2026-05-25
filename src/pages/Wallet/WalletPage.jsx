@@ -811,18 +811,33 @@ function SendModal({ open, onClose, onSuccess, balanceAvailable }) {
 // ── Modal Retirar BOB ─────────────────────────────────────────────────────────
 
 function WithdrawModal({ open, onClose, onSuccess, balanceAvailable }) {
+  const fileInputRef = useRef(null)
   const [form, setForm] = useState({
     amount: '', bankName: '', accountNumber: '', accountHolder: '', accountType: 'Caja de ahorros',
   })
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
-  const [done, setDone]       = useState(false)
+  const [qrFile, setQrFile]       = useState(null)
+  const [qrPreview, setQrPreview] = useState(null)
+  const [loading, setLoading]     = useState(false)
+  const [error, setError]         = useState('')
+  const [done, setDone]           = useState(false)
 
   function handleClose() {
     setForm({ amount: '', bankName: '', accountNumber: '', accountHolder: '', accountType: 'Caja de ahorros' })
+    setQrFile(null); setQrPreview(null)
     setError(''); setDone(false); onClose()
   }
   function set(key, val) { setForm(f => ({ ...f, [key]: val })) }
+
+  function handleQrFileChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) { setError('La imagen del QR no puede superar 5 MB.'); return }
+    setQrFile(file)
+    setError('')
+    const reader = new FileReader()
+    reader.onload = ev => setQrPreview(ev.target.result)
+    reader.readAsDataURL(file)
+  }
 
   async function handleSubmit(e) {
     e.preventDefault(); setError('')
@@ -832,7 +847,18 @@ function WithdrawModal({ open, onClose, onSuccess, balanceAvailable }) {
     if (!form.bankName || !form.accountNumber || !form.accountHolder) return setError('Completa todos los datos bancarios.')
     setLoading(true)
     try {
-      await request('/wallet/withdraw/request', { method: 'POST', body: JSON.stringify({ ...form, amount: n }) })
+      if (qrFile) {
+        const fd = new FormData()
+        fd.append('amount', n)
+        fd.append('bankName', form.bankName)
+        fd.append('accountNumber', form.accountNumber)
+        fd.append('accountHolder', form.accountHolder)
+        fd.append('accountType', form.accountType)
+        fd.append('bankQrImage', qrFile)
+        await requestFormData('/wallet/withdraw/request', fd)
+      } else {
+        await request('/wallet/withdraw/request', { method: 'POST', body: JSON.stringify({ ...form, amount: n }) })
+      }
       setDone(true); onSuccess?.()
     } catch (err) {
       setError(err.message ?? 'Error al solicitar el retiro.')
@@ -887,6 +913,40 @@ function WithdrawModal({ open, onClose, onSuccess, balanceAvailable }) {
               </select>
             </div>
           </div>
+
+          {/* QR bancario opcional */}
+          <div className="rounded-2xl overflow-hidden" style={{ border: '1.5px dashed #CBD5E1' }}>
+            <div className="px-4 py-2.5 flex items-center gap-2" style={{ background: '#F8FAFC', borderBottom: qrFile ? '1px solid #E2E8F0' : 'none' }}>
+              <QrCode size={14} className="text-[#94A3B8]" />
+              <p className="text-[0.8125rem] font-medium text-[#64748B]">QR bancario</p>
+              <span className="ml-auto text-[0.6875rem] text-[#94A3B8]">Opcional</span>
+            </div>
+            {!qrFile ? (
+              <label className="flex flex-col items-center gap-1.5 py-4 cursor-pointer hover:bg-[#F8FAFC] transition-colors">
+                <Upload size={18} className="text-[#CBD5E1]" />
+                <span className="text-[0.75rem] text-[#94A3B8]">Adjunta el QR de tu cuenta bancaria</span>
+                <span className="text-[0.6875rem] text-[#CBD5E1]">El admin lo escaneará para transferirte directamente</span>
+                <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleQrFileChange} />
+              </label>
+            ) : (
+              <div className="p-3 flex items-center gap-3">
+                {qrPreview && (
+                  <img src={qrPreview} alt="QR bancario" className="w-16 h-16 rounded-xl object-contain flex-shrink-0"
+                    style={{ border: '1px solid #E2E8F0' }} />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[0.8125rem] font-medium text-[#0F172A] truncate">{qrFile.name}</p>
+                  <p className="text-[0.6875rem] text-[#22C55E]">QR adjunto</p>
+                </div>
+                <button type="button" onClick={() => { setQrFile(null); setQrPreview(null) }}
+                  className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: '#EF44441A' }}>
+                  <X size={13} className="text-[#F87171]" />
+                </button>
+              </div>
+            )}
+          </div>
+
           {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>}
           <button type="submit" disabled={loading} className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white disabled:opacity-40" style={{ background: '#233E58' }}>
             {loading ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Solicitar retiro'}

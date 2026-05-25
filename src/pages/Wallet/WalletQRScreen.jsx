@@ -15,7 +15,7 @@ import jsQR from 'jsqr'
 import {
   ArrowLeft, QrCode, Camera, CameraOff, Download, Share2,
   RefreshCw, Clock, CheckCircle2, AlertCircle, Loader2,
-  ChevronRight, X,
+  ChevronRight, X, Upload,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { request } from '../../services/api'
@@ -337,6 +337,7 @@ function TabPagar() {
   const canvasRef       = useRef(null)
   const rafRef          = useRef(null)
   const streamRef       = useRef(null)
+  const fileInputRef    = useRef(null)
 
   const [camError,    setCamError]    = useState(null)
   const [scanning,    setScanning]    = useState(false)
@@ -414,6 +415,26 @@ function TabPagar() {
   async function handleManualSubmit() {
     if (!manualText.trim()) return
     await handleQrDetected(manualText.trim())
+  }
+
+  async function handleFileSelect(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    setCamError(null); setPayError(null)
+    const img = new Image()
+    img.onload = () => {
+      const canvas = canvasRef.current
+      canvas.width  = img.width
+      canvas.height = img.height
+      canvas.getContext('2d').drawImage(img, 0, 0)
+      const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height)
+      const code = jsQR(imageData.data, imageData.width, imageData.height)
+      if (code?.data) { handleQrDetected(code.data) }
+      else { setCamError('No se encontró un QR Alyto en la imagen seleccionada.') }
+      URL.revokeObjectURL(img.src)
+    }
+    img.src = URL.createObjectURL(file)
   }
 
   async function handlePay() {
@@ -571,21 +592,31 @@ function TabPagar() {
         )}
 
         {!scanning && (
-          <button
-            onClick={startCamera}
-            className="flex flex-col items-center gap-3 py-12"
-          >
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white border border-[#E2E8F0] shadow-sm">
-              <Camera size={28} className="text-[#233E58]" />
-            </div>
-            <p className="text-[0.875rem] font-semibold text-[#0F172A]">Activar cámara</p>
-            <p className="text-[0.75rem] text-[#94A3B8]">Apunta al QR Alyto</p>
-          </button>
+          <div className="flex flex-col items-center gap-4 py-10">
+            <button
+              onClick={startCamera}
+              className="flex flex-col items-center gap-3"
+            >
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white border border-[#E2E8F0] shadow-sm">
+                <Camera size={28} className="text-[#233E58]" />
+              </div>
+              <p className="text-[0.875rem] font-semibold text-[#0F172A]">Activar cámara</p>
+            </button>
+            <p className="text-[0.7rem] text-[#94A3B8]">o</p>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[0.8125rem] font-semibold text-[#233E58] bg-white border border-[#233E5833] hover:border-[#233E58] transition-colors"
+            >
+              <Upload size={15} /> Adjuntar imagen QR
+            </button>
+          </div>
         )}
 
         {/* Canvas oculto para jsQR */}
         <canvas ref={canvasRef} className="hidden" />
       </div>
+
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
 
       {camError && (
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#EF44441A] border border-[#EF444433]">

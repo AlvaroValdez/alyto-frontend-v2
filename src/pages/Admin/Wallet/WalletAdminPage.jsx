@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Wallet, CheckCircle2, AlertCircle, Loader2, RefreshCw,
-  ChevronDown, X, Lock, Unlock, ArrowRightLeft,
+  ChevronDown, X, Lock, Unlock, ArrowRightLeft, ArrowUpRight, QrCode,
 } from 'lucide-react'
 import { request } from '../../../services/api'
 import { listPendingConversions, confirmConversion, rejectConversion } from '../../../services/adminService'
@@ -145,6 +145,203 @@ function ConfirmDepositModal({ deposit, open, onClose, onSuccess }) {
               className="flex-1 py-3 rounded-xl font-bold text-[0.875rem] text-[#0F1628] disabled:opacity-40"
               style={{ background: '#22C55E' }}>
               {loading ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Confirmar depósito'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ── Modal Confirmar Retiro ─────────────────────────────────────────────────────
+
+function ConfirmWithdrawalModal({ withdrawal, open, onClose, onSuccess }) {
+  const [bankReference, setBankReference] = useState('')
+  const [note, setNote]                   = useState('')
+  const [loading, setLoading]             = useState(false)
+  const [error, setError]                 = useState('')
+  const [showQr, setShowQr]               = useState(false)
+
+  function handleClose() {
+    setBankReference(''); setNote(''); setError(''); setShowQr(false); onClose()
+  }
+
+  async function handleConfirm(e) {
+    e.preventDefault(); setError('')
+    if (!bankReference.trim()) return setError('La referencia bancaria es obligatoria.')
+    setLoading(true)
+    try {
+      await request('/admin/wallet/withdrawal/confirm', {
+        method: 'POST',
+        body: JSON.stringify({ wtxId: withdrawal?.wtxId, bankReference, note }),
+      })
+      onSuccess?.(); handleClose()
+    } catch (err) {
+      setError(err.message ?? 'Error al confirmar el retiro.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!open || !withdrawal) return null
+
+  const { bankName, accountNumber, accountHolder, accountType, bankQrImage } = withdrawal.metadata ?? {}
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: '#0F162299' }}>
+      <div className="w-full max-w-md bg-[#1A2340] rounded-2xl p-6 max-h-[90vh] overflow-y-auto"
+        style={{ border: '1px solid #263050' }}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-[1rem] font-bold text-white flex items-center gap-2">
+            <ArrowUpRight size={16} className="text-[#F59E0B]" /> Confirmar retiro
+          </h3>
+          <button onClick={handleClose} className="w-8 h-8 rounded-full bg-[#0F1628] flex items-center justify-center">
+            <X size={16} className="text-[#8A96B8]" />
+          </button>
+        </div>
+
+        <div className="bg-[#0F1628] rounded-xl p-4 mb-4 space-y-2">
+          <div className="flex justify-between">
+            <span className="text-[0.75rem] text-[#8A96B8]">Usuario</span>
+            <span className="text-[0.875rem] font-semibold text-white">
+              {withdrawal.userId?.firstName} {withdrawal.userId?.lastName}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[0.75rem] text-[#8A96B8]">Email</span>
+            <span className="text-[0.875rem] text-[#C4CBD8]">{withdrawal.userId?.email}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[0.75rem] text-[#8A96B8]">Monto</span>
+            <span className="text-[0.9375rem] font-bold text-[#F59E0B]">{formatBOB(withdrawal.amount)}</span>
+          </div>
+          <div className="pt-2 border-t border-[#263050] space-y-1.5">
+            <p className="text-[0.6875rem] font-semibold text-[#8A96B8] uppercase tracking-wider">Cuenta destino</p>
+            {bankName && <div className="flex justify-between"><span className="text-[0.75rem] text-[#8A96B8]">Banco</span><span className="text-[0.75rem] text-white">{bankName}</span></div>}
+            {accountHolder && <div className="flex justify-between"><span className="text-[0.75rem] text-[#8A96B8]">Titular</span><span className="text-[0.75rem] text-white">{accountHolder}</span></div>}
+            {accountNumber && <div className="flex justify-between"><span className="text-[0.75rem] text-[#8A96B8]">N° cuenta</span><span className="text-[0.75rem] font-mono text-white">{accountNumber}</span></div>}
+            {accountType && <div className="flex justify-between"><span className="text-[0.75rem] text-[#8A96B8]">Tipo</span><span className="text-[0.75rem] text-white">{accountType}</span></div>}
+          </div>
+          {bankQrImage && (
+            <div className="pt-2 border-t border-[#263050]">
+              <button onClick={() => setShowQr(v => !v)}
+                className="flex items-center gap-2 text-[0.75rem] font-semibold text-[#C4CBD8] hover:text-white transition-colors">
+                <QrCode size={14} />
+                {showQr ? 'Ocultar QR bancario' : 'Ver QR bancario del usuario'}
+              </button>
+              {showQr && (
+                <div className="mt-3 flex justify-center">
+                  <img
+                    src={`data:${bankQrImage.mimetype};base64,${bankQrImage.data}`}
+                    alt="QR bancario"
+                    className="max-w-[200px] rounded-xl"
+                    style={{ border: '2px solid #263050' }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <form onSubmit={handleConfirm} className="space-y-4">
+          <div>
+            <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">
+              Referencia bancaria <span className="text-[#F87171]">*</span>
+            </label>
+            <input type="text" value={bankReference} onChange={e => setBankReference(e.target.value)}
+              placeholder="N° de transferencia o comprobante"
+              className="w-full bg-[#0F1628] border border-[#263050] rounded-xl px-4 py-3 text-white text-[0.875rem] focus:border-[#C4CBD8] focus:outline-none" />
+          </div>
+          <div>
+            <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">Nota interna (opcional)</label>
+            <input type="text" value={note} onChange={e => setNote(e.target.value)}
+              placeholder="Observaciones del admin"
+              className="w-full bg-[#0F1628] border border-[#263050] rounded-xl px-4 py-3 text-white text-[0.875rem] focus:border-[#C4CBD8] focus:outline-none" />
+          </div>
+          {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-2">{error}</p>}
+          <div className="flex gap-3">
+            <button type="button" onClick={handleClose}
+              className="flex-1 py-3 rounded-xl font-semibold text-[0.875rem] text-white"
+              style={{ border: '1.5px solid #263050' }}>
+              Cancelar
+            </button>
+            <button type="submit" disabled={loading}
+              className="flex-1 py-3 rounded-xl font-bold text-[0.875rem] text-[#0F1628] disabled:opacity-40"
+              style={{ background: '#22C55E' }}>
+              {loading ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Confirmar retiro'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ── Modal Rechazar Retiro ──────────────────────────────────────────────────────
+
+function RejectWithdrawalModal({ withdrawal, open, onClose, onSuccess }) {
+  const [reason, setReason]   = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
+
+  function handleClose() { setReason(''); setError(''); onClose() }
+
+  async function handleReject(e) {
+    e.preventDefault(); setError('')
+    if (!reason.trim()) return setError('Indica la razón del rechazo.')
+    setLoading(true)
+    try {
+      await request('/admin/wallet/withdrawal/reject', {
+        method: 'POST',
+        body: JSON.stringify({ wtxId: withdrawal?.wtxId, reason }),
+      })
+      onSuccess?.(); handleClose()
+    } catch (err) {
+      setError(err.message ?? 'Error al rechazar el retiro.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!open || !withdrawal) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: '#0F162299' }}>
+      <div className="w-full max-w-md bg-[#1A2340] rounded-2xl p-6"
+        style={{ border: '1px solid #263050' }}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-[1rem] font-bold text-white">Rechazar retiro</h3>
+          <button onClick={handleClose} className="w-8 h-8 rounded-full bg-[#0F1628] flex items-center justify-center">
+            <X size={16} className="text-[#8A96B8]" />
+          </button>
+        </div>
+        <div className="bg-[#EF44441A] border border-[#EF444433] rounded-xl px-4 py-3 mb-4">
+          <p className="text-[0.8125rem] text-[#F87171]">
+            Al rechazar, los {formatBOB(withdrawal.amount)} reservados se devolverán al saldo disponible del usuario.
+          </p>
+        </div>
+        <form onSubmit={handleReject} className="space-y-4">
+          <div>
+            <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">
+              Razón del rechazo <span className="text-[#F87171]">*</span>
+            </label>
+            <input type="text" value={reason} onChange={e => setReason(e.target.value)}
+              placeholder="Ej: Cuenta incorrecta, datos insuficientes..."
+              className="w-full bg-[#0F1628] border border-[#263050] rounded-xl px-4 py-3 text-white text-[0.875rem] focus:border-[#C4CBD8] focus:outline-none" />
+          </div>
+          {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-2">{error}</p>}
+          <div className="flex gap-3">
+            <button type="button" onClick={handleClose}
+              className="flex-1 py-3 rounded-xl font-semibold text-[0.875rem] text-white"
+              style={{ border: '1.5px solid #263050' }}>
+              Cancelar
+            </button>
+            <button type="submit" disabled={loading}
+              className="flex-1 py-3 rounded-xl font-bold text-[0.875rem] text-white disabled:opacity-40"
+              style={{ background: '#EF4444' }}>
+              {loading ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Rechazar retiro'}
             </button>
           </div>
         </form>
@@ -446,26 +643,31 @@ function RejectConversionModal({ conversion, open, onClose, onSuccess }) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function WalletAdminPage() {
-  const [deposits, setDeposits]       = useState([])
-  const [conversions, setConversions] = useState([])
-  const [wallets, setWallets]         = useState([])
-  const [loading, setLoading]         = useState(true)
+  const [deposits, setDeposits]         = useState([])
+  const [withdrawals, setWithdrawals]   = useState([])
+  const [conversions, setConversions]   = useState([])
+  const [wallets, setWallets]           = useState([])
+  const [loading, setLoading]           = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
 
-  const [confirmDeposit, setConfirmDeposit]       = useState(null)
-  const [confirmConv, setConfirmConv]             = useState(null)
-  const [rejectConv, setRejectConv]               = useState(null)
-  const [freezeWallet, setFreezeWallet]           = useState(null)
+  const [confirmDeposit, setConfirmDeposit]         = useState(null)
+  const [confirmWithdrawal, setConfirmWithdrawal]   = useState(null)
+  const [rejectWithdrawal, setRejectWithdrawal]     = useState(null)
+  const [confirmConv, setConfirmConv]               = useState(null)
+  const [rejectConv, setRejectConv]                 = useState(null)
+  const [freezeWallet, setFreezeWallet]             = useState(null)
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
-      const [dep, conv, wal] = await Promise.all([
+      const [dep, wdr, conv, wal] = await Promise.all([
         request('/admin/wallet/deposits/pending'),
+        request('/admin/wallet/withdrawals/pending'),
         listPendingConversions(),
         request(`/admin/wallet${statusFilter ? `?status=${statusFilter}` : ''}`),
       ])
       setDeposits(dep.deposits ?? [])
+      setWithdrawals(wdr.withdrawals ?? [])
       setConversions(conv.conversions ?? [])
       setWallets(wal.wallets ?? [])
     } catch {
@@ -567,7 +769,81 @@ export default function WalletAdminPage() {
         )}
       </section>
 
-      {/* ── SECCIÓN 2: Conversiones BOB→USDC pendientes ─────────────────── */}
+      {/* ── SECCIÓN 2: Retiros pendientes ──────────────────────────────── */}
+      <section>
+        <div className="flex items-center gap-3 mb-4">
+          <h2 className="text-[1rem] font-bold text-white flex items-center gap-2">
+            <ArrowUpRight size={16} className="text-[#F59E0B]" />
+            Retiros pendientes
+          </h2>
+          {withdrawals.length > 0 && (
+            <span className="text-[0.6875rem] font-bold px-2 py-0.5 rounded-full"
+              style={{ background: '#F59E0B1A', color: '#F59E0B', border: '1px solid #F59E0B33' }}>
+              {withdrawals.length}
+            </span>
+          )}
+        </div>
+
+        {withdrawals.length === 0 ? (
+          <div className="bg-[#1A2340] rounded-2xl p-8 text-center" style={{ border: '1px solid #263050' }}>
+            <CheckCircle2 size={28} className="mx-auto text-[#22C55E] mb-2" />
+            <p className="text-[0.875rem] font-semibold text-[#8A96B8]">Sin retiros pendientes</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {withdrawals.map(wdr => {
+              const { bankName, accountNumber, accountHolder, accountType, bankQrImage } = wdr.metadata ?? {}
+              return (
+                <div key={wdr._id ?? wdr.wtxId}
+                  className="flex items-start gap-4 px-5 py-4 rounded-2xl"
+                  style={{ background: '#1A2340', border: '1px solid #263050' }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="text-[0.9375rem] font-bold text-white">
+                        {wdr.userId?.firstName} {wdr.userId?.lastName}
+                      </p>
+                    </div>
+                    <p className="text-[0.75rem] text-[#8A96B8]">{wdr.userId?.email}</p>
+                    {bankName && (
+                      <p className="text-[0.6875rem] text-[#4E5A7A] mt-1">
+                        {bankName} · {accountHolder} · {accountNumber}
+                        {accountType && ` (${accountType})`}
+                      </p>
+                    )}
+                    {bankQrImage && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <QrCode size={12} className="text-[#C4CBD8]" />
+                        <span className="text-[0.6875rem] text-[#C4CBD8]">QR bancario adjunto</span>
+                      </div>
+                    )}
+                    <p className="text-[0.6875rem] text-[#4E5A7A] font-mono mt-0.5">Ref: {wdr.wtxId}</p>
+                    <p className="text-[0.6875rem] text-[#4E5A7A]">{formatDate(wdr.createdAt)}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-[1.0625rem] font-bold text-[#F59E0B] mb-2">{formatBOB(wdr.amount)}</p>
+                    <div className="flex flex-col gap-1.5">
+                      <button
+                        onClick={() => setConfirmWithdrawal(wdr)}
+                        className="text-[0.75rem] font-bold px-3 py-1.5 rounded-xl text-[#0F1628]"
+                        style={{ background: '#22C55E' }}>
+                        Confirmar
+                      </button>
+                      <button
+                        onClick={() => setRejectWithdrawal(wdr)}
+                        className="text-[0.75rem] font-bold px-3 py-1.5 rounded-xl"
+                        style={{ background: '#EF44441A', color: '#F87171', border: '1px solid #EF444433' }}>
+                        Rechazar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* ── SECCIÓN 3: Conversiones BOB→USDC pendientes ─────────────────── */}
       <section>
         <div className="flex items-center gap-3 mb-4">
           <h2 className="text-[1rem] font-bold text-white flex items-center gap-2">
@@ -719,6 +995,18 @@ export default function WalletAdminPage() {
         deposit={confirmDeposit}
         open={!!confirmDeposit}
         onClose={() => setConfirmDeposit(null)}
+        onSuccess={fetchAll}
+      />
+      <ConfirmWithdrawalModal
+        withdrawal={confirmWithdrawal}
+        open={!!confirmWithdrawal}
+        onClose={() => setConfirmWithdrawal(null)}
+        onSuccess={fetchAll}
+      />
+      <RejectWithdrawalModal
+        withdrawal={rejectWithdrawal}
+        open={!!rejectWithdrawal}
+        onClose={() => setRejectWithdrawal(null)}
         onSuccess={fetchAll}
       />
       <FreezeModal
