@@ -1,9 +1,10 @@
 /**
  * api.js — Capa de Comunicación con el Backend Alyto V2.0
  *
- * La sesión se mantiene vía cookie HttpOnly `alyto_token` (seteada por el backend).
- * Todas las peticiones usan `credentials: 'include'` para que el browser
- * adjunte la cookie automáticamente — no se lee ningún token desde storage.
+ * La sesión se mantiene con doble mecanismo: cookie HttpOnly `alyto_token`
+ * (seteada por el backend en todos los modos) + token en localStorage para
+ * el header Bearer. Todas las peticiones envían `credentials: 'include'`
+ * y el header Authorization si el token está disponible.
  *
  * Endpoints de autenticación:
  *   loginUser(credentials)  → POST /auth/login
@@ -13,28 +14,12 @@
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1'
 
-// ── Dual auth mode ──────────────────────────────────────────────────────────
-// VITE_AUTH_MODE=cookie (VPS prod)              → HttpOnly cookie only
-// VITE_AUTH_MODE=header (Render staging, default) → Bearer token from localStorage
-//
-// Belt-and-suspenders: credentials:'include' is ALWAYS set so the browser
-// sends the cookie when it exists. The Authorization header is ALWAYS added
-// when a token is in localStorage. The backend's protect() middleware reads
-// cookie first, then falls back to Bearer — both paths work simultaneously.
-const AUTH_MODE = import.meta.env.VITE_AUTH_MODE ?? 'header'
+// Belt-and-suspenders auth: cookie + Bearer header work simultaneously.
+// The backend always returns the token in the response body AND sets the
+// HttpOnly cookie. The frontend stores it in localStorage so all requests
+// (including multipart uploads) can include the Authorization: Bearer header.
+// protect() reads cookie first, then falls back to Bearer.
 const TOKEN_KEY = 'alyto_token'
-
-console.log('[API] TOKEN_KEY:', TOKEN_KEY)
-console.log('[API] AUTH_MODE:', AUTH_MODE,
-  '| VITE_AUTH_MODE env:', import.meta.env.VITE_AUTH_MODE,
-  '| token:', localStorage.getItem(TOKEN_KEY)?.substring(0, 20) ?? 'none')
-console.log('[API] All localStorage keys at load:', Object.keys(localStorage))
-
-function getAuthHeaders() {
-  const token = localStorage.getItem(TOKEN_KEY)
-  console.log('[Headers] token from localStorage:', token ? token.substring(0, 20) : 'NONE')
-  return token ? { Authorization: `Bearer ${token}` } : {}
-}
 
 export function saveAuthToken(token) {
   if (token) localStorage.setItem(TOKEN_KEY, token)
@@ -66,7 +51,6 @@ function isAuthPublicPath(path) {
  */
 export async function requestFormData(path, formData, method = 'POST') {
   const token = localStorage.getItem(TOKEN_KEY)
-  console.log('[Request]', path, '| auth:', !!token)
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
     credentials: 'include',
@@ -106,8 +90,6 @@ export async function request(path, options = {}) {
     ...options,
     headers,
   }
-
-  console.log('[Request]', path, '| auth:', !!token)
 
   const res = await fetch(`${BASE_URL}${path}`, fetchOptions)
 
@@ -217,7 +199,6 @@ export function initiatePayin(amount, userId) {
  */
 export async function processBoliviaPayout(transactionId) {
   const token = localStorage.getItem(TOKEN_KEY)
-  console.log('[Request] /payouts/bolivia/manual | auth:', !!token)
   const res = await fetch(`${BASE_URL}/payouts/bolivia/manual`, {
     method:      'POST',
     credentials: 'include',
@@ -446,7 +427,6 @@ export function resetPassword(data) {
  */
 export async function submitKyc(formData) {
   const token = localStorage.getItem(TOKEN_KEY)
-  console.log('[Request] /user/kyc | auth:', !!token)
   const res = await fetch(`${BASE_URL}/user/kyc`, {
     method:      'POST',
     credentials: 'include',
