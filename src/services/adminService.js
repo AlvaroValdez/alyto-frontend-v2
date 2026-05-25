@@ -279,6 +279,16 @@ export function updateCLPBOBRate(clpPerUsdt, bobPerUsdt, note) {
   })
 }
 
+// ── Vita Wallet balance ───────────────────────────────────────────────────────
+
+/**
+ * Retorna saldos actuales de la wallet master Vita + alertas de liquidez.
+ * @returns {Promise<{ walletId, balances, alerts, hasAlerts, checkedAt }>}
+ */
+export function getVitaBalance() {
+  return request('/admin/vita/balance')
+}
+
 // ── SRL Config — QR de pago Bolivia ───────────────────────────────────────────
 
 /**

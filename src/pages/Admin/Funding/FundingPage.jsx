@@ -22,6 +22,7 @@ import {
   getCLPBOBRate,
   updateCLPBOBRate,
   getUSDCForecast,
+  getVitaBalance,
 } from '../../../services/adminService'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -730,6 +731,165 @@ function CLPBOBRatePanel({ onToast }) {
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── VitaBalanceWidget ─────────────────────────────────────────────────────────
+
+const VITA_CURRENCIES = [
+  { key: 'usd',  label: 'USD',  flag: '🇺🇸', threshold: 500,     format: (v) => `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+  { key: 'clp',  label: 'CLP',  flag: '🇨🇱', threshold: 500000,  format: (v) => `$${Number(v).toLocaleString('es-CL', { minimumFractionDigits: 0,  maximumFractionDigits: 0  })}` },
+  { key: 'usdt', label: 'USDT', flag: '💵',   threshold: 500,     format: (v) => `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+  { key: 'usdc', label: 'USDC', flag: '🔵',   threshold: 500,     format: (v) => `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+  { key: 'cop',  label: 'COP',  flag: '🇨🇴', threshold: 2000000, format: (v) => `$${Number(v).toLocaleString('es-CO', { minimumFractionDigits: 0,  maximumFractionDigits: 0  })}` },
+]
+
+function VitaBalanceWidget() {
+  const [data,    setData]    = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState(null)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await getVitaBalance()
+      setData(res)
+    } catch (err) {
+      setError(err.message || 'Error consultando saldo Vita')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const balances   = data?.balances ?? {}
+  const alertKeys  = new Set((data?.alerts ?? []).map(a => a.currency?.toLowerCase()))
+  const hasAlerts  = data?.hasAlerts ?? false
+
+  return (
+    <div
+      className="rounded-2xl overflow-hidden"
+      style={{ background: '#1A2340', border: `1px solid ${hasAlerts ? '#FBBF2440' : '#263050'}` }}
+    >
+      {/* Header */}
+      <div
+        className="flex items-center justify-between px-5 py-3.5"
+        style={{ borderBottom: '1px solid #263050' }}
+      >
+        <div className="flex items-center gap-2.5">
+          <div
+            className="w-7 h-7 rounded-xl flex items-center justify-center"
+            style={{ background: '#22C55E1A', border: '1px solid #22C55E33' }}
+          >
+            <Wallet size={13} className="text-[#22C55E]" />
+          </div>
+          <div>
+            <p className="text-[0.9375rem] font-bold text-white">Vita Wallet — balances live</p>
+            <p className="text-[0.6875rem] text-[#4E5A7A]">Cuenta master · fondos para payouts LatAm</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {hasAlerts && (
+            <span
+              className="text-[0.6875rem] font-semibold px-2.5 py-1 rounded-full"
+              style={{ background: '#F59E0B0F', color: '#FBBF24', border: '1px solid #FBBF2430' }}
+            >
+              ⚠️ Fondeo requerido
+            </span>
+          )}
+          <button
+            onClick={load}
+            disabled={loading}
+            className="w-7 h-7 rounded-xl bg-[#1F2B4D] border border-[#263050] flex items-center justify-center hover:border-[#C4CBD833] text-[#4E5A7A] hover:text-white transition-colors disabled:opacity-40"
+            title="Refrescar"
+          >
+            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="px-5 py-5">
+        {error ? (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
+            <AlertTriangle size={13} className="text-[#F87171] flex-shrink-0" />
+            <p className="text-[0.8125rem] text-[#F87171]">{error}</p>
+          </div>
+        ) : loading ? (
+          <div className="grid grid-cols-5 gap-3">
+            {[1,2,3,4,5].map(i => <div key={i} className="h-20 rounded-2xl bg-[#263050] animate-pulse" />)}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-5 gap-3">
+              {VITA_CURRENCIES.map(({ key, label, flag, threshold, format }) => {
+                const value   = balances[key] ?? 0
+                const isLow   = alertKeys.has(key)
+                const isCrit  = isLow && value < threshold * 0.5
+                const color   = isCrit ? '#EF4444' : isLow ? '#FBBF24' : '#22C55E'
+                const bg      = isCrit ? '#EF44441A' : isLow ? '#F59E0B0F' : '#22C55E0A'
+                const border  = isCrit ? '#EF444430' : isLow ? '#FBBF2430' : '#22C55E20'
+                return (
+                  <div
+                    key={key}
+                    className="rounded-2xl p-4 flex flex-col gap-1.5"
+                    style={{ background: isLow ? bg : '#0F1628', border: `1px solid ${isLow ? border : '#263050'}` }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-base leading-none">{flag}</span>
+                      <span className="text-[0.625rem] font-bold text-[#4E5A7A] uppercase">{label}</span>
+                    </div>
+                    <p
+                      className="text-[1.125rem] font-extrabold tabular-nums leading-none mt-1"
+                      style={{ color: isLow ? color : '#C4CBD8' }}
+                    >
+                      {format(value)}
+                    </p>
+                    <p className="text-[0.5625rem] text-[#4E5A7A]">
+                      {isLow ? `mín: ${format(threshold)}` : 'OK'}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Alertas detalladas */}
+            {data?.alerts?.length > 0 && (
+              <div className="space-y-1.5">
+                {data.alerts.map(alert => (
+                  <div
+                    key={alert.currency}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+                    style={{
+                      background: alert.level === 'critical' ? '#EF44441A' : '#F59E0B0F',
+                      border:     `1px solid ${alert.level === 'critical' ? '#EF444430' : '#FBBF2430'}`,
+                    }}
+                  >
+                    <span className="text-sm leading-none flex-shrink-0">
+                      {alert.level === 'critical' ? '🚨' : '⚠️'}
+                    </span>
+                    <p
+                      className="text-[0.8125rem] font-semibold"
+                      style={{ color: alert.level === 'critical' ? '#F87171' : '#FBBF24' }}
+                    >
+                      {alert.message}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {data?.checkedAt && (
+              <p className="text-[0.625rem] text-[#4E5A7A] text-right">
+                Consultado {formatDate(data.checkedAt)}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -1523,7 +1683,10 @@ export default function FundingPage() {
         </div>
       </div>
 
-      {/* ── SECCIÓN 2: Previsión USDC live ── */}
+      {/* ── SECCIÓN 2A: Vita Wallet balances ── */}
+      <VitaBalanceWidget />
+
+      {/* ── SECCIÓN 2B: Previsión USDC live (Harbor/Stellar) ── */}
       <USDCForecastWidget />
 
       {/* ── SECCIÓN 3: Historial ── */}
