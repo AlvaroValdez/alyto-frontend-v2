@@ -9,7 +9,7 @@
  */
 
 import { useState, useCallback } from 'react'
-import { request } from '../services/api'
+import { request, requestFormData } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 
 export function useProfile() {
@@ -91,18 +91,7 @@ export function useProfile() {
     try {
       const formData = new FormData()
       formData.append('avatar', file)
-
-      // No usar request() genérico porque este endpoint es multipart.
-      // La autenticación va por la cookie HttpOnly alyto_token (credentials: 'include').
-      const BASE = import.meta.env.VITE_API_URL ?? ''
-      const res  = await fetch(`${BASE}/user/avatar`, {
-        method:      'PATCH',
-        credentials: 'include',
-        body:        formData,
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Error al subir la foto.')
-
+      const data = await requestFormData('/user/avatar', formData, 'PATCH')
       setProfile(prev => prev ? { ...prev, avatarUrl: data.avatarUrl } : prev)
       updateUser({ avatarUrl: data.avatarUrl })
       return data.avatarUrl

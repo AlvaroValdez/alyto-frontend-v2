@@ -67,12 +67,21 @@ function Avatar({ firstName, lastName, avatarUrl, size = 72, onUpload, uploading
     <div className="relative inline-block" style={{ width: size, height: size }}>
       {/* Foto o iniciales */}
       {avatarUrl ? (
-        <img
-          src={avatarUrl}
-          alt="Foto de perfil"
-          className="rounded-full border-4 border-[#1D3461] object-cover shadow-[0_0_0_3px_#FFFFFF]"
-          style={{ width: size, height: size }}
-        />
+        <div
+          className="rounded-full shadow-[0_0_0_3px_#FFFFFF]"
+          style={{
+            width: size, height: size,
+            border: '4px solid #1D3461',
+            overflow: 'hidden',
+            flexShrink: 0,
+          }}
+        >
+          <img
+            src={avatarUrl}
+            alt="Foto de perfil"
+            className="w-full h-full object-cover object-center"
+          />
+        </div>
       ) : (
         <div
           className="rounded-full border-4 border-[#1D3461] bg-gradient-to-br from-[#1D3461] to-[#0D1F3C] flex items-center justify-center font-bold text-white tracking-wide shadow-[0_0_0_3px_#FFFFFF]"
