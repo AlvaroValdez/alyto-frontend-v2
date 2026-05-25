@@ -49,13 +49,15 @@ const RATE_SOURCES  = [
 ]
 
 // Pares de tasas que el sistema gestiona
+// autoRefresh: true  → job backend actualiza cada 30 min (no requiere acción admin)
+// isOverride:  true  → override opcional; si no está seteado, se usa tasa live P2P
 const RATE_PAIRS = [
-  { pair: 'BOB/USDT', label: 'Bolivia · Binance P2P',  flag: '🇧🇴' },
-  { pair: 'CLP/USD',  label: 'Chile · cambio oficial',  flag: '🇨🇱' },
-  { pair: 'BOB/USDC', label: 'Bolivia · corredor USDC', flag: '🇧🇴' },
-  { pair: 'CLP/USDT', label: 'CL→BO · CLP por USDT',   flag: '🇨🇱', clpBob: true },
-  { pair: 'USDT/BOB', label: 'CL→BO · BOB por USDT',   flag: '🇧🇴', clpBob: true },
-  { pair: 'CLP/BOB',  label: 'CL→BO · tasa efectiva',   flag: '🔄', clpBob: true, auto: true },
+  { pair: 'BOB/USDT', label: 'Bolivia · Binance P2P',        flag: '🇧🇴', autoRefresh: true },
+  { pair: 'CLP/USD',  label: 'Chile · cambio oficial',        flag: '🇨🇱' },
+  { pair: 'BOB/USDC', label: 'Bolivia · override corredor USDC', flag: '🇧🇴', isOverride: true },
+  { pair: 'CLP/USDT', label: 'CL→BO · CLP por USDT',         flag: '🇨🇱', clpBob: true },
+  { pair: 'USDT/BOB', label: 'CL→BO · BOB por USDT',         flag: '🇧🇴', clpBob: true },
+  { pair: 'CLP/BOB',  label: 'CL→BO · tasa efectiva',         flag: '🔄', clpBob: true, auto: true },
 ]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -118,13 +120,14 @@ function Toast({ message, onHide }) {
 // ── RateUpdateModal ───────────────────────────────────────────────────────────
 
 function RateUpdateModal({ rateEntry, onClose, onSaved }) {
-  const { pair, rate: prevRate } = rateEntry
+  const { pair, rate: prevRate, autoRefresh, isOverride } = rateEntry
 
-  const [newRate, setNewRate] = useState('')
-  const [source,  setSource]  = useState('binance_p2p')
-  const [note,    setNote]    = useState('')
-  const [saving,  setSaving]  = useState(false)
-  const [error,   setError]   = useState(null)
+  const [newRate,   setNewRate]   = useState('')
+  const [source,    setSource]    = useState('binance_p2p')
+  const [note,      setNote]      = useState('')
+  const [saving,    setSaving]    = useState(false)
+  const [clearing,  setClearing]  = useState(false)
+  const [error,     setError]     = useState(null)
 
   const handleSave = async () => {
     const val = parseFloat(newRate)
@@ -140,8 +143,27 @@ function RateUpdateModal({ rateEntry, onClose, onSaved }) {
     }
   }
 
-  const inputCls  = 'w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white border border-[#263050] bg-[#1A2340] focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] placeholder-[#4E5A7A] transition-colors'
-  const labelCls  = 'block text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5'
+  // Limpiar override: guarda rate=0 → getBOBRate lo ignora y usa P2P live
+  const handleClearOverride = async () => {
+    setClearing(true)
+    setError(null)
+    try {
+      await updateExchangeRate(pair, 0, 'manual', 'override limpiado — usa P2P live')
+      onSaved(`Override ${pair} eliminado — el sistema usará la tasa live de Binance P2P ✅`)
+    } catch (err) {
+      setError(err.message || 'Error al limpiar el override.')
+      setClearing(false)
+    }
+  }
+
+  const inputCls = 'w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white border border-[#263050] bg-[#1A2340] focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] placeholder-[#4E5A7A] transition-colors'
+  const labelCls = 'block text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5'
+
+  const modalTitle = autoRefresh
+    ? 'Override temporal'
+    : isOverride
+      ? 'Override corredor USDC'
+      : 'Actualizar tasa'
 
   return (
     <div
@@ -160,7 +182,7 @@ function RateUpdateModal({ rateEntry, onClose, onSaved }) {
           style={{ borderBottom: '1px solid #263050', background: 'linear-gradient(180deg, #1A2340 0%, #0F1628 100%)' }}
         >
           <div>
-            <p className="text-[0.75rem] text-[#4E5A7A] uppercase tracking-wider font-semibold">Actualizar tasa</p>
+            <p className="text-[0.75rem] text-[#4E5A7A] uppercase tracking-wider font-semibold">{modalTitle}</p>
             <h3 className="text-[1.0625rem] font-bold text-white mt-0.5">{pair}</h3>
           </div>
           <button
@@ -174,8 +196,35 @@ function RateUpdateModal({ rateEntry, onClose, onSaved }) {
         {/* Body */}
         <div className="px-5 py-5 flex flex-col gap-4">
 
+          {/* Nota contextual para pares especiales */}
+          {autoRefresh && (
+            <div
+              className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl"
+              style={{ background: '#22C55E08', border: '1px solid #22C55E20' }}
+            >
+              <Zap size={13} className="text-[#22C55E] flex-shrink-0 mt-0.5" />
+              <p className="text-[0.75rem] text-[#4E5A7A] leading-relaxed">
+                Este par se actualiza <span className="text-[#C4CBD8] font-semibold">automáticamente cada 30 min</span> desde Binance P2P.
+                Cualquier valor que ingreses aquí será sobreescrito en la siguiente corrida del job.
+              </p>
+            </div>
+          )}
+          {isOverride && (
+            <div
+              className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl"
+              style={{ background: '#8AB4F808', border: '1px solid #8AB4F820' }}
+            >
+              <AlertTriangle size={13} className="text-[#8AB4F8] flex-shrink-0 mt-0.5" />
+              <p className="text-[0.75rem] text-[#4E5A7A] leading-relaxed">
+                Este override tiene <span className="text-[#C4CBD8] font-semibold">mayor prioridad que la tasa live</span> de Binance P2P.
+                Úsalo cuando quieras fijar un margen específico para el corredor USDC.
+                Si lo limpias, el sistema usará la tasa P2P de mercado automáticamente.
+              </p>
+            </div>
+          )}
+
           {/* Tasa anterior */}
-          {prevRate != null && (
+          {prevRate != null && prevRate > 0 && (
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#1A2340] border border-[#263050]">
               <span className="text-[0.75rem] text-[#4E5A7A]">Tasa anterior:</span>
               <span className="text-[0.875rem] font-bold text-[#C4CBD8] tabular-nums">{prevRate}</span>
@@ -187,7 +236,7 @@ function RateUpdateModal({ rateEntry, onClose, onSaved }) {
           {/* Nueva tasa */}
           <div>
             <label className={labelCls}>
-              Nueva tasa <span className="text-[#EF4444]">*</span>
+              {isOverride ? 'Override de tasa' : 'Nueva tasa'} <span className="text-[#EF4444]">*</span>
               <span className="text-[#4E5A7A] normal-case font-normal ml-1">
                 ({pair.split('/')[1]}/{pair.split('/')[0]})
               </span>
@@ -196,7 +245,7 @@ function RateUpdateModal({ rateEntry, onClose, onSaved }) {
               type="number"
               min="0"
               step="0.0001"
-              placeholder={String(prevRate ?? '0.00')}
+              placeholder={String(prevRate && prevRate > 0 ? prevRate : '0.00')}
               value={newRate}
               onChange={e => setNewRate(e.target.value)}
               className={inputCls}
@@ -204,33 +253,35 @@ function RateUpdateModal({ rateEntry, onClose, onSaved }) {
             />
           </div>
 
-          {/* Fuente */}
-          <div>
-            <label className={labelCls}>Fuente</label>
-            <div className="flex gap-3">
-              {RATE_SOURCES.map(s => (
-                <label key={s.value} className="flex items-center gap-2 cursor-pointer group">
-                  <div
-                    className="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors"
-                    style={{
-                      borderColor: source === s.value ? '#C4CBD8' : '#263050',
-                      background:  source === s.value ? '#C4CBD8' : 'transparent',
-                    }}
-                    onClick={() => setSource(s.value)}
-                  >
-                    {source === s.value && <div className="w-1.5 h-1.5 rounded-full bg-[#0F1628]" />}
-                  </div>
-                  <span
-                    className="text-[0.8125rem] transition-colors"
-                    style={{ color: source === s.value ? '#FFFFFF' : '#8A96B8' }}
-                    onClick={() => setSource(s.value)}
-                  >
-                    {s.label}
-                  </span>
-                </label>
-              ))}
+          {/* Fuente — solo si no es override */}
+          {!isOverride && (
+            <div>
+              <label className={labelCls}>Fuente</label>
+              <div className="flex gap-3">
+                {RATE_SOURCES.map(s => (
+                  <label key={s.value} className="flex items-center gap-2 cursor-pointer group">
+                    <div
+                      className="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors"
+                      style={{
+                        borderColor: source === s.value ? '#C4CBD8' : '#263050',
+                        background:  source === s.value ? '#C4CBD8' : 'transparent',
+                      }}
+                      onClick={() => setSource(s.value)}
+                    >
+                      {source === s.value && <div className="w-1.5 h-1.5 rounded-full bg-[#0F1628]" />}
+                    </div>
+                    <span
+                      className="text-[0.8125rem] transition-colors"
+                      style={{ color: source === s.value ? '#FFFFFF' : '#8A96B8' }}
+                      onClick={() => setSource(s.value)}
+                    >
+                      {s.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Nota */}
           <div>
@@ -254,29 +305,45 @@ function RateUpdateModal({ rateEntry, onClose, onSaved }) {
 
         {/* Footer */}
         <div
-          className="flex gap-3 px-5 py-4"
+          className="flex flex-col gap-2 px-5 py-4"
           style={{ borderTop: '1px solid #263050' }}
         >
-          <button
-            onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-[#263050] text-[#8A96B8] text-[0.875rem] font-semibold hover:text-white hover:border-[#C4CBD833] transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving || !newRate}
-            className="flex-1 py-2.5 rounded-xl text-[#0F1628] text-[0.875rem] font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
-            style={{
-              background:  saving || !newRate ? '#C4CBD840' : '#C4CBD8',
-              boxShadow:   saving || !newRate ? 'none' : '0 4px 20px rgba(196,203,216,0.3)',
-            }}
-          >
-            {saving
-              ? <><Loader size={13} className="animate-spin" /> Guardando...</>
-              : 'Guardar tasa'
-            }
-          </button>
+          {/* Botón limpiar override — solo para isOverride con valor activo */}
+          {isOverride && prevRate != null && prevRate > 0 && (
+            <button
+              onClick={handleClearOverride}
+              disabled={clearing || saving}
+              className="w-full py-2.5 rounded-xl border text-[0.8125rem] font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-40"
+              style={{ borderColor: '#8AB4F830', color: '#8AB4F8' }}
+            >
+              {clearing
+                ? <><Loader size={13} className="animate-spin" /> Limpiando...</>
+                : '↩ Limpiar override (usar P2P live)'
+              }
+            </button>
+          )}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl border border-[#263050] text-[#8A96B8] text-[0.875rem] font-semibold hover:text-white hover:border-[#C4CBD833] transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving || clearing || !newRate}
+              className="flex-1 py-2.5 rounded-xl text-[#0F1628] text-[0.875rem] font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+              style={{
+                background: saving || clearing || !newRate ? '#C4CBD840' : '#C4CBD8',
+                boxShadow:  saving || clearing || !newRate ? 'none' : '0 4px 20px rgba(196,203,216,0.3)',
+              }}
+            >
+              {saving
+                ? <><Loader size={13} className="animate-spin" /> Guardando...</>
+                : isOverride ? 'Guardar override' : 'Guardar tasa'
+              }
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -357,8 +424,11 @@ function ExchangeRatesPanel({ onToast }) {
             ))
           ) : (
             rates.map(r => {
-              const stale  = isStaleRate(r.updatedAt)
-              const ago    = timeAgo(r.updatedAt)
+              // autoRefresh → stale si no se actualizó en 2h (job corre c/30 min)
+              // override/manual → stale si no se actualizó en 24h
+              const staleHrs = r.autoRefresh ? 2 : 24
+              const stale    = r.isOverride ? false : isStaleRate(r.updatedAt, staleHrs)
+              const ago      = timeAgo(r.updatedAt)
 
               return (
                 <div
@@ -367,14 +437,36 @@ function ExchangeRatesPanel({ onToast }) {
                 >
                   {/* Par */}
                   <span className="text-base leading-none flex-shrink-0">{r.flag}</span>
-                  <div className="min-w-[80px]">
-                    <p className="text-[0.8125rem] font-bold text-white">{r.pair}</p>
+                  <div className="min-w-[90px]">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[0.8125rem] font-bold text-white">{r.pair}</p>
+                      {r.autoRefresh && (
+                        <span
+                          className="text-[0.5625rem] font-bold px-1.5 py-0.5 rounded-full leading-none"
+                          style={{ background: '#22C55E15', color: '#22C55E', border: '1px solid #22C55E30' }}
+                          title="Actualizado automáticamente por el backend cada 30 min"
+                        >
+                          AUTO
+                        </span>
+                      )}
+                      {r.isOverride && (
+                        <span
+                          className="text-[0.5625rem] font-bold px-1.5 py-0.5 rounded-full leading-none"
+                          style={{ background: '#8AB4F815', color: '#8AB4F8', border: '1px solid #8AB4F830' }}
+                          title="Override opcional. Si no está seteado, se usa la tasa live de Binance P2P"
+                        >
+                          OVERRIDE
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[0.625rem] text-[#4E5A7A]">{r.label}</p>
                   </div>
 
                   {/* Tasa */}
                   <div className="flex-1">
-                    {r.rate != null ? (
+                    {r.isOverride && r.rate == null ? (
+                      <span className="text-[0.8125rem] text-[#4E5A7A] italic">usa tasa live P2P</span>
+                    ) : r.rate != null ? (
                       <span className="text-[1.0625rem] font-extrabold tabular-nums text-[#C4CBD8]">
                         {Number(r.rate).toFixed(4)}
                       </span>
@@ -385,12 +477,12 @@ function ExchangeRatesPanel({ onToast }) {
 
                   {/* Meta: fuente + tiempo */}
                   <div className="flex items-center gap-2 mr-3">
-                    {r.source && (
+                    {r.source && !r.isOverride && (
                       <span className="text-[0.6875rem] text-[#8A96B8] hidden sm:block">
-                        {r.source}
+                        {r.source === 'binance_p2p_auto' ? 'auto · P2P' : r.source}
                       </span>
                     )}
-                    {ago && (
+                    {ago && !r.isOverride && (
                       <span
                         className="text-[0.6875rem] font-medium px-2 py-0.5 rounded-full"
                         style={{
@@ -402,15 +494,24 @@ function ExchangeRatesPanel({ onToast }) {
                         {stale ? `⚠️ ${ago}` : ago}
                       </span>
                     )}
+                    {r.isOverride && r.rate != null && ago && (
+                      <span
+                        className="text-[0.6875rem] font-medium px-2 py-0.5 rounded-full"
+                        style={{ background: '#8AB4F80F', color: '#8AB4F8', border: '1px solid #8AB4F830' }}
+                      >
+                        {ago}
+                      </span>
+                    )}
                   </div>
 
                   {/* Botón editar */}
                   <button
                     onClick={() => setEditEntry(r)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#263050] text-[0.75rem] text-[#8A96B8] hover:text-white hover:border-[#C4CBD833] transition-colors flex-shrink-0"
+                    title={r.autoRefresh ? 'Forzar un valor manualmente (sobreescribe el auto)' : r.isOverride ? 'Setear override (deja vacío para usar P2P live)' : 'Actualizar tasa'}
                   >
                     <Edit2 size={12} />
-                    Actualizar
+                    {r.autoRefresh ? 'Override' : r.isOverride ? 'Setear' : 'Actualizar'}
                   </button>
                 </div>
               )
