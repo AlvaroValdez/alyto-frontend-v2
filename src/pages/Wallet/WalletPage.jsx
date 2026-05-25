@@ -1442,11 +1442,19 @@ export default function WalletPage() {
           {/* Saldo card USDC */}
           <div className="mx-4 mb-5 rounded-3xl p-6 relative overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, #1D4E6A 0%, #164060 55%, #0F3050 100%)',
-              boxShadow: '0 8px 40px rgba(0,0,0,0.18)',
+              background: 'linear-gradient(135deg, #0D4A36 0%, #1D9E75 60%, #17875F 100%)',
+              boxShadow: '0 8px 32px rgba(29,158,117,0.35), 0 2px 8px rgba(29,158,117,0.20)',
             }}>
+            {/* Grid overlay sutil */}
+            <div className="absolute inset-0 pointer-events-none"
+              style={{
+                backgroundImage: 'linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)',
+                backgroundSize: '24px 24px',
+              }} />
             <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none"
-              style={{ border: '1px solid rgba(255,255,255,0.15)' }} />
+              style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '50%' }} />
+            <div className="absolute -bottom-5 left-5 w-24 h-24 rounded-full pointer-events-none"
+              style={{ background: 'rgba(255,255,255,0.03)' }} />
 
             <div className="flex items-start justify-between mb-1">
               <div>
@@ -1496,8 +1504,8 @@ export default function WalletPage() {
                       background: primary ? 'white' : 'rgba(255,255,255,0.18)',
                       border:     primary ? 'none'  : '1px solid rgba(255,255,255,0.3)',
                     }}>
-                    <Icon size={20} style={{ color: primary ? '#164060' : 'white' }} />
-                    <span className="text-[0.75rem] font-semibold" style={{ color: primary ? '#164060' : 'white' }}>{label}</span>
+                    <Icon size={20} style={{ color: primary ? '#0D4A36' : 'white' }} />
+                    <span className="text-[0.75rem] font-semibold" style={{ color: primary ? '#0D4A36' : 'white' }}>{label}</span>
                   </button>
                 ))}
               </div>
