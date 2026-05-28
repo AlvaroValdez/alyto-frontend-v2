@@ -112,7 +112,7 @@ function ActionBtn({ icon, title, onClick }) {
 // ─── Celda editable (número) ──────────────────────────────────────────────────
 
 function EditableNumberCell({
-  value, corridorId, field, suffix = '', onSaved,
+  value, corridorId, field, suffix = '', prefix = '', onSaved,
   onSave: customOnSave,
   accent,
   min = 0, max, step = 0.01,
@@ -201,7 +201,7 @@ function EditableNumberCell({
       <span className="text-[0.8125rem] font-semibold tabular-nums">
         {flashOk
           ? <CheckCircle2 size={14} />
-          : (value == null ? '—' : `${value}${suffix}`)
+          : (value == null ? '—' : `${prefix}${value}${suffix}`)
         }
       </span>
       <Pencil size={10} className="text-[#4E5A7A] opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -278,6 +278,7 @@ const EMPTY_FORM = {
   legalEntity: 'SpA',
   alytoCSpread: 2, businessAlytoCSpread: 0.5,
   fixedFee: 300, payinFeePercent: 0.5, profitRetentionPercent: 30,
+  minAmountUSD: 35, minAmountUSDBusiness: 35,
   isActive: true,
 }
 
@@ -433,6 +434,14 @@ function CreateCorridorModal({ onClose, onCreated }) {
           <div>
             <Label>Profit retention (%)</Label>
             <NumInput value={form.profitRetentionPercent} step="1" max="100" onChange={e => set('profitRetentionPercent', e.target.value)} />
+          </div>
+          <div>
+            <Label>Mínimo USD (retail)</Label>
+            <NumInput value={form.minAmountUSD} step="1" min="0" onChange={e => set('minAmountUSD', e.target.value)} />
+          </div>
+          <div>
+            <Label>Mínimo USD (business)</Label>
+            <NumInput value={form.minAmountUSDBusiness} step="1" min="0" onChange={e => set('minAmountUSDBusiness', e.target.value)} />
           </div>
         </div>
 
@@ -789,7 +798,7 @@ export default function CorridorsPanel() {
       {/* ── Tabla ── */}
       {filtered.length > 0 && (
         <div className="overflow-x-auto -mx-4">
-          <table className="w-full min-w-[1400px]">
+          <table className="w-full min-w-[1600px]">
             <thead>
               <tr className="border-b border-[#263050]">
                 <TH>Corredor</TH>
@@ -799,6 +808,8 @@ export default function CorridorsPanel() {
                 <TH>Fee fijo</TH>
                 <TH>Fee payin %</TH>
                 <TH>Retention %</TH>
+                <TH>Mín USD</TH>
+                <TH>Mín Biz $</TH>
                 <TH>Payin / Payout</TH>
                 <TH>Entidad</TH>
                 <TH>Estado</TH>
@@ -886,6 +897,16 @@ export default function CorridorsPanel() {
                   {/* Profit retention % */}
                   <td className="px-3 py-3.5">
                     <EditableNumberCell value={c.profitRetentionPercent} corridorId={c.corridorId} field="profitRetentionPercent" suffix="%" onSaved={onSaved} />
+                  </td>
+
+                  {/* Mínimo USD retail */}
+                  <td className="px-3 py-3.5">
+                    <EditableNumberCell value={c.minAmountUSD}           corridorId={c.corridorId} field="minAmountUSD"           prefix="$" step={1} min={0} onSaved={onSaved} />
+                  </td>
+
+                  {/* Mínimo USD business */}
+                  <td className="px-3 py-3.5">
+                    <EditableNumberCell value={c.minAmountUSDBusiness}   corridorId={c.corridorId} field="minAmountUSDBusiness"   prefix="$" step={1} min={0} onSaved={onSaved} accent="text-[#1D9E75]" />
                   </td>
 
                   {/* Métodos */}

@@ -262,6 +262,18 @@ export function fetchAdminUsers() {
   return request('/admin/users')
 }
 
+export function fetchAdminUser(userId) {
+  return request(`/admin/users/${userId}`)
+}
+
+export function updateAdminUser(userId, data) {
+  return request(`/admin/users/${userId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
 /**
  * Obtiene las últimas 100 operaciones del libro mayor global (solo admin).
  * @returns {Promise<{ total: number, transactions: Array }>}

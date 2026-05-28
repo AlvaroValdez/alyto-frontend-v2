@@ -63,6 +63,7 @@ import SpAConfigPage       from '../pages/Admin/SpAConfig/SpAConfigPage'
 import WalletAdminPage     from '../pages/Admin/Wallet/WalletAdminPage'
 import ReclamosAdminPage   from '../pages/Admin/Reclamos/ReclamosAdminPage'
 import SanctionsPage       from '../pages/Admin/Sanctions/SanctionsPage'
+import UsersPage           from '../pages/Admin/Users/UsersPage'
 
 // ── Páginas legacy ────────────────────────────────────────────────────────────
 import TransferView   from '../components/TransferView'
@@ -169,6 +170,7 @@ export default function AppRouter() {
         <Route path="/admin/wallet"          element={<WalletAdminPage />}   />
         <Route path="/admin/reclamos"        element={<ReclamosAdminPage />} />
         <Route path="/admin/sanctions"       element={<SanctionsPage />}     />
+        <Route path="/admin/users"           element={<UsersPage />}         />
       </Route>
 
       {/* ── 404 ─────────────────────────────────────────────────────────── */}
