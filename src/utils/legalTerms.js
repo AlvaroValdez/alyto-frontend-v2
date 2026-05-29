@@ -41,7 +41,8 @@ Al aceptar, el Usuario declara haber leído, entendido y aceptado íntegramente 
 // ── Contrato SRL (Bolivia — AV Finance SRL) ────────────────────────────────
 
 const TERMS_SRL = `TÉRMINOS DE SERVICIO Y POLÍTICA DE PRIVACIDAD
-AV Finance SRL — La Paz / Cochabamba, Bolivia
+AV Finance SRL — La Paz, Bolivia
+Domicilio legal: Av. Ramiro Castillo N° 13 | Domicilio operativo: Calle Otero de la Vega N° 295
 
 Versión vigente: 19 de marzo de 2026
 

@@ -9,7 +9,8 @@ export const LEGAL_DOCS = {
           content: `Alyto Wallet es operado por tres entidades legales diferenciadas:
 
 ▸ AV Finance SRL — Bolivia (Entidad PSAV)
-Av. Saavedra 1001, La Paz, Bolivia | soporte@alyto.app
+Domicilio legal: Av. Ramiro Castillo N° 13, La Paz, Bolivia | soporte@alyto.app
+Domicilio operativo: Calle Otero de la Vega N° 295, La Paz, Bolivia
 Opera como Proveedor de Servicios de Activos Virtuales (PSAV) conforme al Decreto Supremo N° 5384 y la Circular ASFI 885/2025. Registro PSAV ante ASFI en trámite.
 
 ▸ AV Finance SpA — Chile (Intermediario de Pagos)
@@ -134,7 +135,8 @@ Autoridades: ASFI Bolivia (asfi.gob.bo) | CMF Chile (cmfchile.cl) | FTC EE.UU. (
           content: `Alyto Wallet is operated by three distinct legal entities:
 
 ▸ AV Finance SRL — Bolivia (VASP Entity)
-Av. Saavedra 1001, La Paz, Bolivia | soporte@alyto.app
+Legal address: Av. Ramiro Castillo N° 13, La Paz, Bolivia | soporte@alyto.app
+Operational address: Calle Otero de la Vega N° 295, La Paz, Bolivia
 Operates as a Virtual Asset Service Provider (VASP) under Bolivian Supreme Decree N° 5384 and ASFI Circular 885/2025. VASP registration pending before ASFI.
 
 ▸ AV Finance SpA — Chile (Payment Intermediary)
@@ -243,7 +245,7 @@ Contato: soporte@alyto.app | alyto.app`,
       sections: [
         {
           title: '1. Responsable del Tratamiento',
-          content: `AV Finance LLC (131 Continental Dr, Dover, Delaware, EE.UU.), AV Finance SpA (Maipú 378, Antofagasta, Chile) y AV Finance SRL (Av. Saavedra 1001, La Paz, Bolivia). Contacto: soporte@alyto.app`,
+          content: `AV Finance LLC (131 Continental Dr, Dover, Delaware, EE.UU.), AV Finance SpA (Maipú 378, Antofagasta, Chile) y AV Finance SRL (Av. Ramiro Castillo N° 13, La Paz, Bolivia). Contacto: soporte@alyto.app`,
         },
         {
           title: '2. Datos que Recopilamos',
@@ -281,7 +283,7 @@ Contato: soporte@alyto.app | alyto.app`,
       sections: [
         {
           title: '1. Data Controller',
-          content: `AV Finance LLC (131 Continental Dr, Dover, Delaware, USA), AV Finance SpA (Maipú 378, Antofagasta, Chile), AV Finance SRL (Av. Saavedra 1001, La Paz, Bolivia). Contact: soporte@alyto.app`,
+          content: `AV Finance LLC (131 Continental Dr, Dover, Delaware, USA), AV Finance SpA (Maipú 378, Antofagasta, Chile), AV Finance SRL (Av. Ramiro Castillo N° 13, La Paz, Bolivia). Contact: soporte@alyto.app`,
         },
         {
           title: '2. Data We Collect',
