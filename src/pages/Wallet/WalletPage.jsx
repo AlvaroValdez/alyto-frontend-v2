@@ -291,14 +291,21 @@ function QuickQRSheet({ open, onClose }) {
 function Modal({ open, onClose, title, children }) {
   if (!open) return null
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-end justify-center"
+    <div className="fixed inset-0 z-[200] flex items-end justify-center"
       style={{ background: '#0F162899' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="w-full max-w-[430px] bg-white rounded-t-3xl px-6 pt-5 pb-8"
-        style={{ border: '1px solid #E2E8F0', borderBottom: 'none' }}>
-        <div className="flex items-center justify-between mb-5">
+      <div
+        className="w-full max-w-[430px] bg-white rounded-t-3xl px-6 pt-5 overflow-y-auto"
+        style={{
+          border: '1px solid #E2E8F0',
+          borderBottom: 'none',
+          maxHeight: '90dvh',
+          paddingBottom: 'max(2rem, env(safe-area-inset-bottom) + 1.5rem)',
+        }}
+      >
+        <div className="flex items-center justify-between mb-5 sticky top-0 bg-white pt-1 pb-2 z-10">
           <h3 className="text-[1rem] font-bold text-[#0F172A]">{title}</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#F1F5F9] flex items-center justify-center">
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#F1F5F9] flex items-center justify-center flex-shrink-0">
             <X size={16} className="text-[#64748B]" />
           </button>
         </div>

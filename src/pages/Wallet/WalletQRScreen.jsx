@@ -28,6 +28,7 @@ import { request } from '../../services/api'
  */
 async function buildQRWithLogo(qrBase64) {
   return new Promise((resolve) => {
+    const src = qrBase64.startsWith('data:') ? qrBase64 : `data:image/png;base64,${qrBase64}`
     const qrImg   = new Image()
     const logoImg = new Image()
     let loaded = 0
@@ -35,11 +36,13 @@ async function buildQRWithLogo(qrBase64) {
     const onLoad = () => {
       loaded++
       if (loaded < 2) return
-      const size    = 400
+      // Usar resolución nativa del QR para evitar distorsiones (mínimo 400px)
+      const size    = Math.max(qrImg.naturalWidth || 400, 400)
       const canvas  = document.createElement('canvas')
       canvas.width  = size
       canvas.height = size
       const ctx     = canvas.getContext('2d')
+      ctx.imageSmoothingEnabled = false
       ctx.drawImage(qrImg, 0, 0, size, size)
 
       const logoSize = Math.round(size * 0.22)
@@ -62,18 +65,19 @@ async function buildQRWithLogo(qrBase64) {
       ctx.quadraticCurveTo(x, y, x + r, y)
       ctx.closePath()
       ctx.fill()
+      ctx.imageSmoothingEnabled = true
       ctx.drawImage(logoImg, x + padding, y + padding, logoSize, logoSize)
 
       try { resolve(canvas.toDataURL('image/png')) }
-      catch { resolve(qrBase64) }
+      catch { resolve(src) }
     }
 
     qrImg.onload    = onLoad
     logoImg.onload  = onLoad
-    qrImg.onerror   = () => resolve(qrBase64)
-    logoImg.onerror = () => resolve(qrBase64)
+    qrImg.onerror   = () => resolve(src)
+    logoImg.onerror = () => { ctx?.drawImage?.(qrImg, 0, 0); resolve(src) }
 
-    qrImg.src   = qrBase64
+    qrImg.src   = src
     logoImg.src = '/assets/LogoAlytoBlack.png'
   })
 }
@@ -151,13 +155,22 @@ function CountdownBadge({ expiresAt }) {
 
 // ── Tab: Cobrar ───────────────────────────────────────────────────────────────
 
+const TTL_OPTIONS = [
+  { label: '10 min',  secs: 600   },
+  { label: '30 min',  secs: 1800  },
+  { label: '1 hora',  secs: 3600  },
+  { label: '8 horas', secs: 28800 },
+  { label: '24 hs',   secs: 86400 },
+]
+
 function TabCobrar({ user }) {
-  const [fixedAmount, setFixedAmount]   = useState(true)
-  const [amount,      setAmount]        = useState('')
-  const [description, setDescription]  = useState('')
-  const [loading,     setLoading]       = useState(false)
-  const [qrData,      setQrData]        = useState(null)
-  const [error,       setError]         = useState(null)
+  const [fixedAmount,  setFixedAmount]  = useState(true)
+  const [amount,       setAmount]       = useState('')
+  const [description,  setDescription] = useState('')
+  const [expirySecs,   setExpirySecs]  = useState(600)
+  const [loading,      setLoading]     = useState(false)
+  const [qrData,       setQrData]      = useState(null)
+  const [error,        setError]       = useState(null)
 
   async function handleGenerate() {
     setError(null)
@@ -168,8 +181,8 @@ function TabCobrar({ user }) {
     setLoading(true)
     try {
       const body = fixedAmount
-        ? { type: 'charge', amount: Number(amount), description: description || undefined }
-        : { type: 'deposit', description: description || undefined }
+        ? { type: 'charge', amount: Number(amount), description: description || undefined, expiresInSecs: expirySecs }
+        : { type: 'deposit', description: description || undefined, expiresInSecs: expirySecs }
 
       const data = await request('/wallet/qr/generate', { method: 'POST', body: JSON.stringify(body) })
       setQrData(data)
@@ -180,14 +193,29 @@ function TabCobrar({ user }) {
     }
   }
 
-  function handleShare() {
+  async function handleShare() {
     if (!qrData?.qrBase64) return
-    if (navigator.share) {
-      navigator.share({ title: 'QR Alyto', text: `Págame Bs. ${formatBOB(qrData.amount)} con Alyto` })
-        .catch(() => {})
-    } else {
-      handleDownload()
+    const src = await buildQRWithLogo(qrData.qrBase64)
+    const text = qrData.amount
+      ? `Págame Bs. ${formatBOB(qrData.amount)} con Alyto`
+      : `Pagar con Alyto${description ? ' — ' + description : ''}`
+
+    if (navigator.canShare) {
+      try {
+        const res   = await fetch(src)
+        const blob  = await res.blob()
+        const file  = new File([blob], `alyto-qr.png`, { type: 'image/png' })
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'QR Alyto', text })
+          return
+        }
+      } catch { /* fallback */ }
     }
+    if (navigator.share) {
+      navigator.share({ title: 'QR Alyto', text }).catch(() => {})
+      return
+    }
+    handleDownload()
   }
 
   async function handleDownload() {
@@ -295,10 +323,10 @@ function TabCobrar({ user }) {
         </div>
       )}
 
-      {/* Descripción */}
+      {/* Motivo */}
       <div>
         <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
-          Descripción (opcional)
+          Motivo (opcional)
         </label>
         <input
           type="text"
@@ -308,6 +336,29 @@ function TabCobrar({ user }) {
           placeholder="Ej: café, servicio, producto..."
           className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.9375rem] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all placeholder:text-[#CBD5E1]"
         />
+      </div>
+
+      {/* Vencimiento */}
+      <div>
+        <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
+          Vence en
+        </label>
+        <div className="flex gap-1.5 flex-wrap">
+          {TTL_OPTIONS.map(opt => (
+            <button
+              key={opt.secs}
+              type="button"
+              onClick={() => setExpirySecs(opt.secs)}
+              className={`px-3 py-1.5 rounded-lg text-[0.8125rem] font-semibold transition-all border ${
+                expirySecs === opt.secs
+                  ? 'bg-[#233E58] text-white border-[#233E58]'
+                  : 'bg-white text-[#64748B] border-[#E2E8F0] hover:border-[#233E5833]'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && (
