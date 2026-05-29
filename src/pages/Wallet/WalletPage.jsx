@@ -198,7 +198,7 @@ function QuickQRSheet({ open, onClose }) {
   useEffect(() => {
     if (!open || qrData) return
     setLoading(true); setError(null)
-    request('/wallet/qr/generate', { method: 'POST', body: JSON.stringify({ type: 'p2p' }) })
+    request('/wallet/qr/generate', { method: 'POST', body: JSON.stringify({ type: 'deposit' }) })
       .then(d => setQrData(d))
       .catch(e => setError(e.message || 'Error al generar el QR.'))
       .finally(() => setLoading(false))
