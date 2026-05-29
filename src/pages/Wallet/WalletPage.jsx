@@ -1298,15 +1298,21 @@ function ConvertModal({ open, onClose, onSuccess, bobBalance, rate }) {
               Convierte tus Bolivianos (BOB) a USDC al tipo de cambio Alyto vigente. Mínimo Bs. 50.
             </p>
           </div>
-          {rate && (
-            <div className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5"
-              style={{ background: '#22C55E0D', border: '1px solid #22C55E22' }}>
+          {/* Tipo de cambio siempre visible */}
+          <div className="flex items-center justify-between rounded-xl px-4 py-3"
+            style={{ background: '#22C55E0D', border: '1px solid #22C55E22' }}>
+            <div className="flex items-center gap-2">
               <ArrowRightLeft size={13} className="text-[#22C55E]" />
               <span className="text-[0.8125rem] font-semibold text-[#22C55E]">
-                Tipo de cambio: 1 USDC = Bs. {rate.toFixed(2)}
+                {rate ? `1 USDC = Bs. ${rate.toFixed(2)}` : 'Cargando tasa...'}
               </span>
             </div>
-          )}
+            {rate && amount && Number(amount) >= 50 && (
+              <span className="text-[0.8125rem] font-bold text-[#22C55E]">
+                ≈ {(Number(amount) / rate).toFixed(4)} USDC
+              </span>
+            )}
+          </div>
           <div>
             <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">¿Cuántos BOB quieres convertir?</label>
             <div className="relative">

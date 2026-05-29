@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import jsQR from 'jsqr'
 import {
   ArrowLeft, QrCode, Camera, CameraOff, Download, Share2,
@@ -163,10 +163,10 @@ const TTL_OPTIONS = [
   { label: '24 hs',   secs: 86400 },
 ]
 
-function TabCobrar({ user }) {
+function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
   const [fixedAmount,  setFixedAmount]  = useState(true)
-  const [amount,       setAmount]       = useState('')
-  const [description,  setDescription] = useState('')
+  const [amount,       setAmount]       = useState(initialAmount)
+  const [description,  setDescription] = useState(initialDescription)
   const [expirySecs,   setExpirySecs]  = useState(600)
   const [loading,      setLoading]     = useState(false)
   const [qrData,       setQrData]      = useState(null)
@@ -643,7 +643,7 @@ function TabPagar() {
         )}
 
         {!scanning && (
-          <div className="flex flex-col items-center gap-4 py-10">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
             <button
               onClick={startCamera}
               className="flex flex-col items-center gap-3"
@@ -852,8 +852,13 @@ const TABS = [
 ]
 
 export default function WalletQRScreen() {
-  const { user }    = useAuth()
-  const navigate    = useNavigate()
+  const { user }       = useAuth()
+  const navigate       = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  const initialAmount      = searchParams.get('amount')      ?? ''
+  const initialDescription = searchParams.get('description') ?? ''
+  // Si vienen parámetros, abrir directamente en tab cobrar
   const [tab, setTab] = useState('cobrar')
 
   return (
@@ -895,7 +900,7 @@ export default function WalletQRScreen() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto pt-2 pb-8">
-        {tab === 'cobrar' && <TabCobrar user={user} />}
+        {tab === 'cobrar' && <TabCobrar user={user} initialAmount={initialAmount} initialDescription={initialDescription} />}
         {tab === 'pagar'  && <TabPagar />}
         {tab === 'mi-qr'  && <TabMiQR  user={user} />}
       </div>
