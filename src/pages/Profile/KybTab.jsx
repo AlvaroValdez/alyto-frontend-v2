@@ -53,7 +53,7 @@ const GOLD_GLOW   = 'rgba(232,184,75,0.32)'
 
 function NotStartedCard({ navigate }) {
   const benefits = [
-    'Spread desde 0.5% — vs 2% en cuenta personal',
+    'Spread preferencial business: 4% vs 6.5% de cuenta personal (corredores estándar)',
     'Factura B2B formal en cada transferencia',
     'Atención Business prioritaria — tus transferencias se procesan primero',
     'Acceso a todos los corredores disponibles',
@@ -115,7 +115,7 @@ function NotStartedCard({ navigate }) {
                 Cuenta Business
               </h3>
               <p className="text-[0.75rem]" style={{ color: 'rgba(232,184,75,0.60)' }}>
-                Spread desde 0.5% · Factura B2B · Atención prioritaria
+                Spread preferencial · Factura B2B · Atención prioritaria
               </p>
             </div>
           </div>

@@ -274,7 +274,7 @@ export default function KybListPage() {
 
                 {/* Volumen */}
                 <span className="text-[0.8125rem] text-[#8A96B8] truncate">
-                  {VOLUMES.find(v => v.value === item.estimatedVolume)?.label ?? item.estimatedVolume ?? '—'}
+                  {VOLUMES.find(v => v.value === item.estimatedMonthlyVolume)?.label ?? item.estimatedMonthlyVolume ?? '—'}
                 </span>
 
                 {/* Estado */}

@@ -41,10 +41,11 @@ function SkeletonCard() {
 
 function NotStartedState({ navigate }) {
   const benefits = [
-    'Tickets hasta $50.000 USD por transacción',
+    'Spread preferencial business: 4% vs 6.5% de cuenta personal (corredores estándar)',
     'Corredores globales: USD, EUR, CNY, BRL, MXN, AED',
-    'Comisiones transparentes desde 0.5% sin cargos ocultos',
-    'Soporte prioritario dedicado',
+    'Factura B2B formal en cada transferencia — sin cargos ocultos',
+    'Límites empresariales conforme a normativa ASFI (Bolivia)',
+    'Atención Business prioritaria',
   ]
   const requirements = [
     'NIT de la empresa',
@@ -74,8 +75,10 @@ function NotStartedState({ navigate }) {
         </div>
 
         <p className="text-[0.875rem] text-[#8A96B8] mb-5 leading-relaxed">
-          Accede a pagos internacionales con comisiones desde{' '}
-          <span className="text-[#C4CBD8] font-semibold">0.5%</span> y sin límites operativos restrictivos.
+          Pagos internacionales con{' '}
+          <span className="text-[#C4CBD8] font-semibold">spread preferencial</span> y límites
+          empresariales conforme a la normativa vigente. El detalle exacto de comisiones se
+          muestra en cada cotización.
         </p>
 
         <button
