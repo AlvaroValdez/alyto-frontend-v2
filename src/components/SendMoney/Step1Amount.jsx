@@ -444,8 +444,14 @@ export default function Step1Amount({ initialData, onNext }) {
 
   // ── WebSocket quote ───────────────────────────────────────────────────────
 
+  // Router EU automático: para destino EU NO enviamos corridorId fijo — el backend
+  // elige Harbor/Vita según el monto (rango Harbor [30,9998] USD). Para el resto,
+  // mantenemos el corridorId explícito (desambigua casos como bo-cn vs bo-cn-usd).
+  const isEuAutoRoute = selectedCountry?.code === 'EU'
+  const quoteCorridorId = isEuAutoRoute ? null : (selectedCountry?.corridorId || null)
+
   const { quote, status, error, errorMeta, isStale, countdown, reconnect } =
-    useQuoteSocket(rawAmount || null, selectedCountry?.code || null, selectedCountry?.corridorId || null)
+    useQuoteSocket(rawAmount || null, selectedCountry?.code || null, quoteCorridorId)
 
   // ── Mínimo owlPay — calculado con la tasa real del quote Harbor ─────────────
   // Para BOB: usa quote.exchangeRate (1 BOB = X USD) cuando está disponible —
@@ -499,10 +505,15 @@ export default function Step1Amount({ initialData, onNext }) {
 
   function handleNext() {
     if (!canContinue) return
+    // En auto-route EU, el corredor lo eligió el backend por monto → usar quote.corridorId.
+    // En el resto, el corridorId explícito de la selección del usuario.
+    const resolvedCorridorId = isEuAutoRoute
+      ? (quote?.corridorId ?? null)
+      : (selectedCountry.corridorId ?? null)
     onNext({
       originAmount:       rawAmount,
       destinationCountry: selectedCountry.code,
-      corridorId:         selectedCountry.corridorId ?? null,
+      corridorId:         resolvedCorridorId,
       quote,
       quoteFetchedAt:     Date.now(),
     })
