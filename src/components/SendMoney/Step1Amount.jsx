@@ -111,6 +111,7 @@ function corridorsToCountries(corridors) {
       payoutMethod: c.payoutMethod  ?? null,
       minAmountUSD:    c.minAmountUSD    ?? null,
       minAmountOrigin: c.minAmountOrigin ?? null,
+      autoRouted:   c.autoRouted === true,   // backend colapsó multi-proveedor → ruteo por monto
     })
   }
   result.sort((a, b) => a.name.localeCompare(b.name, 'es'))
@@ -444,10 +445,11 @@ export default function Step1Amount({ initialData, onNext }) {
 
   // ── WebSocket quote ───────────────────────────────────────────────────────
 
-  // Router EU automático: para destino EU NO enviamos corridorId fijo — el backend
-  // elige Harbor/Vita según el monto (rango Harbor [30,9998] USD). Para el resto,
-  // mantenemos el corridorId explícito (desambigua casos como bo-cn vs bo-cn-usd).
-  const isEuAutoRoute = selectedCountry?.code === 'EU'
+  // Auto-router: para corredores marcados autoRouted por el backend (ej. EU, con
+  // Harbor+Vita), NO enviamos corridorId fijo — el backend elige proveedor según el
+  // monto y devuelve el corridorId resuelto. Para el resto, corridorId explícito
+  // (desambigua casos como bo-cn vs bo-cn-usd).
+  const isEuAutoRoute = selectedCountry?.autoRouted === true
   const quoteCorridorId = isEuAutoRoute ? null : (selectedCountry?.corridorId || null)
 
   const { quote, status, error, errorMeta, isStale, countdown, reconnect } =
@@ -458,7 +460,9 @@ export default function Step1Amount({ initialData, onNext }) {
   // es la única tasa que refleja el rate real de Harbor (mercado, no ASFI).
   // Si aún no hay quote, muestra solo el mínimo en USD sin equivalente BOB.
   const minAmountForCorridor = (() => {
-    if (selectedCountry?.payoutMethod !== 'owlPay') return null
+    // owlPay y auto-ruteados (ej. EU Harbor+Vita) muestran el piso en USD.
+    // Para auto-ruteados el min es el más bajo del grupo (Vita), enviado por el backend.
+    if (selectedCountry?.payoutMethod !== 'owlPay' && !selectedCountry?.autoRouted) return null
     const usdMin = selectedCountry?.minAmountUSD
     if (!usdMin) return null
     if (origin.currency === 'BOB') {
