@@ -123,6 +123,45 @@ function NotStartedState({ navigate }) {
   )
 }
 
+// ── Helpers de presentación ─────────────────────────────────────────────────
+
+function SummaryRow({ label, value }) {
+  if (!value) return null
+  return (
+    <div className="flex items-center justify-between py-1.5">
+      <span className="text-[0.75rem] text-[#8A96B8]">{label}</span>
+      <span className="text-[0.8125rem] text-white font-medium text-right break-all ml-3">{value}</span>
+    </div>
+  )
+}
+
+function fmtFecha(iso) {
+  if (!iso) return null
+  try {
+    return new Date(iso).toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  } catch { return null }
+}
+
+function BusinessSummary({ kybData }) {
+  const b = kybData?.business
+  if (!b?.legalName && !kybData?.businessId) return null
+  return (
+    <div
+      className="w-full mt-3 rounded-xl px-4 py-3 text-left"
+      style={{ background: '#0F1628', border: '1px solid #263050' }}
+    >
+      <p className="text-[0.625rem] font-bold text-[#4E5A7A] uppercase tracking-wider mb-1.5">
+        Resumen de tu postulación
+      </p>
+      <SummaryRow label="Razón social" value={b?.legalName} />
+      <SummaryRow label="Nombre comercial" value={b?.tradeName} />
+      <SummaryRow label="NIT / Tax ID" value={b?.taxId} />
+      <SummaryRow label="Documentos" value={kybData?.documents?.length ? `${kybData.documents.length} subido(s)` : null} />
+      <SummaryRow label="Enviada" value={fmtFecha(kybData?.submittedAt)} />
+    </div>
+  )
+}
+
 // ── Estado: pending / under_review ─────────────────────────────────────────
 
 function PendingState({ kybData }) {
@@ -156,6 +195,7 @@ function PendingState({ kybData }) {
             </p>
           </div>
         )}
+        <BusinessSummary kybData={kybData} />
       </div>
     </div>
   )
@@ -202,9 +242,15 @@ function MoreInfoState({ kybData, onOpenModal }) {
 // ── Estado: approved ───────────────────────────────────────────────────────
 
 function ApprovedState({ kybData, navigate }) {
+  // Límites REALES desde transactionLimits del backend (moneda incluida).
+  // SRL: Bs (BOB); LLC/SpA: USD. Nunca inventar defaults.
+  const tl  = kybData?.transactionLimits ?? {}
+  const cur = tl.currency ?? 'USD'
+  const fmtMoney = (n) =>
+    n == null ? '—' : `${cur === 'USD' ? '$' : ''}${Number(n).toLocaleString('es-BO')} ${cur}`
   const limits = [
-    { label: 'Máximo por transacción', value: `$${(kybData?.maxTransactionUsd ?? 50000).toLocaleString('en-US')} USD` },
-    { label: 'Volumen mensual',         value: `$${(kybData?.maxMonthlyUsd ?? 80000).toLocaleString('en-US')} USD` },
+    { label: 'Máximo por transacción', value: fmtMoney(tl.maxSingleTransaction) },
+    { label: 'Volumen mensual',         value: fmtMoney(tl.maxMonthlyVolume) },
   ]
   return (
     <div className="px-4">
@@ -304,7 +350,10 @@ function MoreInfoModal({ onClose }) {
     setError(null)
     try {
       const fd = new FormData()
-      files.forEach(f => fd.append('documents', f))
+      // El backend espera el campo 'documentos' (upload.array('documentos', 10)).
+      files.forEach(f => fd.append('documentos', f))
+      // Tipos de documento por archivo (backend los mapea por índice).
+      fd.append('documentTypes', JSON.stringify(files.map(() => 'other')))
       await uploadMoreInfo(fd)
       setDone(true)
     } catch (err) {
@@ -404,6 +453,36 @@ function MoreInfoModal({ onClose }) {
   )
 }
 
+// ── Estado: error de carga ─────────────────────────────────────────────────
+
+function ErrorState({ onRetry, message }) {
+  return (
+    <div className="px-4">
+      <div className="rounded-2xl bg-[#1A2340] border border-[#EF444433] p-6 flex flex-col items-center text-center">
+        <div
+          className="w-14 h-14 rounded-full flex items-center justify-center mb-4"
+          style={{ background: '#EF44441A', border: '1px solid #EF444433' }}
+        >
+          <AlertTriangle size={26} className="text-[#EF4444]" />
+        </div>
+        <h2 className="text-[1.0625rem] font-bold text-white mb-1">
+          No pudimos cargar el estado
+        </h2>
+        <p className="text-[0.875rem] text-[#8A96B8] mb-5">
+          {message ?? 'Hubo un problema al consultar tu postulación. Reintenta en unos segundos.'}
+        </p>
+        <button
+          onClick={onRetry}
+          className="w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-[#0F1628]"
+          style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.3)' }}
+        >
+          Reintentar
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────
 
 export default function KybPage() {
@@ -412,17 +491,24 @@ export default function KybPage() {
   const [status, setStatus]   = useState(null)
   const [kybData, setKybData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState(false)
   const [showModal, setShowModal] = useState(false)
 
-  useEffect(() => {
+  function loadStatus() {
+    setLoading(true)
+    setError(false)
     getKybStatus()
       .then(data => {
         setStatus(data.kybStatus ?? 'not_started')
         setKybData(data)
       })
-      .catch(() => setStatus('not_started'))
+      // Distinguir error de red/servidor de "not_started" — antes un 500 hacía
+      // que un postulante existente viera la pantalla de "solicitar cuenta".
+      .catch(() => setError(true))
       .finally(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => { loadStatus() }, [])
 
   const isPending = status === 'pending' || status === 'under_review'
 
@@ -448,6 +534,8 @@ export default function KybPage() {
         {/* ── Content ── */}
         {loading ? (
           <SkeletonCard />
+        ) : error ? (
+          <ErrorState onRetry={loadStatus} />
         ) : status === 'not_started' ? (
           <NotStartedState navigate={navigate} />
         ) : isPending ? (
@@ -458,7 +546,10 @@ export default function KybPage() {
           <ApprovedState kybData={kybData} navigate={navigate} />
         ) : status === 'rejected' ? (
           <RejectedState kybData={kybData} />
-        ) : null}
+        ) : (
+          // Fallback: estado desconocido/parcial — nunca pantalla en blanco.
+          <ErrorState onRetry={loadStatus} message={`Estado no reconocido: ${status ?? '—'}`} />
+        )}
 
       </div>
 

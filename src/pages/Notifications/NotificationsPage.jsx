@@ -31,6 +31,11 @@ const TYPE_CONFIG = {
   conversion_rejected:  { Icon: AlertCircle,    color: '#EF4444', bg: '#EF44441A' },
   qr_payment:           { Icon: Wallet,         color: '#3B82F6', bg: '#3B82F61A' },
   kyc:                  { Icon: CheckCircle2,   color: '#F59E0B', bg: '#F59E0B1A' },
+  // ── KYB / cuenta business ──
+  kyb_approved:         { Icon: Shield,         color: '#22C55E', bg: '#22C55E1A' },
+  kyb_rejected:         { Icon: AlertCircle,    color: '#EF4444', bg: '#EF44441A' },
+  kyb_more_info:        { Icon: FileText,       color: '#F59E0B', bg: '#F59E0B1A' },
+  kyb_under_review:     { Icon: Shield,         color: '#3B82F6', bg: '#3B82F61A' },
   system:               { Icon: Bell,           color: '#64748B', bg: '#64748B1A' },
   // ── Admin-facing ──
   transfer_initiated:      { Icon: ArrowUpRight,  color: '#233E58', bg: '#233E581A' },

@@ -201,22 +201,17 @@ function MoreInfoCard({ navigate }) {
 // ── Estado: approved ───────────────────────────────────────────────────────
 
 function ApprovedCard({ kybData, navigate, isSRL }) {
-  const currency = kybData?.limitsCurrency ?? (isSRL ? 'BOB' : 'USD')
+  // Límites REALES desde transactionLimits del backend (con su moneda).
+  const tl       = kybData?.transactionLimits ?? {}
+  const currency = tl.currency ?? (isSRL ? 'BOB' : 'USD')
   const symbol   = currency === 'BOB' ? 'Bs' : '$'
   const locale   = currency === 'BOB' ? 'es-BO' : 'en-US'
 
-  const singleDefault = isSRL ? 49_999 : 50_000
-  const monthlyDefault = isSRL ? 300_000 : 80_000
+  const fmt = (n) => (n == null ? '—' : `${symbol} ${Number(n).toLocaleString(locale)} ${currency}`)
 
   const limits = [
-    {
-      label: 'Límite por transacción',
-      value: `${symbol} ${(kybData?.maxTransactionUsd ?? singleDefault).toLocaleString(locale)} ${currency}`,
-    },
-    {
-      label: 'Volumen mensual',
-      value: `${symbol} ${(kybData?.maxMonthlyUsd ?? monthlyDefault).toLocaleString(locale)} ${currency}`,
-    },
+    { label: 'Límite por transacción', value: fmt(tl.maxSingleTransaction) },
+    { label: 'Volumen mensual',         value: fmt(tl.maxMonthlyVolume) },
   ]
 
   return (
