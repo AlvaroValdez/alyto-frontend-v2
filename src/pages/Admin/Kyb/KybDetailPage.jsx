@@ -188,12 +188,15 @@ function DocViewer({ doc, label }) {
 
 // ── Decision panel ─────────────────────────────────────────────────────────
 
-function DecisionPanel({ businessId, currentStatus, onDecision }) {
+function DecisionPanel({ businessId, currentStatus, limits, onDecision }) {
+  // Moneda y defaults desde los límites reales del perfil (SRL=BOB 49.999/300.000,
+  // LLC/SpA=USD). Evita mostrar/enviar límites USD a una empresa boliviana.
+  const currency = limits?.currency ?? 'USD'
   const [decision,      setDecision]      = useState('approved')
   const [note,          setNote]          = useState('')
   const [rejReason,     setRejReason]     = useState('')
-  const [maxTx,         setMaxTx]         = useState(50000)
-  const [maxMonthly,    setMaxMonthly]    = useState(80000)
+  const [maxTx,         setMaxTx]         = useState(limits?.maxSingleTransaction ?? 50000)
+  const [maxMonthly,    setMaxMonthly]    = useState(limits?.maxMonthlyVolume ?? 80000)
   const [saving,        setSaving]        = useState(false)
   const [error,         setError]         = useState(null)
   const [success,       setSuccess]       = useState(false)
@@ -291,7 +294,7 @@ function DecisionPanel({ businessId, currentStatus, onDecision }) {
       {decision === 'approved' && (
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className={labelCls}>Límite por transacción (USD)</label>
+            <label className={labelCls}>Límite por transacción ({currency})</label>
             <input
               type="number"
               className={inputCls}
@@ -300,7 +303,7 @@ function DecisionPanel({ businessId, currentStatus, onDecision }) {
             />
           </div>
           <div>
-            <label className={labelCls}>Límite mensual (USD)</label>
+            <label className={labelCls}>Límite mensual ({currency})</label>
             <input
               type="number"
               className={inputCls}
@@ -555,6 +558,7 @@ export default function KybDetailPage() {
           <DecisionPanel
             businessId={data.businessId ?? businessId}
             currentStatus={data.kybStatus}
+            limits={data.transactionLimits}
             onDecision={fetchDetail}
           />
         </div>

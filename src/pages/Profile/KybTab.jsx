@@ -23,17 +23,17 @@ function BobRegulatoryNotice() {
   return (
     <div
       className="flex items-start gap-3 rounded-2xl px-4 py-3.5 mt-3"
-      style={{ background: '#FFFBEB', border: '1px solid #F59E0B33' }}
+      style={{ background: '#F59E0B0D', border: '1px solid #F59E0B33' }}
     >
       <Info size={15} className="text-[#F59E0B] flex-shrink-0 mt-0.5" />
       <div>
         <p className="text-[0.8125rem] font-semibold text-[#F59E0B] mb-1">
           Límites regulatorios vigentes — Bolivia
         </p>
-        <p className="text-[0.75rem] text-[#4A5568] leading-relaxed">
-          Conforme a la <span className="text-[#0D1F3C]">RND 102400000021</span> (Bancarización, Bolivia),
-          operamos hasta <span className="text-[#0D1F3C]">Bs 49.999 por transacción</span> y{' '}
-          <span className="text-[#0D1F3C]">Bs 300.000 mensuales</span> mientras AV Finance SRL tramita
+        <p className="text-[0.75rem] text-[#8A96B8] leading-relaxed">
+          Conforme a la <span className="text-white">RND 102400000021</span> (Bancarización, Bolivia),
+          operamos hasta <span className="text-white">Bs 49.999 por transacción</span> y{' '}
+          <span className="text-white">Bs 300.000 mensuales</span> mientras AV Finance SRL tramita
           su licencia ETF/PSAV ante ASFI. Los límites se actualizarán automáticamente al obtener
           la habilitación regulatoria.
         </p>
