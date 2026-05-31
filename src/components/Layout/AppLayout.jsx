@@ -115,8 +115,10 @@ export default function AppLayout() {
               {/* Logo — solo visible en mobile */}
               <Link to="/dashboard" className="no-underline flex-shrink-0 lg:hidden">
                 <img
-                  src="/assets/LogoAlyto.png"
-                  alt="Alyto"
+                  src={(user?.accountType === 'business' || user?.kybStatus === 'approved')
+                    ? '/assets/LogoAlytoBuss.png'
+                    : '/assets/LogoAlyto.png'}
+                  alt={(user?.accountType === 'business' || user?.kybStatus === 'approved') ? 'Alyto Business' : 'Alyto'}
                   style={{ height: 26, width: 'auto', objectFit: 'contain' }}
                 />
               </Link>
