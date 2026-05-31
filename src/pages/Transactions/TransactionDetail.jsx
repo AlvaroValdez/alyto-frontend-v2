@@ -1230,7 +1230,8 @@ export default function TransactionDetail() {
 
                   <a
                     href={`https://stellar.expert/explorer/${
-                      import.meta.env.VITE_STELLAR_NETWORK === 'mainnet' ? 'public' : 'testnet'
+                      tx.stellarNetwork
+                        ?? (import.meta.env.VITE_STELLAR_NETWORK === 'mainnet' ? 'public' : 'testnet')
                     }/tx/${tx.stellarTxId}`}
                     target="_blank"
                     rel="noopener noreferrer"
