@@ -189,6 +189,52 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  // ── Cierre de sesión por inactividad ──────────────────────────────────────
+  // El JWT del backend dura 24h fijo (sin idle-timeout server-side). Para que
+  // una sesión no quede abierta indefinidamente, el frontend cierra sesión tras
+  // IDLE_TIMEOUT_MS sin actividad del usuario: revoca server-side (logout) y
+  // redirige a /login?expired=1 (mismo destino que el 401 global).
+  // Configurable vía VITE_IDLE_TIMEOUT_MIN (default 10 min — política compliance).
+  useEffect(() => {
+    if (!user) return // solo con sesión activa
+
+    const IDLE_MIN = Number(import.meta.env.VITE_IDLE_TIMEOUT_MIN) || 10
+    const IDLE_TIMEOUT_MS = IDLE_MIN * 60 * 1000
+    const THROTTLE_MS = 1000 // no reprogramar el timer más de 1×/s
+
+    let timerId = null
+    let lastReset = 0
+
+    const onIdle = async () => {
+      try {
+        await logout()
+      } finally {
+        window.location.replace('/login?expired=1')
+      }
+    }
+
+    const arm = () => {
+      if (timerId) clearTimeout(timerId)
+      timerId = setTimeout(onIdle, IDLE_TIMEOUT_MS)
+    }
+
+    const onActivity = () => {
+      const now = Date.now()
+      if (now - lastReset < THROTTLE_MS) return // throttle: evita coste en mousemove
+      lastReset = now
+      arm()
+    }
+
+    const EVENTS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click']
+    EVENTS.forEach(e => window.addEventListener(e, onActivity, { passive: true }))
+    arm() // inicia el contador al montar / al haber sesión
+
+    return () => {
+      if (timerId) clearTimeout(timerId)
+      EVENTS.forEach(e => window.removeEventListener(e, onActivity))
+    }
+  }, [user, logout])
+
   /**
    * updateUser(partial) — actualiza campos del usuario en contexto sin re-login.
    */
