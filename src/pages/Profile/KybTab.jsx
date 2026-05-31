@@ -125,9 +125,9 @@ function NotStartedCard({ navigate }) {
             onClick={() => navigate('/kyb')}
             className="w-full py-3 rounded-xl text-[0.875rem] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-all duration-150"
             style={{
-              background: `linear-gradient(135deg, ${GOLD} 0%, #D4A33A 100%)`,
-              color: '#0D1F3C',
-              boxShadow: `0 4px 20px ${GOLD_GLOW}`,
+              background: '#1D3461',
+              color: '#FFFFFF',
+              boxShadow: '0 4px 16px rgba(29,52,97,0.25)',
             }}
           >
             Solicitar cuenta Business <ChevronRight size={16} />
@@ -181,7 +181,7 @@ function MoreInfoCard({ navigate }) {
       </p>
       <button
         onClick={() => navigate('/kyb')}
-        className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-[#0D1F3C]"
+        className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-white"
         style={{ background: '#1D3461', boxShadow: '0 4px 20px rgba(35,62,88,0.3)' }}
       >
         Subir documentos
@@ -230,7 +230,7 @@ function ApprovedCard({ kybData, navigate, isSRL }) {
         </div>
         <button
           onClick={() => navigate('/send')}
-          className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-[#0D1F3C] flex items-center justify-center gap-2"
+          className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-white flex items-center justify-center gap-2"
           style={{ background: '#1D3461', boxShadow: '0 4px 20px rgba(35,62,88,0.3)' }}
         >
           Empezar a operar →
@@ -261,7 +261,7 @@ function RejectedCard({ kybData }) {
         href={WHATSAPP_SUPPORT}
         target="_blank"
         rel="noopener noreferrer"
-        className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-[#0D1F3C] text-center block"
+        className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-white text-center block"
         style={{ background: '#1D3461', boxShadow: '0 4px 20px rgba(35,62,88,0.3)' }}
       >
         Contactar soporte
@@ -315,7 +315,7 @@ export default function KybTab({ kycStatus, legalEntity }) {
           </p>
           <button
             onClick={() => navigate('/kyc')}
-            className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-[#0D1F3C]"
+            className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-white"
             style={{ background: '#1D3461', boxShadow: '0 4px 20px rgba(35,62,88,0.3)' }}
           >
             Completar verificación →
