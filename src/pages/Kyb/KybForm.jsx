@@ -128,8 +128,8 @@ const DOCS_SCHEMA = [
 
 // ── Clases reutilizables ───────────────────────────────────────────────────
 
-const inputCls = 'w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white border border-[#263050] bg-[#1A2340] focus:outline-none focus:border-[#C4CBD8] focus:shadow-[0_0_0_2px_#C4CBD820] placeholder-[#4E5A7A]'
-const labelCls = 'block text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5'
+const inputCls = 'w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-[#0F172A] border border-[#E2E8F0] bg-white focus:outline-none focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#1D346120] placeholder-[#94A3B8]'
+const labelCls = 'block text-[0.625rem] font-semibold text-[#64748B] uppercase tracking-wider mb-1.5'
 const selectCls = `${inputCls} appearance-none`
 
 // ── Step indicator ─────────────────────────────────────────────────────────
@@ -146,9 +146,9 @@ function StepIndicator({ step, total }) {
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center text-[0.75rem] font-bold transition-all"
               style={{
-                background: done ? '#22C55E1A' : active ? '#C4CBD8' : '#1A2340',
-                border: `1.5px solid ${done ? '#22C55E' : active ? '#C4CBD8' : '#263050'}`,
-                color: done ? '#22C55E' : active ? '#0F1628' : '#4E5A7A',
+                background: done ? '#22C55E1A' : active ? '#1D3461' : '#FFFFFF',
+                border: `1.5px solid ${done ? '#22C55E' : active ? '#1D3461' : '#E2E8F0'}`,
+                color: done ? '#22C55E' : active ? '#F8FAFC' : '#94A3B8',
               }}
             >
               {done ? <CheckCircle2 size={14} /> : n}
@@ -156,7 +156,7 @@ function StepIndicator({ step, total }) {
             {n < total && (
               <div
                 className="w-8 h-px"
-                style={{ background: done ? '#22C55E66' : '#263050' }}
+                style={{ background: done ? '#22C55E66' : '#E2E8F0' }}
               />
             )}
           </div>
@@ -172,8 +172,8 @@ function Step1({ form, onChange }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-2">
-        <Building2 size={18} className="text-[#C4CBD8]" />
-        <h2 className="text-[1rem] font-bold text-white">Datos de la empresa</h2>
+        <Building2 size={18} className="text-[#1D3461]" />
+        <h2 className="text-[1rem] font-bold text-[#0F172A]">Datos de la empresa</h2>
       </div>
 
       <div>
@@ -263,7 +263,7 @@ function Step1({ form, onChange }) {
         <label className={labelCls}>Teléfono corporativo *</label>
         <div className="flex gap-2">
           <select
-            className={`${selectCls} min-w-[90px] w-auto`}
+            className={`${selectCls} w-[84px] flex-shrink-0 pr-6`}
             value={form.phonePrefix ?? '+591'}
             onChange={e => onChange('phonePrefix', e.target.value)}
           >
@@ -272,7 +272,7 @@ function Step1({ form, onChange }) {
             ))}
           </select>
           <input
-            className={`${inputCls} flex-1`}
+            className={`${inputCls} flex-1 min-w-0`}
             placeholder="2 123 4567"
             type="tel"
             value={form.phone}
@@ -300,8 +300,8 @@ function Step2({ form, onChange }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-2">
-        <User size={18} className="text-[#C4CBD8]" />
-        <h2 className="text-[1rem] font-bold text-white">Representante legal</h2>
+        <User size={18} className="text-[#1D3461]" />
+        <h2 className="text-[1rem] font-bold text-[#0F172A]">Representante legal</h2>
       </div>
 
       <div>
@@ -379,8 +379,8 @@ function Step3({ form, onChange, files, onFileChange, corridorOptions }) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-2 mb-2">
-        <Globe size={18} className="text-[#C4CBD8]" />
-        <h2 className="text-[1rem] font-bold text-white">Operativa y documentos</h2>
+        <Globe size={18} className="text-[#1D3461]" />
+        <h2 className="text-[1rem] font-bold text-[#0F172A]">Operativa y documentos</h2>
       </div>
 
       {/* Volumen mensual */}
@@ -411,9 +411,9 @@ function Step3({ form, onChange, files, onFileChange, corridorOptions }) {
                 onClick={() => toggleCorridor(c.value)}
                 className="px-3 py-2 rounded-xl text-[0.8125rem] font-medium text-left transition-all"
                 style={{
-                  background: selected ? '#C4CBD81A' : '#1A2340',
-                  border: `1px solid ${selected ? '#C4CBD8' : '#263050'}`,
-                  color: selected ? '#C4CBD8' : '#8A96B8',
+                  background: selected ? '#1D34610D' : '#FFFFFF',
+                  border: `1px solid ${selected ? '#1D3461' : '#E2E8F0'}`,
+                  color: selected ? '#1D3461' : '#64748B',
                 }}
               >
                 {selected && <span className="mr-1">✓</span>}
@@ -446,7 +446,7 @@ function Step3({ form, onChange, files, onFileChange, corridorOptions }) {
               <div
                 key={doc.key}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer"
-                style={{ background: '#1A2340', border: `1px solid ${file ? '#22C55E33' : '#263050'}` }}
+                style={{ background: '#FFFFFF', border: `1px solid ${file ? '#22C55E33' : '#E2E8F0'}` }}
                 onClick={() => inputRefs.current[doc.key]?.click()}
               >
                 <input
@@ -459,14 +459,14 @@ function Step3({ form, onChange, files, onFileChange, corridorOptions }) {
                 {file ? (
                   <CheckCircle2 size={16} className="text-[#22C55E] flex-shrink-0" />
                 ) : (
-                  <Upload size={16} className="text-[#4E5A7A] flex-shrink-0" />
+                  <Upload size={16} className="text-[#94A3B8] flex-shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-[0.8125rem] font-medium text-white truncate">
+                  <p className="text-[0.8125rem] font-medium text-[#0F172A] truncate">
                     {file ? file.name : doc.label}
                   </p>
                   {!file && (
-                    <p className="text-[0.6875rem] text-[#4E5A7A]">
+                    <p className="text-[0.6875rem] text-[#94A3B8]">
                       {doc.required ? 'Requerido' : 'Opcional'} · PDF, JPG, PNG
                     </p>
                   )}
@@ -475,7 +475,7 @@ function Step3({ form, onChange, files, onFileChange, corridorOptions }) {
                   <button
                     type="button"
                     onClick={e => { e.stopPropagation(); onFileChange(doc.key, null) }}
-                    className="text-[#4E5A7A] hover:text-[#EF4444] transition-colors"
+                    className="text-[#94A3B8] hover:text-[#EF4444] transition-colors"
                   >
                     <X size={14} />
                   </button>
@@ -618,22 +618,22 @@ export default function KybForm() {
   const isLastStep  = step === 3
 
   return (
-    <div className="min-h-screen bg-[#0F1628] font-sans flex flex-col max-w-[430px] mx-auto">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans flex flex-col max-w-[430px] mx-auto">
       <div className="flex-1 overflow-y-auto scrollbar-hide pb-8">
 
         {/* ── Header ── */}
         <div className="px-5 pt-8 pb-4">
           <button
             onClick={() => step > 1 ? (setStep(s => s - 1), setError(null)) : navigate('/kyb')}
-            className="mb-5 flex items-center gap-2 text-[#8A96B8] text-[0.875rem] hover:text-white transition-colors"
+            className="mb-5 flex items-center gap-2 text-[#64748B] text-[0.875rem] hover:text-[#0F172A] transition-colors"
           >
             <ArrowLeft size={16} />
             {step > 1 ? 'Paso anterior' : 'Volver'}
           </button>
-          <p className="text-[0.75rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1">
+          <p className="text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wider mb-1">
             Solicitud Business — Paso {step} de 3
           </p>
-          <h1 className="text-[1.125rem] font-bold text-white">{STEP_LABELS[step - 1]}</h1>
+          <h1 className="text-[1.125rem] font-bold text-[#0F172A]">{STEP_LABELS[step - 1]}</h1>
         </div>
 
         {/* ── Step indicator ── */}
@@ -669,10 +669,10 @@ export default function KybForm() {
           <button
             onClick={isLastStep ? handleSubmit : handleNext}
             disabled={saving}
-            className="mt-6 w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-[#0F1628] flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
+            className="mt-6 w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-white flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
             style={{
-              background: '#C4CBD8',
-              boxShadow: '0 4px 20px rgba(196,203,216,0.3)',
+              background: '#1D3461',
+              boxShadow: '0 4px 16px rgba(29,52,97,0.25)',
             }}
           >
             {saving ? (

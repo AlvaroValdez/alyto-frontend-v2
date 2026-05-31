@@ -27,11 +27,11 @@ const WHATSAPP_SUPPORT = `https://wa.me/${import.meta.env.VITE_SUPPORT_WHATSAPP 
 function SkeletonCard() {
   return (
     <div className="px-4 animate-pulse">
-      <div className="rounded-2xl bg-[#1A2340] p-5">
-        <div className="h-5 w-32 bg-[#263050] rounded-full mb-4" />
-        <div className="h-3.5 w-full bg-[#263050] rounded-full mb-2" />
-        <div className="h-3.5 w-3/4 bg-[#263050] rounded-full mb-6" />
-        <div className="h-10 w-full bg-[#263050] rounded-xl" />
+      <div className="rounded-2xl bg-white p-5">
+        <div className="h-5 w-32 bg-[#E2E8F0] rounded-full mb-4" />
+        <div className="h-3.5 w-full bg-[#E2E8F0] rounded-full mb-2" />
+        <div className="h-3.5 w-3/4 bg-[#E2E8F0] rounded-full mb-6" />
+        <div className="h-10 w-full bg-[#E2E8F0] rounded-xl" />
       </div>
     </div>
   )
@@ -59,34 +59,34 @@ function NotStartedState({ navigate }) {
       <div
         className="rounded-2xl p-5"
         style={{
-          background: 'linear-gradient(135deg, #1D3461 0%, #0F1628 60%, #1A2030 100%)',
-          border: '1px solid #C4CBD833',
-          boxShadow: '0 8px 40px rgba(0,0,0,0.5), 0 0 60px rgba(196,203,216,0.06)',
+          background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 4px 24px rgba(15,23,42,0.08)',
         }}
       >
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-2xl bg-[#C4CBD81A] border border-[#C4CBD833] flex items-center justify-center">
-            <Building2 size={20} className="text-[#C4CBD8]" />
+          <div className="w-10 h-10 rounded-2xl bg-[#1D34610D] border border-[#E2E8F0] flex items-center justify-center">
+            <Building2 size={20} className="text-[#1D3461]" />
           </div>
           <div>
-            <h2 className="text-[1rem] font-bold text-white">Cuenta Business</h2>
-            <p className="text-[0.75rem] text-[#8A96B8]">Pagos institucionales globales</p>
+            <h2 className="text-[1rem] font-bold text-[#0F172A]">Cuenta Business</h2>
+            <p className="text-[0.75rem] text-[#64748B]">Pagos institucionales globales</p>
           </div>
         </div>
 
-        <p className="text-[0.875rem] text-[#8A96B8] mb-5 leading-relaxed">
+        <p className="text-[0.875rem] text-[#64748B] mb-5 leading-relaxed">
           Pagos internacionales con{' '}
-          <span className="text-[#C4CBD8] font-semibold">spread preferencial</span> y límites
+          <span className="text-[#1D3461] font-semibold">spread preferencial</span> y límites
           empresariales conforme a la normativa vigente. El detalle exacto de comisiones se
           muestra en cada cotización.
         </p>
 
         <button
           onClick={() => navigate('/kyb/apply')}
-          className="w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-[#0F1628] transition-colors"
+          className="w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-white transition-colors"
           style={{
-            background: '#C4CBD8',
-            boxShadow: '0 4px 20px rgba(196,203,216,0.3)',
+            background: '#1D3461',
+            boxShadow: '0 4px 16px rgba(29,52,97,0.25)',
           }}
         >
           Solicitar cuenta Business →
@@ -94,30 +94,30 @@ function NotStartedState({ navigate }) {
       </div>
 
       {/* Beneficios */}
-      <div className="rounded-2xl bg-[#1A2340] border border-[#263050] p-5">
-        <h3 className="text-[0.75rem] font-bold text-[#4E5A7A] uppercase tracking-wider mb-3">
+      <div className="rounded-2xl bg-white border border-[#E2E8F0] p-5">
+        <h3 className="text-[0.75rem] font-bold text-[#94A3B8] uppercase tracking-wider mb-3">
           Beneficios
         </h3>
         <ul className="space-y-2.5">
           {benefits.map(b => (
             <li key={b} className="flex items-start gap-2.5">
               <CheckCircle2 size={16} className="text-[#22C55E] mt-0.5 flex-shrink-0" />
-              <span className="text-[0.875rem] text-[#8A96B8] leading-snug">{b}</span>
+              <span className="text-[0.875rem] text-[#64748B] leading-snug">{b}</span>
             </li>
           ))}
         </ul>
       </div>
 
       {/* Requisitos */}
-      <div className="rounded-2xl bg-[#1A2340] border border-[#263050] p-5">
-        <h3 className="text-[0.75rem] font-bold text-[#4E5A7A] uppercase tracking-wider mb-3">
+      <div className="rounded-2xl bg-white border border-[#E2E8F0] p-5">
+        <h3 className="text-[0.75rem] font-bold text-[#94A3B8] uppercase tracking-wider mb-3">
           Documentos requeridos
         </h3>
         <ul className="space-y-2.5">
           {requirements.map(r => (
             <li key={r} className="flex items-center gap-2.5">
-              <FileText size={15} className="text-[#C4CBD8] flex-shrink-0" />
-              <span className="text-[0.875rem] text-[#8A96B8]">{r}</span>
+              <FileText size={15} className="text-[#1D3461] flex-shrink-0" />
+              <span className="text-[0.875rem] text-[#64748B]">{r}</span>
             </li>
           ))}
         </ul>
@@ -132,8 +132,8 @@ function SummaryRow({ label, value }) {
   if (!value) return null
   return (
     <div className="flex items-center justify-between py-1.5">
-      <span className="text-[0.75rem] text-[#8A96B8]">{label}</span>
-      <span className="text-[0.8125rem] text-white font-medium text-right break-all ml-3">{value}</span>
+      <span className="text-[0.75rem] text-[#64748B]">{label}</span>
+      <span className="text-[0.8125rem] text-[#0F172A] font-medium text-right break-all ml-3">{value}</span>
     </div>
   )
 }
@@ -151,9 +151,9 @@ function BusinessSummary({ kybData }) {
   return (
     <div
       className="w-full mt-3 rounded-xl px-4 py-3 text-left"
-      style={{ background: '#0F1628', border: '1px solid #263050' }}
+      style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}
     >
-      <p className="text-[0.625rem] font-bold text-[#4E5A7A] uppercase tracking-wider mb-1.5">
+      <p className="text-[0.625rem] font-bold text-[#94A3B8] uppercase tracking-wider mb-1.5">
         Resumen de tu postulación
       </p>
       <SummaryRow label="Razón social" value={b?.legalName} />
@@ -170,30 +170,30 @@ function BusinessSummary({ kybData }) {
 function PendingState({ kybData }) {
   return (
     <div className="px-4">
-      <div className="rounded-2xl bg-[#1A2340] border border-[#263050] p-6 flex flex-col items-center text-center">
+      <div className="rounded-2xl bg-white border border-[#E2E8F0] p-6 flex flex-col items-center text-center">
         <div
           className="w-14 h-14 rounded-full flex items-center justify-center mb-4"
-          style={{ background: '#C4CBD81A', border: '1px solid #C4CBD833' }}
+          style={{ background: '#1D34610D', border: '1px solid #E2E8F0' }}
         >
-          <Clock size={26} className="text-[#C4CBD8]" />
+          <Clock size={26} className="text-[#1D3461]" />
         </div>
-        <h2 className="text-[1.0625rem] font-bold text-white mb-2">
+        <h2 className="text-[1.0625rem] font-bold text-[#0F172A] mb-2">
           Tu solicitud está en revisión
         </h2>
-        <p className="text-[0.875rem] text-[#8A96B8] leading-relaxed mb-4">
+        <p className="text-[0.875rem] text-[#64748B] leading-relaxed mb-4">
           Revisaremos tu documentación en{' '}
-          <span className="text-white font-semibold">24–72 horas hábiles</span>.
+          <span className="text-[#0F172A] font-semibold">24–72 horas hábiles</span>.
           Te notificaremos por email cuando esté lista.
         </p>
         {kybData?.businessId && (
           <div
             className="w-full rounded-xl px-4 py-3 text-left"
-            style={{ background: '#0F1628', border: '1px dashed #263050' }}
+            style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1' }}
           >
-            <p className="text-[0.625rem] font-bold text-[#4E5A7A] uppercase tracking-wider mb-1">
+            <p className="text-[0.625rem] font-bold text-[#94A3B8] uppercase tracking-wider mb-1">
               ID de solicitud
             </p>
-            <p className="text-[0.8125rem] font-mono text-[#C4CBD8] break-all">
+            <p className="text-[0.8125rem] font-mono text-[#1D3461] break-all">
               {kybData.businessId}
             </p>
           </div>
@@ -209,14 +209,14 @@ function PendingState({ kybData }) {
 function MoreInfoState({ kybData, onOpenModal }) {
   return (
     <div className="px-4">
-      <div className="rounded-2xl bg-[#1A2340] border border-[#263050] p-6 flex flex-col items-center text-center">
+      <div className="rounded-2xl bg-white border border-[#E2E8F0] p-6 flex flex-col items-center text-center">
         <div
           className="w-14 h-14 rounded-full flex items-center justify-center mb-4"
           style={{ background: '#F59E0B1A', border: '1px solid #F59E0B33' }}
         >
           <AlertTriangle size={26} className="text-[#F59E0B]" />
         </div>
-        <h2 className="text-[1.0625rem] font-bold text-white mb-2">
+        <h2 className="text-[1.0625rem] font-bold text-[#0F172A] mb-2">
           Necesitamos más información
         </h2>
         {kybData?.kybNote && (
@@ -227,13 +227,13 @@ function MoreInfoState({ kybData, onOpenModal }) {
             <p className="text-[0.625rem] font-bold text-[#F59E0B] uppercase tracking-wider mb-1.5">
               Mensaje del revisor
             </p>
-            <p className="text-[0.875rem] text-[#8A96B8] leading-relaxed">{kybData.kybNote}</p>
+            <p className="text-[0.875rem] text-[#64748B] leading-relaxed">{kybData.kybNote}</p>
           </div>
         )}
         <button
           onClick={onOpenModal}
-          className="w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-[#0F1628]"
-          style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.3)' }}
+          className="w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-white"
+          style={{ background: '#1D3461', boxShadow: '0 4px 16px rgba(29,52,97,0.25)' }}
         >
           Subir documentos adicionales
         </button>
@@ -257,17 +257,17 @@ function ApprovedState({ kybData, navigate }) {
   ]
   return (
     <div className="px-4">
-      <div className="rounded-2xl bg-[#1A2340] border border-[#22C55E33] p-6 flex flex-col items-center text-center">
+      <div className="rounded-2xl bg-white border border-[#22C55E33] p-6 flex flex-col items-center text-center">
         <div
           className="w-14 h-14 rounded-full flex items-center justify-center mb-4"
           style={{ background: '#22C55E1A', border: '1px solid #22C55E33' }}
         >
           <CheckCircle2 size={26} className="text-[#22C55E]" />
         </div>
-        <h2 className="text-[1.0625rem] font-bold text-white mb-1">
+        <h2 className="text-[1.0625rem] font-bold text-[#0F172A] mb-1">
           ¡Cuenta Business activa!
         </h2>
-        <p className="text-[0.875rem] text-[#8A96B8] mb-5">
+        <p className="text-[0.875rem] text-[#64748B] mb-5">
           Tu empresa está verificada y lista para operar.
         </p>
 
@@ -276,18 +276,18 @@ function ApprovedState({ kybData, navigate }) {
             <div
               key={l.label}
               className="flex items-center justify-between px-4 py-3 rounded-xl"
-              style={{ background: '#0F1628', border: '1px solid #263050' }}
+              style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}
             >
-              <span className="text-[0.8125rem] text-[#8A96B8]">{l.label}</span>
-              <span className="text-[0.8125rem] font-bold text-white">{l.value}</span>
+              <span className="text-[0.8125rem] text-[#64748B]">{l.label}</span>
+              <span className="text-[0.8125rem] font-bold text-[#0F172A]">{l.value}</span>
             </div>
           ))}
         </div>
 
         <button
           onClick={() => navigate('/send')}
-          className="w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-[#0F1628]"
-          style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.3)' }}
+          className="w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-white"
+          style={{ background: '#1D3461', boxShadow: '0 4px 16px rgba(29,52,97,0.25)' }}
         >
           Empezar a operar →
         </button>
@@ -301,14 +301,14 @@ function ApprovedState({ kybData, navigate }) {
 function RejectedState({ kybData }) {
   return (
     <div className="px-4">
-      <div className="rounded-2xl bg-[#1A2340] border border-[#EF444433] p-6 flex flex-col items-center text-center">
+      <div className="rounded-2xl bg-white border border-[#EF444433] p-6 flex flex-col items-center text-center">
         <div
           className="w-14 h-14 rounded-full flex items-center justify-center mb-4"
           style={{ background: '#EF44441A', border: '1px solid #EF444433' }}
         >
           <XCircle size={26} className="text-[#EF4444]" />
         </div>
-        <h2 className="text-[1.0625rem] font-bold text-white mb-2">
+        <h2 className="text-[1.0625rem] font-bold text-[#0F172A] mb-2">
           Solicitud rechazada
         </h2>
         {kybData?.kybRejectionReason && (
@@ -319,7 +319,7 @@ function RejectedState({ kybData }) {
             <p className="text-[0.625rem] font-bold text-[#EF4444] uppercase tracking-wider mb-1.5">
               Motivo
             </p>
-            <p className="text-[0.875rem] text-[#8A96B8] leading-relaxed">
+            <p className="text-[0.875rem] text-[#64748B] leading-relaxed">
               {kybData.kybRejectionReason}
             </p>
           </div>
@@ -328,8 +328,8 @@ function RejectedState({ kybData }) {
           href={WHATSAPP_SUPPORT}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-[#0F1628] text-center block"
-          style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.3)' }}
+          className="w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-white text-center block"
+          style={{ background: '#1D3461', boxShadow: '0 4px 16px rgba(29,52,97,0.25)' }}
         >
           Contactar soporte
         </a>
@@ -370,11 +370,11 @@ function MoreInfoModal({ onClose }) {
     <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: '#0F162899' }}>
       <div
         className="w-full max-w-[430px] rounded-t-3xl p-6"
-        style={{ background: '#1A2340', border: '1px solid #263050' }}
+        style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}
       >
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-[1rem] font-bold text-white">Documentos adicionales</h3>
-          <button onClick={onClose} className="text-[#4E5A7A] hover:text-white transition-colors">
+          <h3 className="text-[1rem] font-bold text-[#0F172A]">Documentos adicionales</h3>
+          <button onClick={onClose} className="text-[#94A3B8] hover:text-[#0F172A] transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -382,14 +382,14 @@ function MoreInfoModal({ onClose }) {
         {done ? (
           <div className="text-center py-4">
             <CheckCircle2 size={40} className="text-[#22C55E] mx-auto mb-3" />
-            <p className="text-white font-semibold mb-1">Documentos enviados</p>
-            <p className="text-[#8A96B8] text-[0.875rem] mb-5">
+            <p className="text-[#0F172A] font-semibold mb-1">Documentos enviados</p>
+            <p className="text-[#64748B] text-[0.875rem] mb-5">
               Revisaremos tus documentos en las próximas horas.
             </p>
             <button
               onClick={onClose}
-              className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-[#0F1628]"
-              style={{ background: '#C4CBD8' }}
+              className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-white"
+              style={{ background: '#1D3461' }}
             >
               Cerrar
             </button>
@@ -397,14 +397,14 @@ function MoreInfoModal({ onClose }) {
         ) : (
           <>
             <div
-              className="border-2 border-dashed border-[#263050] rounded-xl p-6 flex flex-col items-center gap-3 mb-4 cursor-pointer hover:border-[#C4CBD8] transition-colors"
+              className="border-2 border-dashed border-[#E2E8F0] rounded-xl p-6 flex flex-col items-center gap-3 mb-4 cursor-pointer hover:border-[#1D3461] transition-colors"
               onClick={() => inputRef.current?.click()}
             >
-              <Upload size={24} className="text-[#8A96B8]" />
-              <p className="text-[0.875rem] text-[#8A96B8] text-center">
+              <Upload size={24} className="text-[#64748B]" />
+              <p className="text-[0.875rem] text-[#64748B] text-center">
                 Toca para seleccionar archivos
               </p>
-              <p className="text-[0.75rem] text-[#4E5A7A]">PDF, JPG, PNG — máx. 10 MB c/u</p>
+              <p className="text-[0.75rem] text-[#94A3B8]">PDF, JPG, PNG — máx. 10 MB c/u</p>
               <input
                 ref={inputRef}
                 type="file"
@@ -421,13 +421,13 @@ function MoreInfoModal({ onClose }) {
                   <li
                     key={i}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl"
-                    style={{ background: '#0F1628', border: '1px solid #263050' }}
+                    style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}
                   >
-                    <FileText size={14} className="text-[#C4CBD8] flex-shrink-0" />
-                    <span className="text-[0.8125rem] text-[#8A96B8] truncate flex-1">{f.name}</span>
+                    <FileText size={14} className="text-[#1D3461] flex-shrink-0" />
+                    <span className="text-[0.8125rem] text-[#64748B] truncate flex-1">{f.name}</span>
                     <button
                       onClick={() => setFiles(prev => prev.filter((_, j) => j !== i))}
-                      className="text-[#4E5A7A] hover:text-[#EF4444] transition-colors"
+                      className="text-[#94A3B8] hover:text-[#EF4444] transition-colors"
                     >
                       <X size={14} />
                     </button>
@@ -443,8 +443,8 @@ function MoreInfoModal({ onClose }) {
             <button
               onClick={handleSubmit}
               disabled={saving || !files.length}
-              className="w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-[#0F1628] flex items-center justify-center gap-2 transition-opacity disabled:opacity-50"
-              style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.3)' }}
+              className="w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-white flex items-center justify-center gap-2 transition-opacity disabled:opacity-50"
+              style={{ background: '#1D3461', boxShadow: '0 4px 16px rgba(29,52,97,0.25)' }}
             >
               {saving && <Loader2 size={16} className="animate-spin" />}
               {saving ? 'Enviando…' : 'Enviar documentos'}
@@ -461,23 +461,23 @@ function MoreInfoModal({ onClose }) {
 function ErrorState({ onRetry, message }) {
   return (
     <div className="px-4">
-      <div className="rounded-2xl bg-[#1A2340] border border-[#EF444433] p-6 flex flex-col items-center text-center">
+      <div className="rounded-2xl bg-white border border-[#EF444433] p-6 flex flex-col items-center text-center">
         <div
           className="w-14 h-14 rounded-full flex items-center justify-center mb-4"
           style={{ background: '#EF44441A', border: '1px solid #EF444433' }}
         >
           <AlertTriangle size={26} className="text-[#EF4444]" />
         </div>
-        <h2 className="text-[1.0625rem] font-bold text-white mb-1">
+        <h2 className="text-[1.0625rem] font-bold text-[#0F172A] mb-1">
           No pudimos cargar el estado
         </h2>
-        <p className="text-[0.875rem] text-[#8A96B8] mb-5">
+        <p className="text-[0.875rem] text-[#64748B] mb-5">
           {message ?? 'Hubo un problema al consultar tu postulación. Reintenta en unos segundos.'}
         </p>
         <button
           onClick={onRetry}
-          className="w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-[#0F1628]"
-          style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.3)' }}
+          className="w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-white"
+          style={{ background: '#1D3461', boxShadow: '0 4px 16px rgba(29,52,97,0.25)' }}
         >
           Reintentar
         </button>
@@ -516,7 +516,7 @@ export default function KybPage() {
   const isPending = status === 'pending' || status === 'under_review'
 
   return (
-    <div className="min-h-screen bg-[#0F1628] font-sans flex flex-col max-w-[430px] mx-auto relative">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans flex flex-col max-w-[430px] mx-auto relative">
 
       <div className="flex-1 overflow-y-auto scrollbar-hide pb-24">
 
@@ -524,12 +524,12 @@ export default function KybPage() {
         <div className="px-5 pt-8 pb-4">
           <button
             onClick={() => navigate(-1)}
-            className="mb-5 flex items-center gap-2 text-[#8A96B8] text-[0.875rem] hover:text-white transition-colors"
+            className="mb-5 flex items-center gap-2 text-[#64748B] text-[0.875rem] hover:text-[#0F172A] transition-colors"
           >
             <ArrowLeft size={16} />
             Volver
           </button>
-          <p className="text-[0.75rem] font-semibold text-[#4E5A7A] uppercase tracking-wider">
+          <p className="text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wider">
             Cuenta Business
           </p>
         </div>
@@ -557,7 +557,7 @@ export default function KybPage() {
       </div>
 
       {/* ── Bottom nav ── */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-[#0F1628] border-t border-[#1A2340] flex justify-around px-2 pt-2.5 pb-6 z-40">
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-[#F8FAFC] border-t border-[#E2E8F0] flex justify-around px-2 pt-2.5 pb-6 z-40">
         {[
           { icon: Home,      label: 'Inicio',          to: '/dashboard'    },
           { icon: BarChart2, label: 'Activos',          to: '/assets'       },
@@ -571,11 +571,11 @@ export default function KybPage() {
               to={to}
               className="flex flex-col items-center gap-1 min-w-[56px] no-underline"
             >
-              <Icon size={20} className={active ? 'text-[#C4CBD8]' : 'text-[#4E5A7A]'} />
-              <span className={`text-[0.625rem] font-medium ${active ? 'text-[#C4CBD8]' : 'text-[#4E5A7A]'}`}>
+              <Icon size={20} className={active ? 'text-[#1D3461]' : 'text-[#94A3B8]'} />
+              <span className={`text-[0.625rem] font-medium ${active ? 'text-[#1D3461]' : 'text-[#94A3B8]'}`}>
                 {label}
               </span>
-              {active && <span className="w-1 h-1 rounded-full bg-[#C4CBD8]" />}
+              {active && <span className="w-1 h-1 rounded-full bg-[#1D3461]" />}
             </Link>
           )
         })}

@@ -23,17 +23,17 @@ function BobRegulatoryNotice() {
   return (
     <div
       className="flex items-start gap-3 rounded-2xl px-4 py-3.5 mt-3"
-      style={{ background: '#F59E0B0D', border: '1px solid #F59E0B33' }}
+      style={{ background: '#FFFBEB', border: '1px solid #F59E0B33' }}
     >
       <Info size={15} className="text-[#F59E0B] flex-shrink-0 mt-0.5" />
       <div>
-        <p className="text-[0.8125rem] font-semibold text-[#F59E0B] mb-1">
+        <p className="text-[0.8125rem] font-semibold text-[#B45309] mb-1">
           Límites regulatorios vigentes — Bolivia
         </p>
-        <p className="text-[0.75rem] text-[#8A96B8] leading-relaxed">
-          Conforme a la <span className="text-white">RND 102400000021</span> (Bancarización, Bolivia),
-          operamos hasta <span className="text-white">Bs 49.999 por transacción</span> y{' '}
-          <span className="text-white">Bs 300.000 mensuales</span> mientras AV Finance SRL tramita
+        <p className="text-[0.75rem] text-[#4A5568] leading-relaxed">
+          Conforme a la <span className="text-[#0D1F3C] font-medium">RND 102400000021</span> (Bancarización, Bolivia),
+          operamos hasta <span className="text-[#0D1F3C] font-medium">Bs 49.999 por transacción</span> y{' '}
+          <span className="text-[#0D1F3C] font-medium">Bs 300.000 mensuales</span> mientras AV Finance SRL tramita
           su licencia ETF/PSAV ante ASFI. Los límites se actualizarán automáticamente al obtener
           la habilitación regulatoria.
         </p>
@@ -65,27 +65,19 @@ function NotStartedCard({ navigate }) {
       <div
         className="rounded-2xl p-5 relative overflow-hidden"
         style={{
-          background: 'linear-gradient(145deg, #0D1F3C 0%, #162D4E 55%, #0A1525 100%)',
+          background: '#FFFFFF',
           border: `1px solid ${GOLD_BORDER}`,
-          boxShadow: `0 8px 36px rgba(13,31,60,0.50), 0 0 0 1px ${GOLD_BORDER}`,
+          boxShadow: `0 4px 24px rgba(15,23,42,0.08), 0 0 0 1px ${GOLD_BORDER}`,
         }}
       >
-        {/* Gold radial glow at top */}
+        {/* Gold radial glow at top (sutil sobre blanco) */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'radial-gradient(ellipse at 50% -10%, rgba(232,184,75,0.14) 0%, transparent 55%)',
+            background: 'radial-gradient(ellipse at 50% -10%, rgba(232,184,75,0.10) 0%, transparent 55%)',
           }}
         />
-        {/* Subtle grid texture */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
-            backgroundSize: '24px 24px',
-          }}
-        />
+        {/* Decorative corner circle (gold) */}
         {/* Decorative corner circle */}
         <div
           className="absolute pointer-events-none"
@@ -110,11 +102,11 @@ function NotStartedCard({ navigate }) {
             <div>
               <h3
                 className="text-[0.9375rem] font-bold tracking-tight"
-                style={{ color: GOLD }}
+                style={{ color: '#0D1F3C' }}
               >
                 Cuenta Business
               </h3>
-              <p className="text-[0.75rem]" style={{ color: 'rgba(232,184,75,0.60)' }}>
+              <p className="text-[0.75rem]" style={{ color: '#64748B' }}>
                 Spread preferencial · Factura B2B · Atención prioritaria
               </p>
             </div>
@@ -122,7 +114,7 @@ function NotStartedCard({ navigate }) {
 
           <ul className="space-y-2.5 mb-5">
             {benefits.map(b => (
-              <li key={b} className="flex items-start gap-2.5 text-[0.8125rem]" style={{ color: 'rgba(255,255,255,0.78)' }}>
+              <li key={b} className="flex items-start gap-2.5 text-[0.8125rem]" style={{ color: '#4A5568' }}>
                 <CheckCircle2 size={14} className="mt-0.5 flex-shrink-0" style={{ color: GOLD }} />
                 {b}
               </li>

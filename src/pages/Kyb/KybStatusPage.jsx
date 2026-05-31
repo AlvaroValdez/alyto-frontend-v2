@@ -21,14 +21,14 @@ export default function KybStatusPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#0F1628] font-sans flex flex-col max-w-[430px] mx-auto relative">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans flex flex-col max-w-[430px] mx-auto relative">
 
       <div className="flex-1 overflow-y-auto scrollbar-hide pb-24 flex flex-col items-center justify-center px-5">
 
         {/* ── Confirmation card ── */}
         <div
           className="w-full rounded-2xl p-7 flex flex-col items-center text-center"
-          style={{ background: '#1A2340', border: '1px solid #263050' }}
+          style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}
         >
           {/* Icon */}
           <div
@@ -39,13 +39,13 @@ export default function KybStatusPage() {
           </div>
 
           {/* Title */}
-          <h1 className="text-[1.125rem] font-bold text-white mb-2">
+          <h1 className="text-[1.125rem] font-bold text-[#0F172A] mb-2">
             Solicitud recibida
           </h1>
-          <p className="text-[0.875rem] text-[#8A96B8] leading-relaxed mb-6">
+          <p className="text-[0.875rem] text-[#64748B] leading-relaxed mb-6">
             Hemos recibido tu documentación correctamente.
             Revisaremos tu solicitud en{' '}
-            <span className="text-white font-semibold">24–72 horas hábiles</span>{' '}
+            <span className="text-[#0F172A] font-semibold">24–72 horas hábiles</span>{' '}
             y te notificaremos por email.
           </p>
 
@@ -53,12 +53,12 @@ export default function KybStatusPage() {
           {kybData?.businessId && (
             <div
               className="w-full rounded-xl px-4 py-3 mb-6 text-left"
-              style={{ background: '#0F1628', border: '1px dashed #263050' }}
+              style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1' }}
             >
-              <p className="text-[0.625rem] font-bold text-[#4E5A7A] uppercase tracking-wider mb-1">
+              <p className="text-[0.625rem] font-bold text-[#94A3B8] uppercase tracking-wider mb-1">
                 ID de solicitud
               </p>
-              <p className="text-[0.8125rem] font-mono text-[#C4CBD8] break-all">
+              <p className="text-[0.8125rem] font-mono text-[#1D3461] break-all">
                 {kybData.businessId}
               </p>
             </div>
@@ -68,14 +68,14 @@ export default function KybStatusPage() {
           <div className="w-full space-y-3 mb-7">
             {[
               { icon: CheckCircle2, color: '#22C55E', label: 'Documentación recibida', done: true  },
-              { icon: Clock,        color: '#C4CBD8',  label: 'Revisión interna (24–72 h)', done: false },
-              { icon: Clock,        color: '#4E5A7A',  label: 'Notificación por email', done: false },
+              { icon: Clock,        color: '#1D3461',  label: 'Revisión interna (24–72 h)', done: false },
+              { icon: Clock,        color: '#94A3B8',  label: 'Notificación por email', done: false },
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-3 text-left">
                 <item.icon size={16} style={{ color: item.color, flexShrink: 0 }} />
                 <span
                   className="text-[0.8125rem]"
-                  style={{ color: item.done ? '#FFFFFF' : '#8A96B8' }}
+                  style={{ color: item.done ? '#1D3461' : '#94A3B8' }}
                 >
                   {item.label}
                 </span>
@@ -86,15 +86,15 @@ export default function KybStatusPage() {
           {/* Actions */}
           <button
             onClick={() => navigate('/kyb')}
-            className="w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-[#0F1628] mb-3"
-            style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.3)' }}
+            className="w-full py-3.5 rounded-xl text-[0.9375rem] font-bold text-white mb-3"
+            style={{ background: '#1D3461', boxShadow: '0 4px 16px rgba(29,52,97,0.25)' }}
           >
             Ver estado de mi solicitud
           </button>
           <button
             onClick={() => navigate('/dashboard')}
-            className="w-full py-3.5 rounded-xl text-[0.875rem] font-semibold text-[#8A96B8] transition-colors hover:text-white"
-            style={{ background: 'transparent', border: '1px solid #263050' }}
+            className="w-full py-3.5 rounded-xl text-[0.875rem] font-semibold text-[#64748B] transition-colors hover:text-[#0F172A]"
+            style={{ background: 'transparent', border: '1px solid #E2E8F0' }}
           >
             Ir al inicio
           </button>
@@ -103,7 +103,7 @@ export default function KybStatusPage() {
       </div>
 
       {/* ── Bottom nav ── */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-[#0F1628] border-t border-[#1A2340] flex justify-around px-2 pt-2.5 pb-6 z-40">
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-[#F8FAFC] border-t border-[#E2E8F0] flex justify-around px-2 pt-2.5 pb-6 z-40">
         {[
           { icon: Home,      label: 'Inicio',        to: '/dashboard'    },
           { icon: BarChart2, label: 'Activos',        to: '/assets'       },
@@ -111,8 +111,8 @@ export default function KybStatusPage() {
           { icon: User,      label: 'Perfil',         to: '/profile'      },
         ].map(({ icon: Icon, label, to }) => (
           <Link key={label} to={to} className="flex flex-col items-center gap-1 min-w-[56px] no-underline">
-            <Icon size={20} className="text-[#4E5A7A]" />
-            <span className="text-[0.625rem] font-medium text-[#4E5A7A]">{label}</span>
+            <Icon size={20} className="text-[#94A3B8]" />
+            <span className="text-[0.625rem] font-medium text-[#94A3B8]">{label}</span>
           </Link>
         ))}
       </nav>
