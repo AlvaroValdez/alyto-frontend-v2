@@ -23,7 +23,19 @@ const STATUS_META = {
 
 const COUNTRIES = {
   BO: 'Bolivia', CL: 'Chile', PE: 'Perú', AR: 'Argentina',
-  CO: 'Colombia', BR: 'Brasil', MX: 'México', US: 'EEUU', OTHER: 'Otro',
+  CO: 'Colombia', BR: 'Brasil', MX: 'México', US: 'EEUU',
+  ES: 'España', CN: 'China', AE: 'Emiratos Árabes', GB: 'Reino Unido',
+  OTHER: 'Otro',
+}
+
+// Etiquetas legibles para businessType (códigos de BusinessProfile / KybForm)
+const TYPE_LABELS = {
+  SRL: 'SRL', SA: 'S.A.', SAM: 'SAM', SpA: 'SpA',
+  UNIP: 'Unipersonal', COOP: 'Cooperativa', ASC: 'Asoc./Fundación',
+  LLC: 'LLC', LLP: 'LLP', IND: 'Unipersonal', OTHER: 'Otro',
+  // Legacy
+  sole_proprietor: 'Unipersonal', llc: 'LLC', corporation: 'S.A.',
+  partnership: 'Sociedad', ngo: 'ONG',
 }
 
 const VOLUMES = [
@@ -263,13 +275,16 @@ export default function KybListPage() {
                     {stale && <AlertTriangle size={13} className="text-[#F59E0B] flex-shrink-0" />}
                   </p>
                   <p className="text-[0.75rem] text-[#4E5A7A] truncate">
-                    {COUNTRIES[item.country] ?? item.country ?? '—'} · {item.taxId ?? '—'}
+                    {(() => {
+                      const cc = item.countryOfIncorporation ?? item.country
+                      return COUNTRIES[cc] ?? cc ?? '—'
+                    })()} · {item.taxId ?? '—'}
                   </p>
                 </div>
 
                 {/* Tipo */}
                 <span className="text-[0.8125rem] text-[#8A96B8] truncate">
-                  {item.companyType ?? '—'}
+                  {TYPE_LABELS[item.businessType] ?? item.businessType ?? '—'}
                 </span>
 
                 {/* Volumen */}

@@ -10,11 +10,11 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft, Home, BarChart2, FileText, User,
+  ArrowLeft, FileText,
   Building2, CheckCircle2, Clock, AlertTriangle,
-  XCircle, ChevronRight, Upload, X, Loader2,
+  XCircle, Upload, X, Loader2,
 } from 'lucide-react'
 import { getKybStatus, uploadMoreInfo } from '../../services/kybService'
 
@@ -490,7 +490,6 @@ function ErrorState({ onRetry, message }) {
 
 export default function KybPage() {
   const navigate              = useNavigate()
-  const location              = useLocation()
   const [status, setStatus]   = useState(null)
   const [kybData, setKybData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -518,7 +517,7 @@ export default function KybPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans flex flex-col max-w-[430px] mx-auto relative">
 
-      <div className="flex-1 overflow-y-auto scrollbar-hide pb-24">
+      <div className="flex-1 overflow-y-auto scrollbar-hide pb-8">
 
         {/* ── Header ── */}
         <div className="px-5 pt-8 pb-4">
@@ -556,30 +555,9 @@ export default function KybPage() {
 
       </div>
 
-      {/* ── Bottom nav ── */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-[#F8FAFC] border-t border-[#E2E8F0] flex justify-around px-2 pt-2.5 pb-6 z-40">
-        {[
-          { icon: Home,      label: 'Inicio',          to: '/dashboard'    },
-          { icon: BarChart2, label: 'Activos',          to: '/assets'       },
-          { icon: FileText,  label: 'Transferencias',   to: '/transactions' },
-          { icon: User,      label: 'Perfil',           to: '/profile'      },
-        ].map(({ icon: Icon, label, to }) => {
-          const active = location.pathname.startsWith(to)
-          return (
-            <Link
-              key={label}
-              to={to}
-              className="flex flex-col items-center gap-1 min-w-[56px] no-underline"
-            >
-              <Icon size={20} className={active ? 'text-[#1D3461]' : 'text-[#94A3B8]'} />
-              <span className={`text-[0.625rem] font-medium ${active ? 'text-[#1D3461]' : 'text-[#94A3B8]'}`}>
-                {label}
-              </span>
-              {active && <span className="w-1 h-1 rounded-full bg-[#1D3461]" />}
-            </Link>
-          )
-        })}
-      </nav>
+      {/* La navegación inferior (mobile) y el sidebar (desktop) los provee
+          AppLayout — KybPage NO debe renderizar su propio bottom nav, o se
+          duplicaría en mobile y aparecería indebidamente en desktop. */}
 
       {/* ── Modal documentos adicionales ── */}
       {showModal && <MoreInfoModal onClose={() => setShowModal(false)} />}

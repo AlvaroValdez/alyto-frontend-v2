@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { Camera, FileText, Shield, ChevronRight } from 'lucide-react'
+import { Camera, FileText, Shield, ChevronRight, Building2 } from 'lucide-react'
 import { useAuth }             from '../../context/AuthContext'
 import { useProfile }          from '../../hooks/useProfile'
 import KycStatusCard           from './KycStatusCard'
@@ -184,6 +184,10 @@ export default function ProfilePage() {
   const kycStatus   = profile?.kycStatus   ?? user?.kycStatus   ?? null
   const legalEntity = profile?.legalEntity ?? user?.legalEntity ?? 'LLC'
   const avatarUrl   = profile?.avatarUrl   ?? user?.avatarUrl   ?? null
+  const accountType = profile?.accountType ?? user?.accountType ?? 'personal'
+  const kybStatus   = profile?.kybStatus   ?? user?.kybStatus   ?? null
+  // Cuenta Business activa = accountType business o KYB aprobado.
+  const isBusiness  = accountType === 'business' || kybStatus === 'approved'
 
   async function handleAvatarUpload(file) {
     setAvatarError('')
@@ -241,6 +245,23 @@ export default function ProfilePage() {
 
         {/* ── KYC STATUS CARD ─────────────────────────────────────── */}
         <KycStatusCard kycStatus={kycStatus} />
+
+        {/* ── BUSINESS BADGE — bajo "Identidad verificada" si la cuenta es Business ── */}
+        {isBusiness && (
+          <div className="mx-4 mb-4 rounded-2xl border border-[#1D346133] bg-[#1D34610D] px-4 py-3.5 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-[#1D34611A] flex items-center justify-center flex-shrink-0">
+              <Building2 size={18} className="text-[#1D3461]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[0.875rem] font-semibold text-[#1D3461] leading-tight">
+                Cuenta Business activa ✓
+              </p>
+              <p className="text-[0.75rem] text-[#4A5568] mt-0.5">
+                Operas con límites empresariales y spread preferencial
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* ── TABS ────────────────────────────────────────────────── */}
         <div className="px-4 mb-1">
