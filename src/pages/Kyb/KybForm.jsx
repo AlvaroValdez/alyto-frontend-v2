@@ -261,24 +261,13 @@ function Step1({ form, onChange }) {
 
       <div>
         <label className={labelCls}>Teléfono corporativo *</label>
-        <div className="flex gap-2">
-          <select
-            className={`${selectCls} w-[84px] flex-shrink-0 pr-6`}
-            value={form.phonePrefix ?? '+591'}
-            onChange={e => onChange('phonePrefix', e.target.value)}
-          >
-            {['+591','+56','+1','+54','+57','+52','+55','+51'].map(p => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
-          <input
-            className={`${inputCls} flex-1 min-w-0`}
-            placeholder="2 123 4567"
-            type="tel"
-            value={form.phone}
-            onChange={e => onChange('phone', e.target.value)}
-          />
-        </div>
+        <input
+          className={inputCls}
+          placeholder="+591 2 123 4567"
+          type="tel"
+          value={form.phone}
+          onChange={e => onChange('phone', e.target.value)}
+        />
       </div>
 
       <div>

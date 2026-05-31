@@ -100,7 +100,8 @@ export default function KybListPage() {
         limit: LIMIT,
       })
       setItems(data.items ?? data.applications ?? data ?? [])
-      setTotal(data.total ?? 0)
+      // El backend devuelve { applications, pagination: { total } }.
+      setTotal(data.pagination?.total ?? data.total ?? 0)
     } catch (err) {
       setError(err.message || 'Error al cargar solicitudes')
     } finally {
