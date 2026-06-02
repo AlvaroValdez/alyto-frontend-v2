@@ -1,1 +1,6 @@
+# SEP-1: servir stellar.toml y demás archivos de /.well-known como ficheros
+# reales — debe ir ANTES del catch-all SPA o Render los reescribe a index.html.
+/.well-known/*  /.well-known/:splat  200
+
+# SPA fallback — todo lo demás va a la app React.
 /* /index.html 200
