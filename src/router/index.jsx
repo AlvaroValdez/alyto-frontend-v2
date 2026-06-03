@@ -72,6 +72,10 @@ import SettlementView from '../components/SettlementView'
 import VitaPayoutView from '../components/VitaPayoutView'
 import VitaPayinView  from '../components/VitaPayinView'
 
+// ── SEP-24 (Interactive Anchor — público, también para webviews externas) ─────
+import Sep24DepositPage  from '../pages/Sep24/Sep24DepositPage'
+import Sep24WithdrawPage from '../pages/Sep24/Sep24WithdrawPage'
+
 // ── Otras ─────────────────────────────────────────────────────────────────────
 import PaymentSuccessPage from '../pages/PaymentSuccess/PaymentSuccessPage'
 import NotFoundPage       from '../pages/NotFound/NotFoundPage'
@@ -103,6 +107,10 @@ export default function AppRouter() {
       {/* ── Payment Success — pública (redirect Fintoc) ─────────────────── */}
       <Route path="/payment-success" element={<PaymentSuccessPage />} />
       <Route path="/success"         element={<PaymentSuccessPage />} />
+
+      {/* ── SEP-24 Interactive Anchor — pública (webview de wallets externas) ── */}
+      <Route path="/sep24/deposit"   element={<Sep24DepositPage />} />
+      <Route path="/sep24/withdraw"  element={<Sep24WithdrawPage />} />
 
       {/* ══════════════════════════════════════════════════════════════════
           RUTAS PRIVADAS — todas dentro de AppLayout
