@@ -271,6 +271,36 @@ export function cancelFundingIntent(intentId) {
   })
 }
 
+// ── Comisiones P2P USDC (wallet fees) ────────────────────────────────────────
+
+/**
+ * Config actual de comisiones P2P USDC (singleton).
+ * @returns {Promise<object>} usdcP2pEnabled, usdcP2pFeePercent, ... revenueAccruedUsdc
+ */
+export function getWalletFees() {
+  return request('/admin/wallet-fees')
+}
+
+/**
+ * Actualiza comisiones P2P USDC. Enviar SOLO los campos a cambiar.
+ * @param {object} data
+ * @returns {Promise<object>} config actualizada
+ */
+export function updateWalletFees(data) {
+  return request('/admin/wallet-fees', {
+    method: 'PUT',
+    body:   JSON.stringify(data),
+  })
+}
+
+/**
+ * Revenue acumulada + verificación cruzada contra el ledger de fees.
+ * @returns {Promise<{ revenueAccruedUsdc, verification: { sumFeeTransactions, count, matches } }>}
+ */
+export function getWalletFeeRevenue() {
+  return request('/admin/wallet-fees/revenue')
+}
+
 // ── Tasas de cambio ────────────────────────────────────────────────────────────
 
 /**

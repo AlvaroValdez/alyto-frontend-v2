@@ -6,13 +6,17 @@
  * Sección 3: Wallets activas con opción de congelar
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Wallet, CheckCircle2, AlertCircle, Loader2, RefreshCw,
   ChevronDown, X, Lock, Unlock, ArrowRightLeft, ArrowUpRight, QrCode,
+  Percent, Save, Coins,
 } from 'lucide-react'
 import { request } from '../../../services/api'
-import { listPendingConversions, confirmConversion, rejectConversion } from '../../../services/adminService'
+import {
+  listPendingConversions, confirmConversion, rejectConversion,
+  getWalletFees, updateWalletFees, getWalletFeeRevenue,
+} from '../../../services/adminService'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -642,6 +646,265 @@ function RejectConversionModal({ conversion, open, onClose, onSuccess }) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
+// ════════════════════════════════════════════════════════════════════════════
+//  COMISIONES P2P USDC — config editable + revenue acumulada
+// ════════════════════════════════════════════════════════════════════════════
+
+// Campos editables (deben coincidir con EDITABLE del backend walletFeeController)
+const FEE_FIELDS = [
+  'usdcP2pFeePercent', 'usdcP2pFeeFixed', 'usdcP2pFeeMin', 'usdcP2pFeeMax', 'usdcP2pFreeBelow',
+  'businessUsdcP2pFeePercent', 'businessUsdcP2pFeeFixed',
+  'usdcP2pMinPerTx', 'usdcP2pMaxPerTx', 'usdcP2pMaxDaily',
+  'businessUsdcP2pMaxPerTx', 'businessUsdcP2pMaxDaily',
+]
+
+// Normaliza un valor de config a string para el input (null → '')
+const toStr = v => (v == null ? '' : String(v))
+
+function FeeField({ label, value, onChange, suffix, help, placeholder }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-[0.75rem] font-medium text-[#8A96B8]">{label}</label>
+      <div className="relative">
+        <input
+          type="number" inputMode="decimal" step="0.01" min="0"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white border border-[#263050] bg-[#0F1628] focus:outline-none focus:border-[#C4CBD8] transition-colors placeholder:text-[#4E5A7A]"
+          style={{ paddingRight: suffix ? 44 : undefined }}
+        />
+        {suffix && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[0.75rem] text-[#4E5A7A] pointer-events-none">{suffix}</span>
+        )}
+      </div>
+      {help && <p className="text-[0.6875rem] text-[#4E5A7A]">{help}</p>}
+    </div>
+  )
+}
+
+function FeeToggle({ checked, onChange }) {
+  return (
+    <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)}
+      className="flex items-center gap-3">
+      <span style={{
+        display: 'inline-block', width: 46, height: 26, borderRadius: 13,
+        background: checked ? '#22C55E' : '#263050', position: 'relative', flexShrink: 0, transition: 'background 0.2s',
+      }}>
+        <span style={{
+          position: 'absolute', top: 3, left: checked ? 23 : 3,
+          width: 20, height: 20, borderRadius: '50%', background: '#fff',
+          transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+        }} />
+      </span>
+      <span className="text-[0.875rem] font-semibold" style={{ color: checked ? '#22C55E' : '#8A96B8' }}>
+        {checked ? 'Cobrando comisión' : 'Comisión desactivada'}
+      </span>
+    </button>
+  )
+}
+
+function FeeGroup({ title, children }) {
+  return (
+    <div className="rounded-xl p-4" style={{ background: '#0F1628', border: '1px solid #263050' }}>
+      <p className="text-[0.6875rem] font-bold text-[#4E5A7A] uppercase tracking-wider mb-3">{title}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{children}</div>
+    </div>
+  )
+}
+
+function WalletFeesPanel() {
+  const [cfg,     setCfg]     = useState(null)   // config original cargada
+  const [form,    setForm]    = useState(null)   // valores editables (strings + bool)
+  const [revenue, setRevenue] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [saving,  setSaving]  = useState(false)
+  const [error,   setError]   = useState(null)
+  const [saved,   setSaved]   = useState(false)
+
+  const buildForm = (c) => {
+    const f = { usdcP2pEnabled: !!c.usdcP2pEnabled }
+    for (const k of FEE_FIELDS) f[k] = toStr(c[k])
+    return f
+  }
+
+  const load = useCallback(async () => {
+    setLoading(true); setError(null)
+    try {
+      const [c, r] = await Promise.all([getWalletFees(), getWalletFeeRevenue()])
+      setCfg(c); setForm(buildForm(c)); setRevenue(r)
+    } catch (err) {
+      setError(err.message || 'No se pudo cargar la configuración de comisiones')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  // Payload con SOLO los campos cambiados respecto a la config original
+  const changedPayload = useMemo(() => {
+    if (!cfg || !form) return {}
+    const out = {}
+    if (form.usdcP2pEnabled !== !!cfg.usdcP2pEnabled) out.usdcP2pEnabled = form.usdcP2pEnabled
+    for (const k of FEE_FIELDS) {
+      if (k === 'usdcP2pFeeMax') {
+        // null/'' = sin techo
+        const formNull = form[k] === '' || form[k] == null
+        const cfgNull  = cfg[k] == null
+        if (formNull && cfgNull) continue
+        if (formNull && !cfgNull) { out[k] = null; continue }
+        if (Number(form[k]) !== Number(cfg[k])) out[k] = Number(form[k])
+        continue
+      }
+      if (form[k] === '' ) continue                 // vacío en numérico → no tocar
+      if (Number(form[k]) !== Number(cfg[k])) out[k] = Number(form[k])
+    }
+    return out
+  }, [cfg, form])
+
+  const dirty = Object.keys(changedPayload).length > 0
+
+  async function save() {
+    if (!dirty) return
+    setSaving(true); setError(null)
+    try {
+      const updated = await updateWalletFees(changedPayload)
+      setCfg(updated); setForm(buildForm(updated))
+      setSaved(true); setTimeout(() => setSaved(false), 2000)
+      getWalletFeeRevenue().then(setRevenue).catch(() => {})
+    } catch (err) {
+      setError(err.message || 'No se pudo guardar la configuración')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const matches = revenue?.verification?.matches
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-[1rem] font-bold text-white flex items-center gap-2">
+          <Percent size={17} className="text-[#C4CBD8]" />
+          Comisiones P2P USDC
+        </h2>
+        <button onClick={load}
+          className="flex items-center gap-2 text-[0.8125rem] font-medium text-[#8A96B8] hover:text-white px-3 py-2 rounded-xl transition-colors"
+          style={{ border: '1px solid #263050' }}>
+          <RefreshCw size={14} /> Actualizar
+        </button>
+      </div>
+
+      {loading || !form ? (
+        <div className="bg-[#1A2340] rounded-2xl p-8 flex items-center justify-center" style={{ border: '1px solid #263050' }}>
+          <Loader2 size={22} className="animate-spin text-[#C4CBD8]" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          {/* Config (2 columnas) */}
+          <div className="lg:col-span-2 rounded-2xl p-5 space-y-4" style={{ background: '#1A2340', border: '1px solid #263050' }}>
+
+            {/* Toggle cobrar */}
+            <div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: '#0F1628', border: '1px solid #263050' }}>
+              <div>
+                <p className="text-[0.875rem] font-semibold text-white">Cobrar comisión</p>
+                <p className="text-[0.6875rem] text-[#4E5A7A] mt-0.5">Si está apagado, toda transferencia P2P USDC es sin costo.</p>
+              </div>
+              <FeeToggle checked={form.usdcP2pEnabled} onChange={v => set('usdcP2pEnabled', v)} />
+            </div>
+
+            <FeeGroup title="Retail">
+              <FeeField label="Comisión %"     value={form.usdcP2pFeePercent} onChange={v => set('usdcP2pFeePercent', v)} suffix="%" />
+              <FeeField label="Comisión fija"  value={form.usdcP2pFeeFixed}   onChange={v => set('usdcP2pFeeFixed', v)}   suffix="USDC" />
+              <FeeField label="Mínimo de fee"  value={form.usdcP2pFeeMin}     onChange={v => set('usdcP2pFeeMin', v)}     suffix="USDC" />
+              <FeeField label="Máximo de fee"  value={form.usdcP2pFeeMax}     onChange={v => set('usdcP2pFeeMax', v)}     suffix="USDC" placeholder="sin techo" help="Vacío = sin techo" />
+              <FeeField label="Sin fee bajo"   value={form.usdcP2pFreeBelow}  onChange={v => set('usdcP2pFreeBelow', v)}  suffix="USDC" help="Montos menores no pagan fee" />
+            </FeeGroup>
+
+            <FeeGroup title="Business">
+              <FeeField label="Comisión %"    value={form.businessUsdcP2pFeePercent} onChange={v => set('businessUsdcP2pFeePercent', v)} suffix="%" />
+              <FeeField label="Comisión fija" value={form.businessUsdcP2pFeeFixed}   onChange={v => set('businessUsdcP2pFeeFixed', v)}   suffix="USDC" />
+            </FeeGroup>
+
+            <FeeGroup title="Límites retail">
+              <FeeField label="Mín por tx"    value={form.usdcP2pMinPerTx} onChange={v => set('usdcP2pMinPerTx', v)} suffix="USDC" />
+              <FeeField label="Máx por tx"    value={form.usdcP2pMaxPerTx} onChange={v => set('usdcP2pMaxPerTx', v)} suffix="USDC" />
+              <FeeField label="Máx diario"    value={form.usdcP2pMaxDaily} onChange={v => set('usdcP2pMaxDaily', v)} suffix="USDC" />
+            </FeeGroup>
+
+            <FeeGroup title="Límites business">
+              <FeeField label="Máx por tx"    value={form.businessUsdcP2pMaxPerTx} onChange={v => set('businessUsdcP2pMaxPerTx', v)} suffix="USDC" />
+              <FeeField label="Máx diario"    value={form.businessUsdcP2pMaxDaily} onChange={v => set('businessUsdcP2pMaxDaily', v)} suffix="USDC" />
+            </FeeGroup>
+
+            {error && (
+              <div className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ background: '#EF44441A', border: '1px solid #EF444433' }}>
+                <AlertCircle size={14} className="text-[#F87171] flex-shrink-0" />
+                <p className="text-[0.75rem] text-[#F87171]">{error}</p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3">
+              {dirty && !saving && <span className="text-[0.75rem] text-[#F59E0B]">Cambios sin guardar</span>}
+              <button onClick={save} disabled={!dirty || saving}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[0.875rem] font-bold text-[#0F1628] disabled:opacity-40 transition-all active:scale-[0.98]"
+                style={{ background: saved ? '#22C55E' : '#C4CBD8' }}>
+                {saving ? <Loader2 size={15} className="animate-spin" /> : saved ? <CheckCircle2 size={15} /> : <Save size={15} />}
+                {saving ? 'Guardando...' : saved ? 'Guardado' : 'Guardar cambios'}
+              </button>
+            </div>
+          </div>
+
+          {/* Revenue acumulada (1 columna) */}
+          <div className="rounded-2xl p-5 flex flex-col" style={{ background: '#1A2340', border: '1px solid #263050' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-7 h-7 rounded-xl bg-[#C4CBD81A] border border-[#C4CBD833] flex items-center justify-center">
+                <Coins size={13} className="text-[#C4CBD8]" />
+              </div>
+              <p className="text-[0.875rem] font-bold text-white">Revenue acumulada</p>
+            </div>
+
+            <p className="text-[2rem] font-extrabold text-white leading-none">
+              {Number(revenue?.revenueAccruedUsdc ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+              <span className="text-[0.875rem] font-bold text-[#8A96B8] ml-1.5">USDC</span>
+            </p>
+
+            <div className="mt-5 pt-4 space-y-2.5" style={{ borderTop: '1px solid #263050' }}>
+              <div className="flex items-center justify-between">
+                <span className="text-[0.75rem] text-[#8A96B8]">Suma ledger de fees</span>
+                <span className="text-[0.8125rem] font-semibold text-white">
+                  {Number(revenue?.verification?.sumFeeTransactions ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USDC
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[0.75rem] text-[#8A96B8]">Transacciones de fee</span>
+                <span className="text-[0.8125rem] font-semibold text-white">{revenue?.verification?.count ?? 0}</span>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center gap-2 rounded-xl px-3 py-2.5"
+              style={{
+                background: matches ? '#22C55E1A' : '#EF44441A',
+                border: `1px solid ${matches ? '#22C55E40' : '#EF444433'}`,
+              }}>
+              {matches
+                ? <CheckCircle2 size={15} className="text-[#22C55E] flex-shrink-0" />
+                : <AlertCircle size={15} className="text-[#F87171] flex-shrink-0" />}
+              <p className="text-[0.75rem] font-semibold" style={{ color: matches ? '#22C55E' : '#F87171' }}>
+                {matches ? 'Verificado: config = ledger' : 'Discrepancia entre config y ledger'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
+
 export default function WalletAdminPage() {
   const [deposits, setDeposits]         = useState([])
   const [withdrawals, setWithdrawals]   = useState([])
@@ -989,6 +1252,9 @@ export default function WalletAdminPage() {
           </div>
         )}
       </section>
+
+      {/* ── SECCIÓN 5: Comisiones P2P USDC ──────────────────────────────── */}
+      <WalletFeesPanel />
 
       {/* ── Modals ──────────────────────────────────────────────────────── */}
       <ConfirmDepositModal
