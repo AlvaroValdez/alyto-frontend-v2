@@ -1071,10 +1071,11 @@ function USDCDepositModal({ open, onClose, instructions }) {
   )
 
   // ── Contrato nuevo (Camino A: dirección custodial propia, sin memo) ─────────
-  // Decidimos por flags, no por hardcode. Defensivo ante respuestas viejas:
-  //   - memoRequired ausente → inferir de la presencia de stellarMemo
+  // Decidimos SOLO por el flag memoRequired. El default del nuevo modelo es
+  // "sin memo": solo mostramos memo si el backend lo exige explícitamente
+  // (memoRequired === true). Si el flag está ausente o es false → no hay memo.
   //   - ready ausente → asumir true (no bloquear el flujo)
-  const memoRequired = instructions?.memoRequired ?? !!instructions?.stellarMemo
+  const memoRequired = instructions?.memoRequired === true
   const isReady      = instructions ? instructions.ready !== false : true
   const warningText  = instructions?.warning
     ?? (memoRequired
@@ -1759,8 +1760,10 @@ export default function WalletPage() {
               </div>
             )}
 
-            {/* Stellar address/memo hint */}
-            {!usdcLoading && walletUSDC?.stellarMemo && (
+            {/* Memo Stellar — solo si el backend lo exige (modelo legacy con
+                dirección compartida). Camino A (dirección custodial propia) no
+                usa memo, así que el flag llega ausente/false y NO se muestra. */}
+            {!usdcLoading && walletUSDC?.memoRequired === true && walletUSDC?.stellarMemo && (
               <div className="mt-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.2)' }}>
                 <p className="text-[0.6875rem] text-white/60 mb-1">Tu memo Stellar</p>
                 <div className="flex items-center gap-2">
