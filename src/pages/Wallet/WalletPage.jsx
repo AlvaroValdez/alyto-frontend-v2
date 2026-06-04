@@ -1423,8 +1423,17 @@ export default function WalletPage() {
   const fetchUSDCRate = useCallback(async () => {
     try {
       const data = await request('/wallet/usdc/rate')
-      setUsdcRate(data.bobPerUsdc ?? data.rate ?? null)
-    } catch { /* silencioso */ }
+      // El backend devuelve `bobPerUsdc` (alias `rate`). Si por proxy/404 llega
+      // una respuesta no-JSON, `request` devuelve el objeto Response → ignorar.
+      const r = (data && typeof data === 'object' && !(data instanceof Response))
+        ? (data.bobPerUsdc ?? data.rate)
+        : undefined
+      const n = Number(r)
+      if (Number.isFinite(n) && n > 0) setUsdcRate(n)
+      else console.warn('[fetchUSDCRate] respuesta sin tasa válida:', data)
+    } catch (err) {
+      console.warn('[fetchUSDCRate] error al obtener tasa:', err?.status, err?.message)
+    }
   }, [])
 
   async function exportCSV(currency) {
