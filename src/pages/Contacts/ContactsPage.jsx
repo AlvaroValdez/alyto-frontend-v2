@@ -2,70 +2,49 @@ import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Users, Star, Trash2, Loader2, AlertCircle,
-  Search, Plus, X, Send, ChevronRight,
+  Search, Plus, X, Send, ChevronRight, Check,
   CreditCard, FileText, Building2, Mail, UserCheck, Pencil, Filter,
+  Globe, Zap, Hash, Shield,
 } from 'lucide-react'
 import { useContacts } from '../../hooks/useContacts'
 import { deleteContact, toggleContactFavorite, createContact, updateContact } from '../../services/api'
 import VitaContactForm from '../../components/Contacts/VitaContactForm'
 
-// ── Datos de países ───────────────────────────────────────────────────────────
+// ── Datos de países (Vita LatAm + OwlPay Global) ─────────────────────────────
 
 const COUNTRY_META = {
-  CO: { name: 'Colombia',        currency: 'COP', flagCode: 'co',
-        docTypes: ['CC','CE','NIT','Pasaporte'],
-        accountTypes: ['Cuenta de Ahorros','Cuenta Corriente','Daviplata','Nequi'] },
-  PE: { name: 'Perú',            currency: 'PEN', flagCode: 'pe',
-        docTypes: ['DNI','CE','RUC','Pasaporte'],
-        accountTypes: ['Cuenta de Ahorros','Cuenta Corriente'] },
-  BO: { name: 'Bolivia',         currency: 'BOB', flagCode: 'bo',
-        docTypes: ['CI','NIT','Pasaporte'],
-        accountTypes: ['Cuenta de Ahorros','Cuenta Corriente'] },
-  AR: { name: 'Argentina',       currency: 'ARS', flagCode: 'ar',
-        docTypes: ['DNI','CUIL','CUIT','Pasaporte'],
-        accountTypes: ['Caja de Ahorros','Cuenta Corriente'] },
-  MX: { name: 'México',          currency: 'MXN', flagCode: 'mx',
-        docTypes: ['CURP','RFC','Pasaporte'],
-        accountTypes: ['Cuenta de Débito','CLABE'] },
-  BR: { name: 'Brasil',          currency: 'BRL', flagCode: 'br',
-        docTypes: ['CPF','CNPJ','Pasaporte'],
-        accountTypes: ['Conta Corrente','Conta Poupança','Chave PIX'] },
-  CL: { name: 'Chile',           currency: 'CLP', flagCode: 'cl',
-        docTypes: ['RUT','Pasaporte'],
-        accountTypes: ['Cuenta Vista','Cuenta Corriente','Cuenta de Ahorro'] },
-  EC: { name: 'Ecuador',         currency: 'USD', flagCode: 'ec',
-        docTypes: ['CI','RUC','Pasaporte'],
-        accountTypes: ['Cuenta de Ahorros','Cuenta Corriente'] },
-  VE: { name: 'Venezuela',       currency: 'USD', flagCode: 've',
-        docTypes: ['CI','Pasaporte'],
-        accountTypes: ['Cuenta de Ahorros','Cuenta Corriente'] },
-  PY: { name: 'Paraguay',        currency: 'PYG', flagCode: 'py',
-        docTypes: ['CI','RUC','Pasaporte'],
-        accountTypes: ['Cuenta de Ahorros','Cuenta Corriente'] },
-  UY: { name: 'Uruguay',         currency: 'UYU', flagCode: 'uy',
-        docTypes: ['CI','Pasaporte'],
-        accountTypes: ['Caja de Ahorro','Cuenta Corriente'] },
-  CR: { name: 'Costa Rica',      currency: 'CRC', flagCode: 'cr',
-        docTypes: ['CI','Pasaporte'],
-        accountTypes: ['Cuenta de Ahorros','Cuenta Corriente'] },
-  PA: { name: 'Panamá',          currency: 'USD', flagCode: 'pa',
-        docTypes: ['Cédula','Pasaporte'],
-        accountTypes: ['Cuenta de Ahorros','Cuenta Corriente'] },
-  DO: { name: 'Rep. Dominicana', currency: 'DOP', flagCode: 'do',
-        docTypes: ['Cédula','Pasaporte'],
-        accountTypes: ['Cuenta de Ahorros','Cuenta Corriente'] },
-  GT: { name: 'Guatemala',       currency: 'GTQ', flagCode: 'gt',
-        docTypes: ['DPI','Pasaporte'],
-        accountTypes: ['Cuenta de Ahorros','Cuenta Monetaria'] },
-  US: { name: 'Estados Unidos',  currency: 'USD', flagCode: 'us',
-        docTypes: ['SSN','ITIN','Pasaporte'],
-        accountTypes: ['Checking','Savings'] },
-  GB: { name: 'Reino Unido',     currency: 'GBP', flagCode: 'gb',
-        docTypes: ['Pasaporte','DNI'],
-        accountTypes: ['Current Account','Savings Account'] },
-  EU: { name: 'Europa',          currency: 'EUR', flagCode: 'eu',
-        docTypes: ['Pasaporte','DNI'],
-        accountTypes: ['Cuenta Corriente','Cuenta de Ahorros'] },
+  // LatAm — Vita Wallet
+  CO: { name: 'Colombia',         currency: 'COP', flagCode: 'co' },
+  PE: { name: 'Perú',             currency: 'PEN', flagCode: 'pe' },
+  BO: { name: 'Bolivia',          currency: 'BOB', flagCode: 'bo' },
+  AR: { name: 'Argentina',        currency: 'ARS', flagCode: 'ar' },
+  MX: { name: 'México',           currency: 'MXN', flagCode: 'mx' },
+  BR: { name: 'Brasil',           currency: 'BRL', flagCode: 'br' },
+  CL: { name: 'Chile',            currency: 'CLP', flagCode: 'cl' },
+  EC: { name: 'Ecuador',          currency: 'USD', flagCode: 'ec' },
+  VE: { name: 'Venezuela',        currency: 'USD', flagCode: 've' },
+  PY: { name: 'Paraguay',         currency: 'PYG', flagCode: 'py' },
+  UY: { name: 'Uruguay',          currency: 'UYU', flagCode: 'uy' },
+  CR: { name: 'Costa Rica',       currency: 'CRC', flagCode: 'cr' },
+  PA: { name: 'Panamá',           currency: 'USD', flagCode: 'pa' },
+  DO: { name: 'Rep. Dominicana',  currency: 'DOP', flagCode: 'do' },
+  GT: { name: 'Guatemala',        currency: 'GTQ', flagCode: 'gt' },
+  SV: { name: 'El Salvador',      currency: 'USD', flagCode: 'sv' },
+  HT: { name: 'Haití',            currency: 'USD', flagCode: 'ht' },
+  // OwlPay Global
+  US: { name: 'Estados Unidos',   currency: 'USD', flagCode: 'us' },
+  GB: { name: 'Reino Unido',      currency: 'GBP', flagCode: 'gb' },
+  EU: { name: 'Europa (SEPA)',    currency: 'EUR', flagCode: 'eu' },
+  ES: { name: 'España',           currency: 'EUR', flagCode: 'es' },
+  PL: { name: 'Polonia',          currency: 'PLN', flagCode: 'pl' },
+  HK: { name: 'Hong Kong',        currency: 'HKD', flagCode: 'hk' },
+  CN: { name: 'China',            currency: 'CNY', flagCode: 'cn' },
+  NG: { name: 'Nigeria',          currency: 'NGN', flagCode: 'ng' },
+  IN: { name: 'India',            currency: 'INR', flagCode: 'in' },
+  AE: { name: 'Emiratos Árabes',  currency: 'AED', flagCode: 'ae' },
+  JP: { name: 'Japón',            currency: 'JPY', flagCode: 'jp' },
+  SG: { name: 'Singapur',         currency: 'SGD', flagCode: 'sg' },
+  AU: { name: 'Australia',        currency: 'AUD', flagCode: 'au' },
 }
 
 const COUNTRY_LIST = Object.entries(COUNTRY_META).map(([code, m]) => ({ code, ...m }))
@@ -365,13 +344,25 @@ function ContactDetailSheet({ contact, onClose, onDelete, onToggleFavorite, onSe
   const [deleting, setDeleting] = useState(false)
   const name    = contactName(contact)
   const bd      = contact.beneficiaryData ?? {}
-  const bank    = bd.beneficiary_bank ?? bd.beneficiary_bank_label ?? ''
-  const account = bd.beneficiary_account_number ?? bd.account_bank ?? ''
+  const meta    = COUNTRY_META[contact.destinationCountry]
+  const isOwlPay = contact.formType === 'owlpay'
+
+  // Campos universales — resuelven para Vita y OwlPay
+  const displayName  = bd.beneficiary_name
+    || `${bd.beneficiary_first_name ?? ''} ${bd.beneficiary_last_name ?? ''}`.trim()
+    || ''
+  const bank    = bd.bank_name ?? bd.beneficiary_bank ?? bd.beneficiary_bank_label ?? ''
+  const account = bd.account_number ?? bd.iban ?? bd.account_bank ?? bd.beneficiary_account_number ?? ''
+  const swift   = bd.swift_code ?? bd.swift_bic ?? ''
   const docType = bd.beneficiary_document_type ?? ''
-  const docNum  = bd.beneficiary_document_number ?? bd.beneficiary_document ?? ''
+  const docNum  = bd.beneficiary_document_number ?? bd.beneficiary_document ?? bd.beneficiary_id_doc_number ?? ''
   const accType = bd.account_type_bank ?? ''
   const email   = bd.beneficiary_email ?? ''
-  const meta    = COUNTRY_META[contact.destinationCountry]
+  const phone   = bd.beneficiary_phone_number ?? bd.phone ?? ''
+  const purpose = bd.transfer_purpose ?? ''
+
+  // Máscara: últimos 4 chars
+  const maskedAccount = account.length > 4 ? `****${account.slice(-4)}` : account
 
   async function handleDelete() {
     setDeleting(true)
@@ -396,10 +387,9 @@ function ContactDetailSheet({ contact, onClose, onDelete, onToggleFavorite, onSe
         <div style={{ overflowY: 'auto', flex: 1, padding: '0 16px',
           paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
 
-          {/* Hero: avatar + flag + nombre */}
+          {/* Hero */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center',
-            padding: '12px 0 20px', gap: 12 }}>
-            {/* Avatares superpuestos: avatar del contacto + bandera del país */}
+            padding: '12px 0 16px', gap: 10 }}>
             <div style={{ position: 'relative' }}>
               <Avatar name={name} size={72} />
               <div style={{ position: 'absolute', bottom: -2, right: -2 }}>
@@ -415,7 +405,8 @@ function ContactDetailSheet({ contact, onClose, onDelete, onToggleFavorite, onSe
                   {contact.firstName} {contact.lastName}
                 </p>
               )}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
                 {meta && (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
                     background: '#F0F2F7', borderRadius: 20, padding: '3px 10px',
@@ -423,6 +414,16 @@ function ContactDetailSheet({ contact, onClose, onDelete, onToggleFavorite, onSe
                     {meta.name} · {meta.currency}
                   </span>
                 )}
+                {/* Badge de proveedor */}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4,
+                  background: isOwlPay ? '#EFF6FF' : '#F0FDF4',
+                  border: `1px solid ${isOwlPay ? '#BFDBFE' : '#BBF7D0'}`,
+                  borderRadius: 20, padding: '3px 10px',
+                  fontSize: '0.6875rem', fontWeight: 700,
+                  color: isOwlPay ? '#1D4ED8' : '#15803D' }}>
+                  {isOwlPay ? <Zap size={10} /> : <Globe size={10} />}
+                  {isOwlPay ? 'OwlPay' : 'Vita'}
+                </span>
               </div>
             </div>
           </div>
@@ -439,22 +440,38 @@ function ContactDetailSheet({ contact, onClose, onDelete, onToggleFavorite, onSe
             Enviar dinero
           </button>
 
-          {/* Datos bancarios */}
+          {/* Datos bancarios — adaptados según proveedor */}
           <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 16,
             padding: '4px 16px', marginBottom: 12 }}>
-            <DetailRow icon={Building2} label="Banco"            value={bank} />
-            <DetailRow icon={CreditCard} label="N.º de cuenta"   value={account ? `****${account.slice(-4)}` : ''} />
-            <DetailRow icon={FileText}  label="Tipo de cuenta"   value={accType} />
-            <DetailRow icon={UserCheck} label={docType || 'Documento'} value={docNum} />
-            <DetailRow icon={Mail}      label="Email"            value={email} />
+            {displayName && (
+              <DetailRow icon={UserCheck} label="Beneficiario" value={displayName} />
+            )}
+            <DetailRow icon={Building2}  label="Banco"          value={bank} />
+            <DetailRow icon={CreditCard} label="N.º de cuenta"  value={maskedAccount} />
+            {swift && (
+              <DetailRow icon={Hash}     label="SWIFT / BIC"    value={swift} />
+            )}
+            {accType && (
+              <DetailRow icon={FileText} label="Tipo de cuenta" value={accType} />
+            )}
+            {(docType || docNum) && (
+              <DetailRow icon={Shield}   label={docType || 'Documento'} value={docNum} />
+            )}
+            {email && (
+              <DetailRow icon={Mail}     label="Email"          value={email} />
+            )}
+            {phone && (
+              <DetailRow icon={Mail}     label="Teléfono"       value={phone} />
+            )}
           </div>
 
-          {/* Historial */}
+          {/* Historial de envíos */}
           {(contact.sendCount > 0 || contact.lastSentAt) && (
             <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 16,
               padding: '4px 16px', marginBottom: 12 }}>
               {contact.sendCount > 0 && (
-                <DetailRow icon={Send} label="Envíos realizados" value={`${contact.sendCount} envío${contact.sendCount !== 1 ? 's' : ''}`} />
+                <DetailRow icon={Send} label="Envíos realizados"
+                  value={`${contact.sendCount} envío${contact.sendCount !== 1 ? 's' : ''}`} />
               )}
               {contact.lastSentAt && (
                 <DetailRow icon={Send} label="Último envío"
@@ -474,7 +491,8 @@ function ContactDetailSheet({ contact, onClose, onDelete, onToggleFavorite, onSe
               fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer',
               fontFamily: "'Manrope', sans-serif",
             }}>
-              <Star size={14} style={{ fill: contact.isFavorite ? '#FBBF24' : 'none', color: contact.isFavorite ? '#FBBF24' : '#4A5568' }} />
+              <Star size={14} style={{ fill: contact.isFavorite ? '#FBBF24' : 'none',
+                color: contact.isFavorite ? '#FBBF24' : '#4A5568' }} />
               {contact.isFavorite ? 'Fav.' : 'Fav.'}
             </button>
 
@@ -763,8 +781,8 @@ export default function ContactsPage() {
                 {grouped[letter].map((c, idx) => {
                   const name    = contactName(c)
                   const bd      = c.beneficiaryData ?? {}
-                  const bank    = bd.beneficiary_bank ?? bd.beneficiary_bank_label ?? ''
-                  const account = bd.beneficiary_account_number ?? bd.account_bank ?? ''
+                  const bank    = bd.bank_name ?? bd.beneficiary_bank ?? bd.beneficiary_bank_label ?? ''
+                  const account = bd.account_number ?? bd.iban ?? bd.account_bank ?? bd.beneficiary_account_number ?? ''
                   const isLast  = idx === grouped[letter].length - 1
 
                   return (

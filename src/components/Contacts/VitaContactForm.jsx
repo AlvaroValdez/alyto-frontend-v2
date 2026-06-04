@@ -1,16 +1,15 @@
 /**
  * VitaContactForm.jsx — Formulario dinámico de contacto reutilizable.
  *
- * Usa los mismos campos que retorna GET /payments/withdrawal-rules/:country
- * (tanto Vita Wallet como OwlPay Harbor), garantizando que las claves del
- * beneficiaryData coincidan exactamente con lo que espera el backend al crear
- * la transacción.
+ * Soporta ambos proveedores:
+ *   - Vita Wallet: campos dinámicos desde GET /payments/withdrawal-rules/:country
+ *   - OwlPay Harbor: formularios estáticos desde owlPayForms.js (por país)
  *
  * Props:
  *   initialDestinationCountry — string ISO-2 | null  (null = el usuario elige)
  *   initialNickname           — string
  *   initialValues             — object con keys de beneficiaryData
- *   onSave(data)              — callback con { nickname, firstName, lastName,
+ *   onSave(data)              — { nickname, firstName, lastName,
  *                               destinationCountry, destinationCurrency,
  *                               formType, beneficiaryData }
  *   onCancel                  — callback (muestra botón Cancelar)
@@ -19,46 +18,60 @@
  *   submitLabel               — string (default "Guardar contacto")
  */
 
-import { useState, useMemo } from 'react'
-import { AlertCircle, Loader2, X, Search, Check } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { AlertCircle, Loader2, X, Search, Check, Globe, Zap } from 'lucide-react'
 import { useWithdrawalRules } from '../../hooks/useWithdrawalRules'
+import { OWLPAY_FORMS, GENERIC_OWLPAY_FORM } from '../SendMoney/owlPayForms'
+import { runFieldValidator, ibanCountry } from '../SendMoney/formValidators'
 
-// ── Constantes ────────────────────────────────────────────────────────────────
+// ── Prefijos de teléfono ──────────────────────────────────────────────────────
 
 const PHONE_PREFIXES = {
   CO: '+57', PE: '+51', AR: '+54', BO: '+591',
   MX: '+52', BR: '+55', CL: '+56', EC: '+593',
   VE: '+58', GT: '+502', SV: '+503', ES: '+34',
   PL: '+48', HK: '+852', HT: '+509', PA: '+507',
-  DO: '+1', CR: '+506', PY: '+595', UY: '+598',
-  US: '+1', GB: '+44', CN: '+86', NG: '+234',
+  DO: '+1',  CR: '+506', PY: '+595', UY: '+598',
+  US: '+1',  GB: '+44',  CN: '+86',  NG: '+234',
+  IN: '+91', AE: '+971', JP: '+81',  SG: '+65',
+  AU: '+61', EU: '+',
 }
 
-const COUNTRY_META = {
-  CO: { name: 'Colombia',        currency: 'COP', flagCode: 'co' },
-  PE: { name: 'Perú',            currency: 'PEN', flagCode: 'pe' },
-  BO: { name: 'Bolivia',         currency: 'BOB', flagCode: 'bo' },
-  AR: { name: 'Argentina',       currency: 'ARS', flagCode: 'ar' },
-  MX: { name: 'México',          currency: 'MXN', flagCode: 'mx' },
-  BR: { name: 'Brasil',          currency: 'BRL', flagCode: 'br' },
-  CL: { name: 'Chile',           currency: 'CLP', flagCode: 'cl' },
-  EC: { name: 'Ecuador',         currency: 'USD', flagCode: 'ec' },
-  VE: { name: 'Venezuela',       currency: 'USD', flagCode: 've' },
-  PY: { name: 'Paraguay',        currency: 'PYG', flagCode: 'py' },
-  UY: { name: 'Uruguay',         currency: 'UYU', flagCode: 'uy' },
-  CR: { name: 'Costa Rica',      currency: 'CRC', flagCode: 'cr' },
-  PA: { name: 'Panamá',          currency: 'USD', flagCode: 'pa' },
-  DO: { name: 'Rep. Dominicana', currency: 'DOP', flagCode: 'do' },
-  GT: { name: 'Guatemala',       currency: 'GTQ', flagCode: 'gt' },
-  SV: { name: 'El Salvador',     currency: 'USD', flagCode: 'sv' },
-  HT: { name: 'Haití',           currency: 'USD', flagCode: 'ht' },
-  US: { name: 'Estados Unidos',  currency: 'USD', flagCode: 'us' },
-  GB: { name: 'Reino Unido',     currency: 'GBP', flagCode: 'gb' },
-  ES: { name: 'España',          currency: 'EUR', flagCode: 'es' },
-  PL: { name: 'Polonia',         currency: 'PLN', flagCode: 'pl' },
-  HK: { name: 'Hong Kong',       currency: 'HKD', flagCode: 'hk' },
-  CN: { name: 'China',           currency: 'CNY', flagCode: 'cn' },
-  NG: { name: 'Nigeria',         currency: 'NGN', flagCode: 'ng' },
+// ── Metadatos de países (Vita LatAm + OwlPay Global) ─────────────────────────
+
+export const COUNTRY_META = {
+  // LatAm — Vita Wallet
+  CO: { name: 'Colombia',         currency: 'COP', flagCode: 'co' },
+  PE: { name: 'Perú',             currency: 'PEN', flagCode: 'pe' },
+  BO: { name: 'Bolivia',          currency: 'BOB', flagCode: 'bo' },
+  AR: { name: 'Argentina',        currency: 'ARS', flagCode: 'ar' },
+  MX: { name: 'México',           currency: 'MXN', flagCode: 'mx' },
+  BR: { name: 'Brasil',           currency: 'BRL', flagCode: 'br' },
+  CL: { name: 'Chile',            currency: 'CLP', flagCode: 'cl' },
+  EC: { name: 'Ecuador',          currency: 'USD', flagCode: 'ec' },
+  VE: { name: 'Venezuela',        currency: 'USD', flagCode: 've' },
+  PY: { name: 'Paraguay',         currency: 'PYG', flagCode: 'py' },
+  UY: { name: 'Uruguay',          currency: 'UYU', flagCode: 'uy' },
+  CR: { name: 'Costa Rica',       currency: 'CRC', flagCode: 'cr' },
+  PA: { name: 'Panamá',           currency: 'USD', flagCode: 'pa' },
+  DO: { name: 'Rep. Dominicana',  currency: 'DOP', flagCode: 'do' },
+  GT: { name: 'Guatemala',        currency: 'GTQ', flagCode: 'gt' },
+  SV: { name: 'El Salvador',      currency: 'USD', flagCode: 'sv' },
+  HT: { name: 'Haití',            currency: 'USD', flagCode: 'ht' },
+  // OwlPay Global
+  US: { name: 'Estados Unidos',   currency: 'USD', flagCode: 'us' },
+  GB: { name: 'Reino Unido',      currency: 'GBP', flagCode: 'gb' },
+  EU: { name: 'Europa (SEPA)',    currency: 'EUR', flagCode: 'eu' },
+  ES: { name: 'España',           currency: 'EUR', flagCode: 'es' },
+  PL: { name: 'Polonia',          currency: 'PLN', flagCode: 'pl' },
+  HK: { name: 'Hong Kong',        currency: 'HKD', flagCode: 'hk' },
+  CN: { name: 'China',            currency: 'CNY', flagCode: 'cn' },
+  NG: { name: 'Nigeria',          currency: 'NGN', flagCode: 'ng' },
+  IN: { name: 'India',            currency: 'INR', flagCode: 'in' },
+  AE: { name: 'Emiratos Árabes',  currency: 'AED', flagCode: 'ae' },
+  JP: { name: 'Japón',            currency: 'JPY', flagCode: 'jp' },
+  SG: { name: 'Singapur',         currency: 'SGD', flagCode: 'sg' },
+  AU: { name: 'Australia',        currency: 'AUD', flagCode: 'au' },
 }
 
 const COUNTRY_LIST = Object.entries(COUNTRY_META).map(([code, m]) => ({ code, ...m }))
@@ -67,19 +80,118 @@ function flagUrl(flagCode) {
   return `https://flagcdn.com/w80/${flagCode}.png`
 }
 
-// ── Validación ────────────────────────────────────────────────────────────────
+// ── Labels en español para campos Vita (OwlPay ya los tiene en config) ────────
 
-function validateField(field, value) {
-  const v = (value ?? '').toString().trim()
+const FIELD_LABELS = {
+  beneficiary_name:            'Nombre completo del beneficiario',
+  beneficiary_first_name:      'Nombre',
+  beneficiary_last_name:       'Apellidos',
+  company_name:                'Nombre de empresa',
+  beneficiary_dob:             'Fecha de nacimiento',
+  beneficiary_id_doc_number:   'Número de documento',
+  beneficiary_document_type:   'Tipo de documento',
+  beneficiary_document_number: 'Número de documento',
+  beneficiary_email:           'Correo electrónico',
+  beneficiary_address:         'Dirección',
+  beneficiary_type:            'Tipo de beneficiario',
+  street:                      'Calle y número',
+  city:                        'Ciudad',
+  state:                       'Estado / Provincia',
+  state_province:              'Provincia / Estado',
+  postal_code:                 'Código postal',
+  zipcode:                     'Código postal',
+  phone:                       'Teléfono',
+  account_holder_name:         'Nombre del titular de la cuenta',
+  account_type_bank:           'Tipo de cuenta',
+  account_bank:                'Número de cuenta',
+  bank_name:                   'Nombre del banco',
+  account_number:              'Número de cuenta',
+  routing_number:              'Número de ruta (ABA)',
+  swift_code:                  'Código SWIFT / BIC',
+  swift_bic:                   'Código SWIFT / BIC',
+  transfer_purpose:            'Propósito de la transferencia',
+  purpose:                     'Propósito del pago',
+  purpose_comentary:           'Comentario',
+  is_self_transfer:            '¿Transferencia a cuenta propia?',
+}
+
+const PURPOSE_CODE_LABELS = {
+  ISSAVG: 'Ahorros personales',    ISGDDS: 'Pago de bienes',
+  ISSCVE: 'Pago de servicios',     EPDISP: 'Disposición de fondos',
+  ISSTDY: 'Estudios',              EPPROP: 'Compra de propiedad',
+  EPFAMT: 'Transferencia familiar', EPREMT: 'Transferencia internacional',
+  ISTAXS: 'Pago de impuestos',     EPIVST: 'Inversión',
+  ISPAYR: 'Nómina / salario',      ISSUPP: 'Pago a proveedor',
+  ISMDCS: 'Gastos médicos',        EPTOUR: 'Turismo y viajes',
+}
+
+const TRANSFER_PURPOSE_OPTIONS = [
+  { value: 'FAMILY_MAINTENANCE',      label: 'Manutención familiar' },
+  { value: 'TRANSFER_TO_OWN_ACCOUNT', label: 'Transferencia a cuenta propia' },
+  { value: 'SALARY',                  label: 'Salario' },
+  { value: 'DONATIONS',               label: 'Donaciones' },
+  { value: 'EDUCATION',               label: 'Educación' },
+  { value: 'MEDICAL_TREATMENT',       label: 'Gastos médicos' },
+  { value: 'TRAVEL',                  label: 'Viaje' },
+  { value: 'INVESTMENT_SHARES',       label: 'Inversión' },
+  { value: 'ADVERTISING',             label: 'Publicidad' },
+  { value: 'EXPORTED_GOODS',          label: 'Bienes exportados' },
+  { value: 'GENERAL_GOODS_OFFLINE',   label: 'Bienes generales' },
+]
+
+const CN_PROVINCE_OPTIONS = [
+  { value: 'AH', label: 'Anhui' },         { value: 'BJ', label: 'Beijing' },
+  { value: 'CQ', label: 'Chongqing' },     { value: 'FJ', label: 'Fujian' },
+  { value: 'GD', label: 'Guangdong' },     { value: 'GS', label: 'Gansu' },
+  { value: 'GX', label: 'Guangxi' },       { value: 'GZ', label: 'Guizhou' },
+  { value: 'HA', label: 'Henan' },         { value: 'HB', label: 'Hubei' },
+  { value: 'HE', label: 'Hebei' },         { value: 'HI', label: 'Hainan' },
+  { value: 'HL', label: 'Heilongjiang' },  { value: 'HN', label: 'Hunan' },
+  { value: 'JL', label: 'Jilin' },         { value: 'JS', label: 'Jiangsu' },
+  { value: 'JX', label: 'Jiangxi' },       { value: 'LN', label: 'Liaoning' },
+  { value: 'NM', label: 'Mongolia Interior' }, { value: 'NX', label: 'Ningxia' },
+  { value: 'QH', label: 'Qinghai' },       { value: 'SC', label: 'Sichuan' },
+  { value: 'SD', label: 'Shandong' },      { value: 'SH', label: 'Shanghai' },
+  { value: 'SN', label: 'Shaanxi' },       { value: 'SX', label: 'Shanxi' },
+  { value: 'TJ', label: 'Tianjin' },       { value: 'XJ', label: 'Xinjiang' },
+  { value: 'XZ', label: 'Tibet' },         { value: 'YN', label: 'Yunnan' },
+  { value: 'ZJ', label: 'Zhejiang' },
+]
+
+// ── Validación de campo (versión robusta: patrón + validators avanzados) ──────
+
+function validateField(field, value, ctx = {}) {
+  const raw = value === true ? 'true' : value === false ? 'false' : (value ?? '')
+  const v   = String(raw).trim()
+
   if (field.required && v === '') return 'Campo requerido'
+
   if (v !== '') {
+    const maxLen = field.max ?? field.maxLength
     if (field.min && v.length < field.min) return `Mínimo ${field.min} caracteres`
-    if (field.max && v.length > field.max) return `Máximo ${field.max} caracteres`
+    if (maxLen    && v.length > maxLen)    return `Máximo ${maxLen} caracteres`
+
     if (field.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))
       return 'Correo electrónico inválido'
-    if (field.type === 'phone' && !/^[+\d\s\-() ]{5,25}$/.test(v))
+    if (field.type === 'phone' && !/^[+\d\s\-() ]{5,25}$/.test(v))
       return 'Número de teléfono inválido'
+
+    if (field.pattern) {
+      try {
+        if (!new RegExp(field.pattern).test(v)) return field.hint ?? 'Formato inválido'
+      } catch { /* regex inválida en config — ignorar */ }
+    }
+
+    // Validators avanzados: IBAN, CPF, CLABE, SWIFT, postal, etc.
+    const enrichedCtx = {
+      country:         ctx.country,
+      addressCountry:  ibanCountry(ctx.values?.iban) ?? ctx.country,
+      expectedCountry: ctx.country && ctx.country !== 'EU' ? ctx.country : null,
+    }
+    const customErr = runFieldValidator(field.key, v, enrichedCtx)
+    if (customErr) return customErr
   }
+
   return null
 }
 
@@ -88,25 +200,66 @@ function validateField(field, value) {
 function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
   const { key, label, type, required, options, placeholder } = field
 
+  const displayLabel =
+    (key === 'routing_number' && countryCode === 'AU') ? 'Número BSB'
+    : (FIELD_LABELS[key] ?? label)
+
   const base = `w-full bg-white border rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0D1F3C]
     placeholder:text-[#94A3B8] focus:outline-none transition-all font-[inherit]`
   const ok  = 'border-[#E2E8F0] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#1D346120]'
   const err = 'border-[#EF4444] shadow-[0_0_0_2px_#EF44441A]'
 
+  const resolvedOptions =
+    (Array.isArray(options) && options.length > 0)
+      ? key === 'purpose'
+          ? options.map(opt => ({ ...opt, label: PURPOSE_CODE_LABELS[opt.value] ?? opt.label }))
+          : options
+      : (key === 'transfer_purpose'                       ? TRANSFER_PURPOSE_OPTIONS
+       : key === 'state_province' && countryCode === 'CN' ? CN_PROVINCE_OPTIONS
+       : null)
+
   return (
     <div>
       <label className="block text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-wide mb-2">
-        {label}
+        {displayLabel}
         {!required && (
           <span className="ml-1 text-[0.625rem] normal-case font-normal text-[#94A3B8]">(opcional)</span>
         )}
       </label>
 
-      {type === 'select' ? (
-        <select value={value} onChange={e => onChange(key, e.target.value)} onBlur={() => onBlur(key)}
-          className={`${base} appearance-none cursor-pointer ${error ? err : ok}`}>
+      {/* Toggle booleano para is_self_transfer */}
+      {key === 'is_self_transfer' ? (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={value === 'true' || value === true}
+          onClick={() => onChange(key, value === 'true' || value === true ? false : true)}
+          className="flex items-center gap-3 text-[0.9375rem] text-[#0D1F3C]"
+        >
+          <span style={{
+            display: 'inline-block', width: 44, height: 24, borderRadius: 12,
+            background: (value === 'true' || value === true) ? '#1D3461' : '#CBD5E1',
+            position: 'relative', flexShrink: 0, transition: 'background 0.2s',
+          }}>
+            <span style={{
+              position: 'absolute', top: 3,
+              left: (value === 'true' || value === true) ? 23 : 3,
+              width: 18, height: 18, borderRadius: '50%', background: '#FFF',
+              transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.20)',
+            }} />
+          </span>
+          <span>{(value === 'true' || value === true) ? 'Sí' : 'No'}</span>
+        </button>
+
+      ) : (type === 'select' || resolvedOptions) ? (
+        <select
+          value={value ?? ''}
+          onChange={e => onChange(key, e.target.value)}
+          onBlur={() => onBlur(key)}
+          className={`${base} appearance-none cursor-pointer ${error ? err : ok}`}
+        >
           <option value="">Seleccionar...</option>
-          {options.map(opt => (
+          {(resolvedOptions ?? []).map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
@@ -117,19 +270,27 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
             text-[0.875rem] text-[#4A5568] flex-shrink-0 min-w-[64px] justify-center">
             {PHONE_PREFIXES[countryCode] ?? ''}
           </span>
-          <input type="tel" value={value} onChange={e => onChange(key, e.target.value)}
+          <input type="tel" value={value ?? ''} onChange={e => onChange(key, e.target.value)}
             onBlur={() => onBlur(key)} placeholder={placeholder || 'Número sin prefijo'}
             className={`${base} flex-1 ${error ? err : ok}`} />
         </div>
 
       ) : (
-        <input type={type === 'email' ? 'email' : 'text'} value={value}
-          onChange={e => onChange(key, e.target.value)} onBlur={() => onBlur(key)}
+        <input
+          type={type === 'email' ? 'email' : type === 'date' ? 'date' : 'text'}
+          value={value ?? ''}
+          onChange={e => onChange(key, e.target.value)}
+          onBlur={() => onBlur(key)}
           placeholder={placeholder}
-          className={`${base} ${error ? err : ok}`} />
+          maxLength={type === 'date' ? undefined : (field.maxLength ?? field.max ?? undefined)}
+          className={`${base} ${error ? err : ok}`}
+        />
       )}
 
       {error && <p className="mt-1 text-[0.6875rem] text-[#EF4444]">{error}</p>}
+      {field.hint && !error && (
+        <p className="mt-1 text-[0.6875rem] text-[#94A3B8] leading-relaxed">{field.hint}</p>
+      )}
     </div>
   )
 }
@@ -195,8 +356,8 @@ function CountryPickerModal({ selected, onSelect, onClose }) {
                   style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover',
                     border: '1px solid rgba(0,0,0,0.08)', flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
-                  <p style={{ margin: 0, fontSize: '0.9375rem', fontWeight: isActive ? 700 : 600,
-                    color: '#0D1F3C' }}>{c.name}</p>
+                  <p style={{ margin: 0, fontSize: '0.9375rem',
+                    fontWeight: isActive ? 700 : 600, color: '#0D1F3C' }}>{c.name}</p>
                   <p style={{ margin: '2px 0 0', fontSize: '0.8125rem', color: '#4A5568' }}>
                     {c.currency}
                   </p>
@@ -240,18 +401,47 @@ export default function VitaContactForm({
   const { rules, payoutMethod, loading: rulesLoading, error: rulesError, refetch } =
     useWithdrawalRules(country)
 
-  const visibleRules = useMemo(() => rules.filter(field => {
-    if (field.key.startsWith('fc_')) return false
-    if (!field.when) return true
-    const refValue = values[field.when.key] ?? ''
-    const expected = field.when.value
-    if (Array.isArray(expected)) return expected.includes(refValue)
-    return refValue === expected
-  }), [rules, values])
+  // ── Proveedor activo ───────────────────────────────────────────────────────
+  const isOwlPay   = payoutMethod === 'owlPay'
+  const owlPayForm = isOwlPay ? (OWLPAY_FORMS[country] ?? GENERIC_OWLPAY_FORM) : null
 
-  const allValid = useMemo(() =>
-    !!country && visibleRules.every(f => !validateField(f, values[f.key]))
-  , [country, visibleRules, values])
+  // ── Campos activos según proveedor ─────────────────────────────────────────
+  const vitaVisibleRules = useMemo(() => {
+    if (isOwlPay) return []
+    return rules.filter(field => {
+      if (field.key.startsWith('fc_')) return false
+      if (!field.when) return true
+      const refValue = values[field.when.key] ?? ''
+      const expected = field.when.value
+      if (Array.isArray(expected)) return expected.includes(refValue)
+      return refValue === expected
+    })
+  }, [isOwlPay, rules, values])
+
+  const activeFields = isOwlPay ? (owlPayForm?.fields ?? []) : vitaVisibleRules
+
+  // Inicializar defaults de OwlPay al cambiar de proveedor (ej. is_self_transfer)
+  useEffect(() => {
+    if (!isOwlPay || !owlPayForm) return
+    setValues(prev => {
+      const defaults = {}
+      for (const f of owlPayForm.fields) {
+        if (f.default !== undefined && prev[f.key] === undefined) {
+          defaults[f.key] = f.default
+        }
+      }
+      return Object.keys(defaults).length > 0 ? { ...prev, ...defaults } : prev
+    })
+  }, [isOwlPay, owlPayForm])
+
+  // ── Contexto cross-field para validators ───────────────────────────────────
+  const validatorCtx = useMemo(() => ({ country, values }), [country, values])
+
+  // ── Validación general ─────────────────────────────────────────────────────
+  const allValid = useMemo(() => {
+    if (!country) return false
+    return activeFields.every(f => !validateField(f, values[f.key], validatorCtx))
+  }, [country, activeFields, values, validatorCtx])
 
   function handleChange(key, val) {
     setValues(prev => ({ ...prev, [key]: val }))
@@ -263,25 +453,59 @@ export default function VitaContactForm({
 
   function getError(field) {
     if (!touched[field.key]) return null
-    return validateField(field, values[field.key])
+    return validateField(field, values[field.key], validatorCtx)
   }
 
+  // ── Cambio de país: resetear formulario ───────────────────────────────────
+  function handleCountrySelect(code) {
+    setCountry(code)
+    setValues({})
+    setTouched({})
+  }
+
+  // ── Submit ─────────────────────────────────────────────────────────────────
   function handleSubmit() {
     if (!allValid) {
-      const allTouched = Object.fromEntries(visibleRules.map(f => [f.key, true]))
+      const allTouched = Object.fromEntries(activeFields.map(f => [f.key, true]))
       setTouched(prev => ({ ...prev, ...allTouched }))
       return
     }
 
-    const beneficiaryData = Object.fromEntries(
-      visibleRules
-        .filter(f => (values[f.key] ?? '').trim() !== '')
-        .map(f => [f.key, values[f.key].trim()])
-    )
+    let beneficiaryData
 
-    const firstName    = beneficiaryData['beneficiary_first_name'] ?? ''
-    const lastName     = beneficiaryData['beneficiary_last_name']  ?? ''
-    const formType     = payoutMethod === 'owlPay' ? 'owlpay' : 'vita'
+    if (isOwlPay) {
+      beneficiaryData = {}
+      for (const f of activeFields) {
+        const val = values[f.key]
+        if (val === undefined || val === null) continue
+        if (f.key === 'is_self_transfer') {
+          beneficiaryData[f.key] = val === true || val === 'true'
+        } else {
+          const trimmed = typeof val === 'string' ? val.trim() : val
+          if (trimmed !== '') beneficiaryData[f.key] = trimmed
+        }
+      }
+    } else {
+      beneficiaryData = Object.fromEntries(
+        vitaVisibleRules
+          .filter(f => (String(values[f.key] ?? '')).trim() !== '')
+          .map(f => [f.key, String(values[f.key]).trim()])
+      )
+    }
+
+    // Extraer nombre y apellido según el formato del proveedor
+    let firstName, lastName
+    if (isOwlPay) {
+      const fullName = beneficiaryData.beneficiary_name ?? ''
+      const parts    = fullName.trim().split(/\s+/)
+      firstName      = parts[0] ?? ''
+      lastName       = parts.slice(1).join(' ')
+    } else {
+      firstName = beneficiaryData.beneficiary_first_name ?? ''
+      lastName  = beneficiaryData.beneficiary_last_name  ?? ''
+    }
+
+    const formType     = isOwlPay ? 'owlpay' : 'vita'
     const destCurrency = meta?.currency ?? ''
 
     onSave({
@@ -295,10 +519,12 @@ export default function VitaContactForm({
     })
   }
 
+  // ── Render ─────────────────────────────────────────────────────────────────
+
   return (
     <div className="flex flex-col gap-4">
 
-      {/* País — selector o pill locked */}
+      {/* País destino */}
       <div>
         <label className="block text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-wide mb-2">
           País destino *
@@ -335,7 +561,7 @@ export default function VitaContactForm({
         )}
       </div>
 
-      {/* Alias */}
+      {/* Alias del contacto */}
       <div>
         <label className="block text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-wide mb-2">
           Alias{' '}
@@ -349,7 +575,7 @@ export default function VitaContactForm({
             focus:shadow-[0_0_0_2px_#1D346120] transition-all" />
       </div>
 
-      {/* Skeleton de carga */}
+      {/* Skeleton mientras carga */}
       {country && rulesLoading && (
         <div className="flex flex-col gap-4">
           {[...Array(5)].map((_, i) => (
@@ -361,7 +587,7 @@ export default function VitaContactForm({
         </div>
       )}
 
-      {/* Error de carga de reglas */}
+      {/* Error al cargar las reglas */}
       {country && rulesError && !rulesLoading && (
         <div className="flex items-center gap-2.5 bg-[#FEF2F2] border border-[#FECACA] rounded-xl p-3.5">
           <AlertCircle size={15} color="#EF4444" className="flex-shrink-0" />
@@ -375,8 +601,71 @@ export default function VitaContactForm({
         </div>
       )}
 
-      {/* Campos dinámicos */}
-      {!rulesLoading && visibleRules.map(field => (
+      {/* Badge de proveedor */}
+      {!rulesLoading && country && payoutMethod && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: isOwlPay ? '#EFF6FF' : '#F0FDF4',
+          border: `1px solid ${isOwlPay ? '#BFDBFE' : '#BBF7D0'}`,
+          borderRadius: 10, padding: '8px 12px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 22, height: 22, borderRadius: '50%',
+            background: isOwlPay ? '#DBEAFE' : '#DCFCE7', flexShrink: 0 }}>
+            {isOwlPay
+              ? <Zap size={12} color="#1D4ED8" />
+              : <Globe size={12} color="#15803D" />}
+          </div>
+          <div>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700,
+              color: isOwlPay ? '#1D4ED8' : '#15803D' }}>
+              {isOwlPay ? 'OwlPay Harbor' : 'Vita Wallet'}
+            </span>
+            <span style={{ fontSize: '0.6875rem', color: isOwlPay ? '#3B82F6' : '#22C55E',
+              marginLeft: 6 }}>
+              {isOwlPay ? '· Transferencia internacional' : '· Red Latinoamérica'}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ─── OwlPay: formulario estático con secciones ─────────────────────── */}
+      {!rulesLoading && isOwlPay && owlPayForm && (
+        <>
+          {owlPayForm.title && (
+            <p className="text-[0.8125rem] font-semibold text-[#1D3461] -mb-1">
+              {owlPayForm.title}
+            </p>
+          )}
+          {owlPayForm.fields.map((field, idx) => {
+            const prevSection = idx > 0 ? owlPayForm.fields[idx - 1].section : null
+            const showHeader  = field.section && field.section !== prevSection
+            return (
+              <div key={field.key} className="flex flex-col gap-3">
+                {showHeader && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+                    <p className="text-[0.6875rem] font-bold text-[#94A3B8] uppercase tracking-wider whitespace-nowrap">
+                      {field.section}
+                    </p>
+                    <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+                  </div>
+                )}
+                <DynamicField
+                  field={field}
+                  value={values[field.key] ?? (field.default ?? '')}
+                  error={getError(field)}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  countryCode={country}
+                />
+              </div>
+            )
+          })}
+        </>
+      )}
+
+      {/* ─── Vita: campos dinámicos del backend ────────────────────────────── */}
+      {!rulesLoading && !isOwlPay && vitaVisibleRules.map(field => (
         <DynamicField
           key={field.key}
           field={field}
@@ -425,7 +714,7 @@ export default function VitaContactForm({
       {showCountryModal && (
         <CountryPickerModal
           selected={country}
-          onSelect={setCountry}
+          onSelect={handleCountrySelect}
           onClose={() => setShowCountryModal(false)}
         />
       )}
