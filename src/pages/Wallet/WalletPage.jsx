@@ -1070,6 +1070,18 @@ function USDCDepositModal({ open, onClose, instructions }) {
     </button>
   )
 
+  // ── Contrato nuevo (Camino A: dirección custodial propia, sin memo) ─────────
+  // Decidimos por flags, no por hardcode. Defensivo ante respuestas viejas:
+  //   - memoRequired ausente → inferir de la presencia de stellarMemo
+  //   - ready ausente → asumir true (no bloquear el flujo)
+  const memoRequired = instructions?.memoRequired ?? !!instructions?.stellarMemo
+  const isReady      = instructions ? instructions.ready !== false : true
+  const warningText  = instructions?.warning
+    ?? (memoRequired
+      ? 'Debes incluir el memo exacto en tu transferencia Stellar. Sin memo tu depósito no podrá ser acreditado.'
+      : 'Envía USDC (red Stellar) únicamente a tu dirección. No necesitas memo.')
+  const steps = Array.isArray(instructions?.instructions) ? instructions.instructions : []
+
   return (
     <Modal open={open} onClose={onClose} title="Depositar USDC vía Stellar">
       {!instructions ? (
@@ -1078,14 +1090,33 @@ function USDCDepositModal({ open, onClose, instructions }) {
         </div>
       ) : (
         <div className="space-y-4">
-          {/* Warning */}
-          <div className="rounded-2xl px-4 py-3 flex items-start gap-3"
-            style={{ background: '#F59E0B1A', border: '1px solid #F59E0B33' }}>
-            <AlertCircle size={16} className="text-[#F59E0B] mt-0.5 flex-shrink-0" />
-            <p className="text-[0.75rem] text-[#92400E] leading-relaxed">
-              <span className="font-bold">IMPORTANTE:</span> Debes incluir el memo exacto en tu transferencia Stellar. Sin memo tu depósito no podrá ser acreditado.
-            </p>
-          </div>
+          {/* Aviso: cuenta preparándose (trustline USDC estableciéndose) */}
+          {!isReady && (
+            <div className="rounded-2xl px-4 py-3 flex items-start gap-3"
+              style={{ background: '#F59E0B1A', border: '1px solid #F59E0B33' }}>
+              <Loader2 size={16} className="text-[#F59E0B] mt-0.5 flex-shrink-0 animate-spin" />
+              <p className="text-[0.75rem] text-[#92400E] leading-relaxed">
+                <span className="font-bold">Preparando tu cuenta:</span> estamos habilitando tu dirección para recibir USDC (estableciendo la trustline). Espera unos minutos y reintenta antes de depositar.
+              </p>
+            </div>
+          )}
+
+          {/* Aviso principal: con memo (legacy) o sin memo (Camino A) */}
+          {memoRequired ? (
+            <div className="rounded-2xl px-4 py-3 flex items-start gap-3"
+              style={{ background: '#F59E0B1A', border: '1px solid #F59E0B33' }}>
+              <AlertCircle size={16} className="text-[#F59E0B] mt-0.5 flex-shrink-0" />
+              <p className="text-[0.75rem] text-[#92400E] leading-relaxed">
+                <span className="font-bold">IMPORTANTE:</span> {warningText}
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-2xl px-4 py-3 flex items-start gap-3"
+              style={{ background: '#233E581A', border: '1px solid #233E5833' }}>
+              <Info size={16} className="text-[#233E58] mt-0.5 flex-shrink-0" />
+              <p className="text-[0.75rem] text-[#334155] leading-relaxed">{warningText}</p>
+            </div>
+          )}
 
           {/* Datos Stellar */}
           <div className="bg-[#F8FAFC] rounded-2xl p-4 border border-[#E2E8F0] space-y-3">
@@ -1098,20 +1129,38 @@ function USDCDepositModal({ open, onClose, instructions }) {
               <p className="text-[0.875rem] font-semibold text-[#0F172A]">USDC (USD Coin)</p>
             </div>
             <div>
-              <p className="text-[0.6875rem] font-medium text-[#64748B] mb-1">Dirección de destino</p>
+              <p className="text-[0.6875rem] font-medium text-[#64748B] mb-1">Tu dirección de depósito</p>
               <div className="flex items-center gap-2">
                 <span className="flex-1 text-[0.75rem] font-mono text-[#0F172A] break-all">{instructions.stellarAddress}</span>
                 <CopyBtn field="address" text={instructions.stellarAddress} />
               </div>
             </div>
-            <div className="pt-2 border-t border-[#E2E8F0]">
-              <p className="text-[0.6875rem] font-bold text-[#F59E0B] mb-1 uppercase tracking-wider">Memo obligatorio</p>
-              <div className="flex items-center gap-2">
-                <span className="flex-1 text-[0.9375rem] font-mono font-bold text-[#233E58]">{instructions.stellarMemo}</span>
-                <CopyBtn field="memo" text={instructions.stellarMemo} />
+            {/* Memo: solo si el contrato lo exige (compat legacy) */}
+            {memoRequired && instructions.stellarMemo && (
+              <div className="pt-2 border-t border-[#E2E8F0]">
+                <p className="text-[0.6875rem] font-bold text-[#F59E0B] mb-1 uppercase tracking-wider">Memo obligatorio</p>
+                <div className="flex items-center gap-2">
+                  <span className="flex-1 text-[0.9375rem] font-mono font-bold text-[#233E58]">{instructions.stellarMemo}</span>
+                  <CopyBtn field="memo" text={instructions.stellarMemo} />
+                </div>
               </div>
-            </div>
+            )}
           </div>
+
+          {/* Pasos (desde el backend, si los provee) */}
+          {steps.length > 0 && (
+            <div className="bg-white rounded-2xl p-4 border border-[#E2E8F0] space-y-2">
+              <p className="text-[0.6875rem] font-medium text-[#64748B] uppercase tracking-wider">Cómo depositar</p>
+              <ol className="space-y-1.5">
+                {steps.map((step, i) => (
+                  <li key={i} className="text-[0.8125rem] text-[#334155] leading-relaxed flex gap-2">
+                    <span className="font-semibold text-[#233E58] flex-shrink-0">{i + 1}.</span>
+                    <span>{String(step).replace(/^\s*\d+[.)]\s*/, '')}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
 
           <p className="text-[0.75rem] text-[#64748B] text-center">
             El equipo Alyto acreditará tu saldo en <span className="text-[#0F172A] font-semibold">1-2 horas hábiles</span>.
