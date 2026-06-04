@@ -210,6 +210,7 @@ import { fetchTransactionDetail } from '../../services/transactionsService.js'
 import { getPaymentQR, uploadComprobante } from '../../services/paymentsService.js'
 import { downloadBusinessInvoice } from '../../services/api.js'
 import { useAuth }                 from '../../context/AuthContext.jsx'
+import { StellarInstructions }     from '../Sep24/Sep24Shared.jsx'
 
 // ── Configuración de estados ──────────────────────────────────────────────────
 
@@ -239,6 +240,20 @@ const STATUS_CONFIG = {
   failed:                         { label: 'No se pudo completar',    color: '#EF4444',                     bg: '#EF44441A' },
   refunded:                       { label: 'Reembolsada',             color: '#F59E0B',                     bg: '#F59E0B1A' },
   expired:                        { label: 'Expirada',                color: '#EF4444',                     bg: '#EF44441A' },
+  // ── SEP-24 / SEP-31 — depósito/retiro de activo digital ──
+  sep24_deposit_pending:          { label: 'Esperando tu depósito',   color: '#F59E0B',                     bg: '#F59E0B1A' },
+  sep24_withdraw_pending:         { label: 'Procesando tu retiro',    color: '#3B82F6',                     bg: '#3B82F61A' },
+  sep31_waiting:                  { label: 'En proceso',              color: '#3B82F6',                     bg: '#3B82F61A' },
+}
+
+/** Convierte un status técnico desconocido en una etiqueta legible:
+ *  "sep24_deposit_pending" → "Deposit pending" (último recurso, nunca crudo). */
+function humanizeStatus(raw) {
+  if (!raw) return 'Estado desconocido'
+  return String(raw)
+    .replace(/^sep(24|31)_/, '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
 }
 
 // ── Pasos del timeline ────────────────────────────────────────────────────────
@@ -264,6 +279,19 @@ const TIMELINE_STEPS = [
     doneWhen:   s => s === 'completed' || s === 'confirmed',
     activeWhen: s => s === 'payout_sent',
   },
+]
+
+// ── Timeline SEP-24 (depósito/retiro de activo digital) ───────────────────────
+const SEP24_DEPOSIT_STEPS = [
+  { label: 'Solicitado',           doneWhen: () => true,                                         activeWhen: () => false },
+  { label: 'Esperando depósito',   doneWhen: s => s === 'completed' || s === 'confirmed',        activeWhen: s => s === 'sep24_deposit_pending' },
+  { label: 'Acreditado',           doneWhen: s => s === 'completed' || s === 'confirmed',        activeWhen: () => false },
+]
+
+const SEP24_WITHDRAW_STEPS = [
+  { label: 'Solicitado',           doneWhen: () => true,                                         activeWhen: () => false },
+  { label: 'Procesando',           doneWhen: s => s === 'completed' || s === 'confirmed',        activeWhen: s => s === 'sep24_withdraw_pending' },
+  { label: 'Enviado a tu banco',   doneWhen: s => s === 'completed' || s === 'confirmed',        activeWhen: () => false },
 ]
 
 // ── Utilidades ────────────────────────────────────────────────────────────────
@@ -607,16 +635,37 @@ export default function TransactionDetail() {
     )
   }
 
-  const cfg      = STATUS_CONFIG[tx.status] ?? { label: tx.status, color: 'var(--color-text-secondary)', bg: '#64748B1A' }
+  const cfg      = STATUS_CONFIG[tx.status] ?? { label: humanizeStatus(tx.status), color: 'var(--color-text-secondary)', bg: '#64748B1A' }
   const isFailed = tx.status === 'failed' || tx.status === 'refunded' || tx.status === 'expired'
 
-  // Monto destino: si viene 0/null del server, estimar desde tasa
-  const effectiveDestAmount = (tx.destinationAmount && tx.destinationAmount > 0)
-    ? tx.destinationAmount
-    : (tx.exchangeRate > 0 ? Math.round(tx.originAmount * tx.exchangeRate * 100) / 100 : null)
+  // ── SEP-24: depósito/retiro de activo digital, NO envío a beneficiario ──────
+  // Estas operaciones no tienen beneficiario bancario ni conversión de moneda;
+  // el usuario recibe (depósito) o retira (retiro) USDC en su propia wallet.
+  const isSep24Deposit  = tx.sep24Type === 'deposit'  || tx.status === 'sep24_deposit_pending'
+  const isSep24Withdraw = tx.sep24Type === 'withdraw' || tx.status === 'sep24_withdraw_pending'
+  const isSep24         = isSep24Deposit || isSep24Withdraw
 
-  // El monto es referencial hasta que el pago sale al banco
-  const isAmountApproximate = !['payout_sent', 'completed', 'confirmed'].includes(tx.status)
+  // Beneficiario real: solo cross-border. El backend siempre devuelve un objeto
+  // beneficiary (con accountNumber '****'), así que validamos que tenga datos.
+  const hasBeneficiary = !isSep24 && !!(
+    tx.beneficiary?.fullName ||
+    (tx.beneficiary?.accountNumber && tx.beneficiary.accountNumber !== '****')
+  )
+
+  // Activo digital del depósito/retiro (USDC por defecto)
+  const digitalAsset = tx.digitalAsset ?? 'USDC'
+
+  // Monto destino y moneda según el tipo de operación
+  const effectiveDestAmount = isSep24
+    ? (tx.digitalAssetAmount ?? tx.originAmount ?? null)
+    : ((tx.destinationAmount && tx.destinationAmount > 0)
+        ? tx.destinationAmount
+        : (tx.exchangeRate > 0 ? Math.round(tx.originAmount * tx.exchangeRate * 100) / 100 : null))
+  const destCurrency = isSep24 ? digitalAsset : tx.destinationCurrency
+
+  // El monto cross-border es referencial hasta que sale al banco; el de un
+  // depósito/retiro SEP-24 es exacto (1:1 con el activo digital).
+  const isAmountApproximate = !isSep24 && !['payout_sent', 'completed', 'confirmed'].includes(tx.status)
 
   // Tiempo estimado: mostrar en lenguaje más atractivo
   const deliveryLabel = (() => {
@@ -669,10 +718,10 @@ export default function TransactionDetail() {
             {/* Timeline — no se muestra si falló */}
             {!isFailed && (
               <div className="flex items-start">
-                {TIMELINE_STEPS.map((step, i) => {
+                {(isSep24Deposit ? SEP24_DEPOSIT_STEPS : isSep24Withdraw ? SEP24_WITHDRAW_STEPS : TIMELINE_STEPS).map((step, i, steps) => {
                   const done   = step.doneWhen(tx.status)
                   const active = step.activeWhen(tx.status)
-                  const isLast = i === TIMELINE_STEPS.length - 1
+                  const isLast = i === steps.length - 1
 
                   const nodeColor  = done ? '#233E58' : active ? cfg.color : 'var(--color-border)'
                   const nodeBorder = done ? '#233E58' : active ? cfg.color : 'var(--color-border)'
@@ -716,6 +765,17 @@ export default function TransactionDetail() {
               </div>
             )}
           </div>
+
+          {/* ── 1b-SEP24. INSTRUCCIONES DE DEPÓSITO PENDIENTE ─────────────── */}
+          {/* El usuario aún no envió el USDC: mostramos dirección + memo.    */}
+          {isSep24Deposit && tx.status === 'sep24_deposit_pending' && tx.instructionAddress && (
+            <StellarInstructions
+              address={tx.instructionAddress}
+              memo={tx.instructionMemo}
+              amount={tx.digitalAssetAmount ?? tx.originAmount}
+              assetCode={digitalAsset}
+            />
+          )}
 
           {/* ── 1c. DETALLE DEL FALLO — solo si failed con info user-facing ── */}
           {isFailed && tx.failure?.reason && (
@@ -940,11 +1000,11 @@ export default function TransactionDetail() {
           <Section title="Resumen financiero">
             <div className="flex flex-col gap-3">
               <Row
-                label="Enviaste"
+                label={isSep24Deposit ? 'Depositaste' : isSep24Withdraw ? 'Retiraste' : 'Enviaste'}
                 value={formatAmount(tx.originAmount, tx.originCurrency)}
                 bold
               />
-              {tx.exchangeRate > 0 && tx.destinationCurrency && (
+              {!isSep24 && tx.exchangeRate > 0 && tx.destinationCurrency && (
                 <Row
                   label="Tasa aplicada"
                   value={`1 ${tx.originCurrency} = ${tx.exchangeRate.toFixed(6)} ${tx.destinationCurrency}`}
@@ -959,9 +1019,9 @@ export default function TransactionDetail() {
               )}
               <div className="h-px bg-[#E2E8F0]" />
               <Row
-                label="Beneficiario recibe"
+                label={isSep24Deposit ? 'Recibes en tu wallet' : isSep24Withdraw ? 'Recibes en tu banco' : 'Beneficiario recibe'}
                 value={effectiveDestAmount
-                  ? `${isAmountApproximate ? '~' : ''}${formatAmount(Math.round(effectiveDestAmount), tx.destinationCurrency)}${isAmountApproximate ? ' aprox.' : ''}`
+                  ? `${isAmountApproximate ? '~' : ''}${formatAmount(Math.round(effectiveDestAmount), destCurrency)}${isAmountApproximate ? ' aprox.' : ''}`
                   : '—'}
                 bold
                 valueColor="#233E58"
@@ -975,7 +1035,7 @@ export default function TransactionDetail() {
           </Section>
 
           {/* ── 3. BENEFICIARIO ──────────────────────────────────────────── */}
-          {tx.beneficiary && (
+          {hasBeneficiary && (
             <Section title="Beneficiario">
               <div className="flex flex-col gap-3">
                 {tx.beneficiary.fullName && (
@@ -1008,7 +1068,9 @@ export default function TransactionDetail() {
                   crossOrigin="anonymous"
                   style={{ height: '28px', width: 'auto', marginBottom: 6 }}
                 />
-                <p style={{ color: '#94A3B8', fontSize: '0.6875rem', marginTop: 2 }}>Comprobante de transferencia</p>
+                <p style={{ color: '#94A3B8', fontSize: '0.6875rem', marginTop: 2 }}>
+                  {isSep24Deposit ? 'Comprobante de depósito' : isSep24Withdraw ? 'Comprobante de retiro' : 'Comprobante de transferencia'}
+                </p>
               </div>
 
               <div className="px-5 pb-6 flex flex-col">
@@ -1037,16 +1099,22 @@ export default function TransactionDetail() {
                 {/* Tú enviaste / Ellos reciben / Tasa */}
                 <div className="flex flex-col gap-3 mb-4 pb-4 w-full text-center" style={{ borderBottom: '1px solid #F1F5F9' }}>
                   <div>
-                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 2 }}>Tú enviaste</p>
+                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 2 }}>
+                      {isSep24Deposit ? 'Depositaste' : isSep24Withdraw ? 'Retiraste' : 'Tú enviaste'}
+                    </p>
                     <p style={{ color: 'var(--color-text-primary)', fontSize: '0.9375rem', fontWeight: 600 }}>
                       {countryFlag(currencyToCountry(tx.originCurrency))} {formatAmount(tx.originAmount, tx.originCurrency)}
                     </p>
                   </div>
                   <div>
-                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 2 }}>Ellos reciben</p>
+                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginBottom: 2 }}>
+                      {isSep24Deposit ? 'Recibes en tu wallet' : isSep24Withdraw ? 'Recibes en tu banco' : 'Ellos reciben'}
+                    </p>
                     <p style={{ color: 'var(--color-accent-teal)', fontSize: '0.9375rem', fontWeight: 700 }}>
-                      {countryFlag(tx.destinationCountry)}{' '}
-                      {isAmountApproximate ? '~' : ''}{formatAmount(Math.round(effectiveDestAmount), tx.destinationCurrency)}{isAmountApproximate ? ' aprox.' : ''}
+                      {isSep24 ? '🪙' : countryFlag(tx.destinationCountry)}{' '}
+                      {effectiveDestAmount
+                        ? `${isAmountApproximate ? '~' : ''}${formatAmount(Math.round(effectiveDestAmount), destCurrency)}${isAmountApproximate ? ' aprox.' : ''}`
+                        : '—'}
                     </p>
                     {isAmountApproximate && effectiveDestAmount && (
                       <p style={{ color: '#94A3B8', fontSize: '0.6875rem', marginTop: 2 }}>
@@ -1065,7 +1133,7 @@ export default function TransactionDetail() {
                 </div>
 
                 {/* Beneficiario */}
-                {tx.beneficiary && (
+                {hasBeneficiary && (
                   <div className="flex flex-col gap-3 mb-4 pb-4 w-full text-center" style={{ borderBottom: '1px solid #F1F5F9' }}>
                     {tx.beneficiary.fullName && (
                       <div>
@@ -1342,18 +1410,18 @@ export default function TransactionDetail() {
         <h2>Comprobante Alyto</h2>
         <div className="row"><span className="label">ID:</span><span className="value">{tx.transactionId}</span></div>
         <div className="row"><span className="label">Estado:</span><span className="value">{cfg.label}</span></div>
-        <div className="row"><span className="label">Enviaste:</span><span className="value">{formatAmount(tx.originAmount, tx.originCurrency)}</span></div>
-        <div className="row"><span className="label">Beneficiario recibe:</span><span className="value">{formatAmount(tx.destinationAmount, tx.destinationCurrency)}</span></div>
+        <div className="row"><span className="label">{isSep24Deposit ? 'Depositaste:' : isSep24Withdraw ? 'Retiraste:' : 'Enviaste:'}</span><span className="value">{formatAmount(tx.originAmount, tx.originCurrency)}</span></div>
+        <div className="row"><span className="label">{isSep24Deposit ? 'Recibes:' : isSep24Withdraw ? 'Recibes en tu banco:' : 'Beneficiario recibe:'}</span><span className="value">{effectiveDestAmount ? formatAmount(Math.round(effectiveDestAmount), destCurrency) : '—'}</span></div>
         {tx.fees?.totalDeducted > 0 && (
           <div className="row"><span className="label">Fees:</span><span className="value">{formatAmount(tx.fees.totalDeducted, tx.originCurrency)}</span></div>
         )}
-        {tx.beneficiary?.fullName && (
+        {hasBeneficiary && tx.beneficiary?.fullName && (
           <div className="row"><span className="label">Beneficiario:</span><span className="value">{tx.beneficiary.fullName}</span></div>
         )}
-        {tx.beneficiary?.bankName && (
+        {hasBeneficiary && tx.beneficiary?.bankName && (
           <div className="row"><span className="label">Banco:</span><span className="value">{resolveBankName(tx.beneficiary.bankName) ?? tx.beneficiary.bankName}</span></div>
         )}
-        {tx.beneficiary?.accountNumber && (
+        {hasBeneficiary && tx.beneficiary?.accountNumber && (
           <div className="row"><span className="label">Cuenta:</span><span className="value">{tx.beneficiary.accountNumber}</span></div>
         )}
         <div className="row"><span className="label">Fecha:</span><span className="value">{formatExactDate(tx.createdAt)}</span></div>
