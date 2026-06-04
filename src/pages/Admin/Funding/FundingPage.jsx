@@ -12,6 +12,7 @@ import {
   Plus, RefreshCw, X, AlertTriangle, CheckCircle2,
   Loader, Filter, TrendingUp, Wallet, Calendar,
   Edit2, BarChart3, ArrowRight, Zap, Clock, Copy, ExternalLink,
+  QrCode, ChevronLeft, ChevronRight, Ban, Eye,
 } from 'lucide-react'
 import {
   getFundingBalances,
@@ -23,6 +24,9 @@ import {
   updateCLPBOBRate,
   getUSDCForecast,
   getVitaBalance,
+  createFundingIntent,
+  listFundingIntents,
+  cancelFundingIntent,
 } from '../../../services/adminService'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -1589,6 +1593,426 @@ function FundingHistoryTable({ fundings, loading }) {
 
 // ── FundingPage ───────────────────────────────────────────────────────────────
 
+// ════════════════════════════════════════════════════════════════════════════
+//  FONDEO DE TESORERÍA — Intents (Camino A)
+//  El admin crea un intent → correlativo + dirección de tesorería + memo + QR
+//  SEP-7. Retira el USDC del exchange a esa dirección con el memo; se concilia
+//  on-chain. NO hay lógica de red/firma aquí: solo consumo de API + mostrar/copiar.
+// ════════════════════════════════════════════════════════════════════════════
+
+const STELLAR_NETWORK = import.meta.env.VITE_STELLAR_NETWORK === 'mainnet' ? 'public' : 'testnet'
+const stellarExpertTx = hash => `https://stellar.expert/explorer/${STELLAR_NETWORK}/tx/${hash}`
+
+const INTENT_STATUS_META = {
+  open:      { label: 'Abierto',    bg: '#F59E0B1A', text: '#F59E0B' },
+  matched:   { label: 'Conciliado', bg: '#22C55E1A', text: '#22C55E' },
+  cancelled: { label: 'Cancelado',  bg: '#4E5A7A1A', text: '#8A96B8' },
+}
+
+function IntentStatusBadge({ status }) {
+  const s = INTENT_STATUS_META[status] ?? { label: status, bg: '#4E5A7A1A', text: '#8A96B8' }
+  return (
+    <span className="text-[0.625rem] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+      style={{ background: s.bg, color: s.text }}>
+      {s.label}
+    </span>
+  )
+}
+
+function CopyBtn({ text, label = 'Copiar' }) {
+  const [copied, setCopied] = useState(false)
+  if (!text) return null
+  return (
+    <button
+      onClick={() => { navigator.clipboard?.writeText(String(text)); setCopied(true); setTimeout(() => setCopied(false), 1500) }}
+      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[0.75rem] font-semibold flex-shrink-0 transition-all active:scale-90"
+      style={{ background: copied ? '#22C55E1A' : '#1A2340', border: `1px solid ${copied ? '#22C55E40' : '#263050'}`, color: copied ? '#22C55E' : '#8A96B8' }}
+    >
+      {copied ? <CheckCircle2 size={12} /> : <Copy size={12} />}
+      {copied ? 'Copiado' : label}
+    </button>
+  )
+}
+
+function IntentFieldRow({ label, value, mono = false }) {
+  if (value == null || value === '') return null
+  return (
+    <div className="flex items-center justify-between gap-3 py-2">
+      <div className="min-w-0">
+        <p className="text-[0.625rem] text-[#4E5A7A] uppercase tracking-wider mb-0.5">{label}</p>
+        <p className={`text-[0.8125rem] text-white break-all ${mono ? 'font-mono' : 'font-semibold'}`}>{value}</p>
+      </div>
+      <CopyBtn text={value} />
+    </div>
+  )
+}
+
+/** Vista de datos de un intent: QR (si lo hay) + dirección + memo + aviso. */
+function IntentDataView({ intent }) {
+  return (
+    <div className="space-y-3">
+      {intent.qr && (
+        <div className="flex flex-col items-center gap-2">
+          <img src={intent.qr} alt={`QR ${intent.intentId}`}
+            className="w-44 h-44 rounded-xl bg-white p-2 object-contain" />
+          <span className="text-[0.625rem] text-[#4E5A7A]">Escaneá desde tu wallet/exchange</span>
+        </div>
+      )}
+
+      <div className="rounded-xl px-3.5 divide-y divide-[#26305060]"
+        style={{ background: '#0F1628', border: '1px solid #263050' }}>
+        <IntentFieldRow label="Correlativo (intent)"   value={intent.intentId} mono />
+        <IntentFieldRow label="Dirección de tesorería" value={intent.treasuryAddress} mono />
+        <IntentFieldRow label="Memo (MEMO_TEXT)"        value={intent.memo} mono />
+        {intent.expectedAmount != null && (
+          <IntentFieldRow label="Monto esperado" value={`${intent.expectedAmount} ${intent.asset ?? 'USDC'}`} />
+        )}
+      </div>
+
+      <div className="flex items-start gap-2.5 rounded-xl px-3.5 py-3"
+        style={{ background: '#F59E0B12', border: '1px solid #F59E0B33' }}>
+        <AlertTriangle size={15} className="text-[#F59E0B] mt-0.5 flex-shrink-0" />
+        <p className="text-[0.75rem] leading-relaxed" style={{ color: '#E3C892' }}>
+          {intent.note
+            ?? 'Retirá el USDC del exchange a esta dirección, incluyendo este MEMO. El monto se reconcilia on-chain (no es necesario que el exchange respete el monto del QR).'}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+const intentModalShell = { background: '#0F1628', border: '1px solid #263050' }
+const intentInputCls = 'w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white border border-[#263050] bg-[#0F1628] focus:outline-none focus:border-[#C4CBD8] transition-colors placeholder:text-[#4E5A7A]'
+
+/** Modal para crear un intent. Tras crear, muestra dirección + memo + QR. */
+function IntentCreateModal({ onClose, onCreated }) {
+  const [entity,         setEntity]         = useState('SRL')
+  const [expectedAmount, setExpectedAmount] = useState('')
+  const [sourceCurrency, setSourceCurrency] = useState('BOB')
+  const [sourceAmount,   setSourceAmount]   = useState('')
+  const [binanceOrderId, setBinanceOrderId] = useState('')
+  const [note,           setNote]           = useState('')
+  const [creating,       setCreating]       = useState(false)
+  const [error,          setError]          = useState(null)
+  const [result,         setResult]         = useState(null)
+
+  async function submit(e) {
+    e?.preventDefault()
+    setCreating(true); setError(null)
+    try {
+      const body = { entity }
+      if (expectedAmount !== '') body.expectedAmount = Number(expectedAmount)
+      if (sourceCurrency)        body.sourceCurrency = sourceCurrency
+      if (sourceAmount !== '')   body.sourceAmount   = Number(sourceAmount)
+      if (binanceOrderId.trim()) body.binanceOrderId = binanceOrderId.trim()
+      if (note.trim())           body.note           = note.trim()
+      const res = await createFundingIntent(body)
+      setResult(res)
+      onCreated?.()
+    } catch (err) {
+      setError(err.message || 'No se pudo crear el intent')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const labelCls = 'text-[0.75rem] font-medium text-[#8A96B8]'
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: '#0F162899', backdropFilter: 'blur(8px)' }} onClick={onClose}>
+      <div className="w-full max-w-md rounded-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        style={intentModalShell} onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid #263050' }}>
+          <h3 className="text-[0.9375rem] font-bold text-white">
+            {result ? `Intent ${result.intentId}` : 'Crear intent de fondeo'}
+          </h3>
+          <button onClick={onClose} className="text-[#4E5A7A] hover:text-white transition-colors"><X size={18} /></button>
+        </div>
+
+        {/* Body */}
+        <div className="overflow-y-auto px-5 py-5">
+          {result ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-[#22C55E]">
+                <CheckCircle2 size={16} />
+                <span className="text-[0.8125rem] font-semibold">Intent creado</span>
+              </div>
+              <IntentDataView intent={result} />
+              <button onClick={onClose}
+                className="w-full py-3 rounded-xl text-[0.875rem] font-bold text-[#0F1628]"
+                style={{ background: '#C4CBD8' }}>
+                Listo
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={submit} className="space-y-3.5">
+              <div className="space-y-1.5">
+                <label className={labelCls}>Entidad</label>
+                <select value={entity} onChange={e => setEntity(e.target.value)} className={intentInputCls}>
+                  {ENTITIES.map(en => <option key={en} value={en}>{en}</option>)}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className={labelCls}>Monto esperado (USDC)</label>
+                  <input type="number" inputMode="decimal" step="0.01" min="0" value={expectedAmount}
+                    onChange={e => setExpectedAmount(e.target.value)} placeholder="100" className={intentInputCls} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className={labelCls}>Moneda origen</label>
+                  <select value={sourceCurrency} onChange={e => setSourceCurrency(e.target.value)} className={intentInputCls}>
+                    {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className={labelCls}>Monto fiat pagado ({sourceCurrency}) <span className="text-[#4E5A7A]">· opcional</span></label>
+                <input type="number" inputMode="decimal" step="0.01" min="0" value={sourceAmount}
+                  onChange={e => setSourceAmount(e.target.value)} placeholder="930" className={intentInputCls} />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className={labelCls}>Orden Binance <span className="text-[#4E5A7A]">· opcional</span></label>
+                <input type="text" value={binanceOrderId} onChange={e => setBinanceOrderId(e.target.value)}
+                  placeholder="ID de la orden P2P" className={intentInputCls} />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className={labelCls}>Nota <span className="text-[#4E5A7A]">· opcional</span></label>
+                <input type="text" value={note} onChange={e => setNote(e.target.value)}
+                  placeholder="Referencia interna" className={intentInputCls} />
+              </div>
+
+              {error && (
+                <div className="flex items-center gap-2 rounded-xl px-3 py-2.5"
+                  style={{ background: '#EF44441A', border: '1px solid #EF444433' }}>
+                  <AlertTriangle size={14} className="text-[#F87171] flex-shrink-0" />
+                  <p className="text-[0.75rem] text-[#F87171]">{error}</p>
+                </div>
+              )}
+
+              <button type="submit" disabled={creating}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[0.875rem] font-bold text-[#0F1628] disabled:opacity-50"
+                style={{ background: '#C4CBD8' }}>
+                {creating ? <Loader size={15} className="animate-spin" /> : <Plus size={15} />}
+                {creating ? 'Creando...' : 'Crear intent'}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Modal de solo-lectura: re-muestra los datos de un intent (sin QR del backend). */
+function IntentViewModal({ intent, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: '#0F162899', backdropFilter: 'blur(8px)' }} onClick={onClose}>
+      <div className="w-full max-w-md rounded-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        style={intentModalShell} onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid #263050' }}>
+          <h3 className="text-[0.9375rem] font-bold text-white">Datos del intent {intent.intentId}</h3>
+          <button onClick={onClose} className="text-[#4E5A7A] hover:text-white transition-colors"><X size={18} /></button>
+        </div>
+        <div className="overflow-y-auto px-5 py-5">
+          <IntentDataView intent={intent} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TreasuryFundingIntentsPanel() {
+  const [intents,      setIntents]      = useState([])
+  const [loading,      setLoading]      = useState(true)
+  const [error,        setError]        = useState(null)
+  const [filterStatus, setFilterStatus] = useState('')
+  const [page,         setPage]         = useState(1)
+  const [pagination,   setPagination]   = useState({ total: 0, page: 1, limit: 20, totalPages: 1 })
+  const [createOpen,   setCreateOpen]   = useState(false)
+  const [viewIntent,   setViewIntent]   = useState(null)
+  const [cancelling,   setCancelling]   = useState(null)
+
+  const load = useCallback(async () => {
+    setLoading(true); setError(null)
+    try {
+      const data = await listFundingIntents({ status: filterStatus, page, limit: 20 })
+      setIntents(data.intents ?? [])
+      setPagination(data.pagination ?? { total: 0, page: 1, limit: 20, totalPages: 1 })
+    } catch (err) {
+      setError(err.message || 'No se pudieron cargar los intents')
+      setIntents([])
+    } finally {
+      setLoading(false)
+    }
+  }, [filterStatus, page])
+
+  useEffect(() => { load() }, [load])
+  useEffect(() => { setPage(1) }, [filterStatus])
+
+  async function handleCancel(intentId) {
+    if (!window.confirm(`¿Cancelar el intent ${intentId}? Esta acción no se puede deshacer.`)) return
+    setCancelling(intentId)
+    try {
+      await cancelFundingIntent(intentId)
+      load()
+    } catch (err) {
+      setError(err.message || 'No se pudo cancelar el intent')
+    } finally {
+      setCancelling(null)
+    }
+  }
+
+  const selectCls = 'rounded-xl px-3 py-2 text-[0.8125rem] text-white border border-[#263050] bg-[#1A2340] focus:outline-none focus:border-[#C4CBD8] transition-colors appearance-none cursor-pointer'
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: '#1A2340', border: '1px solid #263050' }}>
+
+      {/* Header */}
+      <div className="flex flex-wrap items-center gap-3 px-6 py-4" style={{ borderBottom: '1px solid #263050' }}>
+        <div className="flex items-center gap-2.5 mr-auto">
+          <div className="w-7 h-7 rounded-xl bg-[#C4CBD81A] border border-[#C4CBD833] flex items-center justify-center">
+            <QrCode size={13} className="text-[#C4CBD8]" />
+          </div>
+          <div>
+            <h2 className="text-[0.9375rem] font-bold text-white">Fondeo de tesorería</h2>
+            <p className="text-[0.6875rem] text-[#4E5A7A]">Intents con correlativo + QR · se concilian on-chain</p>
+          </div>
+        </div>
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className={selectCls}>
+          <option value="">Todos los estados</option>
+          <option value="open">Abiertos</option>
+          <option value="matched">Conciliados</option>
+          <option value="cancelled">Cancelados</option>
+        </select>
+        <button onClick={load}
+          className="w-9 h-9 rounded-xl bg-[#1F2B4D] border border-[#263050] flex items-center justify-center hover:border-[#C4CBD833] text-[#8A96B8] hover:text-white transition-colors"
+          title="Actualizar">
+          <RefreshCw size={14} />
+        </button>
+        <button onClick={() => setCreateOpen(true)}
+          className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-[0.8125rem] font-bold text-[#0F1628] hover:opacity-90 active:scale-[0.98] transition-all"
+          style={{ background: '#C4CBD8', boxShadow: '0 4px 20px rgba(196,203,216,0.3)' }}>
+          <Plus size={15} />
+          Crear intent
+        </button>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="flex items-center gap-3 px-6 py-3" style={{ background: '#EF44440D', borderBottom: '1px solid #263050' }}>
+          <AlertTriangle size={15} className="text-[#F87171] flex-shrink-0" />
+          <p className="text-[0.8125rem] text-[#F87171]">{error}</p>
+        </div>
+      )}
+
+      {/* Tabla / estados */}
+      {loading ? (
+        <div className="p-6 space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-12 rounded-xl bg-[#0F1628] animate-pulse" />
+          ))}
+        </div>
+      ) : intents.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-14 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-[#0F1628] border border-[#263050] flex items-center justify-center mb-3">
+            <QrCode size={20} className="text-[#4E5A7A]" />
+          </div>
+          <p className="text-[0.875rem] font-semibold text-white">Sin intents de fondeo</p>
+          <p className="text-[0.75rem] text-[#4E5A7A] mt-1">Creá uno para fondear la tesorería con correlativo y QR.</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr style={{ background: '#0F1628', borderBottom: '1px solid #263050' }}>
+                {['Intent', 'Esperado', 'Estado', 'Conciliado', 'Tx on-chain', 'Creado', ''].map((h, i) => (
+                  <th key={i} className="text-left px-4 py-3 text-[0.625rem] font-bold text-[#4E5A7A] uppercase tracking-wider whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {intents.map(it => (
+                <tr key={it.intentId} className="border-b border-[#26305040] last:border-0 hover:bg-[#0F162840] transition-colors">
+                  <td className="px-4 py-3">
+                    <p className="text-[0.8125rem] font-mono text-[#C4CBD8] whitespace-nowrap">{it.intentId}</p>
+                    {it.entity && <p className="text-[0.625rem] text-[#4E5A7A] mt-0.5">{it.entity} · {it.asset ?? 'USDC'}</p>}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-[0.8125rem] text-white font-semibold">
+                      {it.expectedAmount != null ? `${formatAmount(it.expectedAmount)} ${it.asset ?? 'USDC'}` : '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3"><IntentStatusBadge status={it.status} /></td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-[0.8125rem] text-white">
+                      {it.matchedAmount != null ? `${formatAmount(it.matchedAmount)} ${it.asset ?? 'USDC'}` : '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {it.matchedStellarTxId ? (
+                      <a href={stellarExpertTx(it.matchedStellarTxId)} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-[0.75rem] font-semibold text-[#8AB4F8] hover:opacity-80">
+                        <ExternalLink size={12} />
+                        Ver tx
+                      </a>
+                    ) : <span className="text-[0.75rem] text-[#4E5A7A]">—</span>}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-[0.75rem] text-[#8A96B8]">{formatDate(it.createdAt)}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => setViewIntent(it)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[0.75rem] font-semibold text-[#8A96B8] hover:text-white transition-colors"
+                        style={{ background: '#1A2340', border: '1px solid #263050' }}>
+                        <Eye size={12} /> Datos
+                      </button>
+                      {it.status === 'open' && (
+                        <button onClick={() => handleCancel(it.intentId)} disabled={cancelling === it.intentId}
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[0.75rem] font-semibold text-[#F87171] hover:bg-[#EF44441A] transition-colors disabled:opacity-50"
+                          style={{ border: '1px solid #EF444433' }}>
+                          {cancelling === it.intentId ? <Loader size={12} className="animate-spin" /> : <Ban size={12} />}
+                          Cancelar
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Paginación */}
+      {pagination.totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 py-4" style={{ borderTop: '1px solid #263050' }}>
+          <span className="text-[0.75rem] text-[#4E5A7A]">Página {pagination.page} de {pagination.totalPages} · {pagination.total} intents</span>
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
+            className="w-8 h-8 rounded-lg border border-[#263050] flex items-center justify-center disabled:opacity-40 text-[#8A96B8] hover:text-white">
+            <ChevronLeft size={14} />
+          </button>
+          <button onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))} disabled={page >= pagination.totalPages}
+            className="w-8 h-8 rounded-lg border border-[#263050] flex items-center justify-center disabled:opacity-40 text-[#8A96B8] hover:text-white">
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      )}
+
+      {createOpen && <IntentCreateModal onClose={() => setCreateOpen(false)} onCreated={load} />}
+      {viewIntent && <IntentViewModal intent={viewIntent} onClose={() => setViewIntent(null)} />}
+    </div>
+  )
+}
+
 export default function FundingPage() {
   const [balances,     setBalances]     = useState({ SRL: null, SpA: null, LLC: null })
   const [balLoading,   setBalLoading]   = useState(true)
@@ -1688,6 +2112,9 @@ export default function FundingPage() {
 
       {/* ── SECCIÓN 2B: Previsión USDC live (Harbor/Stellar) ── */}
       <USDCForecastWidget />
+
+      {/* ── SECCIÓN 2C: Fondeo de tesorería — intents (Camino A) ── */}
+      <TreasuryFundingIntentsPanel />
 
       {/* ── SECCIÓN 3: Historial ── */}
       <div className="rounded-2xl overflow-hidden" style={{ background: '#1A2340', border: '1px solid #263050' }}>

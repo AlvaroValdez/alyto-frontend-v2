@@ -230,6 +230,47 @@ export function getUSDCForecast(entity = 'SRL') {
   return request(`/admin/funding/forecast?entity=${entity}`)
 }
 
+// ── Intents de fondeo de tesorería (Camino A) ────────────────────────────────
+
+/**
+ * Crea un intent de fondeo: genera correlativo, dirección de tesorería, memo
+ * y QR SEP-7 para que el admin retire USDC del exchange y se reconcilie on-chain.
+ * @param {{ entity?, expectedAmount?, sourceCurrency?, sourceAmount?, binanceOrderId?, note? }} data
+ * @returns {Promise<{ intentId, entity, asset, treasuryAddress, assetIssuer, memo, expectedAmount, status, sep7Uri, qr, note }>}
+ */
+export function createFundingIntent(data = {}) {
+  return request('/admin/funding/intents', {
+    method: 'POST',
+    body:   JSON.stringify(data),
+  })
+}
+
+/**
+ * Lista los intents de fondeo con filtros opcionales.
+ * @param {{ status?, entity?, page?, limit? }} params
+ * @returns {Promise<{ intents, pagination }>}
+ */
+export function listFundingIntents(params = {}) {
+  const qs = new URLSearchParams()
+  if (params.status) qs.set('status', params.status)
+  if (params.entity) qs.set('entity', params.entity)
+  if (params.page)   qs.set('page',   String(params.page))
+  if (params.limit)  qs.set('limit',  String(params.limit))
+  const query = qs.toString()
+  return request(`/admin/funding/intents${query ? `?${query}` : ''}`)
+}
+
+/**
+ * Cancela un intent de fondeo abierto.
+ * @param {string} intentId
+ * @returns {Promise<{ intentId, status }>}
+ */
+export function cancelFundingIntent(intentId) {
+  return request(`/admin/funding/intents/${encodeURIComponent(intentId)}/cancel`, {
+    method: 'PATCH',
+  })
+}
+
 // ── Tasas de cambio ────────────────────────────────────────────────────────────
 
 /**
