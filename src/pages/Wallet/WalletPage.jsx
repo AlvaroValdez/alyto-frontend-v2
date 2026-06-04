@@ -187,105 +187,6 @@ function FilterChips({ filters, active, onChange, accent = '#233E58' }) {
   )
 }
 
-// ── Quick QR Sheet ─────────────────────────────────────────────────────────────
-
-function QuickQRSheet({ open, onClose }) {
-  const [qrData,  setQrData]  = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState(null)
-  const [copied,  setCopied]  = useState(false)
-
-  useEffect(() => {
-    if (!open || qrData) return
-    setLoading(true); setError(null)
-    request('/wallet/qr/generate', { method: 'POST', body: JSON.stringify({ type: 'deposit' }) })
-      .then(d => setQrData(d))
-      .catch(e => setError(e.message || 'Error al generar el QR.'))
-      .finally(() => setLoading(false))
-  }, [open, qrData])
-
-  function handleClose() { setQrData(null); onClose() }
-
-  function copyId() {
-    if (!qrData?.qrId) return
-    navigator.clipboard.writeText(qrData.qrId)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  if (!open) return null
-  return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-end justify-center"
-      style={{ background: '#0F162880' }}
-      onClick={e => { if (e.target === e.currentTarget) handleClose() }}>
-      <div className="w-full max-w-[430px] bg-white rounded-t-3xl overflow-hidden"
-        style={{ border: '1px solid #E2E8F0', borderBottom: 'none', boxShadow: '0 -8px 40px rgba(0,0,0,0.15)' }}>
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-[#E2E8F0]" />
-        </div>
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-3 pb-4">
-          <div>
-            <h3 className="text-[1rem] font-bold text-[#0F172A]">Mi QR de cobro</h3>
-            <p className="text-[0.75rem] text-[#64748B] mt-0.5">Muéstralo para recibir BOB al instante</p>
-          </div>
-          <button onClick={handleClose}
-            className="w-9 h-9 rounded-full flex items-center justify-center"
-            style={{ background: '#F1F5F9' }}>
-            <X size={16} className="text-[#64748B]" />
-          </button>
-        </div>
-
-        <div className="px-6 pb-8">
-          {loading && (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 size={32} className="animate-spin text-[#233E58]" />
-            </div>
-          )}
-          {error && (
-            <div className="flex items-center gap-2 bg-[#EF44441A] rounded-xl px-4 py-3 mb-4">
-              <AlertCircle size={15} className="text-[#F87171] flex-shrink-0" />
-              <p className="text-[0.8125rem] text-[#F87171]">{error}</p>
-            </div>
-          )}
-          {qrData && !loading && (
-            <div className="flex flex-col items-center gap-4">
-              {/* QR code */}
-              <div className="p-3.5 rounded-2xl bg-white"
-                style={{ border: '2.5px solid #1D3461', boxShadow: '0 4px 32px rgba(29,52,97,0.12)' }}>
-                <img src={qrData.qrBase64} alt="Mi QR Alyto" className="w-52 h-52 object-contain block" />
-              </div>
-              {/* ID copiable */}
-              <div className="flex items-center gap-2 bg-[#F8FAFC] rounded-xl px-3.5 py-2.5 border border-[#E2E8F0] w-full">
-                <QrCode size={14} className="text-[#94A3B8] flex-shrink-0" />
-                <span className="flex-1 text-[0.75rem] font-mono text-[#0F172A] truncate">{qrData.qrId}</span>
-                <button onClick={copyId}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: '#233E581A', border: '1px solid #233E5833' }}>
-                  {copied ? <CheckCheck size={12} className="text-[#22C55E]" /> : <Copy size={12} className="text-[#233E58]" />}
-                </button>
-              </div>
-              {qrData.expiresAt && (
-                <p className="text-[0.6875rem] text-[#94A3B8] flex items-center gap-1.5">
-                  <Clock size={11} />
-                  Válido hasta {new Date(qrData.expiresAt).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              )}
-              <button onClick={handleClose}
-                className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white"
-                style={{ background: '#233E58' }}>
-                Cerrar
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>,
-    document.body
-  )
-}
-
 // ── Modal base ─────────────────────────────────────────────────────────────────
 
 function Modal({ open, onClose, title, children }) {
@@ -1441,7 +1342,6 @@ export default function WalletPage() {
   const [bobTxFilter,       setBobTxFilter]       = useState('all')
   const [usdcTxFilter,      setUsdcTxFilter]      = useState('all')
   const [copiedMemo,        setCopiedMemo]        = useState(false)
-  const [showQuickQR,       setShowQuickQR]       = useState(false)
   const [exportBobLoading,  setExportBobLoading]  = useState(false)
   const [exportUsdcLoading, setExportUsdcLoading] = useState(false)
 
@@ -1523,7 +1423,7 @@ export default function WalletPage() {
   const fetchUSDCRate = useCallback(async () => {
     try {
       const data = await request('/wallet/usdc/rate')
-      setUsdcRate(data.rate ?? null)
+      setUsdcRate(data.bobPerUsdc ?? data.rate ?? null)
     } catch { /* silencioso */ }
   }, [])
 
@@ -1680,7 +1580,7 @@ export default function WalletPage() {
                 {[
                   { label: 'Cargar',    icon: ArrowDownToLine, action: () => setShowDeposit(true),   primary: true  },
                   { label: 'Enviar',    icon: ArrowUpRight,    action: () => setShowSend(true),       primary: false },
-                  { label: 'QR',        icon: QrCode,          action: () => setShowQuickQR(true),  primary: false },
+                  { label: 'QR',        icon: QrCode,          action: () => navigate('/wallet/qr'),  primary: false },
                   { label: 'Retirar',   icon: Wallet,          action: () => setShowWithdraw(true),  primary: false },
                 ].map(({ label, icon: Icon, action, primary }) => (
                   <button key={label} onClick={action}
@@ -1904,7 +1804,6 @@ export default function WalletPage() {
         rate={usdcRate}
       />
 
-      <QuickQRSheet open={showQuickQR} onClose={() => setShowQuickQR(false)} />
     </div>
   )
 }
