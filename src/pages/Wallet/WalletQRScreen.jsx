@@ -19,93 +19,9 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { request } from '../../services/api'
+import QRDisplay, { buildQRWithLogo } from '../../components/ui/QRDisplay'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-/**
- * Superpone el logo sobre el QR con canvas (para descargar).
- * El logo ocupa ~22% del ancho (seguro con errorCorrectionLevel 'H').
- */
-async function buildQRWithLogo(qrBase64) {
-  return new Promise((resolve) => {
-    const src = qrBase64.startsWith('data:') ? qrBase64 : `data:image/png;base64,${qrBase64}`
-    const qrImg   = new Image()
-    const logoImg = new Image()
-    let loaded = 0
-
-    const onLoad = () => {
-      loaded++
-      if (loaded < 2) return
-      // Usar resolución nativa del QR para evitar distorsiones (mínimo 400px)
-      const size    = Math.max(qrImg.naturalWidth || 400, 400)
-      const canvas  = document.createElement('canvas')
-      canvas.width  = size
-      canvas.height = size
-      const ctx     = canvas.getContext('2d')
-      ctx.imageSmoothingEnabled = false
-      ctx.drawImage(qrImg, 0, 0, size, size)
-
-      const logoSize = Math.round(size * 0.22)
-      const padding  = Math.round(logoSize * 0.18)
-      const boxSize  = logoSize + padding * 2
-      const x        = Math.round((size - boxSize) / 2)
-      const y        = Math.round((size - boxSize) / 2)
-      const r        = Math.round(boxSize * 0.18)
-
-      ctx.fillStyle = '#FFFFFF'
-      ctx.beginPath()
-      ctx.moveTo(x + r, y)
-      ctx.lineTo(x + boxSize - r, y)
-      ctx.quadraticCurveTo(x + boxSize, y, x + boxSize, y + r)
-      ctx.lineTo(x + boxSize, y + boxSize - r)
-      ctx.quadraticCurveTo(x + boxSize, y + boxSize, x + boxSize - r, y + boxSize)
-      ctx.lineTo(x + r, y + boxSize)
-      ctx.quadraticCurveTo(x, y + boxSize, x, y + boxSize - r)
-      ctx.lineTo(x, y + r)
-      ctx.quadraticCurveTo(x, y, x + r, y)
-      ctx.closePath()
-      ctx.fill()
-      ctx.imageSmoothingEnabled = true
-      ctx.drawImage(logoImg, x + padding, y + padding, logoSize, logoSize)
-
-      try { resolve(canvas.toDataURL('image/png')) }
-      catch { resolve(src) }
-    }
-
-    qrImg.onload    = onLoad
-    logoImg.onload  = onLoad
-    qrImg.onerror   = () => resolve(src)
-    logoImg.onerror = () => { ctx?.drawImage?.(qrImg, 0, 0); resolve(src) }
-
-    qrImg.src   = src
-    logoImg.src = '/assets/LogoAlytoBlack.png'
-  })
-}
-
-/**
- * QRDisplay — muestra el QR con el logo de Alyto superpuesto vía CSS.
- * No usa canvas → no hay riesgo de taint ni errores de carga.
- */
-function QRDisplay({ src, alt, className }) {
-  return (
-    <div className={`relative inline-block ${className ?? ''}`}>
-      <img src={src} alt={alt} className="w-full h-full rounded-xl block" />
-      {/* Logo overlay centrado */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div
-          className="flex items-center justify-center rounded-xl bg-white"
-          style={{ width: '22%', height: '22%', padding: '3%', boxShadow: '0 0 0 1.5px #E2E8F0' }}
-        >
-          <img
-            src="/assets/LogoAlytoBlack.png"
-            alt="Alyto"
-            className="w-full h-full object-contain"
-          />
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function formatBOB(amount) {
   if (amount == null || amount === '') return ''
@@ -113,6 +29,18 @@ function formatBOB(amount) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Number(amount))
+}
+
+function formatUSDC(amount) {
+  if (amount == null || amount === '') return ''
+  return `${new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(amount))} USDC`
+}
+
+function amountDisplay(amount, asset) {
+  return asset === 'USDC' ? formatUSDC(amount) : `Bs. ${formatBOB(amount)}`
 }
 
 function useCountdown(expiresAt) {
@@ -164,6 +92,7 @@ const TTL_OPTIONS = [
 ]
 
 function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
+  const [asset,        setAsset]        = useState('BOB')   // 'BOB' | 'USDC'
   const [fixedAmount,  setFixedAmount]  = useState(true)
   const [amount,       setAmount]       = useState(initialAmount)
   const [description,  setDescription] = useState(initialDescription)
@@ -174,15 +103,16 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
 
   async function handleGenerate() {
     setError(null)
+    const minLabel = asset === 'USDC' ? '1 USDC' : 'Bs. 1'
     if (fixedAmount && (!amount || Number(amount) < 1)) {
-      setError('Ingresa un monto válido (mínimo Bs. 1).')
+      setError(`Ingresa un monto válido (mínimo ${minLabel}).`)
       return
     }
     setLoading(true)
     try {
       const body = fixedAmount
-        ? { type: 'charge', amount: Number(amount), description: description || undefined, expiresInSecs: expirySecs }
-        : { type: 'deposit', description: description || undefined, expiresInSecs: expirySecs }
+        ? { type: 'charge', asset, amount: Number(amount), description: description || undefined, expiresInSecs: expirySecs }
+        : { type: 'deposit', asset, description: description || undefined, expiresInSecs: expirySecs }
 
       const data = await request('/wallet/qr/generate', { method: 'POST', body: JSON.stringify(body) })
       setQrData(data)
@@ -196,8 +126,9 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
   async function handleShare() {
     if (!qrData?.qrBase64) return
     const src = await buildQRWithLogo(qrData.qrBase64)
+    const qrAsset = qrData.asset ?? asset
     const text = qrData.amount
-      ? `Págame Bs. ${formatBOB(qrData.amount)} con Alyto`
+      ? `Págame ${amountDisplay(qrData.amount, qrAsset)} con Alyto`
       : `Pagar con Alyto${description ? ' — ' + description : ''}`
 
     if (navigator.canShare) {
@@ -239,13 +170,15 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
       <div className="flex flex-col items-center gap-5 px-4 py-2">
         {/* QR image */}
         <div className="bg-white rounded-2xl p-4 shadow-[0_4px_24px_rgba(15,23,42,0.08)] border border-[#E2E8F0]">
-          <QRDisplay src={qrData.qrBase64} alt="QR Alyto" className="w-64 h-64" />
+          <QRDisplay src={qrData.qrBase64} alt="QR Alyto" size={256} />
         </div>
 
         {/* Monto + nombre */}
         <div className="text-center">
           {qrData.amount != null && (
-            <p className="text-[1.75rem] font-bold text-[#233E58]">Bs. {formatBOB(qrData.amount)}</p>
+            <p className="text-[1.75rem] font-bold text-[#233E58]">
+              {amountDisplay(qrData.amount, qrData.asset ?? asset)}
+            </p>
           )}
           <p className="text-[0.875rem] text-[#64748B] mt-0.5">
             {user.firstName} {user.lastName}
@@ -282,6 +215,26 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
   return (
     <div className="flex flex-col gap-5 px-4 py-2">
 
+      {/* Asset selector: BOB / USDC */}
+      <div>
+        <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
+          Moneda
+        </label>
+        <div className="flex gap-2 p-1 rounded-xl bg-[#F1F5F9] border border-[#E2E8F0]">
+          {[{ label: 'BOB (Bolivianos)', val: 'BOB' }, { label: 'USDC', val: 'USDC' }].map(({ label, val }) => (
+            <button
+              key={val}
+              onClick={() => { setAsset(val); setAmount('') }}
+              className={`flex-1 py-2 rounded-lg text-[0.8125rem] font-semibold transition-all ${
+                asset === val ? 'bg-[#233E58] text-white shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Toggle monto fijo vs libre */}
       <div className="flex gap-2 p-1 rounded-xl bg-[#F1F5F9] border border-[#E2E8F0]">
         {[
@@ -309,7 +262,9 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
             Monto a cobrar
           </label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-bold text-[1.125rem]">Bs</span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-bold text-[1.125rem]">
+              {asset === 'USDC' ? '$' : 'Bs'}
+            </span>
             <input
               type="number"
               inputMode="decimal"
@@ -317,8 +272,11 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
               value={amount}
               onChange={e => setAmount(e.target.value)}
               placeholder="0.00"
-              className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-12 pr-4 py-4 text-[#0F172A] text-[1.5rem] font-bold focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all placeholder:text-[#CBD5E1]"
+              className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-12 pr-16 py-4 text-[#0F172A] text-[1.5rem] font-bold focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all placeholder:text-[#CBD5E1]"
             />
+            {asset === 'USDC' && (
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-semibold text-[0.875rem]">USDC</span>
+            )}
           </div>
         </div>
       )}
@@ -389,10 +347,11 @@ function TabPagar() {
   const rafRef          = useRef(null)
   const streamRef       = useRef(null)
   const fileInputRef    = useRef(null)
+  const idempKeyRef     = useRef(null)  // reused on retry, reset on success/new scan
 
   const [camError,    setCamError]    = useState(null)
   const [scanning,    setScanning]    = useState(false)
-  const [preview,     setPreview]     = useState(null)   // datos del QR previsualizado
+  const [preview,     setPreview]     = useState(null)
   const [manualMode,  setManualMode]  = useState(false)
   const [manualText,  setManualText]  = useState('')
   const [depositAmt,  setDepositAmt]  = useState('')
@@ -490,16 +449,24 @@ function TabPagar() {
 
   async function handlePay() {
     if (!preview) return
+    // Generate key once per confirm attempt; reuse if retrying same payment
+    if (!idempKeyRef.current) idempKeyRef.current = crypto.randomUUID()
     setPaying(true)
     setPayError(null)
     try {
       const body = { qrContent: preview._rawContent }
       if (preview.type === 'deposit') body.amount = Number(depositAmt)
-      const data = await request('/wallet/qr/scan', { method: 'POST', body: JSON.stringify(body) })
+      const data = await request('/wallet/qr/scan', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { 'Idempotency-Key': idempKeyRef.current },
+      })
       setResult(data)
       setPreview(null)
+      idempKeyRef.current = null
     } catch (err) {
       setPayError(err.message || 'Error al procesar el pago.')
+      // Keep key so retry of same payment uses same key
     } finally {
       setPaying(false)
     }
@@ -508,21 +475,29 @@ function TabPagar() {
   function handleReset() {
     setPreview(null); setResult(null); setPayError(null)
     setManualText(''); setManualMode(false); setDepositAmt('')
+    idempKeyRef.current = null
   }
 
   // ── Pantalla de resultado ──
   if (result) {
+    const isUSDC = result.asset === 'USDC'
     return (
       <div className="flex flex-col items-center gap-5 px-4 py-6 text-center">
         <div className="w-16 h-16 rounded-full flex items-center justify-center bg-[#233E581A] border border-[#233E5833]">
           <CheckCircle2 size={32} className="text-[#233E58]" />
         </div>
         <div>
-          <p className="text-[1.5rem] font-bold text-[#233E58]">Bs. {formatBOB(result.amount)}</p>
-          <p className="text-[0.875rem] text-[#64748B] mt-1">Enviado a {result.recipient}</p>
-          <p className="text-[0.75rem] text-[#94A3B8] mt-0.5">
-            Saldo actual: Bs. {formatBOB(result.balanceAfter)}
+          <p className="text-[1.5rem] font-bold text-[#233E58]">
+            {isUSDC ? formatUSDC(result.amount) : `Bs. ${formatBOB(result.amount)}`}
           </p>
+          <p className="text-[0.875rem] text-[#64748B] mt-1">
+            {isUSDC ? 'USDC enviado a' : 'Enviado a'} {result.recipient}
+          </p>
+          {result.balanceAfter != null && (
+            <p className="text-[0.75rem] text-[#94A3B8] mt-0.5">
+              Saldo: {isUSDC ? formatUSDC(result.balanceAfter) : `Bs. ${formatBOB(result.balanceAfter)}`}
+            </p>
+          )}
         </div>
         <button
           onClick={handleReset}
@@ -536,8 +511,18 @@ function TabPagar() {
 
   // ── Pantalla de confirmación ──
   if (preview) {
+    const previewAsset = preview.asset ?? 'BOB'
+    const isUSDC       = previewAsset === 'USDC'
     return (
       <div className="flex flex-col gap-4 px-4 py-2">
+        {/* Asset badge */}
+        <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[0.75rem] font-semibold ${
+          isUSDC ? 'bg-[#0D6E521A] text-[#0D6E52]' : 'bg-[#233E581A] text-[#233E58]'
+        }`}>
+          <CheckCircle2 size={13} />
+          QR Alyto detectado — {isUSDC ? 'USDC (Stellar)' : 'BOB (Bolivia)'}
+        </div>
+
         <div className="rounded-2xl p-5 bg-white border border-[#E2E8F0]">
           <p className="text-[0.75rem] text-[#94A3B8] mb-1">Destinatario</p>
           <p className="text-[1rem] font-bold text-[#0F172A]">{preview.creatorName}</p>
@@ -545,15 +530,21 @@ function TabPagar() {
           {preview.type !== 'deposit' && preview.amount != null && (
             <>
               <p className="text-[0.75rem] text-[#94A3B8] mt-3 mb-1">Monto</p>
-              <p className="text-[1.75rem] font-bold text-[#233E58]">Bs. {formatBOB(preview.amount)}</p>
+              <p className="text-[1.75rem] font-bold text-[#233E58]">
+                {amountDisplay(preview.amount, previewAsset)}
+              </p>
             </>
           )}
 
           {preview.type === 'deposit' && (
             <div className="mt-3">
-              <label className="block text-[0.75rem] text-[#94A3B8] mb-1">Monto a enviar</label>
+              <label className="block text-[0.75rem] text-[#94A3B8] mb-1">
+                Monto a enviar {isUSDC ? '(USDC)' : '(BOB)'}
+              </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-bold">Bs</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-bold">
+                  {isUSDC ? '$' : 'Bs'}
+                </span>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -599,10 +590,10 @@ function TabPagar() {
             onClick={handlePay}
             disabled={paying || (preview.type === 'deposit' && !depositAmt)}
             className="flex-1 py-3 rounded-2xl text-[0.875rem] font-semibold flex items-center justify-center gap-2 text-white transition-all disabled:opacity-50"
-            style={{ background: '#233E58', boxShadow: '0 4px 20px rgba(35,62,88,0.25)' }}
+            style={{ background: isUSDC ? '#0D6E52' : '#233E58', boxShadow: `0 4px 20px ${isUSDC ? 'rgba(13,110,82,0.25)' : 'rgba(35,62,88,0.25)'}` }}
           >
             {paying ? <Loader2 size={16} className="animate-spin" /> : null}
-            {paying ? 'Procesando...' : 'Confirmar pago'}
+            {paying ? 'Procesando...' : isUSDC ? 'Pagar USDC' : 'Confirmar pago'}
           </button>
         </div>
       </div>
@@ -800,7 +791,7 @@ function TabMiQR({ user }) {
     <div className="flex flex-col items-center gap-5 px-4 py-2">
       {/* QR */}
       <div className="bg-white rounded-2xl p-4 shadow-[0_4px_24px_rgba(15,23,42,0.08)] border border-[#E2E8F0]">
-        <QRDisplay src={qrData.qrBase64} alt="Mi QR Alyto" className="w-64 h-64" />
+        <QRDisplay src={qrData.qrBase64} alt="Mi QR Alyto" size={256} />
       </div>
 
       {/* Nombre */}
@@ -858,8 +849,10 @@ export default function WalletQRScreen() {
 
   const initialAmount      = searchParams.get('amount')      ?? ''
   const initialDescription = searchParams.get('description') ?? ''
-  // Si vienen parámetros, abrir directamente en tab cobrar
-  const [tab, setTab] = useState('cobrar')
+  const initialTab         = (['cobrar', 'pagar', 'mi-qr'].includes(searchParams.get('tab') ?? ''))
+    ? searchParams.get('tab')
+    : 'cobrar'
+  const [tab, setTab] = useState(initialTab)
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">

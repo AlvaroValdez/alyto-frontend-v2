@@ -42,6 +42,7 @@ import ContactsPage       from '../pages/Contacts/ContactsPage'
 import NotificationsPage  from '../pages/Notifications/NotificationsPage'
 import WalletPage         from '../pages/Wallet/WalletPage'
 import WalletQRScreen     from '../pages/Wallet/WalletQRScreen'
+import SendUSDCPage       from '../pages/Wallet/SendUSDCPage'
 import KycPage            from '../pages/Kyc/KycPage'
 import KycReturnPage      from '../pages/Kyc/KycReturnPage'
 import ReclamosPage       from '../pages/Reclamos/ReclamosPage'
@@ -61,6 +62,7 @@ import KybDetailPage       from '../pages/Admin/Kyb/KybDetailPage'
 import SRLConfigPage       from '../pages/Admin/SRLConfig/SRLConfigPage'
 import SpAConfigPage       from '../pages/Admin/SpAConfig/SpAConfigPage'
 import WalletAdminPage     from '../pages/Admin/Wallet/WalletAdminPage'
+import WalletFeesPage      from '../pages/Admin/WalletFees/WalletFeesPage'
 import ReclamosAdminPage   from '../pages/Admin/Reclamos/ReclamosAdminPage'
 import SanctionsPage       from '../pages/Admin/Sanctions/SanctionsPage'
 import UsersPage           from '../pages/Admin/Users/UsersPage'
@@ -129,8 +131,9 @@ export default function AppRouter() {
         <Route path="/kyc/return"    element={<KycReturnPage />} />
 
         {/* Wallet (activos / liquidación BOB para SRL) */}
-        <Route path="/wallet"        element={<WalletPage />} />
-        <Route path="/wallet/qr"     element={<WalletQRScreen />} />
+        <Route path="/wallet"            element={<WalletPage />} />
+        <Route path="/wallet/qr"         element={<WalletQRScreen />} />
+        <Route path="/wallet/usdc/send"  element={<SendUSDCPage />} />
 
         {/* Transferencias */}
         <Route path="/transactions"                element={<TransactionsPage />} />
@@ -176,6 +179,7 @@ export default function AppRouter() {
         <Route path="/admin/srl-config"      element={<SRLConfigPage />}     />
         <Route path="/admin/spa-config"      element={<SpAConfigPage />}     />
         <Route path="/admin/wallet"          element={<WalletAdminPage />}   />
+        <Route path="/admin/wallet-fees"     element={<WalletFeesPage />}    />
         <Route path="/admin/reclamos"        element={<ReclamosAdminPage />} />
         <Route path="/admin/sanctions"       element={<SanctionsPage />}     />
         <Route path="/admin/users"           element={<UsersPage />}         />

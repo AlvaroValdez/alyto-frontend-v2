@@ -484,6 +484,32 @@ export const toggleContactFavorite = (id) =>
  *
  * @param {string} transactionId — alytoTransactionId
  */
+// ── Wallet P2P (alias + USDC) ────────────────────────────────────────────────
+
+export const getMyAlias = () =>
+  request('/wallet/alias/me')
+
+export const checkAliasAvailable = (alias) =>
+  request(`/wallet/alias/available?alias=${encodeURIComponent(alias)}`)
+
+export const setAlias = (alias) =>
+  request('/wallet/alias', { method: 'PUT', body: JSON.stringify({ alias }) })
+
+export const getUSDCTransferQuote = (alias, amount) =>
+  request(`/wallet/usdc/transfer-quote?alias=${encodeURIComponent(alias)}&amount=${amount}`)
+
+export const sendUSDC = (recipientAlias, amount, description, idempotencyKey) =>
+  request('/wallet/usdc/send', {
+    method: 'POST',
+    body: JSON.stringify({
+      recipientAlias,
+      amount,
+      ...(description ? { description } : {}),
+    }),
+    headers: { 'Idempotency-Key': idempotencyKey },
+  })
+
+// ── Factura B2B ──────────────────────────────────────────────────────────
 export async function downloadBusinessInvoice(transactionId) {
   const res = await request(`/payments/${transactionId}/business-invoice`)
   const blob = await res.blob()

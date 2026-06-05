@@ -6,7 +6,7 @@
 
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
-import { BarChart2, Layers, ArrowLeft, ShieldCheck, TrendingUp, Wallet, Building2, QrCode, Banknote, AlertCircle, ShieldAlert, Settings2, AlertTriangle, CheckCircle2, X, Bell, UserPlus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, FileText, Send, Shield as ShieldIcon, CheckCheck, Loader2, Users } from 'lucide-react'
+import { BarChart2, Layers, ArrowLeft, ShieldCheck, TrendingUp, Wallet, Building2, QrCode, Banknote, AlertCircle, ShieldAlert, Settings2, AlertTriangle, CheckCircle2, X, Bell, UserPlus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, FileText, Send, Shield as ShieldIcon, CheckCheck, Loader2, Users, Percent } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { request, fetchUnreadCount, fetchNotifications, markNotificationsRead } from '../../services/api'
 
@@ -174,7 +174,8 @@ export default function AdminLayout() {
         <SidebarLink to="/admin/srl-config" icon={QrCode}     label="Bolivia — QR" />
         <SidebarLink to="/admin/spa-config" icon={Settings2}  label="Chile — Transferencias" />
         <SidebarLink to="/admin/kyb"        icon={Building2}  label="KYB"         />
-        <SidebarLink to="/admin/wallet"     icon={Banknote}      label="Wallets Bolivia" />
+        <SidebarLink to="/admin/wallet"      icon={Banknote}   label="Wallets Bolivia"      />
+        <SidebarLink to="/admin/wallet-fees" icon={Percent}    label="Comisiones P2P"       />
         <SidebarLink to="/admin/reclamos"   icon={AlertCircle}   label="Reclamos PRILI"  />
         <SidebarLink to="/admin/sanctions"  icon={ShieldAlert}   label="Sanciones AML"   />
         <SidebarLink to="/admin/users"      icon={Users}         label="Usuarios"        />

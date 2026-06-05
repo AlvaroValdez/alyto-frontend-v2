@@ -16,10 +16,11 @@ import {
   ArrowRightLeft, AlertCircle, CheckCircle2, Clock,
   ChevronLeft, ChevronRight, X, Loader2, Copy, CheckCheck, QrCode,
   RefreshCw, Info, Upload, Building2, Mail, Camera, CameraOff,
-  Download,
+  Download, AtSign, Share2,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { request, requestFormData } from '../../services/api'
+import QRDisplay from '../../components/ui/QRDisplay'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -45,6 +46,20 @@ function formatDate(d) {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   }).format(new Date(d))
+}
+
+const ALIAS_RE = /^[a-z0-9_]{3,20}$/
+
+function useCountdown(expiresAt) {
+  const [secs, setSecs] = useState(null)
+  useEffect(() => {
+    if (!expiresAt) { setSecs(null); return }
+    const tick = () => setSecs(Math.max(0, Math.floor((new Date(expiresAt) - Date.now()) / 1000)))
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [expiresAt])
+  return secs
 }
 
 // ── Status Badge ──────────────────────────────────────────────────────────────
@@ -77,6 +92,8 @@ function TxIcon({ type }) {
     fee:         { icon: ArrowRightLeft,  color: '#8A96B8', bg: '#C4CBD81A' },
     bob_to_usdc: { icon: ArrowRightLeft,  color: '#F59E0B', bg: '#F59E0B1A' },
     usdc_deposit:{ icon: ArrowDownToLine, color: '#22C55E', bg: '#22C55E1A' },
+    p2p_send:    { icon: ArrowUpRight,    color: '#F87171', bg: '#EF44441A' },
+    p2p_receive: { icon: ArrowDownToLine, color: '#22C55E', bg: '#22C55E1A' },
   }
   const m = map[type] ?? map.receive
   const Icon = m.icon
@@ -1286,8 +1303,26 @@ function ConvertModal({ open, onClose, onSuccess, bobBalance, rate }) {
 
 // ── Tab de transacciones compartido ──────────────────────────────────────────
 
+function txLabel(tx) {
+  const alias = tx.metadata?.recipientAlias || tx.metadata?.senderAlias
+  const map = {
+    deposit:      'Depósito BOB',
+    withdrawal:   'Retiro BOB',
+    send:         tx.metadata?.recipientAlias ? `Para @${tx.metadata.recipientAlias}` : 'Envío BOB',
+    receive:      tx.metadata?.senderAlias    ? `De @${tx.metadata.senderAlias}`       : 'BOB recibido',
+    freeze:       'Congelamiento',
+    unfreeze:     'Descongelamiento',
+    fee:          'Comisión',
+    bob_to_usdc:  'Conversión BOB → USDC',
+    usdc_deposit: 'Depósito USDC',
+    p2p_send:     tx.metadata?.recipientAlias ? `Para @${tx.metadata.recipientAlias}` : 'Envío USDC',
+    p2p_receive:  tx.metadata?.senderAlias    ? `De @${tx.metadata.senderAlias}`       : 'USDC recibido',
+  }
+  return tx.description || map[tx.type] || tx.type
+}
+
 function TxList({ txs, txLoading, txPages, txPage, setTxPage, currency }) {
-  const isCredit = (type) => ['deposit', 'receive', 'unfreeze', 'usdc_deposit'].includes(type)
+  const isCredit = (type) => ['deposit', 'receive', 'unfreeze', 'usdc_deposit', 'p2p_receive'].includes(type)
 
   if (txLoading && txs.length === 0) {
     return (
@@ -1319,9 +1354,12 @@ function TxList({ txs, txLoading, txPages, txPage, setTxPage, currency }) {
             <TxIcon type={tx.type} />
             <div className="flex-1 min-w-0">
               <p className="text-[0.875rem] font-semibold text-[#0F172A] truncate">
-                {tx.description ?? tx.type}
+                {txLabel(tx)}
               </p>
-              <p className="text-[0.6875rem] text-[#94A3B8] mt-0.5">{formatDate(tx.createdAt)}</p>
+              <p className="text-[0.6875rem] text-[#94A3B8] mt-0.5">
+                {formatDate(tx.createdAt)}
+                {tx.metadata?.fee > 0 && ` · fee ${formatUSDC(tx.metadata.fee)}`}
+              </p>
             </div>
             <div className="text-right flex-shrink-0">
               <p className="text-[0.9375rem] font-bold"
@@ -1348,6 +1386,353 @@ function TxList({ txs, txLoading, txPages, txPage, setTxPage, currency }) {
         </div>
       )}
     </div>
+  )
+}
+
+// ── Modal Alias Alyto ─────────────────────────────────────────────────────────
+
+function AliasModal({ open, onClose, currentAlias, canChangeAt, onSaved }) {
+  const [input,      setInput]      = useState('')
+  const [checking,   setChecking]   = useState(false)
+  const [available,  setAvailable]  = useState(null)  // null | true | false
+  const [checkError, setCheckError] = useState('')
+  const [saving,     setSaving]     = useState(false)
+  const [error,      setError]      = useState('')
+  const [done,       setDone]       = useState(false)
+  const [savedAlias, setSavedAlias] = useState('')
+  const debounceRef  = useRef(null)
+
+  const aliasClean = input.trim().toLowerCase().replace(/^@/, '')
+  const formatOK   = ALIAS_RE.test(aliasClean)
+  const cooldown   = !!(canChangeAt && currentAlias && new Date(canChangeAt) > new Date())
+
+  function handleClose() {
+    setInput(''); setAvailable(null); setCheckError('')
+    setSaving(false); setError(''); setDone(false); setSavedAlias('')
+    clearTimeout(debounceRef.current)
+    onClose()
+  }
+
+  useEffect(() => {
+    if (!open) return
+    setAvailable(null); setCheckError('')
+    if (!formatOK) { setChecking(false); return }
+    setChecking(true)
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const data = await request(`/wallet/alias/available?alias=${encodeURIComponent(aliasClean)}`)
+        setAvailable(data.available)
+        setCheckError(data.available ? '' : (data.reason || 'Este alias no está disponible.'))
+      } catch (err) {
+        setCheckError(err.message || 'Error al verificar.')
+        setAvailable(false)
+      } finally {
+        setChecking(false)
+      }
+    }, 600)
+    return () => clearTimeout(debounceRef.current)
+  }, [aliasClean, formatOK, open])
+
+  async function handleSave(e) {
+    e.preventDefault()
+    if (!available) return
+    setError(''); setSaving(true)
+    try {
+      const data = await request('/wallet/alias', {
+        method: 'PUT',
+        body: JSON.stringify({ alias: aliasClean }),
+      })
+      setSavedAlias(data.alias)
+      setDone(true)
+      onSaved?.(data.alias)
+    } catch (err) {
+      if (err.status === 409) {
+        setError('Este alias ya está en uso. Elige otro.')
+      } else if (err.status === 429) {
+        const cd = err.data?.canChangeAt
+        setError(`Período de espera activo. Próximo cambio: ${cd ? new Date(cd).toLocaleDateString('es-BO', { day: '2-digit', month: 'long', year: 'numeric' }) : 'en 30 días'}.`)
+      } else {
+        setError(err.message || 'Error al guardar el alias.')
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={handleClose} title="Tu alias Alyto">
+      {done ? (
+        <div className="text-center py-4 space-y-4">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{ background: '#22C55E1A' }}>
+            <CheckCircle2 size={32} className="text-[#22C55E]" />
+          </div>
+          <div>
+            <p className="text-[1.125rem] font-bold text-[#0F172A]">@{savedAlias}</p>
+            <p className="text-[0.875rem] text-[#64748B] mt-1">
+              Alias registrado. Compártelo para recibir USDC al instante.
+            </p>
+          </div>
+          <button onClick={handleClose}
+            className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white"
+            style={{ background: '#0D6E52' }}>
+            Listo
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {/* Current alias display */}
+          {currentAlias && (
+            <div className="flex items-center gap-3 rounded-2xl px-4 py-3"
+              style={{ background: '#0D6E520D', border: '1px solid #0D6E5222' }}>
+              <div className="w-9 h-9 rounded-xl bg-[#0D6E521A] flex items-center justify-center flex-shrink-0">
+                <AtSign size={16} className="text-[#0D6E52]" />
+              </div>
+              <div>
+                <p className="text-[0.6875rem] text-[#64748B]">Alias actual</p>
+                <p className="text-[0.9375rem] font-bold text-[#0F172A]">@{currentAlias}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Cooldown notice */}
+          {cooldown ? (
+            <>
+              <div className="flex items-start gap-2 px-4 py-3 rounded-xl"
+                style={{ background: '#F59E0B1A', border: '1px solid #F59E0B33' }}>
+                <AlertCircle size={14} className="text-[#F59E0B] mt-0.5 flex-shrink-0" />
+                <p className="text-[0.8125rem] text-[#92400E]">
+                  Cambio disponible el{' '}
+                  <span className="font-bold">
+                    {new Date(canChangeAt).toLocaleDateString('es-BO', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  </span>.
+                </p>
+              </div>
+              <button onClick={handleClose}
+                className="w-full py-3.5 rounded-2xl font-semibold text-[0.9375rem] text-[#64748B]"
+                style={{ border: '1.5px solid #E2E8F0' }}>
+                Cerrar
+              </button>
+            </>
+          ) : (
+            <form onSubmit={handleSave} className="space-y-4">
+              <div>
+                <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
+                  {currentAlias ? 'Cambiar alias' : 'Elegir alias'}
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-semibold">@</span>
+                  <input
+                    type="text"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    value={input}
+                    onChange={e => { setInput(e.target.value); setError('') }}
+                    placeholder="tualias"
+                    maxLength={20}
+                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-8 pr-10 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#0D6E52] focus:outline-none transition-all"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {checking && <Loader2 size={15} className="animate-spin text-[#94A3B8]" />}
+                    {!checking && available === true  && <CheckCircle2 size={15} className="text-[#22C55E]" />}
+                    {!checking && available === false && <AlertCircle  size={15} className="text-[#EF4444]" />}
+                  </div>
+                </div>
+                <p className="text-[0.6875rem] text-[#94A3B8] mt-1">
+                  3-20 caracteres: letras minúsculas, números o _
+                </p>
+                {!checking && available === true && (
+                  <p className="text-[0.75rem] text-[#22C55E] mt-1">@{aliasClean} está disponible.</p>
+                )}
+                {!checking && checkError && (
+                  <p className="text-[0.75rem] text-[#F87171] mt-1">{checkError}</p>
+                )}
+              </div>
+              {error && (
+                <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>
+              )}
+              <button
+                type="submit"
+                disabled={!available || saving}
+                className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white disabled:opacity-40"
+                style={{ background: '#0D6E52' }}>
+                {saving
+                  ? <Loader2 size={18} className="animate-spin mx-auto" />
+                  : currentAlias ? 'Cambiar alias' : 'Guardar alias'}
+              </button>
+            </form>
+          )}
+        </div>
+      )}
+    </Modal>
+  )
+}
+
+// ── Modal Cobrar USDC (generar QR) ────────────────────────────────────────────
+
+const USDC_TTL_OPTIONS = [
+  { label: '10 min', secs: 600   },
+  { label: '30 min', secs: 1800  },
+  { label: '1 hora', secs: 3600  },
+  { label: '24 hs',  secs: 86400 },
+]
+
+function ReceiveUSDCModal({ open, onClose, user }) {
+  const [fixedAmount,  setFixedAmount]  = useState(true)
+  const [amount,       setAmount]       = useState('')
+  const [description,  setDescription] = useState('')
+  const [expirySecs,   setExpirySecs]  = useState(600)
+  const [loading,      setLoading]     = useState(false)
+  const [qrData,       setQrData]      = useState(null)
+  const [error,        setError]       = useState(null)
+
+  const countdown = useCountdown(qrData?.expiresAt)
+  const mm = countdown != null ? String(Math.floor(countdown / 60)).padStart(2, '0') : '00'
+  const ss = countdown != null ? String(countdown % 60).padStart(2, '0') : '00'
+  const expired = countdown === 0
+
+  function resetAll() {
+    setFixedAmount(true); setAmount(''); setDescription('')
+    setExpirySecs(600); setLoading(false); setQrData(null); setError(null)
+  }
+
+  function handleClose() { resetAll(); onClose() }
+
+  async function handleGenerate() {
+    setError(null)
+    if (fixedAmount && (!amount || Number(amount) < 1)) {
+      setError('Ingresa un monto válido (mínimo 1 USDC).')
+      return
+    }
+    setLoading(true)
+    try {
+      const body = fixedAmount
+        ? { type: 'charge', asset: 'USDC', amount: Number(amount), description: description || undefined, expiresInSecs: expirySecs }
+        : { type: 'deposit', asset: 'USDC', description: description || undefined, expiresInSecs: expirySecs }
+      const data = await request('/wallet/qr/generate', { method: 'POST', body: JSON.stringify(body) })
+      setQrData(data)
+    } catch (err) {
+      setError(err.message || 'Error al generar el QR.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function handleShare() {
+    if (!qrData?.qrBase64) return
+    const text = qrData.amount
+      ? `Págame ${qrData.amount} USDC con Alyto`
+      : `Envíame USDC en Alyto${description ? ` — ${description}` : ''}`
+    if (navigator.share) navigator.share({ title: 'QR USDC Alyto', text }).catch(() => {})
+  }
+
+  return (
+    <Modal open={open} onClose={handleClose} title="Cobrar USDC">
+      {qrData ? (
+        <div className="flex flex-col items-center gap-5 py-2">
+          <div className="bg-white rounded-2xl p-4 border border-[#E2E8F0] shadow-sm flex items-center justify-center">
+            <QRDisplay src={qrData.qrBase64} alt="QR USDC Alyto" size={256} />
+          </div>
+
+          <div className="text-center">
+            {qrData.amount != null && (
+              <p className="text-[1.5rem] font-bold text-[#0D6E52]">
+                {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(qrData.amount)} USDC
+              </p>
+            )}
+            <p className="text-[0.875rem] text-[#64748B] mt-0.5">
+              {user?.firstName} {user?.lastName}
+            </p>
+            {countdown != null && !expired && (
+              <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.75rem] font-semibold bg-[#F1F5F9] text-[#94A3B8]">
+                <Clock size={12} /> Expira en {mm}:{ss}
+              </div>
+            )}
+            {expired && (
+              <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.75rem] font-semibold bg-[#EF44441A] text-[#EF4444]">
+                <AlertCircle size={12} /> QR expirado
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3 w-full">
+            <button onClick={handleShare}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-[0.875rem] font-semibold text-white"
+              style={{ background: '#0D6E52' }}>
+              <Share2 size={16} /> Compartir
+            </button>
+            <button onClick={resetAll}
+              className="px-4 py-3 rounded-2xl bg-white border border-[#E2E8F0] text-[#64748B]"
+              title="Generar nuevo QR">
+              <RefreshCw size={16} />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          <div className="flex p-1 rounded-xl bg-[#F1F5F9] border border-[#E2E8F0] gap-1">
+            {[{ label: 'Monto fijo', val: true }, { label: 'Pagador elige', val: false }].map(({ label, val }) => (
+              <button key={String(val)} onClick={() => setFixedAmount(val)}
+                className={`flex-1 py-2 rounded-lg text-[0.8125rem] font-semibold transition-all ${
+                  fixedAmount === val ? 'bg-[#0D6E52] text-white shadow-sm' : 'text-[#64748B]'
+                }`}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {fixedAmount && (
+            <div>
+              <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
+                Monto a cobrar (USDC)
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-semibold text-sm">$</span>
+                <input
+                  type="number" min={1} step="0.01"
+                  value={amount} onChange={e => setAmount(e.target.value)} placeholder="1.00"
+                  className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-9 pr-16 py-3.5 text-[#0F172A] text-[1.25rem] font-bold focus:border-[#0D6E52] focus:outline-none"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-semibold text-sm">USDC</span>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Motivo (opcional)</label>
+            <input type="text" value={description} onChange={e => setDescription(e.target.value)} maxLength={80}
+              placeholder="Ej: servicio, producto..."
+              className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.9375rem] focus:border-[#0D6E52] focus:outline-none" />
+          </div>
+
+          <div>
+            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-2">Vence en</label>
+            <div className="flex gap-2 flex-wrap">
+              {USDC_TTL_OPTIONS.map(opt => (
+                <button key={opt.secs} onClick={() => setExpirySecs(opt.secs)}
+                  className={`px-3 py-1.5 rounded-lg text-[0.8125rem] font-semibold border transition-all ${
+                    expirySecs === opt.secs
+                      ? 'bg-[#0D6E52] text-white border-[#0D6E52]'
+                      : 'bg-white text-[#64748B] border-[#E2E8F0]'
+                  }`}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {error && (
+            <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>
+          )}
+
+          <button onClick={handleGenerate} disabled={loading}
+            className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white flex items-center justify-center gap-2 disabled:opacity-40"
+            style={{ background: '#0D6E52' }}>
+            {loading ? <Loader2 size={18} className="animate-spin" /> : <><QrCode size={18} /> Generar QR USDC</>}
+          </button>
+        </div>
+      )}
+    </Modal>
   )
 }
 
@@ -1381,8 +1766,11 @@ export default function WalletPage() {
   const [depositInstructions, setDepositInstructions] = useState(null)
   const [instrLoading, setInstrLoading]     = useState(false)
 
-  const [showUSDCDeposit, setShowUSDCDeposit] = useState(false)
-  const [showConvert, setShowConvert]         = useState(false)
+  const [showUSDCDeposit,   setShowUSDCDeposit]   = useState(false)
+  const [showConvert,       setShowConvert]       = useState(false)
+  const [showAlias,         setShowAlias]         = useState(false)
+  const [showReceiveUSDC,   setShowReceiveUSDC]   = useState(false)
+  const [aliasData,         setAliasData]         = useState(null)  // { alias, canChangeAt } | false
 
   // New state — improvements
   const [bobHistory,        setBobHistory]        = useState([])
@@ -1470,6 +1858,15 @@ export default function WalletPage() {
     } catch { /* silencioso */ }
   }, [])
 
+  const fetchAlias = useCallback(async () => {
+    try {
+      const data = await request('/wallet/alias/me')
+      setAliasData(data ?? false)
+    } catch {
+      setAliasData(false)
+    }
+  }, [])
+
   const fetchUSDCRate = useCallback(async () => {
     try {
       const data = await request('/wallet/usdc/rate')
@@ -1526,6 +1923,7 @@ export default function WalletPage() {
   useEffect(() => { fetchUsdcHistory() }, [fetchUsdcHistory])
   useEffect(() => { fetchDailyLimits() }, [fetchDailyLimits])
   useEffect(() => { fetchUSDCRate() }, [fetchUSDCRate])
+  useEffect(() => { fetchAlias() }, [fetchAlias])
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -1540,7 +1938,7 @@ export default function WalletPage() {
     fetchWallet(); fetchTxs(txPage, bobTxFilter)
     fetchWalletUSDC(); fetchUSDCTxs(usdcTxPage, usdcTxFilter)
     fetchBobHistory(); fetchUsdcHistory()
-    fetchDailyLimits(); fetchUSDCRate()
+    fetchDailyLimits(); fetchUSDCRate(); fetchAlias()
   }
 
   const txPages     = Math.ceil(txTotal / 10)
@@ -1787,10 +2185,12 @@ export default function WalletPage() {
             {/* Botones de acción USDC */}
             {(walletUSDC?.status ?? 'active') === 'active' && (
               <>
-                <div className="flex gap-3 mt-5">
+                <div className="flex gap-2 mt-5">
                   {[
-                    { label: 'Depositar',  icon: ArrowDownToLine, action: openUSDCDeposit,             primary: true  },
-                    { label: 'Convertir',  icon: ArrowRightLeft,  action: () => setShowConvert(true),  primary: false },
+                    { label: 'Depositar', icon: ArrowDownToLine, action: openUSDCDeposit,                        primary: true  },
+                    { label: 'Enviar',    icon: ArrowUpRight,    action: () => navigate('/wallet/usdc/send'),     primary: false },
+                    { label: 'Cobrar',    icon: QrCode,          action: () => setShowReceiveUSDC(true),          primary: false },
+                    { label: 'Convertir', icon: ArrowRightLeft,  action: () => setShowConvert(true),              primary: false },
                   ].map(({ label, icon: Icon, action, primary }) => (
                     <button key={label} onClick={action}
                       className="flex-1 flex flex-col items-center gap-2 py-3.5 rounded-2xl transition-all active:scale-95"
@@ -1813,6 +2213,40 @@ export default function WalletPage() {
             )}
           </div>
 
+          {/* Alias section */}
+          <div className="px-4 mb-4">
+            {aliasData && aliasData.alias ? (
+              <button
+                onClick={() => setShowAlias(true)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-white border border-[#E2E8F0] text-left"
+              >
+                <div className="w-9 h-9 rounded-xl bg-[#0D6E521A] flex items-center justify-center flex-shrink-0">
+                  <AtSign size={15} className="text-[#0D6E52]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[0.6875rem] text-[#94A3B8]">Tu alias</p>
+                  <p className="text-[0.9375rem] font-bold text-[#0F172A]">@{aliasData.alias}</p>
+                </div>
+                <ChevronRight size={15} className="text-[#94A3B8] flex-shrink-0" />
+              </button>
+            ) : aliasData === false ? (
+              <button
+                onClick={() => setShowAlias(true)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left"
+                style={{ background: '#0D6E520D', border: '1px solid #0D6E5222' }}
+              >
+                <div className="w-9 h-9 rounded-xl bg-[#0D6E521A] flex items-center justify-center flex-shrink-0">
+                  <AtSign size={15} className="text-[#0D6E52]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[0.75rem] font-semibold text-[#0D6E52]">Elegí tu alias Alyto</p>
+                  <p className="text-[0.6875rem] text-[#64748B]">Recibí USDC por @alias al instante</p>
+                </div>
+                <ChevronRight size={15} className="text-[#0D6E52] flex-shrink-0" />
+              </button>
+            ) : null}
+          </div>
+
           {/* Historial USDC */}
           <div className="px-4">
             <div className="flex items-center justify-between mb-3">
@@ -1833,6 +2267,8 @@ export default function WalletPage() {
               <FilterChips
                 filters={[
                   { key: 'all',          label: 'Todos'        },
+                  { key: 'receive',      label: 'Recibidos'    },
+                  { key: 'send',         label: 'Enviados'     },
                   { key: 'usdc_deposit', label: 'Depósitos'    },
                   { key: 'bob_to_usdc',  label: 'Conversiones' },
                 ]}
@@ -1863,6 +2299,18 @@ export default function WalletPage() {
         onSuccess={handleRefresh}
         bobBalance={bobAvailable}
         rate={usdcRate}
+      />
+      <AliasModal
+        open={showAlias}
+        onClose={() => setShowAlias(false)}
+        currentAlias={aliasData?.alias ?? null}
+        canChangeAt={aliasData?.canChangeAt ?? null}
+        onSaved={(newAlias) => setAliasData(prev => ({ ...prev, alias: newAlias }))}
+      />
+      <ReceiveUSDCModal
+        open={showReceiveUSDC}
+        onClose={() => setShowReceiveUSDC(false)}
+        user={user}
       />
 
     </div>
