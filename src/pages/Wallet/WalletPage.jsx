@@ -2229,7 +2229,7 @@ export default function WalletPage() {
                 </div>
                 <ChevronRight size={15} className="text-[#94A3B8] flex-shrink-0" />
               </button>
-            ) : aliasData === false ? (
+            ) : aliasData !== null ? (
               <button
                 onClick={() => setShowAlias(true)}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left"

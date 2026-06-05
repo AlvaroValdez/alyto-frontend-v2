@@ -12,7 +12,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, User, AtSign, AlertCircle,
-  CheckCircle2, Loader2, QrCode, ArrowRightLeft, Info,
+  CheckCircle2, Loader2, QrCode, ArrowRightLeft, Info, Upload,
 } from 'lucide-react'
 import { request } from '../../services/api'
 
@@ -245,13 +245,23 @@ export default function SendUSDCPage() {
               >
                 Continuar
               </button>
-              <button
-                type="button"
-                onClick={() => navigate('/wallet/qr?tab=pagar')}
-                className="w-full py-3.5 rounded-2xl text-[0.875rem] font-semibold text-[#64748B] bg-white border border-[#E2E8F0] flex items-center justify-center gap-2 hover:border-[#CBD5E1] transition-colors"
-              >
-                <QrCode size={16} /> Escanear QR
-              </button>
+              <p className="text-center text-[0.75rem] text-[#94A3B8] mt-1">o pagá escaneando / subiendo un QR</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate('/wallet/qr?tab=pagar')}
+                  className="flex-1 py-3.5 rounded-2xl text-[0.8125rem] font-semibold text-[#64748B] bg-white border border-[#E2E8F0] flex items-center justify-center gap-2 hover:border-[#CBD5E1] transition-colors"
+                >
+                  <QrCode size={16} /> Escanear con cámara
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/wallet/qr?tab=pagar')}
+                  className="flex-1 py-3.5 rounded-2xl text-[0.8125rem] font-semibold text-[#64748B] bg-white border border-[#E2E8F0] flex items-center justify-center gap-2 hover:border-[#CBD5E1] transition-colors"
+                >
+                  <Upload size={16} /> Subir QR
+                </button>
+              </div>
             </div>
           </form>
         )}
