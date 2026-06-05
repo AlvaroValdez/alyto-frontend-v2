@@ -142,10 +142,8 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
         }
       } catch { /* fallback */ }
     }
-    if (navigator.share) {
-      navigator.share({ title: 'QR Alyto', text }).catch(() => {})
-      return
-    }
+    // Sin soporte de compartir archivo (desktop / navegadores sin Web Share files):
+    // descargar la imagen en vez de compartir solo texto (que pierde el QR).
     handleDownload()
   }
 
@@ -739,14 +737,23 @@ function TabMiQR({ user }) {
     if (!qrData) handleGenerate()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function handleShare() {
+  async function handleShare() {
     if (!qrData?.qrBase64) return
-    if (navigator.share) {
-      navigator.share({ title: `QR Alyto de ${user.firstName}`, text: 'Escanéame para enviarme BOB en Alyto' })
-        .catch(() => {})
-    } else {
-      handleDownload()
+    const src  = await buildQRWithLogo(qrData.qrBase64)
+    const text = `Escanéame para enviarme dinero en Alyto`
+    if (navigator.canShare) {
+      try {
+        const res  = await fetch(src)
+        const blob = await res.blob()
+        const file = new File([blob], `alyto-mi-qr.png`, { type: 'image/png' })
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: `QR Alyto de ${user.firstName}`, text })
+          return
+        }
+      } catch { /* fallback */ }
     }
+    // Sin soporte de compartir archivo → descargar la imagen del QR
+    handleDownload()
   }
 
   async function handleDownload() {
