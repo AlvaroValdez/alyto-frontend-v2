@@ -893,7 +893,9 @@ export const OWLPAY_FORMS = {
   // US — Estados Unidos (ACH_PUSH, DOMESTIC_WIRE, FEDWIRE, WIRE)
   // Schema verificado (todos los métodos comparten payout schema):
   //   payout requires account_holder_name, bank_name, account_number, routing_number.
-  //   benef requires name (ACH_PUSH solo) o name + address (otros).
+  //   benef requires name + address (street, city, state_province, postal_code, country).
+  // IMPORTANTE: Harbor valida state_province contra enum de abreviaturas de estado US.
+  //   'US' no es un valor válido — debe ser CA, NY, TX, etc. (2 letras, required).
   // NO existe account_type en el schema — removido.
   // ═══════════════════════════════════════════════════════════════════════════
   US: {
@@ -909,7 +911,20 @@ export const OWLPAY_FORMS = {
         required: true,
         maxLength: 140,
       },
-      ...addressFields({ countryName: 'Estados Unidos' }),
+      // Spread addressFields excepto state_province, que para US es required con enum propio
+      ...addressFields({ countryName: 'Estados Unidos' }).filter(f => f.key !== 'state_province'),
+      {
+        key: 'state_province',
+        label: 'Estado',
+        section: 'Dirección del beneficiario',
+        type: 'text',
+        placeholder: 'Ej: CA, NY, TX, FL',
+        required: true,
+        maxLength: 2,
+        minLength: 2,
+        pattern: '^[A-Z]{2}$',
+        hint: 'Abreviatura de 2 letras del estado (CA, NY, TX, FL, IL…)',
+      },
       {
         key: 'account_holder_name',
         label: 'Titular de la cuenta',
