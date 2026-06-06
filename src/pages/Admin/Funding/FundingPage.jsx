@@ -166,9 +166,11 @@ function RateUpdateModal({ rateEntry, onClose, onSaved }) {
 
   const modalTitle = autoRefresh
     ? 'Override temporal'
-    : isOverride
+    : rateEntry.source === 'admin_override'
       ? 'Override corredor USDC'
-      : 'Actualizar tasa'
+      : isOverride
+        ? 'Setear override USDC'
+        : 'Actualizar tasa'
 
   return (
     <div
@@ -214,7 +216,7 @@ function RateUpdateModal({ rateEntry, onClose, onSaved }) {
               </p>
             </div>
           )}
-          {isOverride && (
+          {isOverride && rateEntry.source === 'admin_override' && (
             <div
               className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl"
               style={{ background: '#8AB4F808', border: '1px solid #8AB4F820' }}
@@ -227,14 +229,28 @@ function RateUpdateModal({ rateEntry, onClose, onSaved }) {
               </p>
             </div>
           )}
+          {isOverride && rateEntry.computed && (
+            <div
+              className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl"
+              style={{ background: '#22C55E08', border: '1px solid #22C55E20' }}
+            >
+              <Zap size={13} className="text-[#22C55E] flex-shrink-0 mt-0.5" />
+              <p className="text-[0.75rem] text-[#4E5A7A] leading-relaxed">
+                Ahora se usa la <span className="text-[#C4CBD8] font-semibold">tasa automática</span> (mercado × spread {rateEntry.spreadPct ?? 2}%).
+                Al ingresar un valor aquí lo fijarás como override manual con prioridad máxima sobre el cálculo automático.
+              </p>
+            </div>
+          )}
 
-          {/* Tasa anterior */}
+          {/* Tasa actual/anterior */}
           {prevRate != null && prevRate > 0 && (
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#1A2340] border border-[#263050]">
-              <span className="text-[0.75rem] text-[#4E5A7A]">Tasa anterior:</span>
+              <span className="text-[0.75rem] text-[#4E5A7A]">
+                {rateEntry.computed ? 'Tasa actual (auto):' : 'Tasa anterior:'}
+              </span>
               <span className="text-[0.875rem] font-bold text-[#C4CBD8] tabular-nums">{prevRate}</span>
               <ArrowRight size={12} className="text-[#4E5A7A] mx-1" />
-              <span className="text-[0.75rem] text-[#4E5A7A]">Nueva →</span>
+              <span className="text-[0.75rem] text-[#4E5A7A]">Override →</span>
             </div>
           )}
 
@@ -313,8 +329,8 @@ function RateUpdateModal({ rateEntry, onClose, onSaved }) {
           className="flex flex-col gap-2 px-5 py-4"
           style={{ borderTop: '1px solid #263050' }}
         >
-          {/* Botón limpiar override — solo para isOverride con valor activo */}
-          {isOverride && prevRate != null && prevRate > 0 && (
+          {/* Botón limpiar override — solo cuando hay override manual activo */}
+          {isOverride && rateEntry.source === 'admin_override' && prevRate != null && prevRate > 0 && (
             <button
               onClick={handleClearOverride}
               disabled={clearing || saving}
@@ -432,8 +448,10 @@ function ExchangeRatesPanel({ onToast }) {
               // autoRefresh → stale si no se actualizó en 2h (job corre c/30 min)
               // override/manual → stale si no se actualizó en 24h
               const staleHrs = r.autoRefresh ? 2 : 24
-              const stale    = r.isOverride ? false : isStaleRate(r.updatedAt, staleHrs)
+              const stale    = (r.isOverride && !r.computed) ? false : isStaleRate(r.updatedAt, staleHrs)
               const ago      = timeAgo(r.updatedAt)
+              const isAuto   = r.autoRefresh || r.computed || r.source === 'binance_p2p+spread'
+              const isManualOverride = r.source === 'admin_override'
 
               return (
                 <div
@@ -445,20 +463,20 @@ function ExchangeRatesPanel({ onToast }) {
                   <div className="min-w-[90px]">
                     <div className="flex items-center gap-1.5">
                       <p className="text-[0.8125rem] font-bold text-white">{r.pair}</p>
-                      {r.autoRefresh && (
+                      {isAuto && (
                         <span
                           className="text-[0.5625rem] font-bold px-1.5 py-0.5 rounded-full leading-none"
                           style={{ background: '#22C55E15', color: '#22C55E', border: '1px solid #22C55E30' }}
-                          title="Actualizado automáticamente por el backend cada 30 min"
+                          title={r.autoRefresh ? 'Actualizado automáticamente por el backend cada 30 min' : 'Calculado automáticamente: tasa de mercado × spread'}
                         >
                           AUTO
                         </span>
                       )}
-                      {r.isOverride && (
+                      {isManualOverride && (
                         <span
                           className="text-[0.5625rem] font-bold px-1.5 py-0.5 rounded-full leading-none"
-                          style={{ background: '#8AB4F815', color: '#8AB4F8', border: '1px solid #8AB4F830' }}
-                          title="Override opcional. Si no está seteado, se usa la tasa live de Binance P2P"
+                          style={{ background: '#F59E0B15', color: '#FBBF24', border: '1px solid #FBBF2430' }}
+                          title="Override manual activo. Tiene prioridad sobre la tasa de mercado."
                         >
                           OVERRIDE
                         </span>
@@ -469,12 +487,19 @@ function ExchangeRatesPanel({ onToast }) {
 
                   {/* Tasa */}
                   <div className="flex-1">
-                    {r.isOverride && r.rate == null ? (
+                    {r.rate != null ? (
+                      <div>
+                        <span className="text-[1.0625rem] font-extrabold tabular-nums text-[#C4CBD8]">
+                          {Number(r.rate).toFixed(4)}
+                        </span>
+                        {r.computed && r.spreadPct != null && (
+                          <p className="text-[0.625rem] text-[#22C55E] mt-0.5">
+                            mercado × spread {r.spreadPct}%
+                          </p>
+                        )}
+                      </div>
+                    ) : r.isOverride ? (
                       <span className="text-[0.8125rem] text-[#4E5A7A] italic">usa tasa live P2P</span>
-                    ) : r.rate != null ? (
-                      <span className="text-[1.0625rem] font-extrabold tabular-nums text-[#C4CBD8]">
-                        {Number(r.rate).toFixed(4)}
-                      </span>
                     ) : (
                       <span className="text-[0.875rem] text-[#4E5A7A]">Sin configurar</span>
                     )}
@@ -482,12 +507,14 @@ function ExchangeRatesPanel({ onToast }) {
 
                   {/* Meta: fuente + tiempo */}
                   <div className="flex items-center gap-2 mr-3">
-                    {r.source && !r.isOverride && (
+                    {r.source && (!r.isOverride || r.computed) && (
                       <span className="text-[0.6875rem] text-[#8A96B8] hidden sm:block">
-                        {r.source === 'binance_p2p_auto' ? 'auto · P2P' : r.source}
+                        {r.source === 'binance_p2p_auto' ? 'auto · P2P'
+                          : r.source === 'binance_p2p+spread' ? 'P2P + spread'
+                          : r.source}
                       </span>
                     )}
-                    {ago && !r.isOverride && (
+                    {ago && (!r.isOverride || r.computed) && (
                       <span
                         className="text-[0.6875rem] font-medium px-2 py-0.5 rounded-full"
                         style={{
@@ -499,10 +526,10 @@ function ExchangeRatesPanel({ onToast }) {
                         {stale ? `⚠️ ${ago}` : ago}
                       </span>
                     )}
-                    {r.isOverride && r.rate != null && ago && (
+                    {isManualOverride && r.rate != null && ago && (
                       <span
                         className="text-[0.6875rem] font-medium px-2 py-0.5 rounded-full"
-                        style={{ background: '#8AB4F80F', color: '#8AB4F8', border: '1px solid #8AB4F830' }}
+                        style={{ background: '#F59E0B0F', color: '#FBBF24', border: '1px solid #FBBF2430' }}
                       >
                         {ago}
                       </span>
@@ -513,10 +540,10 @@ function ExchangeRatesPanel({ onToast }) {
                   <button
                     onClick={() => setEditEntry(r)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#263050] text-[0.75rem] text-[#8A96B8] hover:text-white hover:border-[#C4CBD833] transition-colors flex-shrink-0"
-                    title={r.autoRefresh ? 'Forzar un valor manualmente (sobreescribe el auto)' : r.isOverride ? 'Setear override (deja vacío para usar P2P live)' : 'Actualizar tasa'}
+                    title={r.autoRefresh ? 'Forzar un valor manualmente (sobreescribe el auto)' : r.computed ? 'Fijar un override manual sobre la tasa calculada' : r.isOverride ? 'Setear override' : 'Actualizar tasa'}
                   >
                     <Edit2 size={12} />
-                    {r.autoRefresh ? 'Override' : r.isOverride ? 'Setear' : 'Actualizar'}
+                    {r.autoRefresh ? 'Override' : r.computed ? 'Setear override' : isManualOverride ? 'Actualizar' : r.isOverride ? 'Setear override' : 'Actualizar'}
                   </button>
                 </div>
               )
