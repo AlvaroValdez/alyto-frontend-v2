@@ -350,6 +350,14 @@ export function updateCLPBOBRate(clpPerUsdt, bobPerUsdt, note) {
   })
 }
 
+/**
+ * Elimina el override manual de BOB/USDC, volviendo al cálculo automático.
+ * @returns {Promise<{ success, deleted, previousRate }>}
+ */
+export function deleteBobUsdcOverride() {
+  return request('/admin/exchange-rates/bob-usdc-override', { method: 'DELETE' })
+}
+
 // ── Vita Wallet balance ───────────────────────────────────────────────────────
 
 /**

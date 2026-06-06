@@ -20,6 +20,7 @@ import {
   listFundings,
   getExchangeRates,
   updateExchangeRate,
+  deleteBobUsdcOverride,
   getCLPBOBRate,
   updateCLPBOBRate,
   getUSDCForecast,
@@ -374,9 +375,10 @@ function RateUpdateModal({ rateEntry, onClose, onSaved }) {
 // ── ExchangeRatesPanel (Sección 0) ────────────────────────────────────────────
 
 function ExchangeRatesPanel({ onToast }) {
-  const [rates,      setRates]      = useState([])
-  const [loading,    setLoading]    = useState(true)
-  const [editEntry,  setEditEntry]  = useState(null)   // { pair, rate } | null
+  const [rates,           setRates]           = useState([])
+  const [loading,         setLoading]         = useState(true)
+  const [editEntry,       setEditEntry]       = useState(null)   // { pair, rate } | null
+  const [deletingOverride, setDeletingOverride] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -403,6 +405,22 @@ function ExchangeRatesPanel({ onToast }) {
     setEditEntry(null)
     onToast(msg)
     load()
+  }
+
+  const handleDeleteOverride = async () => {
+    if (!window.confirm('¿Eliminar override manual BOB-USDC? La tasa volverá a calcularse automáticamente desde Binance P2P.')) return
+    setDeletingOverride(true)
+    try {
+      await deleteBobUsdcOverride()
+      onToast('Override BOB-USDC eliminado — tasa vuelve a automática ✅')
+      load()
+    } catch (err) {
+      if (err.status === 400) onToast('⚠️ No hay override manual activo')
+      else if (err.status === 404) onToast('⚠️ No hay registro BOB-USDC en DB')
+      else onToast(`⚠️ ${err.message || 'Error al eliminar el override'}`)
+    } finally {
+      setDeletingOverride(false)
+    }
   }
 
   return (
@@ -536,15 +554,32 @@ function ExchangeRatesPanel({ onToast }) {
                     )}
                   </div>
 
-                  {/* Botón editar */}
-                  <button
-                    onClick={() => setEditEntry(r)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#263050] text-[0.75rem] text-[#8A96B8] hover:text-white hover:border-[#C4CBD833] transition-colors flex-shrink-0"
-                    title={r.autoRefresh ? 'Forzar un valor manualmente (sobreescribe el auto)' : r.computed ? 'Fijar un override manual sobre la tasa calculada' : r.isOverride ? 'Setear override' : 'Actualizar tasa'}
-                  >
-                    <Edit2 size={12} />
-                    {r.autoRefresh ? 'Override' : r.computed ? 'Setear override' : isManualOverride ? 'Actualizar' : r.isOverride ? 'Setear override' : 'Actualizar'}
-                  </button>
+                  {/* Botones de acción */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {isManualOverride && (
+                      <button
+                        onClick={handleDeleteOverride}
+                        disabled={deletingOverride}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[0.75rem] transition-colors disabled:opacity-40"
+                        style={{ borderColor: '#EF444430', color: '#F87171' }}
+                        title="Eliminar override manual — la tasa volverá al cálculo automático"
+                      >
+                        {deletingOverride
+                          ? <Loader size={12} className="animate-spin" />
+                          : <Ban size={12} />
+                        }
+                        Reset a automática
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setEditEntry(r)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#263050] text-[0.75rem] text-[#8A96B8] hover:text-white hover:border-[#C4CBD833] transition-colors"
+                      title={r.autoRefresh ? 'Forzar un valor manualmente (sobreescribe el auto)' : r.computed ? 'Fijar un override manual sobre la tasa calculada' : r.isOverride ? 'Setear override' : 'Actualizar tasa'}
+                    >
+                      <Edit2 size={12} />
+                      {r.autoRefresh ? 'Override' : r.computed ? 'Setear override' : isManualOverride ? 'Actualizar' : r.isOverride ? 'Setear override' : 'Actualizar'}
+                    </button>
+                  </div>
                 </div>
               )
             })
