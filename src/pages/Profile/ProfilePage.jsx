@@ -9,7 +9,8 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { Camera, FileText, Shield, ChevronRight, Building2 } from 'lucide-react'
+import { Camera, FileText, Shield, ChevronRight, Building2, MessageSquare } from 'lucide-react'
+import { useNavigate }         from 'react-router-dom'
 import { useAuth }             from '../../context/AuthContext'
 import { useProfile }          from '../../hooks/useProfile'
 import KycStatusCard           from './KycStatusCard'
@@ -165,6 +166,7 @@ function ProfileSkeleton() {
 
 export default function ProfilePage() {
   const { user }   = useAuth()
+  const navigate   = useNavigate()
   const { profile, loading, saving, fetchProfile, updateProfile, changePassword, removeDevice, uploadAvatar } = useProfile()
 
   const [activeTab,     setActiveTab]     = useState('info')
@@ -330,13 +332,25 @@ export default function ProfilePage() {
             </button>
             <button
               onClick={() => setLegalDoc('privacy')}
-              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#F0F2F7] transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#F0F2F7] transition-colors border-b border-[#E2E8F0]"
             >
               <div className="w-8 h-8 rounded-lg bg-[#1D34611A] flex items-center justify-center flex-shrink-0">
                 <Shield size={15} className="text-[#1D3461]" />
               </div>
               <span className="flex-1 text-left text-[0.875rem] font-semibold text-[#0D1F3C]">
                 Política de Privacidad
+              </span>
+              <ChevronRight size={16} className="text-[#94A3B8] flex-shrink-0" />
+            </button>
+            <button
+              onClick={() => navigate('/reclamos')}
+              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#F0F2F7] transition-colors"
+            >
+              <div className="w-8 h-8 rounded-lg bg-[#1D34611A] flex items-center justify-center flex-shrink-0">
+                <MessageSquare size={15} className="text-[#1D3461]" />
+              </div>
+              <span className="flex-1 text-left text-[0.875rem] font-semibold text-[#0D1F3C]">
+                Reclamos (PRILI)
               </span>
               <ChevronRight size={16} className="text-[#94A3B8] flex-shrink-0" />
             </button>
