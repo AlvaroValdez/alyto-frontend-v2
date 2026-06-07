@@ -825,7 +825,8 @@ export default function TransactionDetail() {
           {/* ── 1b. INSTRUCCIONES PAYIN MANUAL (Bolivia) ─────────────────── */}
 
           {/* pending_comprobante: usuario aún no subió comprobante — tarjeta prominente */}
-          {tx.payinMethod === 'manual' && (tx.status === 'pending_comprobante' || tx.status === 'initiated') && (
+          {/* Nota: pending_comprobante implica payin manual — no exigir payinMethod para ese status */}
+          {(tx.status === 'pending_comprobante' || (tx.payinMethod === 'manual' && tx.status === 'initiated')) && (
             <div className="rounded-2xl overflow-hidden" style={{ border: '2px solid #EF444460' }}>
               {/* Header de acción requerida */}
               <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#EF444420]" style={{ background: '#EF44440A' }}>
