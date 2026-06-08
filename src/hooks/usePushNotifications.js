@@ -13,7 +13,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { messaging, getToken, onMessage, registerFirebaseSW } from '../services/firebase'
+import { messaging, getToken, onMessage, registerFirebaseSW, VAPID_KEY } from '../services/firebase'
 import { registerFcmToken } from '../services/api'
 
 // ── Claves de storage ──────────────────────────────────────────────────────
@@ -23,9 +23,6 @@ const ASKED_AT_KEY        = 'alyto_notif_asked_at'
 const BANNER_SHOWN_KEY    = 'alyto_notif_banner_shown'   // sessionStorage
 const BANNER_DENIED_KEY   = 'alyto_notif_banner_denied'  // localStorage (permanente)
 const BANNER_COOLDOWN_MS  = 24 * 60 * 60 * 1000         // 24 h
-
-// VAPID key pública — generada en Firebase Console > Cloud Messaging
-const VAPID_KEY = 'BHssXZMwSwImsxvw6h4V-l5lhnQbUbrl1d64t6t3iR5wxnoijY3M6K1bOQ2Yw7Oo3NS5bele6seI2MmY5KUCT-4'
 
 // ── Helper ─────────────────────────────────────────────────────────────────
 function getInitialPermission() {
@@ -42,9 +39,6 @@ export function usePushNotifications() {
   const unsubRef = useRef(null)
 
   // ── Hydrate token from localStorage on mount ───────────────────────────
-  // Also handles the "denied → granted after reload" case: getInitialPermission()
-  // already reads Notification.permission at init time, so after the user unlocks
-  // in browser settings and reloads, permission state is correct without extra logic.
   useEffect(() => {
     try {
       const saved = localStorage.getItem(FCM_TOKEN_KEY)
@@ -53,6 +47,47 @@ export function usePushNotifications() {
         setPermission('granted')
       }
     } catch {}
+  }, [])
+
+  // ── Detectar cambios de permisos en settings del navegador ────────────
+  // El usuario puede cambiar el permiso sin recargar (en Chrome settings).
+  // Usamos PermissionStatus API si existe; si no, polling liviano cada 5s.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return
+
+    let cleanup = () => {}
+
+    if (navigator.permissions?.query) {
+      navigator.permissions.query({ name: 'notifications' }).then((status) => {
+        const handleChange = () => {
+          const newPermission = status.state === 'prompt' ? 'default' : status.state
+          setPermission(newPermission)
+          // Si el usuario acaba de conceder permisos en settings → auto-registrar
+          if (newPermission === 'granted') {
+            requestPermission()
+          }
+        }
+        status.addEventListener('change', handleChange)
+        cleanup = () => status.removeEventListener('change', handleChange)
+      }).catch(() => {
+        // Fallback: polling cada 5s si PermissionStatus no está disponible
+        const id = setInterval(() => {
+          const current = Notification.permission
+          setPermission(prev => {
+            if (prev !== current) {
+              if (current === 'granted') requestPermission()
+              return current
+            }
+            return prev
+          })
+        }, 5000)
+        cleanup = () => clearInterval(id)
+      })
+    }
+
+    return () => cleanup()
+  // requestPermission se define con useCallback y es estable — no genera loop
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ── requestPermission ──────────────────────────────────────────────────

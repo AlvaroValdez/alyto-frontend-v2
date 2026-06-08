@@ -10,9 +10,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Lock, Smartphone, LogOut, Loader2, Check, X, Shield } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { messaging, getToken, registerFirebaseSW } from '../../services/firebase'
-
-const VAPID_KEY = 'BHssXZMwSwImsxvw6h4V-l5lhnQbUbrl1d64t6t3iR5wxnoijY3M6K1bOQ2Yw7Oo3NS5bele6seI2MmY5KUCT-4'
+import { messaging, getToken, registerFirebaseSW, VAPID_KEY } from '../../services/firebase'
 
 async function getCurrentDeviceFcmToken() {
   try {

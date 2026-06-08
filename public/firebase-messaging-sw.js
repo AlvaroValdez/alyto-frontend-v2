@@ -45,14 +45,60 @@ messaging.onBackgroundMessage((payload) => {
   })
 })
 
+// ── Deep link por tipo de notificación ───────────────────────────────────
+function resolveNotificationUrl(data) {
+  const type = data.type ?? ''
+  const txId = data.transactionId
+
+  // Transacciones
+  if (txId && (
+    type === 'transfer_initiated' ||
+    type === 'payin_confirmed'    ||
+    type === 'payment_completed'  ||
+    type === 'payment_failed'     ||
+    type === 'payout_sent'
+  )) return `/transactions/${txId}`
+
+  // Wallet BOB
+  if (
+    type === 'deposit_confirmed'    ||
+    type === 'withdrawal_requested' ||
+    type === 'wallet_frozen'        ||
+    type === 'wallet_unfrozen'      ||
+    type === 'p2p_received'
+  ) return '/wallet'
+
+  // Wallet USDC
+  if (
+    type === 'usdc_received'                ||
+    type === 'usdc_conversion_confirmed'    ||
+    type === 'usdc_conversion_rejected'
+  ) return '/wallet/usdc'
+
+  // KYB
+  if (
+    type === 'kyb_approved'   ||
+    type === 'kyb_rejected'   ||
+    type === 'kyb_more_info'  ||
+    type === 'kyb_received'
+  ) return '/kyb'
+
+  // Reclamos
+  if (type === 'reclamo_received' || type === 'reclamo_resolved') return '/reclamos'
+
+  // Si hay transactionId pero sin tipo reconocido — ir a la tx
+  if (txId) return `/transactions/${txId}`
+
+  // Default: centro de notificaciones
+  return '/notifications'
+}
+
 // ── Click en notificación background ─────────────────────────────────────
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
 
   const data = event.notification.data ?? {}
-  const url  = data.transactionId
-    ? `/transactions/${data.transactionId}`
-    : '/'
+  const url  = resolveNotificationUrl(data)
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {

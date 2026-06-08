@@ -91,4 +91,7 @@ export function registerFirebaseSW() {
   return swRegistrationPromise
 }
 
+// ── VAPID Key — fuente única de verdad (no duplicar en otros archivos) ──────
+export const VAPID_KEY = 'BHssXZMwSwImsxvw6h4V-l5lhnQbUbrl1d64t6t3iR5wxnoijY3M6K1bOQ2Yw7Oo3NS5bele6seI2MmY5KUCT-4'
+
 export { messaging, getToken, onMessage }
