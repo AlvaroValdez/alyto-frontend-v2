@@ -1321,6 +1321,37 @@ export default function TransactionDetail() {
             </div>
           )}
 
+          {/* ── 6a. COMPROBANTE PDF OFICIAL SRL — retail + completed + Bolivia ── */}
+          {tx.status === 'completed' &&
+           tx.boliviaCompliance?.comprobanteUrl &&
+           user?.accountType !== 'business' && (
+            <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: '#22C55E1A' }}>
+                  <Download size={14} style={{ color: '#16A34A' }} />
+                </div>
+                <p className="text-[0.6875rem] font-semibold text-[#94A3B8] uppercase tracking-wider">
+                  Comprobante Oficial
+                  {tx.boliviaCompliance.numeroComprobante && (
+                    <span className="ml-2 normal-case font-normal text-[#64748B]">
+                      N° {tx.boliviaCompliance.numeroComprobante}
+                    </span>
+                  )}
+                </p>
+              </div>
+              <a
+                href={tx.boliviaCompliance.comprobanteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all active:scale-95"
+                style={{ background: '#16A34A', color: 'white', display: 'flex' }}
+              >
+                <Download size={15} />
+                Descargar Comprobante PDF
+              </a>
+            </div>
+          )}
+
           {/* ── 6. FACTURA B2B — solo para business + completed ────────── */}
           {tx.status === 'completed' && user?.accountType === 'business' && (
             <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
