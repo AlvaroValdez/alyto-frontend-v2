@@ -1263,7 +1263,7 @@ export default function TransactionDetail() {
                   <div className="flex justify-between items-center">
                     <span className="text-[0.8125rem] text-[#4A5568]">Red</span>
                     <span className="text-[0.8125rem] font-medium text-[#0D1F3C]">
-                      {import.meta.env.VITE_STELLAR_NETWORK === 'mainnet'
+                      {tx.stellarNetwork === 'public'
                         ? 'Stellar Mainnet'
                         : 'Stellar Testnet'}
                     </span>
