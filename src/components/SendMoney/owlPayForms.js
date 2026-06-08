@@ -523,10 +523,10 @@ export const OWLPAY_FORMS = {
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // AE — Emiratos Árabes (FTS, AANI, BANK-TRANSFER)
+  // AE — Emiratos Árabes (BANK-TRANSFER)
   // Schema verificado: payout requires account_holder_name, phone_number
   //   (^\+971[0-9]{8,9}$), swift_code, account_number (IBAN).
-  //   NO incluye bank_name. benef requires name + address.
+  //   benef requires name + address + dob + id_doc (UAE Emirates ID 784-YYYY-XXXXXXX-X).
   // ═══════════════════════════════════════════════════════════════════════════
   AE: {
     title: 'Datos del beneficiario en Emiratos Árabes',
@@ -539,6 +539,24 @@ export const OWLPAY_FORMS = {
         placeholder: 'Ej: Ahmed Al Rashidi',
         required: true,
         maxLength: 140,
+      },
+      {
+        key: 'beneficiary_dob',
+        label: 'Fecha de nacimiento',
+        section: 'Datos del beneficiario',
+        type: 'date',
+        required: true,
+        hint: 'Requerido por regulación AML UAE',
+      },
+      {
+        key: 'beneficiary_id_doc_number',
+        label: 'Emirates ID',
+        section: 'Datos del beneficiario',
+        type: 'text',
+        placeholder: 'Ej: 784-1985-1234567-1',
+        required: true,
+        hint: 'Cédula de identidad Emirates — formato 784-YYYY-XXXXXXX-X',
+        maxLength: 20,
       },
       ...addressFields({ countryName: 'Emiratos Árabes' }),
       {
