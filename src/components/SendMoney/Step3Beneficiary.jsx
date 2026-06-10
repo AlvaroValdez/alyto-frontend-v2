@@ -38,7 +38,7 @@ const HARBOR_DEST_CURRENCY = {
   BR: 'BRL',
   MX: 'MXN',
   AE: 'AED',
-  GB: 'GBP',
+  GB: 'USD',  // corredor bo-gb usa USD via WIRE — confirmado Jolin OwlPay 2026-06-09
   JP: 'JPY',
   SG: 'SGD',
   HK: 'HKD',
@@ -63,8 +63,8 @@ const FALLBACK_HARBOR_METHODS = {
     { method: 'WIRE', rate: null, deliveryLabel: '1-3 días',    recommended: true },
   ],
   GB: [
-    // SRL no tiene acceso a GB en Harbor — requiere LLC activado en MSA.
-    { method: 'FPS',  rate: null, deliveryLabel: 'Mismo día',   recommended: true },
+    // USD via WIRE/SWIFT — confirmado Jolin OwlPay 2026-06-09. LLC sandbox verificado.
+    { method: 'WIRE', rate: null, deliveryLabel: '1-3 días hábiles', recommended: true },
   ],
   NG: [
     { method: 'BANK-TRANSFER', rate: null, deliveryLabel: '1-2 días', recommended: true },
@@ -119,7 +119,7 @@ const FALLBACK_HARBOR_METHODS = {
 const SUPPORTED_HARBOR_METHODS = {
   CN: ['CIPS', 'WIRE'],
   EU: ['WIRE'],                                  // SEPA deshabilitado (bug Harbor)
-  GB: ['FPS'],                                   // form no captura SWIFT (WIRE no soportado)
+  GB: ['WIRE', 'FPS'],                            // WIRE=USD (principal), FPS=GBP (fallback)
   NG: ['BANK-TRANSFER'],                         // hyphen, no underscore
   BR: ['PIX'],                                   // form solo PIX
   MX: ['SPEI'],                                  // form solo CLABE
