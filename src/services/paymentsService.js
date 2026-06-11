@@ -44,12 +44,11 @@ export function getQuote(originAmount, destinationCountry, signal) {
  * }} payload
  * @returns {Promise<{ transactionId: string, payinUrl: string, status: string }>}
  */
-export function initPayment(payload) {
-  const { corridorId, originAmount, beneficiary, beneficiaryData } = payload
-  console.log('[initPayment] body enviado:', JSON.stringify({ corridorId, originAmount, beneficiary, beneficiaryData }))
+export function initPayment(payload, idempotencyKey) {
   return request('/payments/crossborder', {
     method: 'POST',
     body: JSON.stringify(payload),
+    ...(idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : {}),
   })
 }
 

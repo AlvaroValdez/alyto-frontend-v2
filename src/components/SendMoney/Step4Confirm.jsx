@@ -153,6 +153,8 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
   const [quoteLoading, setQuoteLoading] = useState(false)
   const [quoteError, setQuoteError]     = useState(null)
   const quoteFetchedRef                 = useRef(false)
+  // Idempotency-Key: una por intento de pago; se reusa en retry del mismo pago
+  const idempKeyRef                     = useRef(null)
 
   // Modal que aparece cuando la tasa varió >0.5% al momento de confirmar
   const [rateModal, setRateModal] = useState(null) // { freshQuote, rateDiff } | null
@@ -255,6 +257,7 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
   async function executePayment(q) {
     setLoading(true)
     setError(null)
+    if (!idempKeyRef.current) idempKeyRef.current = crypto.randomUUID()
     try {
       const res = await initPayment({
         corridorId:        quote.corridorId,
@@ -272,7 +275,8 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
           ? { owlPayMethod: q.owlPayMethod ?? owlPayMethod }
           : {}),
         ...(q.harborQuoteId ?? harborQuoteId ? { harborQuoteId: q.harborQuoteId ?? harborQuoteId } : {}),
-      })
+      }, idempKeyRef.current)
+      idempKeyRef.current = null
       if (res.transactionId) {
         sessionStorage.setItem('lastTransactionId', res.transactionId)
       }

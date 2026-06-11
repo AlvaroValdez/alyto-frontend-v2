@@ -562,6 +562,9 @@ function SendModal({ open, onClose, onSuccess, balanceAvailable }) {
   const streamRef   = useRef(null)
   const rafRef      = useRef(null)
   const fileInputRef = useRef(null)
+  // Idempotency-Key: una por intento de pago; se reusa en retry del mismo pago
+  const sendKeyRef  = useRef(null)
+  const qrKeyRef    = useRef(null)
 
   const stopCamera = useCallback(() => {
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
@@ -594,14 +597,18 @@ function SendModal({ open, onClose, onSuccess, balanceAvailable }) {
 
   async function handleConfirm() {
     setLoading(true); setError('')
+    if (!sendKeyRef.current) sendKeyRef.current = crypto.randomUUID()
     try {
       await request('/wallet/send', {
         method: 'POST',
         body: JSON.stringify({ recipientEmail: email, amount: Number(amount), description }),
+        headers: { 'Idempotency-Key': sendKeyRef.current },
       })
+      sendKeyRef.current = null
       setDoneInfo({ recipient: email, amount: formatBOB(Number(amount)) })
       setDone(true); onSuccess?.()
     } catch (err) {
+      // Mantener la key: el retry del mismo envío reusa la misma key
       setError(err.message ?? 'Error al procesar el envío.')
     } finally {
       setLoading(false)
@@ -677,13 +684,20 @@ function SendModal({ open, onClose, onSuccess, balanceAvailable }) {
     if (!payAmt || payAmt < 1) { setPayError('Ingresa un monto válido.'); return }
     if (payAmt > balanceAvailable) { setPayError(`Saldo insuficiente. Disponible: ${formatBOB(balanceAvailable)}.`); return }
     setPaying(true); setPayError(null)
+    if (!qrKeyRef.current) qrKeyRef.current = crypto.randomUUID()
     try {
       const body = { qrContent: preview._rawContent }
       if (!(preview.amount > 0)) body.amount = Number(qrAmount)
-      await request('/wallet/qr/scan', { method: 'POST', body: JSON.stringify(body) })
+      await request('/wallet/qr/scan', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { 'Idempotency-Key': qrKeyRef.current },
+      })
+      qrKeyRef.current = null
       setDoneInfo({ recipient: preview.recipientName || preview.recipientEmail || 'Destinatario', amount: formatBOB(payAmt) })
       setDone(true); onSuccess?.()
     } catch (err) {
+      // Mantener la key: el retry del mismo pago reusa la misma key
       setPayError(err.message || 'Error al procesar el pago.')
     } finally {
       setPaying(false)
