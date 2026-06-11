@@ -56,9 +56,14 @@ export function usePushNotifications() {
     if (typeof window === 'undefined' || !('Notification' in window)) return
 
     let cleanup = () => {}
+    // Flag de cancelación: si el componente se desmonta antes de que la promesa
+    // resuelva, el .then NO debe registrar listener/interval (quedaba huérfano
+    // para siempre — memory leak, audit 2026-06-11).
+    let cancelled = false
 
     if (navigator.permissions?.query) {
       navigator.permissions.query({ name: 'notifications' }).then((status) => {
+        if (cancelled) return
         const handleChange = () => {
           const newPermission = status.state === 'prompt' ? 'default' : status.state
           setPermission(newPermission)
@@ -70,6 +75,7 @@ export function usePushNotifications() {
         status.addEventListener('change', handleChange)
         cleanup = () => status.removeEventListener('change', handleChange)
       }).catch(() => {
+        if (cancelled) return
         // Fallback: polling cada 5s si PermissionStatus no está disponible
         const id = setInterval(() => {
           const current = Notification.permission
@@ -85,7 +91,7 @@ export function usePushNotifications() {
       })
     }
 
-    return () => cleanup()
+    return () => { cancelled = true; cleanup() }
   // requestPermission se define con useCallback y es estable — no genera loop
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

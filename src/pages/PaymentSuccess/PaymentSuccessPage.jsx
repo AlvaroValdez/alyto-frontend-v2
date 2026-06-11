@@ -28,6 +28,7 @@ export default function PaymentSuccessPage() {
   const [transactionId, setTransactionId] = useState(null)
   const attemptsRef = useRef(0)
   const timerRef    = useRef(null)
+  const aliveRef    = useRef(true)
 
   useEffect(() => {
     const txId = sessionStorage.getItem('lastTransactionId')
@@ -39,14 +40,19 @@ export default function PaymentSuccessPage() {
     }
 
     // Spinner por 2s antes de la primera consulta
+    aliveRef.current = true
     const init = setTimeout(() => poll(txId), INITIAL_DELAY_MS)
     return () => {
+      // aliveRef corta la cadena async: un fetch en vuelo al desmontar ya no
+      // programa un nuevo setTimeout huérfano (audit 2026-06-11)
+      aliveRef.current = false
       clearTimeout(init)
       clearTimeout(timerRef.current)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function poll(txId) {
+    if (!aliveRef.current) return
     if (attemptsRef.current >= MAX_ATTEMPTS) {
       setPhase('timeout')
       return
@@ -56,6 +62,7 @@ export default function PaymentSuccessPage() {
 
     try {
       const data = await getTransactionStatus(txId)
+      if (!aliveRef.current) return
       if (data.status === 'payin_confirmed' || data.status === 'completed') {
         setPhase('confirmed')
         return
@@ -64,6 +71,7 @@ export default function PaymentSuccessPage() {
       // Continuar polling si hay error de red
     }
 
+    if (!aliveRef.current) return
     timerRef.current = setTimeout(() => poll(txId), POLL_INTERVAL_MS)
   }
 
