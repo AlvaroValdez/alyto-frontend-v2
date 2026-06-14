@@ -109,6 +109,22 @@ function ActionBtn({ icon, title, onClick }) {
   )
 }
 
+// ─── Opciones de método payin / payout ───────────────────────────────────────
+
+const PAYIN_METHOD_OPTIONS = [
+  { value: 'fintoc',  label: 'fintoc'  },
+  { value: 'vita',    label: 'vita'    },
+  { value: 'manual',  label: 'manual'  },
+  { value: 'bankQr',  label: 'bankQr'  },
+]
+
+const PAYOUT_METHOD_OPTIONS = [
+  { value: 'vita',           label: 'vita'           },
+  { value: 'owlPay',         label: 'owlPay'         },
+  { value: 'anchor_manual',  label: 'anchor_manual'  },
+  { value: 'stellar_direct', label: 'stellar_direct' },
+]
+
 // ─── Celda editable (número) ──────────────────────────────────────────────────
 
 function EditableNumberCell({
@@ -209,6 +225,150 @@ function EditableNumberCell({
   )
 }
 
+// ─── Celda editable (select) ─────────────────────────────────────────────────
+
+function EditableSelectCell({ value, corridorId, field, options, onSaved }) {
+  const [editing,  setEditing]  = useState(false)
+  const [draft,    setDraft]    = useState(value ?? '')
+  const [saving,   setSaving]   = useState(false)
+  const [flashOk,  setFlashOk]  = useState(false)
+  const [flashErr, setFlashErr] = useState(false)
+
+  const startEdit = () => { setDraft(value ?? ''); setEditing(true) }
+  const cancel    = () => setEditing(false)
+
+  const save = async () => {
+    if (draft === value) { setEditing(false); return }
+    setSaving(true)
+    try {
+      await updateCorridor(corridorId, { [field]: draft })
+      setFlashOk(true)
+      setTimeout(() => setFlashOk(false), 1500)
+      onSaved?.()
+    } catch {
+      setFlashErr(true)
+      setTimeout(() => setFlashErr(false), 1500)
+    } finally {
+      setSaving(false)
+      setEditing(false)
+    }
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1">
+        <select
+          autoFocus
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          className="rounded-lg px-2 py-1 text-[0.75rem] text-white border border-[#C4CBD8] bg-[#0F1628] focus:outline-none"
+        >
+          {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <button onClick={save} disabled={saving} className="text-[#22C55E] hover:opacity-80">
+          {saving ? <Loader size={12} className="animate-spin" /> : <Check size={12} />}
+        </button>
+        <button onClick={cancel} className="text-[#4E5A7A] hover:text-[#F87171]">
+          <X size={12} />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <button
+      onClick={startEdit}
+      title={`Editar ${field}`}
+      className={`flex items-center gap-1.5 group rounded-lg px-2 py-1 transition-colors hover:bg-[#1F2B4D] ${
+        flashOk ? 'text-[#22C55E]' : flashErr ? 'text-[#F87171]' : ''
+      }`}
+    >
+      <span className={`text-[0.625rem] px-1.5 py-0.5 rounded font-mono ${
+        flashOk ? 'bg-[#22C55E20] text-[#22C55E]' : 'bg-[#1F2B4D] text-[#8A96B8]'
+      }`}>
+        {flashOk ? <CheckCircle2 size={10} /> : (value ?? '—')}
+      </span>
+      <Pencil size={9} className="text-[#4E5A7A] opacity-0 group-hover:opacity-100 transition-opacity" />
+    </button>
+  )
+}
+
+// ─── Celda editable (texto) ───────────────────────────────────────────────────
+
+function EditableTextCell({ value, corridorId, field, onSave: customOnSave, onSaved, placeholder = '' }) {
+  const [editing,  setEditing]  = useState(false)
+  const [draft,    setDraft]    = useState(value ?? '')
+  const [saving,   setSaving]   = useState(false)
+  const [flashOk,  setFlashOk]  = useState(false)
+  const [flashErr, setFlashErr] = useState(false)
+
+  const startEdit = () => { setDraft(value ?? ''); setEditing(true) }
+  const cancel    = () => setEditing(false)
+
+  const save = async () => {
+    if (draft === value) { setEditing(false); return }
+    setSaving(true)
+    try {
+      if (customOnSave) {
+        await customOnSave(draft)
+      } else {
+        await updateCorridor(corridorId, { [field]: draft })
+      }
+      setFlashOk(true)
+      setTimeout(() => setFlashOk(false), 1500)
+      onSaved?.()
+    } catch {
+      setFlashErr(true)
+      setTimeout(() => setFlashErr(false), 1500)
+    } finally {
+      setSaving(false)
+      setEditing(false)
+    }
+  }
+
+  const onKeyDown = (e) => {
+    if (e.key === 'Enter')  save()
+    if (e.key === 'Escape') cancel()
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1">
+        <input
+          autoFocus
+          type="text"
+          value={draft}
+          placeholder={placeholder}
+          onChange={e => setDraft(e.target.value)}
+          onKeyDown={onKeyDown}
+          className="w-20 rounded-lg px-2 py-1 text-[0.75rem] text-white border border-[#C4CBD8] bg-[#0F1628] focus:outline-none"
+        />
+        <button onClick={save} disabled={saving} className="text-[#22C55E] hover:opacity-80">
+          {saving ? <Loader size={12} className="animate-spin" /> : <Check size={12} />}
+        </button>
+        <button onClick={cancel} className="text-[#4E5A7A] hover:text-[#F87171]">
+          <X size={12} />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <button
+      onClick={startEdit}
+      title={`Editar ${field}`}
+      className="flex items-center gap-1.5 group rounded-lg px-2 py-1 transition-colors hover:bg-[#1F2B4D]"
+    >
+      <span className={`text-[0.625rem] px-1.5 py-0.5 rounded font-mono ${
+        flashOk ? 'bg-[#22C55E20] text-[#22C55E]' : 'bg-[#1F2B4D] text-[#4E5A7A]'
+      }`}>
+        {flashOk ? <CheckCircle2 size={10} /> : (value ?? placeholder ?? '—')}
+      </span>
+      <Pencil size={9} className="text-[#4E5A7A] opacity-0 group-hover:opacity-100 transition-opacity" />
+    </button>
+  )
+}
+
 // ─── Toggle isActive ──────────────────────────────────────────────────────────
 
 function ActiveToggle({ value, corridorId, onSaved }) {
@@ -275,6 +435,7 @@ function Modal({ title, onClose, children, wide = false }) {
 const EMPTY_FORM = {
   originCountry: 'CL', destinationCountry: 'CO',
   payinMethod: 'fintoc', payoutMethod: 'vita',
+  bankQrBankId: 'bec',
   legalEntity: 'SpA',
   alytoCSpread: 2, businessAlytoCSpread: 0.5,
   fixedFee: 300, payinFeePercent: 0.5, profitRetentionPercent: 30,
@@ -308,6 +469,7 @@ function CreateCorridorModal({ onClose, onCreated }) {
         fixedFee:               Number(form.fixedFee),
         payinFeePercent:        Number(form.payinFeePercent),
         profitRetentionPercent: Number(form.profitRetentionPercent),
+        ...(form.payinMethod === 'bankQr' ? { bankQrConfig: { bankId: form.bankQrBankId || 'bec' } } : {}),
       })
       onCreated()
     } catch (err) {
@@ -380,6 +542,7 @@ function CreateCorridorModal({ onClose, onCreated }) {
               <option value="fintoc">fintoc</option>
               <option value="vita">vita</option>
               <option value="manual">manual</option>
+              <option value="bankQr">bankQr</option>
             </Sel>
           </div>
           <div>
@@ -400,6 +563,23 @@ function CreateCorridorModal({ onClose, onCreated }) {
             </Sel>
           </div>
         </div>
+
+        {/* bankQr: banco ID */}
+        {form.payinMethod === 'bankQr' && (
+          <div>
+            <Label>Banco QR (bankId)</Label>
+            <input
+              type="text"
+              value={form.bankQrBankId}
+              onChange={e => set('bankQrBankId', e.target.value)}
+              placeholder="bec"
+              className="w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white bg-[#1A2340] border border-[#263050] focus:border-[#C4CBD8] focus:outline-none transition-colors"
+            />
+            <p className="mt-1.5 text-[0.6875rem] text-[#4E5A7A]">
+              Identificador del banco en bankQrRegistry. Actualmente solo disponible: <span className="font-mono text-[#8A96B8]">bec</span> (Banco Económico Bolivia).
+            </p>
+          </div>
+        )}
 
         {/* Parámetros financieros */}
         <div className="grid grid-cols-2 gap-4">
@@ -854,9 +1034,9 @@ export default function CorridorsPanel() {
                     />
                   </td>
 
-                  {/* Tasa manual (solo corredores manual) */}
+                  {/* Tasa manual (corredores manual o bankQr — ambos usan BOB→USDC) */}
                   <td className="px-3 py-3.5">
-                    {c.payinMethod === 'manual' ? (
+                    {(c.payinMethod === 'manual' || c.payinMethod === 'bankQr') ? (
                       <EditableNumberCell
                         value={c.manualExchangeRate}
                         onSave={async (newRate) => {
@@ -911,10 +1091,35 @@ export default function CorridorsPanel() {
 
                   {/* Métodos */}
                   <td className="px-3 py-3.5">
-                    <div className="flex items-center gap-1">
-                      <MethodPill value={c.payinMethod} />
-                      <span className="text-[#4E5A7A] text-[0.625rem]">→</span>
-                      <MethodPill value={c.payoutMethod} />
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-1">
+                        <EditableSelectCell
+                          value={c.payinMethod}
+                          corridorId={c.corridorId}
+                          field="payinMethod"
+                          options={PAYIN_METHOD_OPTIONS}
+                          onSaved={onSaved}
+                        />
+                        <span className="text-[#4E5A7A] text-[0.625rem]">→</span>
+                        <EditableSelectCell
+                          value={c.payoutMethod}
+                          corridorId={c.corridorId}
+                          field="payoutMethod"
+                          options={PAYOUT_METHOD_OPTIONS}
+                          onSaved={onSaved}
+                        />
+                      </div>
+                      {c.payinMethod === 'bankQr' && (
+                        <div className="flex items-center gap-1 pl-1">
+                          <span className="text-[0.5625rem] text-[#4E5A7A]">bankId:</span>
+                          <EditableTextCell
+                            value={c.bankQrConfig?.bankId ?? 'bec'}
+                            onSave={(bankId) => updateCorridor(c.corridorId, { bankQrConfig: { bankId } })}
+                            onSaved={onSaved}
+                            placeholder="bec"
+                          />
+                        </div>
+                      )}
                     </div>
                   </td>
 
