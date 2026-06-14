@@ -51,7 +51,9 @@ function InfoRow({ label, value, mono = false, highlight = false }) {
 function toQrSrc(raw) {
   if (!raw) return null
   if (raw.startsWith('data:') || raw.startsWith('http')) return raw
-  return `data:image/png;base64,${raw}`
+  // SVG base64 starts with 'PHN2' (<svg); PNG starts with 'iVBOR' (\x89PNG)
+  const mime = raw.startsWith('PHN2') ? 'image/svg+xml' : 'image/png'
+  return `data:${mime};base64,${raw}`
 }
 
 // ── ManualPayinScreen — instrucciones bancarias Bolivia con QR ────────────────
