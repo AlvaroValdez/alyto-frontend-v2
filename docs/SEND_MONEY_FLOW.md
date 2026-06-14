@@ -1,6 +1,6 @@
 # Send Money Flow — Living Document
 
-> Last updated: April 2026 (v1.2)
+> Last updated: June 2026 (v1.3 — añade payin `bankQr` BEC QR Connect)
 > This documents **actual working code**, not aspirational spec.
 > Update this file whenever the flow changes.
 > Both repos (`alyto-backend-v2` and `alyto-frontend-v2`) carry an identical copy.
@@ -14,7 +14,7 @@ Alyto supports three legal entities. The send-money flow varies by `user.legalEn
 | Entity | Origin currency | Payin | Payout routing |
 |--------|----------------|-------|----------------|
 | **SpA** (Chile) | CLP | Fintoc A2A (PISP) | Vita Wallet (LatAm) / anchorBolivia (BOB) |
-| **SRL** (Bolivia) | BOB | Manual: QR scan or bank transfer (`payinMethod = 'manual'`) | Vita Wallet (LatAm) / OwlPay Harbor v2 (CN/NG/global) |
+| **SRL** (Bolivia) | BOB | Manual (`payinMethod = 'manual'`) **o** QR bancario automático (`payinMethod = 'bankQr'`, BEC QR Connect) | Vita Wallet (LatAm) / OwlPay Harbor v2 (CN/NG/global) |
 | **LLC** (USA) | USD | Manual: wire transfer (`payinMethod = 'manual'`) | OwlPay Harbor v2 (global) |
 
 **SRL and LLC auto-skip Step 2** — the Step2 component’s `useEffect` fires on mount and forces `payinMethod = 'manual'` + `_skipStep2 = true`, jumping straight to Step 3. They never see the payin-method picker.
@@ -280,10 +280,21 @@ if corridor.payinMethod === 'fintoc'        (SpA standard LatAm)
   → Response: { transactionId, payinUrl, payinMethod: 'fintoc', status: 'payin_pending', ... }
 
 if corridor.payinMethod === 'manual'        (SRL, LLC)
-  → Transaction.create({ status: 'payin_pending', payinProvider: 'manual' })
+  → Transaction.create({ status: 'pending_comprobante', payinProvider: 'manual' })
   → Generate dynamic QR (encodes bank data for banking apps)
   → Read SRLConfig for static QRs (Tigo Money, Banco Bisa, ...)
   → Response: { transactionId, paymentInstructions, paymentQR, paymentQRStatic, status: 'payin_pending' }
+  → Status real en BD = 'pending_comprobante'; pasa a 'payin_pending' al subir comprobante
+
+if corridor.payinMethod === 'bankQr'        (SRL — BEC QR Connect u otro banco)
+  → getBankQrService(corridor.bankQrConfig.bankId).generateQR({ ..., dueDate })
+      dueDate = hoy + BANK_QR_DUE_DAYS (env, default 1 día)
+  → Transaction.create({ status: 'payin_pending', payinProvider: 'bankQr',
+                         bankQr: { bankId, qrId, dueDate },
+                         paymentInstructionsExpiresAt = fin del día de vencimiento })
+  → Response: { transactionId, paymentQR (imagen real del banco), bankQrId, dueDate, status: 'payin_pending' }
+  → Confirmación 100% automática vía IPN del banco (sin admin, sin comprobante)
+  → Mock mode si faltan credenciales BEC o BEC_MOCK_ENABLED=true (qrId 'mock-bec-...', SVG placeholder)
 
 if corridor.payinMethod === 'vitaWalletPayin'   (legacy A2A PISP)
   → vitaWalletService.createPayin() → vitaPayinId + payinUrl
@@ -341,13 +352,29 @@ Called from IPN handlers without `await`. Routing decision reads `corridor.payou
 
 | Handler | Trigger | Transition |
 |---------|---------|------------|
+| `handleBankQrIPN` | `POST /ipn/bankqr/:bankId` — pago QR confirmado por el banco (busca tx por `bankQr.qrId`) | `payin_pending → payin_confirmed → dispatchPayout` |
 | `handleFintocIPN` | `POST /payments/webhooks/fintoc-crossborder` — `payment_intent.succeeded` | `payin_pending → payin_confirmed → dispatchPayout` |
 | `handleVitaIPN` (payin) | `POST /ipn/vita` — `vitaStatus: 'completed'` when `currentStatus ∈ { payin_pending, initiated }` | `payin_pending → payin_confirmed → dispatchPayout` |
 | `handleVitaIPN` (payout) | Same endpoint — `vitaStatus: 'completed'` when `currentStatus === 'payout_sent'` | `payout_sent → completed` + recordSent |
-| `handleOwlPayWebhook` — `transfer.source_received` | `POST /payments/webhooks/owlpay` | `payout_pending_usdc_send → payout_sent` |
-| `handleOwlPayWebhook` — `transfer.completed` | Same endpoint | `payout_sent → completed` + recordSent |
+| `handleOwlPayIPN` — `transfer.source_received` | `POST /ipn/owlpay` | `payout_pending_usdc_send → payout_sent` |
+| `handleOwlPayIPN` — `transfer.completed` | Same endpoint | `payout_sent → completed` + recordSent |
 
 **`recordSent(contactId, destinationAmount, destinationCurrency)`:** fire-and-forget (`.catch(() => {})`) — updates `Contact.lastUsedAt` + `Contact.totalSent`. Never blocks the payment flow.
+
+---
+
+### Background jobs — payin bankQr (`reconcileBankQrPayments`, cada 30 min)
+
+Red de seguridad del IPN bankQr. Dos fases (guard de overlap `_isRunning`):
+
+- **FASE A — confirmar pagos perdidos:** consulta `getPaidQRs` de **ayer + hoy** por cada banco con credenciales (`listAvailableBankIds`). La ventana de 2 días cierra el gap de un IPN perdido a través de medianoche. Por cada QR pagado con tx en `payin_pending` → `confirmBankQrTx` (status `payin_confirmed` + `dispatchPayout`).
+- **FASE B — barrido de expiración (give-up):** toma tx bankQr `payin_pending` sin `bankQr.paidAt` cuyo `paymentInstructionsExpiresAt < now − 1h` de gracia. Hace un `getQRStatus` final en el banco:
+  - `'paid'` → confirma (cubre cualquier pago que la FASE A no listó).
+  - `'pending'` → **cancela el QR en el banco** (`cancelQR`) + marca `failed`/`archived` (`failureCategory='BANKQR_EXPIRED'`). Cancelar antes de fallar cierra la carrera *"marco failed → el usuario paga después → SRL recibe BOB sin payout"*.
+  - `'cancelled'` → marca `failed`/`archived`.
+  - Banco no responde y tx > 7 días → give-up duro.
+
+**`cleanupOrphanTransactions` (cada 1h)** EXCLUYE bankQr (lo maneja la FASE B). Sí archiva intentos `manual` abandonados: ahora cubre `status ∈ { payin_pending, pending_comprobante }` — antes solo `payin_pending`, dejando zombie los intentos manuales que nunca subieron comprobante.
 
 ---
 
@@ -500,13 +527,19 @@ Step 7 — effective rate for display
 ## 9. Status State Machine
 
 ```
-payin_pending                    ← Created by initCrossBorderPayment (all paths)
+pending_comprobante              ← Created by initCrossBorderPayment (payinMethod 'manual')
+  │                                 Abandonado + vencido sin comprobante → cleanup → failed/archived
+  └─ payin_pending               ← user uploads comprobante (uploadPaymentProof)
+
+payin_pending                    ← Created by initCrossBorderPayment (fintoc / bankQr / vita)
   │
   ├─ payin_confirmed             ← Fintoc IPN payment_intent.succeeded
   │    └─→ dispatchPayout()          or Vita IPN completed (payin)
+  │                                  or bankQr IPN / reconcileBankQrPayments (FASE A/B)
   │                                  or Admin manual confirmation (Ledger)
   │
   ├─ failed                      ← Vita IPN vitaStatus: 'denied'
+  │                                 or bankQr QR vencido (failureCategory='BANKQR_EXPIRED', FASE B)
   │
   └─ [user uploads comprobante   ← No status change — admin confirms
        → broadcastToAdmins]
