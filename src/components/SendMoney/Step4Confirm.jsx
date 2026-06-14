@@ -246,12 +246,14 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
   const comisionServicio = (fees.alytoCSpread || 0) + (fees.fixedFee || 0)
   const feeProcesamiento = (fees.payinFee     || 0) + (fees.payoutFee || 0)
 
-  const payinMethodLabel = {
-    fintoc:  'Fintoc — Transferencia bancaria',
-    vita:    'Pago digital',
-    manual:  'Transferencia bancaria manual',
-    owlpay:  'Transferencia internacional',
-  }[payinMethod] || payinMethod || '—'
+  const payinMethodLabel = payinMethod?.startsWith('bankQr')
+    ? 'QR Bancario'
+    : ({
+        fintoc:  'Fintoc — Transferencia bancaria',
+        vita:    'Pago digital',
+        manual:  'Transferencia bancaria manual',
+        owlpay:  'Transferencia internacional',
+      }[payinMethod] || payinMethod || '—')
 
   // Ejecuta el pago con la cotización indicada (Vita fresca, Harbor live, o estimado WS)
   async function executePayment(q) {
@@ -287,6 +289,9 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
         payinInstructions: res.paymentInstructions ?? null,
         paymentQR:         res.paymentQR           ?? null,
         paymentQRStatic:   res.paymentQRStatic     ?? [],
+        // bankQr
+        dueDate:           res.dueDate             ?? null,
+        bankQrId:          res.bankQrId            ?? null,
       })
     } catch (err) {
       Sentry.captureException(err, {

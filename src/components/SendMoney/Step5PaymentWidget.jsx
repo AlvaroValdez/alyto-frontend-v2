@@ -1,10 +1,10 @@
 /**
  * Step5PaymentWidget.jsx — Widget de pago del proveedor.
  *
- * Tres modos según payinMethod:
+ * Modos según payinMethod:
  *   • fintoc / vita / url → abre redirect_url en nueva pestaña + polling
- *   • manual             → muestra instrucciones de transferencia bancaria
- *                          sin polling (admin confirma manualmente)
+ *   • manual             → instrucciones transferencia bancaria + upload comprobante
+ *   • bankQr:*           → QR bancario dinámico; confirmación automática por banco
  *
  * Polling cada 5s a GET /payments/:transactionId/status.
  * Avanza automáticamente cuando status ∈ FINAL_STATUSES.
@@ -15,7 +15,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Loader2, ExternalLink, AlertCircle, MessageCircle,
-  Copy, CheckCheck, Clock, Download, Paperclip, Upload, CheckCircle2,
+  Copy, CheckCheck, Clock, Download, Paperclip, Upload, CheckCircle2, Smartphone,
 } from 'lucide-react'
 import { getTransactionStatus, getPaymentQR, uploadComprobante } from '../../services/paymentsService'
 import Sentry from '../../services/sentry.js'
@@ -400,6 +400,156 @@ function ManualPayinScreen({ stepData }) {
   )
 }
 
+// ── BankQrPayinScreen — QR bancario dinámico (BEC y futuros bancos) ──────────
+
+function BankQrPayinScreen({ stepData }) {
+  const navigate = useNavigate()
+  const { transactionId, paymentQR, originAmount, dueDate, quote } = stepData
+  const originCurrency = stepData.originCurrency ?? quote?.originCurrency ?? 'BOB'
+
+  const [qrSrc,     setQrSrc]     = useState(() => toQrSrc(paymentQR))
+  const [qrLoading, setQrLoading] = useState(!paymentQR && !!transactionId)
+  const [confirmed, setConfirmed] = useState(false)
+
+  // Polling automático — banco notifica al backend via webhook; FE solo verifica
+  useEffect(() => {
+    if (confirmed) return
+    const interval = setInterval(async () => {
+      try {
+        const data = await getTransactionStatus(transactionId)
+        if (FINAL_STATUSES.has(data.status)) {
+          setConfirmed(true)
+          clearInterval(interval)
+        }
+      } catch { /* silent */ }
+    }, POLL_INTERVAL_MS)
+    return () => clearInterval(interval)
+  }, [transactionId, confirmed])
+
+  // Cargar QR del backend si no vino en stepData
+  useEffect(() => {
+    if (paymentQR || !transactionId) return
+    let cancelled = false
+    getPaymentQR(transactionId)
+      .then(res => {
+        if (cancelled) return
+        const raw = res.qrDataUrl ?? res.qrUrl ?? res.qr ?? res.qrBase64
+        if (raw) setQrSrc(toQrSrc(raw))
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setQrLoading(false) })
+    return () => { cancelled = true }
+  }, [transactionId, paymentQR])
+
+  const downloadQR = () => {
+    if (!qrSrc) return
+    const a = document.createElement('a')
+    a.download = `qr-alyto-${transactionId ?? 'pago'}.png`
+    a.href = qrSrc
+    a.click()
+  }
+
+  if (confirmed) {
+    return (
+      <div className="flex flex-col gap-5 px-4 pb-28">
+        <div className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-[#22C55E0A] border border-[#22C55E33]">
+          <CheckCircle2 size={36} className="text-[#22C55E]" />
+          <div className="text-center">
+            <p className="text-[1rem] font-bold text-[#22C55E]">¡Pago confirmado!</p>
+            <p className="text-[0.8125rem] text-[#4A5568] mt-1">
+              Tu QR fue pagado. Estamos procesando tu transferencia.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate(`/transactions/${transactionId}`)}
+            className="mt-1 px-5 py-2.5 rounded-xl bg-[#0D1F3C] text-white text-[0.875rem] font-bold shadow-[0_4px_20px_rgba(13,31,60,0.25)] active:scale-[0.98] transition-all"
+          >
+            Ver estado de mi transferencia →
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-5 px-4 pb-28">
+
+      {/* QR bancario */}
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 flex flex-col items-center gap-4">
+        <div className="flex items-center gap-2 text-[0.8125rem] font-semibold text-[#0D1F3C]">
+          <Smartphone size={15} />
+          Escanea con tu app bancaria
+        </div>
+
+        {qrLoading ? (
+          <div className="w-[200px] h-[200px] rounded-2xl bg-[#E2E8F0] animate-pulse" />
+        ) : qrSrc ? (
+          <>
+            <img
+              src={qrSrc}
+              alt="QR de pago bancario"
+              className="w-[200px] h-[200px] rounded-2xl bg-white p-2 object-contain"
+            />
+            <button
+              onClick={downloadQR}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#E2E8F0] text-[0.8125rem] text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#0D1F3C33] transition-colors"
+            >
+              <Download size={13} /> Descargar QR
+            </button>
+          </>
+        ) : (
+          <div className="flex flex-col items-center gap-2 py-4">
+            <AlertCircle size={24} className="text-[#94A3B8]" />
+            <p className="text-[0.8125rem] text-[#4A5568] text-center">
+              No se pudo cargar el QR. Recarga la página e intenta nuevamente.
+            </p>
+          </div>
+        )}
+
+        <div className="w-full border-t border-[#E2E8F0] pt-3 flex flex-col gap-1">
+          <div className="flex justify-between text-[0.8125rem]">
+            <span className="text-[#94A3B8]">Monto</span>
+            <span className="font-bold text-[#0D1F3C]">
+              {Number(originAmount ?? 0).toLocaleString('es-BO', { minimumFractionDigits: 2 })} {originCurrency ?? 'BOB'}
+            </span>
+          </div>
+          {dueDate && (
+            <div className="flex justify-between text-[0.8125rem]">
+              <span className="text-[#94A3B8]">Válido hasta</span>
+              <span className="font-semibold text-[#0D1F3C]">{dueDate}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mensaje de confirmación automática */}
+      <div className="flex items-start gap-2.5 px-4 py-3.5 rounded-2xl bg-[#0EA5E90F] border border-[#0EA5E933]">
+        <span className="text-base flex-shrink-0 leading-none mt-0.5">⚡</span>
+        <div>
+          <p className="text-[0.8125rem] font-semibold text-[#0EA5E9] leading-tight">
+            Confirmación automática
+          </p>
+          <p className="text-[0.75rem] text-[#4A5568] mt-0.5">
+            No necesitas subir comprobante. En cuanto escanees y pagues el QR, el banco nos notifica y tu transferencia se procesa automáticamente.
+          </p>
+        </div>
+      </div>
+
+      {/* Referencia */}
+      <p className="text-center text-[0.6875rem] text-[#94A3B8]">
+        ID de referencia: <span className="font-mono">{formatTransactionId(transactionId)}</span>
+      </p>
+
+      <button
+        onClick={() => navigate(`/transactions/${transactionId}`)}
+        className="w-full py-3 rounded-xl border border-[#E2E8F0] text-[0.875rem] text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#0D1F3C33] transition-colors"
+      >
+        Ver estado de mi transferencia →
+      </button>
+    </div>
+  )
+}
+
 // ── Step5PaymentWidget ────────────────────────────────────────────────────────
 
 export default function Step5PaymentWidget({ stepData, onNext }) {
@@ -409,6 +559,12 @@ export default function Step5PaymentWidget({ stepData, onNext }) {
 
   if (payinMethod === 'manual') {
     return <ManualPayinScreen stepData={stepData} />
+  }
+
+  // ── QR bancario dinámico (BEC + futuros bancos) ───────────────────────────
+
+  if (payinMethod?.startsWith('bankQr')) {
+    return <BankQrPayinScreen stepData={stepData} />
   }
 
   // ── Resto de modos: fintoc / vita / url (con redirect + polling) ─────────
