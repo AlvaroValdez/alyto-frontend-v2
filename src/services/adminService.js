@@ -73,6 +73,12 @@ export function updateTransactionStatus(transactionId, status, note, extras = {}
   })
 }
 
+export function simulateBankQrPayment(transactionId) {
+  return request(`/admin/transactions/${encodeURIComponent(transactionId)}/simulate-bankqr-payment`, {
+    method: 'POST',
+  })
+}
+
 // ── Corredores ────────────────────────────────────────────────────────────────
 
 /**

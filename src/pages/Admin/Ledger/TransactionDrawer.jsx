@@ -11,7 +11,7 @@ import {
   Clock, CheckCircle2, XCircle, AlertCircle, Loader,
   User, Banknote, List, Edit3, ArrowRight, Paperclip, ZoomIn, FileText,
 } from 'lucide-react'
-import { getTransactionDetail, updateTransactionStatus, getTransactionComprobante, getBusinessInvoice } from '../../../services/adminService'
+import { getTransactionDetail, updateTransactionStatus, getTransactionComprobante, getBusinessInvoice, simulateBankQrPayment } from '../../../services/adminService'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -175,6 +175,71 @@ function IpnLogEntry({ entry, index }) {
 }
 
 // ── Banner payin manual SRL — formulario inline ───────────────────────────────
+
+function BankQrTestBanner({ tx, onConfirmed }) {
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState(null)
+  const [success, setSuccess] = useState(false)
+
+  const handleSimulate = async () => {
+    if (!window.confirm('¿Simular pago bancario BEC? Esto confirma la transacción y dispara el payout.')) return
+    setLoading(true)
+    setError(null)
+    try {
+      await simulateBankQrPayment(tx.alytoTransactionId)
+      setSuccess(true)
+      onConfirmed()
+    } catch (err) {
+      setError(err.message || 'Error al simular el pago.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (success) {
+    return (
+      <div className="mb-5 flex items-center gap-3 p-4 rounded-2xl border border-[#22C55E40] bg-[#22C55E0A]">
+        <CheckCircle2 size={20} className="text-[#22C55E] flex-shrink-0" />
+        <div>
+          <p className="text-[0.875rem] font-bold text-[#22C55E]">✅ Pago simulado</p>
+          <p className="text-[0.75rem] text-[#8A96B8] mt-0.5">Payout iniciado automáticamente.</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-5 p-4 rounded-2xl border border-[#8AB4F840] bg-[#8AB4F80A] space-y-3">
+      <div className="flex items-center gap-2">
+        <span className="text-lg leading-none">🧪</span>
+        <p className="text-[0.875rem] font-bold text-[#8AB4F8]">Sandbox — QR bancario pendiente</p>
+        <span className="ml-auto text-[0.625rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#8AB4F820] text-[#8AB4F8] border border-[#8AB4F840]">
+          Sandbox
+        </span>
+      </div>
+      <div className="pl-1 space-y-0.5">
+        <p className="text-[0.8125rem] text-[#8A96B8]">QR generado por el banco:</p>
+        <p className="text-[0.75rem] font-mono text-[#C4CBD8]">{tx.bankQr?.qrId ?? '—'}</p>
+        <p className="text-[0.75rem] text-[#4E5A7A]">
+          En producción el banco notificará automáticamente cuando el QR sea pagado.
+          En sandbox, usa el botón para simular esa notificación.
+        </p>
+      </div>
+      {error && (
+        <p className="text-[0.8125rem] text-[#F87171]">{error}</p>
+      )}
+      <button
+        onClick={handleSimulate}
+        disabled={loading}
+        className="w-full py-2.5 rounded-xl bg-[#8AB4F8] text-[#0F1628] text-[0.875rem] font-bold disabled:opacity-50 flex items-center justify-center gap-2 transition-all hover:opacity-90"
+      >
+        {loading
+          ? <><span className="animate-spin">⟳</span> Simulando...</>
+          : '⚡ Simular pago bancario (sandbox)'}
+      </button>
+    </div>
+  )
+}
 
 function PayinManualBanner({ tx, onConfirmed }) {
   const [bankRef, setBankRef] = useState('')
@@ -667,8 +732,17 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
                 )
               })()}
 
+              {/* ── Banner sandbox: simular pago QR bancario ── */}
+              {tx.status === 'payin_pending' && tx.bankQr?.qrId && (
+                <BankQrTestBanner
+                  tx={tx}
+                  onConfirmed={() => { load(); onStatusUpdated?.() }}
+                />
+              )}
+
               {/* ── Banner payin manual (SRL Bolivia o SpA→BO manual) ── */}
               {MANUAL_PAYIN_PENDING.has(tx.status)
+                && !tx.bankQr?.qrId
                 && (tx.legalEntity === 'SRL' || (tx.legalEntity === 'SpA' && tx.destinationCountry === 'BO'))
                 && (
                 <PayinManualBanner
