@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   RefreshCw, CheckCircle2, AlertCircle, Loader,
-  Pencil, Check, X, Plus, BarChart2, History, ArrowRight,
+  Pencil, Check, X, Plus, BarChart2, History, ArrowRight, Search,
 } from 'lucide-react'
 import {
   listCorridors, updateCorridor, createCorridor, setCorridorRate,
@@ -862,7 +862,10 @@ export default function CorridorsPanel() {
   const [corridors,    setCorridors]    = useState([])
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState(null)
-  const [filter,       setFilter]       = useState('all')   // 'all' | 'active' | 'inactive'
+  const [filter,       setFilter]       = useState('all')      // 'all' | 'active' | 'inactive'
+  const [entity,       setEntity]       = useState('all')      // 'all' | 'SpA' | 'LLC' | 'SRL'
+  const [payinFilter,  setPayinFilter]  = useState('all')      // 'all' | 'manual' | 'bankQr' | 'fintoc' | ...
+  const [search,       setSearch]       = useState('')
   const [toast,        setToast]        = useState(null)
   const [modalCreate,  setModalCreate]  = useState(false)
   const [analyticsFor, setAnalyticsFor] = useState(null)    // corridor | null
@@ -888,11 +891,25 @@ export default function CorridorsPanel() {
   const onSaved   = useCallback(() => { showToast('Corredor actualizado'); load() }, [load, showToast])
   const onCreated = useCallback(() => { setModalCreate(false); showToast('Corredor creado'); load() }, [load, showToast])
 
+  const q = search.trim().toLowerCase()
   const filtered = corridors.filter(c => {
-    if (filter === 'active')   return  c.isActive
-    if (filter === 'inactive') return !c.isActive
+    if (filter === 'active'   && !c.isActive) return false
+    if (filter === 'inactive' &&  c.isActive) return false
+    if (entity !== 'all' && c.legalEntity !== entity) return false
+    if (payinFilter !== 'all' && c.payinMethod !== payinFilter) return false
+    if (q) {
+      const haystack = [
+        c.corridorId, c.originCountry, c.destinationCountry,
+        c.originCurrency, c.destinationCurrency,
+        COUNTRIES[c.originCountry]?.name, COUNTRIES[c.destinationCountry]?.name,
+      ].join(' ').toLowerCase()
+      if (!haystack.includes(q)) return false
+    }
     return true
   })
+
+  // payin methods presentes en la lista cargada (para pills dinámicos)
+  const payinMethods = [...new Set(corridors.map(c => c.payinMethod).filter(Boolean))].sort()
 
   const TH = ({ children }) => (
     <th className="text-left text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider px-3 py-3 whitespace-nowrap">
@@ -928,8 +945,29 @@ export default function CorridorsPanel() {
         </div>
       </div>
 
+      {/* ── Buscador ── */}
+      <div className="relative mb-3">
+        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4E5A7A] pointer-events-none" />
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Buscar por corredor, país, moneda…"
+          className="w-full pl-8 pr-4 py-2 rounded-xl text-[0.8125rem] text-white bg-[#1A2340] border border-[#263050] focus:border-[#C4CBD833] focus:outline-none placeholder-[#4E5A7A] transition-colors"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4E5A7A] hover:text-[#C4CBD8]"
+          >
+            <X size={12} />
+          </button>
+        )}
+      </div>
+
       {/* ── Filtros ── */}
-      <div className="flex gap-2 mb-5">
+      <div className="flex flex-wrap gap-2 mb-5">
+        {/* Estado */}
         {[
           { key: 'all',      label: 'Todos'     },
           { key: 'active',   label: 'Activos'   },
@@ -938,7 +976,7 @@ export default function CorridorsPanel() {
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`px-4 py-1.5 rounded-xl text-[0.8125rem] font-semibold border transition-all ${
+            className={`px-3 py-1.5 rounded-xl text-[0.8125rem] font-semibold border transition-all ${
               filter === f.key
                 ? 'bg-[#C4CBD81A] text-[#C4CBD8] border-[#C4CBD833]'
                 : 'text-[#4E5A7A] border-[#263050] hover:text-[#8A96B8]'
@@ -947,6 +985,74 @@ export default function CorridorsPanel() {
             {f.label}
           </button>
         ))}
+
+        {/* Separador */}
+        <div className="w-px bg-[#263050] self-stretch mx-1" />
+
+        {/* Entidad */}
+        {[
+          { key: 'all', label: 'Toda entidad' },
+          { key: 'SRL', label: '🇧🇴 SRL' },
+          { key: 'SpA', label: '🇨🇱 SpA' },
+          { key: 'LLC', label: '🇺🇸 LLC' },
+        ].map(f => (
+          <button
+            key={f.key}
+            onClick={() => setEntity(f.key)}
+            className={`px-3 py-1.5 rounded-xl text-[0.8125rem] font-semibold border transition-all ${
+              entity === f.key
+                ? 'bg-[#22C55E14] text-[#22C55E] border-[#22C55E40]'
+                : 'text-[#4E5A7A] border-[#263050] hover:text-[#8A96B8]'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+
+        {/* Separador */}
+        {payinMethods.length > 0 && <div className="w-px bg-[#263050] self-stretch mx-1" />}
+
+        {/* Payin method (dinámico según corredores cargados) */}
+        {payinMethods.length > 0 && (
+          <>
+            <button
+              onClick={() => setPayinFilter('all')}
+              className={`px-3 py-1.5 rounded-xl text-[0.8125rem] font-semibold border transition-all ${
+                payinFilter === 'all'
+                  ? 'bg-[#8AB4F814] text-[#8AB4F8] border-[#8AB4F840]'
+                  : 'text-[#4E5A7A] border-[#263050] hover:text-[#8A96B8]'
+              }`}
+            >
+              Todo payin
+            </button>
+            {payinMethods.map(m => (
+              <button
+                key={m}
+                onClick={() => setPayinFilter(m)}
+                className={`px-3 py-1.5 rounded-xl text-[0.8125rem] font-mono font-semibold border transition-all ${
+                  payinFilter === m
+                    ? 'bg-[#8AB4F814] text-[#8AB4F8] border-[#8AB4F840]'
+                    : 'text-[#4E5A7A] border-[#263050] hover:text-[#8A96B8]'
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </>
+        )}
+
+        {/* Contador de resultados */}
+        {(search || filter !== 'all' || entity !== 'all' || payinFilter !== 'all') && (
+          <span className="ml-auto self-center text-[0.75rem] text-[#4E5A7A]">
+            {filtered.length} resultado{filtered.length !== 1 ? 's' : ''}
+            <button
+              onClick={() => { setSearch(''); setFilter('all'); setEntity('all'); setPayinFilter('all') }}
+              className="ml-2 text-[#4E5A7A] hover:text-[#C4CBD8] underline"
+            >
+              Limpiar
+            </button>
+          </span>
+        )}
       </div>
 
       {/* ── Error ── */}
@@ -966,12 +1072,22 @@ export default function CorridorsPanel() {
 
       {/* ── Empty ── */}
       {!loading && !error && !filtered.length && (
-        <div className="flex flex-col items-center justify-center py-16">
+        <div className="flex flex-col items-center justify-center py-16 gap-2">
           <p className="text-[0.875rem] text-[#4E5A7A]">
-            {filter === 'all'
-              ? 'Sin corredores configurados.'
-              : `Sin corredores ${filter === 'active' ? 'activos' : 'inactivos'}.`}
+            {search || entity !== 'all' || payinFilter !== 'all'
+              ? 'Sin corredores que coincidan con los filtros.'
+              : filter === 'all'
+                ? 'Sin corredores configurados.'
+                : `Sin corredores ${filter === 'active' ? 'activos' : 'inactivos'}.`}
           </p>
+          {(search || entity !== 'all' || payinFilter !== 'all') && (
+            <button
+              onClick={() => { setSearch(''); setFilter('all'); setEntity('all'); setPayinFilter('all') }}
+              className="text-[0.8125rem] text-[#8A96B8] hover:text-[#C4CBD8] underline transition-colors"
+            >
+              Limpiar filtros
+            </button>
+          )}
         </div>
       )}
 
