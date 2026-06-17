@@ -107,10 +107,11 @@ function TxIcon({ type }) {
 
 function TxStatusBadge({ status }) {
   const map = {
-    pending:   { bg: '#64748B1A', text: '#64748B', label: 'Pendiente' },
-    completed: { bg: '#22C55E1A', text: '#22C55E', label: 'Completado' },
-    failed:    { bg: '#EF44441A', text: '#F87171', label: 'Fallido' },
-    reversed:  { bg: '#64748B1A', text: '#64748B', label: 'Revertido' },
+    awaiting_proof: { bg: '#F59E0B1A', text: '#D97706', label: 'Pendiente de comprobante' },
+    pending:        { bg: '#64748B1A', text: '#64748B', label: 'Pendiente' },
+    completed:      { bg: '#22C55E1A', text: '#22C55E', label: 'Completado' },
+    failed:         { bg: '#EF44441A', text: '#F87171', label: 'Fallido' },
+    reversed:       { bg: '#64748B1A', text: '#64748B', label: 'Revertido' },
   }
   const s = map[status] ?? map.pending
   return (
@@ -239,9 +240,18 @@ function Modal({ open, onClose, title, children }) {
 const DEPOSIT_MIN_BOB = parseInt(import.meta.env.VITE_DEPOSIT_MIN_BOB || '50', 10)
 const DEPOSIT_MAX_BOB = parseInt(import.meta.env.VITE_DEPOSIT_MAX_BOB || '10000', 10)
 
+// Convierte el paymentQR del banco (base64 SVG en mock BEC) a una src usable en <img>.
+// El mock BEC devuelve base64 de un SVG; el banco real podría devolver PNG/data-uri.
+function bankQrSrc(raw) {
+  if (!raw) return ''
+  if (raw.startsWith('data:')) return raw
+  if (raw.trim().startsWith('<svg')) return `data:image/svg+xml;utf8,${encodeURIComponent(raw)}`
+  return `data:image/svg+xml;base64,${raw}`
+}
+
 function DepositModal({ open, onClose, onSuccess }) {
   // ─── state ───────────────────────────────────────────────────────────────────
-  const [view, setView]           = useState('amount')   // 'amount' | 'instructions' | 'done'
+  const [view, setView]           = useState('amount')   // 'amount' | 'instructions' | 'bankqr'
   const [amount, setAmount]       = useState('')
   const [loading, setLoading]     = useState(false)
   const [result, setResult]       = useState(null)       // response from /deposit/initiate
@@ -250,19 +260,43 @@ function DepositModal({ open, onClose, onSuccess }) {
   const [error, setError]         = useState('')
   const [copied, setCopied]       = useState(false)
 
-  // comprobante upload
+  // comprobante upload (solo flujo manual)
   const [proofFile, setProofFile]       = useState(null)
   const [proofPreview, setProofPreview] = useState(null)
   const [uploading, setUploading]       = useState(false)
   const [uploadError, setUploadError]   = useState('')
   const [uploadDone, setUploadDone]     = useState(false)
 
+  // bankQr — confirmación automática vía polling
+  const [bankConfirmed, setBankConfirmed] = useState(false)
+  const [bankFailed, setBankFailed]       = useState('')
+
   function resetAll() {
     setView('amount'); setAmount(''); setResult(null); setQrImages([])
     setPayTab('transfer'); setError(''); setCopied(false)
     setProofFile(null); setProofPreview(null); setUploading(false)
     setUploadError(''); setUploadDone(false)
+    setBankConfirmed(false); setBankFailed('')
   }
+
+  // Polling del estado del depósito bankQr — el banco confirma vía IPN y el saldo
+  // se acredita solo. Detectamos el cambio a 'completed'/'failed' en el historial.
+  useEffect(() => {
+    if (view !== 'bankqr' || !result?.wtxId || bankConfirmed || bankFailed) return
+    let active = true
+    async function poll() {
+      try {
+        const res = await request('/wallet/transactions?type=deposit&limit=15')
+        const tx  = (res?.transactions ?? []).find(t => t.wtxId === result.wtxId)
+        if (!active || !tx) return
+        if (tx.status === 'completed') { setBankConfirmed(true); onSuccess?.() }
+        else if (tx.status === 'failed') { setBankFailed('El QR expiró o el pago no se completó.') }
+      } catch { /* reintenta en el próximo tick */ }
+    }
+    poll()
+    const id = setInterval(poll, 5000)
+    return () => { active = false; clearInterval(id) }
+  }, [view, result, bankConfirmed, bankFailed])
 
   function handleClose() { resetAll(); onClose() }
 
@@ -275,14 +309,20 @@ function DepositModal({ open, onClose, onSuccess }) {
     if (n > DEPOSIT_MAX_BOB)        return setError(`El monto máximo es Bs. ${DEPOSIT_MAX_BOB.toLocaleString('es-BO')}.`)
     setLoading(true)
     try {
-      const [data, instrData] = await Promise.all([
-        request('/wallet/deposit/initiate', {
-          method: 'POST',
-          body: JSON.stringify({ amount: n }),
-        }),
-        request('/wallet/deposit/qr-images').catch(() => ({ qrImages: [] })),
-      ])
+      const data = await request('/wallet/deposit/initiate', {
+        method: 'POST',
+        body: JSON.stringify({ amount: n }),
+      })
       setResult(data)
+
+      // Camino bankQr: QR dinámico del banco + confirmación automática (sin comprobante).
+      if (data.method === 'bankQr') {
+        setView('bankqr')
+        return
+      }
+
+      // Camino manual: instrucciones bancarias + comprobante. Traemos los QRs estáticos del admin.
+      const instrData = await request('/wallet/deposit/qr-images').catch(() => ({ qrImages: [] }))
       const imgs = Array.isArray(instrData?.qrImages) ? instrData.qrImages.filter(q => q.imageBase64) : []
       setQrImages(imgs)
       setPayTab(imgs.length > 0 ? 'qr' : 'transfer')
@@ -528,6 +568,83 @@ function DepositModal({ open, onClose, onSuccess }) {
               style={{ background: '#22C55E' }}>
               Cerrar
             </button>
+          )}
+        </div>
+      )}
+
+      {/* ── PASO 2 (bankQr): QR del banco + confirmación automática ── */}
+      {view === 'bankqr' && (
+        <div className="space-y-5">
+
+          {bankConfirmed ? (
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: '#22C55E1A' }}>
+                <CheckCircle2 size={28} className="text-[#22C55E]" />
+              </div>
+              <p className="text-[1rem] font-bold text-[#0F172A]">¡Pago confirmado!</p>
+              <p className="text-[0.8125rem] text-[#64748B]">
+                Se acreditaron <span className="font-bold text-[#0F172A]">{formatBOB(result?.amount)}</span> a tu saldo.
+              </p>
+              <button onClick={handleClose}
+                className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white mt-2"
+                style={{ background: '#22C55E' }}>
+                Cerrar
+              </button>
+            </div>
+          ) : bankFailed ? (
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: '#EF44441A' }}>
+                <X size={28} className="text-[#F87171]" />
+              </div>
+              <p className="text-[1rem] font-bold text-[#0F172A]">El QR no se completó</p>
+              <p className="text-[0.8125rem] text-[#64748B]">{bankFailed}</p>
+              <button onClick={() => { resetAll() }}
+                className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white mt-2"
+                style={{ background: '#233E58' }}>
+                Generar un nuevo QR
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* QR bancario dinámico */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="bg-white rounded-2xl p-4" style={{ border: '2px solid #233E5833' }}>
+                  <img src={bankQrSrc(result?.paymentQR)} alt="QR bancario"
+                    className="w-[200px] h-[200px] object-contain" />
+                </div>
+                <p className="text-[1.25rem] font-bold text-[#0F172A]">{formatBOB(result?.amount)}</p>
+              </div>
+
+              {/* Estado: esperando pago */}
+              <div className="flex items-center justify-center gap-2 bg-[#233E580D] rounded-2xl px-4 py-3"
+                style={{ border: '1px solid #233E5822' }}>
+                <Loader2 size={16} className="animate-spin text-[#233E58]" />
+                <p className="text-[0.8125rem] font-semibold text-[#233E58]">Esperando confirmación del pago…</p>
+              </div>
+
+              <div className="bg-[#F8FAFC] rounded-2xl p-4 space-y-2" style={{ border: '1px solid #E2E8F0' }}>
+                <div className="flex items-start gap-2">
+                  <QrCode size={15} className="text-[#64748B] mt-0.5 flex-shrink-0" />
+                  <p className="text-[0.75rem] text-[#64748B]">
+                    Escanea el QR con tu app bancaria y paga el monto exacto. El saldo se acredita
+                    <span className="font-semibold text-[#0F172A]"> automáticamente</span> al confirmarse el pago —
+                    no necesitas subir comprobante.
+                  </p>
+                </div>
+                {result?.expiresAt && (
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} className="text-[#94A3B8] flex-shrink-0" />
+                    <p className="text-[0.6875rem] text-[#94A3B8]">Válido hasta {formatDate(result.expiresAt)}</p>
+                  </div>
+                )}
+              </div>
+
+              <button onClick={handleClose}
+                className="w-full py-3 rounded-2xl font-semibold text-[0.875rem]"
+                style={{ border: '1.5px solid #E2E8F0', color: '#64748B' }}>
+                Pagar más tarde
+              </button>
+            </>
           )}
         </div>
       )}

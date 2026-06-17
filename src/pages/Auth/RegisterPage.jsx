@@ -362,10 +362,8 @@ export default function RegisterPage() {
         termsVersion:    LEGAL_VERSION,
       })
 
-      navigate('/kyc', {
-        replace: true,
-        state:   { welcome: true, message: '¡Cuenta creada! Ahora verifica tu identidad para comenzar a enviar dinero.' },
-      })
+      // Onboarding: verificar email → info de cumplimiento → biometría.
+      navigate('/verify-email', { replace: true })
     } catch (err) {
       setError(err.message || 'Error al crear la cuenta. Intenta nuevamente.')
     } finally {

@@ -10,7 +10,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Wallet, CheckCircle2, AlertCircle, Loader2, RefreshCw,
   ChevronDown, X, Lock, Unlock, ArrowRightLeft, ArrowUpRight, QrCode,
-  Percent, Save, Coins,
+  Percent, Save, Coins, Eye, FileText, Phone, CreditCard,
 } from 'lucide-react'
 import { request } from '../../../services/api'
 import {
@@ -34,6 +34,76 @@ function formatDate(d) {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   }).format(new Date(d))
+}
+
+// Extrae los datos del usuario del depósito de forma tolerante: prioriza el shape
+// nuevo (d.user, rico) y cae al legacy (d.userId populado) por si el backend aún
+// no expone el shape nuevo durante un deploy escalonado.
+function depUser(d) {
+  if (d?.user) return d.user
+  const u = d?.userId ?? {}
+  return {
+    name:         `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || '—',
+    email:        u.email ?? null,
+    phone:        u.phone ?? null,
+    documentType: null,
+    kycStatus:    u.kycStatus ?? null,
+  }
+}
+
+// ── Modal Ver Comprobante ─────────────────────────────────────────────────────
+
+function ProofViewerModal({ wtxId, open, onClose }) {
+  const [loading, setLoading] = useState(false)
+  const [proof, setProof]     = useState(null)
+  const [error, setError]     = useState('')
+
+  useEffect(() => {
+    if (!open || !wtxId) return
+    let active = true
+    setLoading(true); setError(''); setProof(null)
+    request(`/admin/wallet/deposits/${encodeURIComponent(wtxId)}/comprobante`)
+      .then(d => { if (active) setProof(d) })
+      .catch(e => { if (active) setError(e.message ?? 'No se pudo cargar el comprobante.') })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [open, wtxId])
+
+  if (!open) return null
+  const isPdf = proof?.mimeType === 'application/pdf'
+  const src   = proof ? `data:${proof.mimeType};base64,${proof.base64}` : ''
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: '#0F162299' }}>
+      <div className="w-full max-w-lg bg-[#1A2340] rounded-2xl p-6 max-h-[90vh] overflow-y-auto"
+        style={{ border: '1px solid #263050' }}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-[1rem] font-bold text-white flex items-center gap-2">
+            <FileText size={16} className="text-[#C4CBD8]" /> Comprobante
+          </h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#0F1628] flex items-center justify-center">
+            <X size={16} className="text-[#8A96B8]" />
+          </button>
+        </div>
+        {loading ? (
+          <div className="py-10 flex justify-center"><Loader2 size={22} className="animate-spin text-[#8A96B8]" /></div>
+        ) : error ? (
+          <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>
+        ) : isPdf ? (
+          <div className="text-center space-y-3">
+            <p className="text-[0.8125rem] text-[#8A96B8]">{proof.filename ?? 'comprobante.pdf'}</p>
+            <a href={src} download={proof.filename ?? 'comprobante.pdf'} target="_blank" rel="noreferrer"
+              className="inline-block px-4 py-2.5 rounded-xl font-bold text-[0.8125rem] text-[#0F1628]"
+              style={{ background: '#C4CBD8' }}>
+              Abrir PDF
+            </a>
+          </div>
+        ) : (
+          <img src={src} alt="Comprobante" className="w-full rounded-xl" style={{ border: '1px solid #263050' }} />
+        )}
+      </div>
+    </div>
+  )
 }
 
 // ── Status Badge ──────────────────────────────────────────────────────────────
@@ -98,30 +168,45 @@ function ConfirmDepositModal({ deposit, open, onClose, onSuccess }) {
         </div>
 
         {/* Resumen del depósito */}
-        <div className="bg-[#0F1628] rounded-xl p-4 mb-4 space-y-2">
-          <div className="flex justify-between">
-            <span className="text-[0.75rem] text-[#8A96B8]">Usuario</span>
-            <span className="text-[0.875rem] font-semibold text-white">
-              {deposit.userId?.firstName} {deposit.userId?.lastName}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[0.75rem] text-[#8A96B8]">Email</span>
-            <span className="text-[0.875rem] text-[#C4CBD8]">{deposit.userId?.email}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[0.75rem] text-[#8A96B8]">Monto</span>
-            <span className="text-[0.9375rem] font-bold text-[#22C55E]">{formatBOB(deposit.amount)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[0.75rem] text-[#8A96B8]">Referencia</span>
-            <span className="text-[0.75rem] font-mono text-[#C4CBD8]">{deposit.wtxId}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[0.75rem] text-[#8A96B8]">Fecha</span>
-            <span className="text-[0.75rem] text-white">{formatDate(deposit.createdAt)}</span>
-          </div>
-        </div>
+        {(() => {
+          const u = depUser(deposit)
+          return (
+            <div className="bg-[#0F1628] rounded-xl p-4 mb-4 space-y-2">
+              <div className="flex justify-between">
+                <span className="text-[0.75rem] text-[#8A96B8]">Usuario</span>
+                <span className="text-[0.875rem] font-semibold text-white">{u.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[0.75rem] text-[#8A96B8]">Email</span>
+                <span className="text-[0.875rem] text-[#C4CBD8]">{u.email ?? '—'}</span>
+              </div>
+              {u.phone && (
+                <div className="flex justify-between">
+                  <span className="text-[0.75rem] text-[#8A96B8]">Teléfono</span>
+                  <span className="text-[0.875rem] text-[#C4CBD8]">{u.phone}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-[0.75rem] text-[#8A96B8]">KYC / Documento</span>
+                <span className="text-[0.75rem] text-[#C4CBD8]">
+                  {u.kycStatus ?? '—'}{u.documentType ? ` · ${u.documentType}` : ''}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[0.75rem] text-[#8A96B8]">Monto</span>
+                <span className="text-[0.9375rem] font-bold text-[#22C55E]">{formatBOB(deposit.amount)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[0.75rem] text-[#8A96B8]">Referencia</span>
+                <span className="text-[0.75rem] font-mono text-[#C4CBD8]">{deposit.reference ?? deposit.wtxId}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[0.75rem] text-[#8A96B8]">Fecha</span>
+                <span className="text-[0.75rem] text-white">{formatDate(deposit.createdAt)}</span>
+              </div>
+            </div>
+          )
+        })()}
 
         <form onSubmit={handleConfirm} className="space-y-4">
           <div>
@@ -914,6 +999,7 @@ export default function WalletAdminPage() {
   const [statusFilter, setStatusFilter] = useState('')
 
   const [confirmDeposit, setConfirmDeposit]         = useState(null)
+  const [viewProof, setViewProof]                   = useState(null)
   const [confirmWithdrawal, setConfirmWithdrawal]   = useState(null)
   const [rejectWithdrawal, setRejectWithdrawal]     = useState(null)
   const [confirmConv, setConfirmConv]               = useState(null)
@@ -999,35 +1085,54 @@ export default function WalletAdminPage() {
           </div>
         ) : (
           <div className="space-y-2">
-            {deposits.map(dep => (
-              <div key={dep._id ?? dep.wtxId}
-                className="flex items-center gap-4 px-5 py-4 rounded-2xl"
-                style={{ background: '#1A2340', border: '1px solid #263050' }}>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p className="text-[0.9375rem] font-bold text-white">
-                      {dep.userId?.firstName} {dep.userId?.lastName}
-                    </p>
-                    <span className="text-[0.625rem] font-semibold px-2 py-0.5 rounded-full"
-                      style={{ background: '#C4CBD81A', color: '#C4CBD8' }}>
-                      {dep.userId?.kycStatus}
-                    </span>
+            {deposits.map(dep => {
+              const u            = depUser(dep)
+              const hasProof     = dep.comprobante?.present ?? !!dep.metadata?.paymentProof
+              return (
+                <div key={dep._id ?? dep.wtxId}
+                  className="flex items-center gap-4 px-5 py-4 rounded-2xl"
+                  style={{ background: '#1A2340', border: '1px solid #263050' }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                      <p className="text-[0.9375rem] font-bold text-white">{u.name}</p>
+                      <span className="text-[0.625rem] font-semibold px-2 py-0.5 rounded-full"
+                        style={{ background: '#C4CBD81A', color: '#C4CBD8' }}>
+                        {u.kycStatus ?? '—'}{u.documentType ? ` · ${u.documentType}` : ''}
+                      </span>
+                      <span className="text-[0.625rem] font-semibold px-2 py-0.5 rounded-full"
+                        style={{ background: '#233E581A', color: '#8AA6C8' }}>
+                        {dep.method === 'bankQr' ? 'QR bancario' : 'Manual'}
+                      </span>
+                    </div>
+                    <p className="text-[0.75rem] text-[#8A96B8]">{u.email ?? '—'}</p>
+                    {u.phone && (
+                      <p className="text-[0.6875rem] text-[#8A96B8] flex items-center gap-1">
+                        <Phone size={10} /> {u.phone}
+                      </p>
+                    )}
+                    <p className="text-[0.6875rem] text-[#4E5A7A] mt-0.5 font-mono">Ref: {dep.reference ?? dep.wtxId}</p>
+                    <p className="text-[0.6875rem] text-[#4E5A7A]">{formatDate(dep.createdAt)}</p>
                   </div>
-                  <p className="text-[0.75rem] text-[#8A96B8]">{dep.userId?.email}</p>
-                  <p className="text-[0.6875rem] text-[#4E5A7A] mt-0.5 font-mono">Ref: {dep.wtxId}</p>
-                  <p className="text-[0.6875rem] text-[#4E5A7A]">{formatDate(dep.createdAt)}</p>
+                  <div className="text-right flex-shrink-0 flex flex-col items-end gap-2">
+                    <p className="text-[1.0625rem] font-bold text-[#22C55E]">{formatBOB(dep.amount)}</p>
+                    {hasProof && (
+                      <button
+                        onClick={() => setViewProof(dep.wtxId)}
+                        className="text-[0.6875rem] font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1.5"
+                        style={{ border: '1px solid #263050', color: '#C4CBD8' }}>
+                        <Eye size={12} /> Comprobante
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setConfirmDeposit(dep)}
+                      className="text-[0.75rem] font-bold px-3 py-1.5 rounded-xl text-[#0F1628]"
+                      style={{ background: '#22C55E' }}>
+                      Confirmar
+                    </button>
+                  </div>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-[1.0625rem] font-bold text-[#22C55E] mb-2">{formatBOB(dep.amount)}</p>
-                  <button
-                    onClick={() => setConfirmDeposit(dep)}
-                    className="text-[0.75rem] font-bold px-3 py-1.5 rounded-xl text-[#0F1628]"
-                    style={{ background: '#22C55E' }}>
-                    Confirmar
-                  </button>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </section>
@@ -1262,6 +1367,11 @@ export default function WalletAdminPage() {
         open={!!confirmDeposit}
         onClose={() => setConfirmDeposit(null)}
         onSuccess={fetchAll}
+      />
+      <ProofViewerModal
+        wtxId={viewProof}
+        open={!!viewProof}
+        onClose={() => setViewProof(null)}
       />
       <ConfirmWithdrawalModal
         withdrawal={confirmWithdrawal}
