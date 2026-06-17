@@ -346,6 +346,53 @@ export function getKycStatus() {
   return request('/kyc/status')
 }
 
+/**
+ * Perfil completo del usuario (incluye phone, nationality, sourceOfFunds,
+ * dateOfBirth, address, emailVerified, kycProfileCompleted). Usado para
+ * pre-llenar el formulario de cumplimiento.
+ */
+export function getUserProfile() {
+  return request('/user/profile')
+}
+
+// ── Verificación de email ────────────────────────────────────────────────────
+
+/**
+ * Confirma el email del usuario con el código de 6 dígitos.
+ * @param {string} code
+ * @returns {Promise<{ emailVerified: boolean }>}
+ */
+export function verifyEmail(code) {
+  return request('/auth/verify-email', {
+    method: 'POST',
+    body:   JSON.stringify({ code }),
+  })
+}
+
+/**
+ * Reenvía el código de verificación (cooldown 60s server-side).
+ * @returns {Promise<{ ok: boolean }>}
+ */
+export function resendVerification() {
+  return request('/auth/resend-verification', { method: 'POST' })
+}
+
+// ── Información de cumplimiento KYC (CDD previo a la biometría) ───────────────
+
+/**
+ * Guarda los datos de cumplimiento que Stripe Identity no provee y que
+ * Harbor/anchors requieren para reusar nuestro KYC.
+ * @param {{ dateOfBirth: string, nationality: string, sourceOfFunds: string,
+ *           address: { street, city, state, zip, country }, phone?: string }} data
+ * @returns {Promise<object>} perfil actualizado
+ */
+export function updateKycProfile(data) {
+  return request('/user/kyc-profile', {
+    method: 'PATCH',
+    body:   JSON.stringify(data),
+  })
+}
+
 // ── Notificaciones Push ─────────────────────────────────────────────────────
 
 /**

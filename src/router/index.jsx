@@ -29,6 +29,7 @@ import AdminLayout from '../components/Layout/AdminLayout'
 // ── Páginas auth (públicas) ───────────────────────────────────────────────────
 import LoginPage          from '../pages/Auth/LoginPage'
 import RegisterPage       from '../pages/Auth/RegisterPage'
+import EmailVerifyPage    from '../pages/Auth/EmailVerifyPage'
 import ForgotPasswordPage from '../pages/Auth/ForgotPasswordPage'
 import ResetPasswordPage  from '../pages/Auth/ResetPasswordPage'
 
@@ -125,6 +126,9 @@ export default function AppRouter() {
 
         {/* Enviar dinero — con KYC guard, dentro de AppLayout */}
         <Route path="/send"          element={<KycRoute><SendMoneyPage /></KycRoute>} />
+
+        {/* Onboarding — verificación de email (paso previo al KYC) */}
+        <Route path="/verify-email"  element={<EmailVerifyPage />} />
 
         {/* KYC — dentro de AppLayout */}
         <Route path="/kyc"           element={<KycPage />} />

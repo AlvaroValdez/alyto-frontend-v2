@@ -25,6 +25,7 @@ import {
 import { useAuth }            from '../../context/AuthContext'
 import { createKycSession, getKycStatus } from '../../services/api'
 import { LEGAL_TERMS, ENTITY_NAMES, ENTITY_JURISDICTIONS } from '../../utils/legalTerms'
+import KycProfileForm from './KycProfileForm'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
@@ -323,7 +324,18 @@ export default function KycPage() {
   const [loading,          setLoading]          = useState(false)
   const [error,            setError]            = useState('')
   const [pollTimedOut,     setPollTimedOut]      = useState(false)
+  // Paso de cumplimiento (CDD) previo a la biometría.
+  const [profileDone,      setProfileDone]      = useState(!!user?.kycProfileCompleted)
   const pollAttemptRef                          = useRef(0)
+
+  // Gate de onboarding: si el email no está verificado (y el KYC aún no fue
+  // aprobado), volver al paso de verificación de email. Los usuarios ya
+  // aprobados nunca entran a este gate.
+  useEffect(() => {
+    if (user && user.kycStatus !== 'approved' && user.emailVerified === false) {
+      navigate('/verify-email', { replace: true })
+    }
+  }, [user?.emailVerified, user?.kycStatus, navigate])
 
   // Bloquear scroll del body mientras el modal de Stripe está abierto
   // para evitar que el overlay fixed se desplace en iOS Safari
@@ -471,7 +483,11 @@ export default function KycPage() {
           <ArrowLeft size={18} className="text-[#64748B]" />
         </button>
         <div className="flex-1">
-          <p className="text-[0.75rem] text-[#64748B]">Onboarding</p>
+          <p className="text-[0.75rem] text-[#64748B]">
+            {kycStatus === 'approved'
+              ? 'Onboarding'
+              : profileDone ? 'Onboarding · Paso 3 de 3' : 'Onboarding · Paso 2 de 3'}
+          </p>
           <h1 className="text-[1.0625rem] font-bold text-[#0D1F3C] leading-tight">Activar cuenta</h1>
         </div>
       </div>
@@ -495,11 +511,15 @@ export default function KycPage() {
       {/* Contenido según estado */}
       <div className="flex-1 overflow-y-auto px-5 pb-10">
         {(kycStatus === 'pending' || !kycStatus) && (
-          <IntroState
-            entName={entName} entJuris={entJuris} entity={entity} terms={terms}
-            onStart={handleStart} loading={loading} error={error}
-            tosAccepted={tosAccepted} setTosAccepted={setTosAccepted}
-          />
+          profileDone ? (
+            <IntroState
+              entName={entName} entJuris={entJuris} entity={entity} terms={terms}
+              onStart={handleStart} loading={loading} error={error}
+              tosAccepted={tosAccepted} setTosAccepted={setTosAccepted}
+            />
+          ) : (
+            <KycProfileForm onComplete={() => setProfileDone(true)} />
+          )
         )}
         {kycStatus === 'in_review' && (
           <PendingState
