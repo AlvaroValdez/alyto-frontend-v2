@@ -1065,6 +1065,13 @@ function USDCForecastWidget() {
                   {formatAmount(forecast.stellar?.balance ?? 0)}
                 </p>
                 <p className="text-[0.6875rem] text-[#4E5A7A]">USDC en wallet</p>
+                <p className="text-[0.625rem] text-[#4E5A7A] mt-0.5">
+                  XLM:{' '}
+                  <span className="font-semibold text-[#C4CBD8] tabular-nums">
+                    {forecast.stellar?.xlmBalance != null ? formatAmount(forecast.stellar.xlmBalance) : '—'}
+                  </span>{' '}
+                  <span className="opacity-70">(fees)</span>
+                </p>
               </div>
 
               {/* Comprometido */}
