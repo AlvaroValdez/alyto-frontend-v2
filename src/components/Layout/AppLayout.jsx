@@ -6,6 +6,7 @@ import { fetchUnreadCount } from '../../services/api'
 import { useInactivityTimeout } from '../../hooks/useInactivityTimeout'
 import BottomNavBar from '../layout/BottomNavBar'
 import SideNavBar   from '../layout/SideNavBar'
+import SupportChatWidget from '../support/SupportChatWidget'
 
 const PAGE_TITLES = {
   '/dashboard':    'Inicio',
@@ -256,6 +257,9 @@ export default function AppLayout() {
       <div className="lg:hidden">
         <BottomNavBar user={user} />
       </div>
+
+      {/* Widget IA de soporte (AWS-4) — flotante, solo app de usuario */}
+      <SupportChatWidget />
 
       {/* ── OVERLAY DE CIERRE DE SESIÓN ──────────────────────────────── */}
       {loggingOut && (
