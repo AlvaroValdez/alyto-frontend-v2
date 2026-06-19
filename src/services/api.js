@@ -176,6 +176,18 @@ export function logoutUser() {
   return request('/auth/logout', { method: 'POST' })
 }
 
+/**
+ * Elimina (desactiva con retención legal) la cuenta del usuario autenticado.
+ * Requiere reautenticación con contraseña. Requisito Google Play.
+ * @param {string} password — contraseña actual del usuario
+ */
+export function deleteAccount(password) {
+  return request('/auth/account', {
+    method: 'DELETE',
+    body:   JSON.stringify({ password, confirm: true }),
+  })
+}
+
 // ── Pagos ──────────────────────────────────────────────────────────────────
 
 /**

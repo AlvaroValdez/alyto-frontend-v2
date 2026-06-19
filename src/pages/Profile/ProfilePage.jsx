@@ -9,7 +9,8 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { Camera, FileText, Shield, ChevronRight, Building2, MessageSquare } from 'lucide-react'
+import { Camera, FileText, Shield, ChevronRight, Building2, MessageSquare, Trash2, X } from 'lucide-react'
+import { deleteAccount, clearAuthToken } from '../../services/api'
 import { useNavigate }         from 'react-router-dom'
 import { useAuth }             from '../../context/AuthContext'
 import { useProfile }          from '../../hooks/useProfile'
@@ -172,6 +173,27 @@ export default function ProfilePage() {
   const [activeTab,     setActiveTab]     = useState('info')
   const [avatarError,   setAvatarError]   = useState('')
   const [legalDoc,      setLegalDoc]      = useState(null)
+
+  // ── Eliminación de cuenta (requisito Google Play) ──
+  const [showDelete,    setShowDelete]    = useState(false)
+  const [deletePwd,     setDeletePwd]     = useState('')
+  const [deleting,      setDeleting]      = useState(false)
+  const [deleteError,   setDeleteError]   = useState('')
+
+  async function handleDeleteAccount(e) {
+    e.preventDefault()
+    if (!deletePwd) { setDeleteError('Ingresa tu contraseña.'); return }
+    setDeleting(true)
+    setDeleteError('')
+    try {
+      await deleteAccount(deletePwd)
+      clearAuthToken()
+      window.location.href = '/login'
+    } catch (err) {
+      setDeleteError(err?.data?.error || err?.message || 'No se pudo eliminar la cuenta.')
+      setDeleting(false)
+    }
+  }
 
   useEffect(() => {
     fetchProfile()
@@ -357,11 +379,103 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* ── DANGER ZONE — eliminar cuenta ───────────────────────── */}
+        <div className="px-4 mt-6 mb-8">
+          <p className="text-[0.6875rem] font-semibold text-[#EF4444] uppercase tracking-wider mb-2 px-1">
+            Zona de riesgo
+          </p>
+          <div className="bg-white rounded-2xl border border-[#FECACA] overflow-hidden">
+            <button
+              onClick={() => { setDeleteError(''); setDeletePwd(''); setShowDelete(true) }}
+              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#FEF2F2] transition-colors"
+            >
+              <div className="w-8 h-8 rounded-lg bg-[#FEE2E2] flex items-center justify-center flex-shrink-0">
+                <Trash2 size={15} className="text-[#EF4444]" />
+              </div>
+              <span className="flex-1 text-left text-[0.875rem] font-semibold text-[#EF4444]">
+                Eliminar cuenta
+              </span>
+              <ChevronRight size={16} className="text-[#FCA5A5] flex-shrink-0" />
+            </button>
+          </div>
+        </div>
+
         <LegalModal
           isOpen={!!legalDoc}
           onClose={() => setLegalDoc(null)}
           docType={legalDoc ?? 'terms'}
         />
+
+        {/* ── Modal de confirmación de eliminación ─────────────────── */}
+        {showDelete && (
+          <div
+            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+            onClick={(e) => { if (e.target === e.currentTarget && !deleting) setShowDelete(false) }}
+          >
+            <form
+              onSubmit={handleDeleteAccount}
+              className="w-full sm:max-w-[420px] bg-white rounded-t-3xl sm:rounded-3xl p-6 flex flex-col gap-4"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#FEE2E2] flex items-center justify-center">
+                    <Trash2 size={18} className="text-[#EF4444]" />
+                  </div>
+                  <h2 className="text-[1.0625rem] font-bold text-[#0F172A]">Eliminar cuenta</h2>
+                </div>
+                {!deleting && (
+                  <button type="button" onClick={() => setShowDelete(false)} aria-label="Cerrar"
+                    className="w-8 h-8 rounded-xl flex items-center justify-center text-[#64748B] hover:bg-[#F1F5F9]">
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+
+              <p className="text-[0.875rem] text-[#475569] leading-[1.6]">
+                Tu cuenta quedará desactivada y se eliminarán tus datos personales.
+                Por obligación legal (AML/ASFI) conservamos ciertos registros de
+                identidad y transacciones durante el plazo normativo. Retira tu saldo
+                y espera a que finalicen tus operaciones antes de continuar.
+              </p>
+
+              <label className="text-[0.8125rem] font-semibold text-[#334155]">
+                Confirma con tu contraseña
+                <input
+                  type="password"
+                  value={deletePwd}
+                  onChange={(e) => setDeletePwd(e.target.value)}
+                  autoComplete="current-password"
+                  disabled={deleting}
+                  className="mt-1.5 w-full px-4 py-3 rounded-xl border border-[#CBD5E1] text-[0.9375rem] focus:outline-none focus:border-[#233E58]"
+                  placeholder="Contraseña"
+                />
+              </label>
+
+              {deleteError && (
+                <p className="text-[0.8125rem] text-[#EF4444] font-medium">{deleteError}</p>
+              )}
+
+              <div className="flex gap-3 mt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowDelete(false)}
+                  disabled={deleting}
+                  className="flex-1 py-3 rounded-xl text-[0.875rem] font-bold text-[#334155] border border-[#CBD5E1]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={deleting}
+                  className="flex-1 py-3 rounded-xl text-[0.875rem] font-bold text-white bg-[#EF4444] disabled:opacity-60"
+                >
+                  {deleting ? 'Eliminando…' : 'Eliminar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
     </div>
   )
