@@ -6,9 +6,14 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 import { registerFirebaseSW } from './services/firebase'
+import { isNativePlatform } from './native/nativePush'
 
-// Registrar SW de FCM al arranque (sin bloquear render)
-registerFirebaseSW()
+// Registrar SW de FCM al arranque (sin bloquear render).
+// En la app nativa (Capacitor) el push es nativo vía @capacitor/push-notifications
+// → no registramos el Service Worker web (no es fiable dentro del WebView).
+if (!isNativePlatform()) {
+  registerFirebaseSW()
+}
 
 /** Fallback que se muestra cuando un error no capturado llega al ErrorBoundary raíz. */
 function ErrorFallback({ eventId, resetError }) {

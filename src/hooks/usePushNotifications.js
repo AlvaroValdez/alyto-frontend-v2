@@ -15,6 +15,13 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { messaging, getToken, onMessage, registerFirebaseSW, VAPID_KEY } from '../services/firebase'
 import { registerFcmToken } from '../services/api'
+import {
+  isNativePlatform,
+  requestNativePushPermission,
+  checkNativePushPermission,
+} from '../native/nativePush'
+
+const IS_NATIVE = isNativePlatform()
 
 // ── Claves de storage ──────────────────────────────────────────────────────
 const FCM_REGISTERED_KEY  = 'alyto_fcm_registered'
@@ -26,6 +33,9 @@ const BANNER_COOLDOWN_MS  = 24 * 60 * 60 * 1000         // 24 h
 
 // ── Helper ─────────────────────────────────────────────────────────────────
 function getInitialPermission() {
+  // En nativo el permiso lo resuelve el plugin de push (async, vía efecto).
+  // Partimos de 'default' para no bloquear el banner antes de comprobarlo.
+  if (IS_NATIVE) return 'default'
   if (typeof window === 'undefined' || !('Notification' in window)) return 'denied'
   return Notification.permission
 }
@@ -40,6 +50,14 @@ export function usePushNotifications() {
 
   // ── Hydrate token from localStorage on mount ───────────────────────────
   useEffect(() => {
+    if (IS_NATIVE) {
+      // En nativo el token lo gestiona el plugin (listener 'registration').
+      // Solo sincronizamos el estado del permiso del sistema.
+      checkNativePushPermission().then((p) => {
+        setPermission(p === 'prompt' ? 'default' : p)
+      }).catch(() => {})
+      return
+    }
     try {
       const saved = localStorage.getItem(FCM_TOKEN_KEY)
       if (saved && Notification.permission === 'granted') {
@@ -53,6 +71,7 @@ export function usePushNotifications() {
   // El usuario puede cambiar el permiso sin recargar (en Chrome settings).
   // Usamos PermissionStatus API si existe; si no, polling liviano cada 5s.
   useEffect(() => {
+    if (IS_NATIVE) return  // permisos nativos no usan la Permissions API web
     if (typeof window === 'undefined' || !('Notification' in window)) return
 
     let cleanup = () => {}
@@ -98,6 +117,23 @@ export function usePushNotifications() {
 
   // ── requestPermission ──────────────────────────────────────────────────
   const requestPermission = useCallback(async () => {
+    // ── Camino nativo (Capacitor + FCM nativo) ──────────────────────────
+    if (IS_NATIVE) {
+      try {
+        const result = await requestNativePushPermission()
+        setPermission(result === 'granted' ? 'granted' : 'denied')
+        setShowBanner(false)
+        localStorage.setItem(
+          BANNER_DENIED_KEY,
+          result === 'granted' ? 'accepted' : 'dismissed',
+        )
+      } catch (err) {
+        console.error('[NativePush] requestPermission error:', err?.message)
+        setError(err?.message ?? 'No se pudo habilitar las notificaciones.')
+      }
+      return
+    }
+
     if (!('Notification' in window) || !messaging) return
 
     try {
@@ -188,6 +224,28 @@ export function usePushNotifications() {
    *  - Han pasado más de 24 h desde la última vez que se preguntó
    */
   const triggerBannerCheck = useCallback(() => {
+    // ── Camino nativo: decidir el banner según el permiso del sistema ────
+    if (IS_NATIVE) {
+      const denied = localStorage.getItem(BANNER_DENIED_KEY)
+      if (denied === 'accepted') return
+      if (denied === 'dismissed') {
+        const lastAsked = Number(localStorage.getItem(ASKED_AT_KEY) || 0)
+        if (Date.now() - lastAsked < BANNER_COOLDOWN_MS) return
+      }
+      checkNativePushPermission().then((p) => {
+        if (p === 'prompt' || p === 'default') {
+          setShowBanner(true)
+          sessionStorage.setItem(BANNER_SHOWN_KEY, 'true')
+          localStorage.setItem(ASKED_AT_KEY, String(Date.now()))
+        } else if (p === 'granted') {
+          // Ya concedido (ej. reinstalación) → re-registrar token en backend.
+          requestNativePushPermission().catch(() => {})
+          setPermission('granted')
+        }
+      }).catch(() => {})
+      return
+    }
+
     if (!('Notification' in window))           return
     if (Notification.permission !== 'default') return
     // Solo bloquear si el usuario explícitamente dismisseó:

@@ -11,4 +11,5 @@ docs/*
 !docs/SEND_MONEY_FLOW.md
 !docs/CHANGELOG_FLOWS.md
 !docs/ALYTO_ALTER_DESIGN_SPEC.md
+!docs/ANDROID_RELEASE.md
 alyto-silver-preview.html
