@@ -1,5 +1,15 @@
 apply plugin: 'com.android.application'
 
+// Firma de release: lee credenciales desde android/keystore.properties (gitignored,
+// NUNCA en el repo). Si el archivo no existe (ej. máquina sin el keystore), el
+// build de release sigue funcionando sin firmar — sólo `bundleRelease` para Play
+// requiere la firma. Ver docs/ANDROID_RELEASE.md §4.
+def keystorePropsFile = rootProject.file("keystore.properties")
+def keystoreProps = new Properties()
+if (keystorePropsFile.exists()) {
+    keystoreProps.load(new FileInputStream(keystorePropsFile))
+}
+
 android {
     namespace = "app.alyto.android"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,8 +26,24 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (keystorePropsFile.exists()) {
+                storeFile file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
+            // Firma con la upload key sólo si keystore.properties está presente.
+            if (keystorePropsFile.exists()) {
+                signingConfig signingConfigs.release
+            }
+            // R8/minify desactivado en el primer release (sin validar contra el
+            // WebView+plugins). Activar tras probar un AAB minificado e2e.
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

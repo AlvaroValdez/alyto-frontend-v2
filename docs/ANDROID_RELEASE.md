@@ -59,15 +59,12 @@ apuntar a `https://api.alyto.app/api/v1`. La sesión viaja por **Bearer**
    keytool -genkey -v -keystore alyto-upload.jks -alias alyto-upload \
      -keyalg RSA -keysize 2048 -validity 10000
    ```
-2. Crear `android/keystore.properties` (ya en `.gitignore`):
-   ```properties
-   storeFile=/ruta/segura/alyto-upload.jks
-   storePassword=...
-   keyAlias=alyto-upload
-   keyPassword=...
-   ```
-3. Configurar `signingConfigs` en `android/app/build.gradle` leyendo
-   `keystore.properties` (solo para el build de release; no commitear secretos).
+2. Crear `android/keystore.properties` copiando `android/keystore.properties.example`
+   (el real está en `.gitignore`) y completar con los datos reales.
+3. ✅ Ya está wired: `android/app/build.gradle` lee `keystore.properties` y firma
+   el build de release **sólo si el archivo existe** (`signingConfigs.release`).
+   No requiere más cambios de Gradle; sin el archivo, el build sigue funcionando
+   sin firmar.
 4. Activar **Play App Signing** en Play Console (Google custodia la clave final;
    tú firmas con la upload key). Tomar el **SHA-256 de la clave de firma de la
    app** desde Play Console → registrarlo en Firebase (§2.2) y en
