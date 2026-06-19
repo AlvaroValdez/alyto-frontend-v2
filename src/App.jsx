@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import AppNotifications  from './components/AppNotifications'
 import AppRouter         from './router/index'
 import SplashScreen      from './components/SplashScreen'
+import NativeBridge      from './native/NativeBridge'
 
 function AppContent() {
   const { isLoading, user } = useAuth()
@@ -22,6 +23,7 @@ function AppContent() {
 
   return (
     <>
+      <NativeBridge />
       <SplashScreen isLoading={isLoading} />
       <AppNotifications />
       <AppRouter />

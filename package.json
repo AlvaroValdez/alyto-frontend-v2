@@ -9,9 +9,20 @@
     "preview": "vite preview",
     "inject:sw": "node scripts/inject-firebase-sw.js",
     "check:production": "node scripts/checkProduction.js",
-    "build:production": "npm run check:production && vite build && node scripts/inject-firebase-sw.js"
+    "build:production": "npm run check:production && vite build && node scripts/inject-firebase-sw.js",
+    "cap:sync": "npm run build && npx cap sync android",
+    "cap:open": "npx cap open android",
+    "cap:run": "npm run build && npx cap run android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/browser": "^8.0.3",
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/keyboard": "^8.0.5",
+    "@capacitor/push-notifications": "^8.1.1",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
     "@sentry/react": "^10.45.0",
     "@stripe/stripe-js": "^8.11.0",
     "firebase": "^12.11.0",
@@ -23,11 +34,14 @@
     "react-router-dom": "^6.28.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.4.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "dotenv": "^17.4.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
+    "typescript": "^6.0.3",
     "vite": "^6.0.5"
   }
 }

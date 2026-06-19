@@ -2,7 +2,9 @@
  * useAdminSSE — hook de Server-Sent Events para el admin Ledger.
  *
  * Abre un stream persistente a /admin/ledger/events y enruta los eventos
- * `tx_actionable` y `tx_manual_payout` a callbacks proporcionados por la página.
+ * `tx_actionable`, `tx_manual_payout` y `kyb_ai_analyzed` a callbacks
+ * proporcionados por la página. Todos los eventos de broadcastToAdmins viajan
+ * por este mismo stream (registro único en el backend).
  *
  * Auth: cookie HttpOnly `alyto_token` — EventSource lleva `withCredentials:true`.
  * En VITE_AUTH_MODE=header (solo token en localStorage, sin cookie same-origin)
@@ -19,12 +21,14 @@ import { useEffect, useRef } from 'react'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1'
 
-export function useAdminSSE({ onActionable, onManualPayout, enabled = true } = {}) {
+export function useAdminSSE({ onActionable, onManualPayout, onKybAnalyzed, enabled = true } = {}) {
   const onActionableRef   = useRef(onActionable)
   const onManualPayoutRef = useRef(onManualPayout)
+  const onKybAnalyzedRef  = useRef(onKybAnalyzed)
 
   useEffect(() => { onActionableRef.current   = onActionable   }, [onActionable])
   useEffect(() => { onManualPayoutRef.current = onManualPayout }, [onManualPayout])
+  useEffect(() => { onKybAnalyzedRef.current  = onKybAnalyzed  }, [onKybAnalyzed])
 
   useEffect(() => {
     if (!enabled) return undefined
@@ -60,6 +64,15 @@ export function useAdminSSE({ onActionable, onManualPayout, enabled = true } = {
         onManualPayoutRef.current?.(data)
       } catch (err) {
         console.warn('[useAdminSSE] tx_manual_payout parse error:', err?.message)
+      }
+    })
+
+    source.addEventListener('kyb_ai_analyzed', (evt) => {
+      try {
+        const data = JSON.parse(evt.data)
+        onKybAnalyzedRef.current?.(data)
+      } catch (err) {
+        console.warn('[useAdminSSE] kyb_ai_analyzed parse error:', err?.message)
       }
     })
 

@@ -17,6 +17,8 @@ import {
   Download, Eye, EyeOff,
 } from 'lucide-react'
 import { getKybDetail, decideKyb } from '../../../services/kybService'
+import { useAdminSSE } from '../../../hooks/useAdminSSE'
+import AiAnalysisPanel from './AiAnalysisPanel'
 
 // ── Catálogos ──────────────────────────────────────────────────────────────
 
@@ -376,6 +378,7 @@ export default function KybDetailPage() {
   const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(null)
+  const [aiHighlight, setAiHighlight] = useState(false)
 
   async function fetchDetail() {
     setLoading(true)
@@ -390,7 +393,24 @@ export default function KybDetailPage() {
     }
   }
 
+  // Refresco sin parpadeo de pantalla (usado por el SSE del análisis IA).
+  async function silentRefresh() {
+    try { setData(await getKybDetail(businessId)) } catch { /* noop */ }
+  }
+
   useEffect(() => { fetchDetail() }, [businessId])
+
+  // SSE: el análisis IA es fire-and-forget y puede llegar mientras el admin
+  // tiene abierta la pantalla. Refrescamos y resaltamos el panel al recibirlo.
+  useAdminSSE({
+    onKybAnalyzed: (evt) => {
+      const mine = evt?.businessId && (evt.businessId === data?.businessId || evt.businessId === businessId)
+      if (!mine) return
+      silentRefresh()
+      setAiHighlight(true)
+      setTimeout(() => setAiHighlight(false), 4000)
+    },
+  })
 
   if (loading) {
     return (
@@ -553,8 +573,13 @@ export default function KybDetailPage() {
           )}
         </div>
 
-        {/* ── Right column: decisión ── */}
-        <div className="sticky top-8">
+        {/* ── Right column: análisis IA + decisión ── */}
+        <div className="sticky top-8 space-y-5">
+          <AiAnalysisPanel
+            analysis={data.aiAnalysis}
+            status={data.kybStatus}
+            highlight={aiHighlight}
+          />
           <DecisionPanel
             businessId={data.businessId ?? businessId}
             currentStatus={data.kybStatus}

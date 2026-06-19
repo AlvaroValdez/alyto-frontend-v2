@@ -81,6 +81,10 @@ import Sep24WithdrawPage from '../pages/Sep24/Sep24WithdrawPage'
 
 // ── Otras ─────────────────────────────────────────────────────────────────────
 import PaymentSuccessPage from '../pages/PaymentSuccess/PaymentSuccessPage'
+
+// ── Legales públicas (requisito Google Play) ──
+import LegalPage         from '../pages/Legal/LegalPage'
+import DeleteAccountPage from '../pages/Legal/DeleteAccountPage'
 import NotFoundPage       from '../pages/NotFound/NotFoundPage'
 
 // ── Router ───────────────────────────────────────────────────────────────────
@@ -114,6 +118,12 @@ export default function AppRouter() {
       {/* ── SEP-24 Interactive Anchor — pública (webview de wallets externas) ── */}
       <Route path="/sep24/deposit"   element={<Sep24DepositPage />} />
       <Route path="/sep24/withdraw"  element={<Sep24WithdrawPage />} />
+
+      {/* ── Legales públicas (URL pública requerida por Google Play) ───────── */}
+      <Route path="/terms"           element={<LegalPage docType="terms" />} />
+      <Route path="/privacy"         element={<LegalPage docType="privacy" />} />
+      <Route path="/eliminar-cuenta" element={<DeleteAccountPage />} />
+      <Route path="/delete-account"  element={<DeleteAccountPage />} />
 
       {/* ══════════════════════════════════════════════════════════════════
           RUTAS PRIVADAS — todas dentro de AppLayout
