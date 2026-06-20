@@ -217,6 +217,23 @@ const FIELD_LABELS = {
   is_self_transfer:            '¿Transferencia a cuenta propia?',
 }
 
+// Campos "compactos" que NUNCA llevan espacios internos: números de cuenta,
+// códigos de banco, documentos, IBAN, CLABE, CBU/CCI, etc. Vita (y otros
+// proveedores) rechazan el valor si trae espacios — ej. account_bank:
+// "Solo se permiten números". Saneamos en tiempo real al tipear/pegar.
+// El backend repite este saneamiento como backstop (ipnController).
+const COMPACT_FIELDS = new Set([
+  'account_bank', 'account_number', 'bank_code', 'beneficiary_document_number',
+  'document_number', 'routing_number', 'sort_code', 'swift', 'swift_code',
+  'iban', 'mx_clabe', 'clabe', 'cbu', 'cci', 'interbank_code', 'card_number',
+])
+
+/** Quita todo espacio en blanco de los campos compactos; deja el resto intacto. */
+function sanitizeFieldValue(key, value) {
+  if (typeof value !== 'string') return value
+  return COMPACT_FIELDS.has(key) ? value.replace(/\s+/g, '') : value
+}
+
 // Códigos de propósito para corredores Vita AU y CN-USD — compliance: nunca "remesa"
 const PURPOSE_CODE_LABELS = {
   ISSAVG: 'Ahorros personales',
@@ -656,7 +673,7 @@ export default function Step3Beneficiary({ destinationCountry, corridorId, onNex
   const activeFields = isOwlPay ? (owlPayForm?.fields ?? []) : vitaVisibleRules
 
   function handleChange(key, value) {
-    setValues(prev => ({ ...prev, [key]: value }))
+    setValues(prev => ({ ...prev, [key]: sanitizeFieldValue(key, value) }))
   }
 
   function handleBlur(key) {
@@ -699,15 +716,15 @@ export default function Step3Beneficiary({ destinationCountry, corridorId, onNex
           // Persist booleans as booleans (not strings)
           beneficiaryData[f.key] = val === true || val === 'true'
         } else {
-          const trimmed = typeof val === 'string' ? val.trim() : val
-          if (trimmed !== '') beneficiaryData[f.key] = trimmed
+          const clean = typeof val === 'string' ? sanitizeFieldValue(f.key, val).trim() : val
+          if (clean !== '') beneficiaryData[f.key] = clean
         }
       }
     } else {
       beneficiaryData = Object.fromEntries(
         vitaVisibleRules
-          .filter(f => (String(values[f.key] ?? '')).trim() !== '')
-          .map(f => [f.key, String(values[f.key]).trim()]),
+          .map(f => [f.key, sanitizeFieldValue(f.key, String(values[f.key] ?? '')).trim()])
+          .filter(([, v]) => v !== ''),
       )
     }
 
