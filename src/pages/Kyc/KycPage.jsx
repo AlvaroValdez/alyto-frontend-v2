@@ -11,6 +11,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { loadStripe } from '@stripe/stripe-js'
+import { Capacitor } from '@capacitor/core'
+import { Browser } from '@capacitor/browser'
 import {
   ShieldCheck,
   ScanFace,
@@ -425,9 +427,28 @@ export default function KycPage() {
     try {
       const { clientSecret, url } = await createKycSession()
 
-      // En dispositivos móviles, Stripe Identity requiere redirect completo
-      // (el modal nativo no funciona bien en mobile browsers — el botón de
-      // cámara queda oculto). El return_url en /kyc/return retoma el flujo.
+      // App nativa (Capacitor): abrir Stripe Identity en un Custom Tab del sistema
+      // (motor Chrome completo) en vez de navegar dentro del WebView. El WebView de
+      // Android NO captura de forma confiable la selfie/liveness de Stripe: la sesión
+      // termina en 'requires_input' sin error porque nunca llega una selfie utilizable.
+      // El return_url (/kyc/return) carga en el tab; al cerrarlo, el polling + el
+      // listener 'browserFinished' retoman el estado dentro de la app.
+      if (Capacitor.isNativePlatform()) {
+        if (!url) throw new Error('No se recibió URL de verificación del servidor.')
+        await Browser.open({ url })
+        setKycStatus('in_review')
+        updateUser({ kycStatus: 'in_review' })
+        startPolling()
+        const sub = await Browser.addListener('browserFinished', () => {
+          handleManualCheck()
+          sub.remove()
+        })
+        return
+      }
+
+      // Navegador móvil normal: redirect full-page a la página hosted de Stripe
+      // (el modal embebido oculta el botón de cámara en mobile browsers).
+      // El return_url en /kyc/return retoma el flujo.
       if (isMobileDevice()) {
         if (!url) throw new Error('No se recibió URL de verificación del servidor.')
         // La redirección desmonta el componente — no hace falta setLoading(false)
