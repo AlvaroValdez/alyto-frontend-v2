@@ -20,6 +20,7 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import { request } from '../../services/api'
 import QRDisplay, { buildQRWithLogo } from '../../components/ui/QRDisplay'
+import { shareQRImage } from '../../utils/shareImage'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -125,31 +126,19 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
 
   async function handleShare() {
     if (!qrData?.qrBase64) return
-    const src = await buildQRWithLogo(qrData.qrBase64)
     const qrAsset = qrData.asset ?? asset
+    const src = await buildQRWithLogo(qrData.qrBase64, qrAsset)
     const text = qrData.amount
       ? `Págame ${amountDisplay(qrData.amount, qrAsset)} con Alyto`
       : `Pagar con Alyto${description ? ' — ' + description : ''}`
-
-    if (navigator.canShare) {
-      try {
-        const res   = await fetch(src)
-        const blob  = await res.blob()
-        const file  = new File([blob], `alyto-qr.png`, { type: 'image/png' })
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: 'QR Alyto', text })
-          return
-        }
-      } catch { /* fallback */ }
-    }
-    // Sin soporte de compartir archivo (desktop / navegadores sin Web Share files):
-    // descargar la imagen en vez de compartir solo texto (que pierde el QR).
-    handleDownload()
+    // shareQRImage adjunta la IMAGEN real (nativo: Filesystem+Share; web: Web Share
+    // de archivos; fallback: descarga) — antes en WebView caía a solo descargar.
+    await shareQRImage({ dataUrl: src, text, title: 'QR Alyto', filename: `alyto-qr-${qrAsset.toLowerCase()}.png` })
   }
 
   async function handleDownload() {
     if (!qrData?.qrBase64) return
-    const src = await buildQRWithLogo(qrData.qrBase64)
+    const src = await buildQRWithLogo(qrData.qrBase64, qrData.asset ?? asset)
     const a = document.createElement('a')
     a.href     = src
     a.download = `alyto-qr-${qrData.qrId}.png`
@@ -168,7 +157,7 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
       <div className="flex flex-col items-center gap-5 px-4 py-2">
         {/* QR image */}
         <div className="bg-white rounded-2xl p-4 shadow-[0_4px_24px_rgba(15,23,42,0.08)] border border-[#E2E8F0]">
-          <QRDisplay src={qrData.qrBase64} alt="QR Alyto" size={256} />
+          <QRDisplay src={qrData.qrBase64} alt="QR Alyto" size={256} asset={qrData.asset ?? asset} />
         </div>
 
         {/* Monto + nombre */}
@@ -741,19 +730,7 @@ function TabMiQR({ user }) {
     if (!qrData?.qrBase64) return
     const src  = await buildQRWithLogo(qrData.qrBase64)
     const text = `Escanéame para enviarme dinero en Alyto`
-    if (navigator.canShare) {
-      try {
-        const res  = await fetch(src)
-        const blob = await res.blob()
-        const file = new File([blob], `alyto-mi-qr.png`, { type: 'image/png' })
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: `QR Alyto de ${user.firstName}`, text })
-          return
-        }
-      } catch { /* fallback */ }
-    }
-    // Sin soporte de compartir archivo → descargar la imagen del QR
-    handleDownload()
+    await shareQRImage({ dataUrl: src, text, title: `QR Alyto de ${user.firstName}`, filename: 'alyto-mi-qr.png' })
   }
 
   async function handleDownload() {

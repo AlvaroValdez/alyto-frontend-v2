@@ -20,7 +20,8 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { request, requestFormData } from '../../services/api'
-import QRDisplay from '../../components/ui/QRDisplay'
+import QRDisplay, { buildQRWithLogo } from '../../components/ui/QRDisplay'
+import { shareQRImage } from '../../utils/shareImage'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1749,12 +1750,14 @@ function ReceiveUSDCModal({ open, onClose, user }) {
     }
   }
 
-  function handleShare() {
+  async function handleShare() {
     if (!qrData?.qrBase64) return
+    const src  = await buildQRWithLogo(qrData.qrBase64, 'USDC')
     const text = qrData.amount
       ? `Págame ${qrData.amount} USDC con Alyto`
       : `Envíame USDC en Alyto${description ? ` — ${description}` : ''}`
-    if (navigator.share) navigator.share({ title: 'QR USDC Alyto', text }).catch(() => {})
+    // Comparte la IMAGEN del QR (antes solo enviaba texto → WhatsApp no mostraba el QR)
+    await shareQRImage({ dataUrl: src, text, title: 'QR USDC Alyto', filename: 'alyto-qr-usdc.png' })
   }
 
   return (
@@ -1762,7 +1765,7 @@ function ReceiveUSDCModal({ open, onClose, user }) {
       {qrData ? (
         <div className="flex flex-col items-center gap-5 py-2">
           <div className="bg-white rounded-2xl p-4 border border-[#E2E8F0] shadow-sm flex items-center justify-center">
-            <QRDisplay src={qrData.qrBase64} alt="QR USDC Alyto" size={256} />
+            <QRDisplay src={qrData.qrBase64} alt="QR USDC Alyto" size={256} asset="USDC" />
           </div>
 
           <div className="text-center">

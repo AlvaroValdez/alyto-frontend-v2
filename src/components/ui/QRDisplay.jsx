@@ -14,8 +14,11 @@
  * @param {string}  [alt] - Texto alternativo
  * @param {number}  [size=256] - Lado del QR en píxeles
  * @param {string}  [className]
+ * @param {('BOB'|'USDC')} [asset] - Activo del QR; USDC añade un anillo verde
+ *        distintivo (vía outline, fuera de los módulos del QR → no afecta el escaneo).
  */
-export default function QRDisplay({ src, alt = 'QR Alyto', size = 256, className = '' }) {
+export default function QRDisplay({ src, alt = 'QR Alyto', size = 256, className = '', asset }) {
+  const isUSDC = asset === 'USDC'
   // Logo "alyto" wordmark: 604 × 217 px → ratio 2.783
   const LOGO_RATIO = 604 / 217
 
@@ -33,7 +36,12 @@ export default function QRDisplay({ src, alt = 'QR Alyto', size = 256, className
   return (
     <div
       className={className}
-      style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}
+      style={{
+        position: 'relative', width: size, height: size, flexShrink: 0,
+        // Anillo verde distintivo para USDC (Stellar). outline va por fuera del
+        // box y no toca los módulos del QR, así que no afecta la lectura.
+        ...(isUSDC ? { outline: '3px solid #0D6E52', outlineOffset: 6, borderRadius: 8 } : {}),
+      }}
     >
       {/* QR image — object-contain mantiene proporción 1:1 sin estirar */}
       <img
@@ -87,10 +95,13 @@ export default function QRDisplay({ src, alt = 'QR Alyto', size = 256, className
  * descargas / compartir. Usa las mismas proporciones que QRDisplay.
  *
  * @param {string} qrBase64 - data-URI o base64 pura de la imagen QR
- * @returns {Promise<string>} data-URI PNG del QR con logo
+ * @param {('BOB'|'USDC')} [asset] - USDC hornea una banda verde "USDC · STELLAR"
+ *        bajo el QR, para que la imagen compartida (WhatsApp, etc.) sea distinguible.
+ * @returns {Promise<string>} data-URI PNG del QR con logo (+ banda si USDC)
  */
-export async function buildQRWithLogo(qrBase64) {
+export async function buildQRWithLogo(qrBase64, asset) {
   const LOGO_RATIO = 604 / 217
+  const isUSDC = asset === 'USDC'
 
   return new Promise((resolve) => {
     const src    = qrBase64.startsWith('data:') ? qrBase64 : `data:image/png;base64,${qrBase64}`
@@ -101,10 +112,15 @@ export async function buildQRWithLogo(qrBase64) {
     const onBothLoaded = () => {
       // Renderizar al tamaño nativo del QR (mínimo 400 px para buena calidad)
       const size   = Math.max(qrImg.naturalWidth || 400, 400)
+      const bandH  = isUSDC ? Math.round(size * 0.12) : 0
       const canvas = document.createElement('canvas')
       canvas.width  = size
-      canvas.height = size
+      canvas.height = size + bandH
       const ctx = canvas.getContext('2d')
+
+      // Fondo blanco (cubre el área de la banda)
+      ctx.fillStyle = '#FFFFFF'
+      ctx.fillRect(0, 0, size, size + bandH)
 
       // Dibujar QR sin suavizado para mantener módulos nítidos
       ctx.imageSmoothingEnabled = false
@@ -151,6 +167,17 @@ export async function buildQRWithLogo(qrBase64) {
         logoW,
         logoH,
       )
+
+      // Banda distintiva USDC · STELLAR bajo el QR (solo USDC)
+      if (isUSDC && bandH > 0) {
+        ctx.fillStyle = '#0D6E52'
+        ctx.fillRect(0, size, size, bandH)
+        ctx.fillStyle = '#FFFFFF'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.font = `600 ${Math.round(bandH * 0.40)}px -apple-system, "Segoe UI", Roboto, sans-serif`
+        ctx.fillText('USDC · STELLAR', size / 2, size + bandH / 2 + 1)
+      }
 
       try {
         resolve(canvas.toDataURL('image/png'))
