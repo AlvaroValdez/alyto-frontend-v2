@@ -10,9 +10,9 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Wallet, CheckCircle2, AlertCircle, Loader2, RefreshCw,
   ChevronDown, X, Lock, Unlock, ArrowRightLeft, ArrowUpRight, QrCode,
-  Percent, Save, Coins, Eye, FileText, Phone, CreditCard,
+  Percent, Save, Coins, Eye, FileText, Phone, CreditCard, Upload,
 } from 'lucide-react'
-import { request } from '../../../services/api'
+import { request, requestFormData } from '../../../services/api'
 import {
   listPendingConversions, confirmConversion, rejectConversion,
   getWalletFees, updateWalletFees, getWalletFeeRevenue,
@@ -250,9 +250,26 @@ function ConfirmWithdrawalModal({ withdrawal, open, onClose, onSuccess }) {
   const [loading, setLoading]             = useState(false)
   const [error, setError]                 = useState('')
   const [showQr, setShowQr]               = useState(false)
+  const [proofFile, setProofFile]         = useState(null)
+  const [proofPreview, setProofPreview]   = useState(null)
 
   function handleClose() {
-    setBankReference(''); setNote(''); setError(''); setShowQr(false); onClose()
+    setBankReference(''); setNote(''); setError(''); setShowQr(false)
+    setProofFile(null); setProofPreview(null); onClose()
+  }
+
+  function handleProofChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) { setError('El comprobante no puede superar 5 MB.'); return }
+    setProofFile(file); setError('')
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = ev => setProofPreview(ev.target.result)
+      reader.readAsDataURL(file)
+    } else {
+      setProofPreview(null)
+    }
   }
 
   async function handleConfirm(e) {
@@ -260,10 +277,19 @@ function ConfirmWithdrawalModal({ withdrawal, open, onClose, onSuccess }) {
     if (!bankReference.trim()) return setError('La referencia bancaria es obligatoria.')
     setLoading(true)
     try {
-      await request('/admin/wallet/withdrawal/confirm', {
-        method: 'POST',
-        body: JSON.stringify({ wtxId: withdrawal?.wtxId, bankReference, note }),
-      })
+      if (proofFile) {
+        const fd = new FormData()
+        fd.append('wtxId', withdrawal?.wtxId)
+        fd.append('bankReference', bankReference)
+        fd.append('note', note)
+        fd.append('comprobante', proofFile)
+        await requestFormData('/admin/wallet/withdrawal/confirm', fd)
+      } else {
+        await request('/admin/wallet/withdrawal/confirm', {
+          method: 'POST',
+          body: JSON.stringify({ wtxId: withdrawal?.wtxId, bankReference, note }),
+        })
+      }
       onSuccess?.(); handleClose()
     } catch (err) {
       setError(err.message ?? 'Error al confirmar el retiro.')
@@ -341,6 +367,30 @@ function ConfirmWithdrawalModal({ withdrawal, open, onClose, onSuccess }) {
             <input type="text" value={bankReference} onChange={e => setBankReference(e.target.value)}
               placeholder="N° de transferencia o comprobante"
               className="w-full bg-[#0F1628] border border-[#263050] rounded-xl px-4 py-3 text-white text-[0.875rem] focus:border-[#C4CBD8] focus:outline-none" />
+          </div>
+          <div>
+            <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">
+              Comprobante de la transferencia <span className="text-[#8A96B8] font-normal">(lo verá el usuario)</span>
+            </label>
+            {!proofFile ? (
+              <label className="flex flex-col items-center gap-1.5 py-4 rounded-xl cursor-pointer transition-colors hover:bg-[#0F1628]"
+                style={{ border: '1.5px dashed #263050' }}>
+                <Upload size={18} className="text-[#8A96B8]" />
+                <span className="text-[0.75rem] text-[#8A96B8]">Subir comprobante (JPG, PNG o PDF)</span>
+                <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" onChange={handleProofChange} />
+              </label>
+            ) : (
+              <div className="flex items-center gap-3 p-3 rounded-xl" style={{ border: '1px solid #263050', background: '#0F1628' }}>
+                {proofPreview
+                  ? <img src={proofPreview} alt="Comprobante" className="w-12 h-12 rounded-lg object-contain flex-shrink-0" style={{ border: '1px solid #263050' }} />
+                  : <FileText size={20} className="text-[#C4CBD8] flex-shrink-0" />}
+                <span className="flex-1 min-w-0 text-[0.8125rem] text-white truncate">{proofFile.name}</span>
+                <button type="button" onClick={() => { setProofFile(null); setProofPreview(null) }}
+                  className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#EF44441A' }}>
+                  <X size={13} className="text-[#F87171]" />
+                </button>
+              </div>
+            )}
           </div>
           <div>
             <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">Nota interna (opcional)</label>

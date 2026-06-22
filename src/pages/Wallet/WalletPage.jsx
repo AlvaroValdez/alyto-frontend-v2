@@ -16,7 +16,7 @@ import {
   ArrowRightLeft, AlertCircle, CheckCircle2, Clock,
   ChevronLeft, ChevronRight, X, Loader2, Copy, CheckCheck, QrCode,
   RefreshCw, Info, Upload, Building2, Mail, Camera, CameraOff,
-  Download, AtSign, Share2,
+  Download, AtSign, Share2, FileText, Eye,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { request, requestFormData } from '../../services/api'
@@ -1052,6 +1052,7 @@ function SendModal({ open, onClose, onSuccess, balanceAvailable }) {
 
 function WithdrawModal({ open, onClose, onSuccess, balanceAvailable }) {
   const fileInputRef = useRef(null)
+  const [method, setMethod] = useState('bank')   // 'bank' | 'qr'
   const [form, setForm] = useState({
     amount: '', bankName: '', accountNumber: '', accountHolder: '', accountType: 'Caja de ahorros',
   })
@@ -1062,6 +1063,7 @@ function WithdrawModal({ open, onClose, onSuccess, balanceAvailable }) {
   const [done, setDone]           = useState(false)
 
   function handleClose() {
+    setMethod('bank')
     setForm({ amount: '', bankName: '', accountNumber: '', accountHolder: '', accountType: 'Caja de ahorros' })
     setQrFile(null); setQrPreview(null)
     setError(''); setDone(false); onClose()
@@ -1084,20 +1086,24 @@ function WithdrawModal({ open, onClose, onSuccess, balanceAvailable }) {
     const n = Number(form.amount)
     if (n < 100) return setError('El monto mínimo de retiro es Bs. 100.')
     if (n > balanceAvailable) return setError(`Saldo insuficiente. Disponible: ${formatBOB(balanceAvailable)}.`)
-    if (!form.bankName || !form.accountNumber || !form.accountHolder) return setError('Completa todos los datos bancarios.')
+    if (method === 'bank') {
+      if (!form.bankName || !form.accountNumber || !form.accountHolder) return setError('Completa todos los datos bancarios.')
+    } else if (!qrFile) {
+      return setError('Adjunta el QR de tu cuenta bancaria.')
+    }
     setLoading(true)
     try {
-      if (qrFile) {
+      if (method === 'qr') {
         const fd = new FormData()
+        fd.append('method', 'qr')
         fd.append('amount', n)
-        fd.append('bankName', form.bankName)
-        fd.append('accountNumber', form.accountNumber)
-        fd.append('accountHolder', form.accountHolder)
-        fd.append('accountType', form.accountType)
         fd.append('bankQrImage', qrFile)
         await requestFormData('/wallet/withdraw/request', fd)
       } else {
-        await request('/wallet/withdraw/request', { method: 'POST', body: JSON.stringify({ ...form, amount: n }) })
+        await request('/wallet/withdraw/request', {
+          method: 'POST',
+          body: JSON.stringify({ ...form, amount: n, method: 'bank' }),
+        })
       }
       setDone(true); onSuccess?.()
     } catch (err) {
@@ -1116,7 +1122,7 @@ function WithdrawModal({ open, onClose, onSuccess, balanceAvailable }) {
           </div>
           <div>
             <p className="text-[#0F172A] font-bold text-[1rem]">Solicitud enviada</p>
-            <p className="text-[#64748B] text-[0.875rem] mt-1">AV Finance SRL procesará tu retiro en <span className="text-[#0F172A]">1-2 días hábiles</span>.</p>
+            <p className="text-[#64748B] text-[0.875rem] mt-1">Procesaremos tu retiro en <span className="text-[#0F172A]">1-2 días hábiles</span>. Verás el comprobante en tus movimientos al completarse.</p>
           </div>
           <button onClick={handleClose} className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white" style={{ background: '#233E58' }}>Cerrar</button>
         </div>
@@ -1131,61 +1137,84 @@ function WithdrawModal({ open, onClose, onSuccess, balanceAvailable }) {
             </div>
             <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Mínimo Bs. 100. Disponible: {formatBOB(balanceAvailable)}</p>
           </div>
-          <div className="space-y-3 bg-[#F8FAFC] rounded-2xl p-4 border border-[#E2E8F0]">
-            <p className="text-[0.75rem] font-semibold text-[#64748B] uppercase tracking-wider">Datos bancarios de destino</p>
+
+          {/* Tabs método de retiro — mismas dos pestañas que la carga */}
+          <div className="flex rounded-xl overflow-hidden"
+            style={{ border: '1px solid #E2E8F0', background: '#F8FAFC' }}>
             {[
-              { key: 'bankName',       label: 'Banco',                placeholder: 'Ej. Banco Bisa' },
-              { key: 'accountHolder',  label: 'Titular de la cuenta', placeholder: 'Nombre completo' },
-              { key: 'accountNumber',  label: 'Número de cuenta',     placeholder: '0000000000' },
-            ].map(f => (
-              <div key={f.key}>
-                <label className="block text-[0.6875rem] font-medium text-[#64748B] mb-1">{f.label}</label>
-                <input type="text" value={form[f.key]} onChange={e => set(f.key, e.target.value)} placeholder={f.placeholder}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.875rem] focus:border-[#233E58] focus:outline-none" />
-              </div>
+              { key: 'bank', icon: Building2, label: 'Cuenta bancaria' },
+              { key: 'qr',   icon: QrCode,    label: 'QR' },
+            ].map(t => (
+              <button type="button" key={t.key} onClick={() => { setMethod(t.key); setError('') }}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[0.8125rem] font-semibold transition-all"
+                style={method === t.key
+                  ? { background: '#233E58', color: '#FFFFFF', borderRadius: '10px' }
+                  : { color: '#64748B' }}>
+                <t.icon size={14} />
+                {t.label}
+              </button>
             ))}
-            <div>
-              <label className="block text-[0.6875rem] font-medium text-[#64748B] mb-1">Tipo de cuenta</label>
-              <select value={form.accountType} onChange={e => set('accountType', e.target.value)}
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.875rem] focus:border-[#233E58] focus:outline-none">
-                <option>Caja de ahorros</option>
-                <option>Cuenta corriente</option>
-              </select>
-            </div>
           </div>
 
-          {/* QR bancario opcional */}
-          <div className="rounded-2xl overflow-hidden" style={{ border: '1.5px dashed #CBD5E1' }}>
-            <div className="px-4 py-2.5 flex items-center gap-2" style={{ background: '#F8FAFC', borderBottom: qrFile ? '1px solid #E2E8F0' : 'none' }}>
-              <QrCode size={14} className="text-[#94A3B8]" />
-              <p className="text-[0.8125rem] font-medium text-[#64748B]">QR bancario</p>
-              <span className="ml-auto text-[0.6875rem] text-[#94A3B8]">Opcional</span>
-            </div>
-            {!qrFile ? (
-              <label className="flex flex-col items-center gap-1.5 py-4 cursor-pointer hover:bg-[#F8FAFC] transition-colors">
-                <Upload size={18} className="text-[#CBD5E1]" />
-                <span className="text-[0.75rem] text-[#94A3B8]">Adjunta el QR de tu cuenta bancaria</span>
-                <span className="text-[0.6875rem] text-[#CBD5E1]">El admin lo escaneará para transferirte directamente</span>
-                <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleQrFileChange} />
-              </label>
-            ) : (
-              <div className="p-3 flex items-center gap-3">
-                {qrPreview && (
-                  <img src={qrPreview} alt="QR bancario" className="w-16 h-16 rounded-xl object-contain flex-shrink-0"
-                    style={{ border: '1px solid #E2E8F0' }} />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-[0.8125rem] font-medium text-[#0F172A] truncate">{qrFile.name}</p>
-                  <p className="text-[0.6875rem] text-[#22C55E]">QR adjunto</p>
+          {/* Tab: Cuenta bancaria */}
+          {method === 'bank' && (
+            <div className="space-y-3 bg-[#F8FAFC] rounded-2xl p-4 border border-[#E2E8F0]">
+              <p className="text-[0.75rem] font-semibold text-[#64748B] uppercase tracking-wider">Datos bancarios de destino</p>
+              {[
+                { key: 'bankName',       label: 'Banco',                placeholder: 'Ej. Banco Económico' },
+                { key: 'accountHolder',  label: 'Titular de la cuenta', placeholder: 'Nombre completo' },
+                { key: 'accountNumber',  label: 'Número de cuenta',     placeholder: '0000000000' },
+              ].map(f => (
+                <div key={f.key}>
+                  <label className="block text-[0.6875rem] font-medium text-[#64748B] mb-1">{f.label}</label>
+                  <input type="text" value={form[f.key]} onChange={e => set(f.key, e.target.value)} placeholder={f.placeholder}
+                    className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.875rem] focus:border-[#233E58] focus:outline-none" />
                 </div>
-                <button type="button" onClick={() => { setQrFile(null); setQrPreview(null) }}
-                  className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: '#EF44441A' }}>
-                  <X size={13} className="text-[#F87171]" />
-                </button>
+              ))}
+              <div>
+                <label className="block text-[0.6875rem] font-medium text-[#64748B] mb-1">Tipo de cuenta</label>
+                <select value={form.accountType} onChange={e => set('accountType', e.target.value)}
+                  className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.875rem] focus:border-[#233E58] focus:outline-none">
+                  <option>Caja de ahorros</option>
+                  <option>Cuenta corriente</option>
+                </select>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Tab: QR */}
+          {method === 'qr' && (
+            <div className="rounded-2xl overflow-hidden" style={{ border: '1.5px dashed #CBD5E1' }}>
+              <div className="px-4 py-2.5 flex items-center gap-2" style={{ background: '#F8FAFC', borderBottom: qrFile ? '1px solid #E2E8F0' : 'none' }}>
+                <QrCode size={14} className="text-[#94A3B8]" />
+                <p className="text-[0.8125rem] font-medium text-[#64748B]">QR de tu cuenta</p>
+              </div>
+              {!qrFile ? (
+                <label className="flex flex-col items-center gap-1.5 py-5 cursor-pointer hover:bg-[#F8FAFC] transition-colors">
+                  <Upload size={20} className="text-[#CBD5E1]" />
+                  <span className="text-[0.75rem] text-[#94A3B8]">Adjunta el QR de tu cuenta bancaria</span>
+                  <span className="text-[0.6875rem] text-[#CBD5E1] text-center px-4">Lo escaneamos para transferirte directamente. El QR ya contiene tu cuenta destino.</span>
+                  <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleQrFileChange} />
+                </label>
+              ) : (
+                <div className="p-3 flex items-center gap-3">
+                  {qrPreview && (
+                    <img src={qrPreview} alt="QR bancario" className="w-16 h-16 rounded-xl object-contain flex-shrink-0"
+                      style={{ border: '1px solid #E2E8F0' }} />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[0.8125rem] font-medium text-[#0F172A] truncate">{qrFile.name}</p>
+                    <p className="text-[0.6875rem] text-[#22C55E]">QR adjunto</p>
+                  </div>
+                  <button type="button" onClick={() => { setQrFile(null); setQrPreview(null) }}
+                    className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{ background: '#EF44441A' }}>
+                    <X size={13} className="text-[#F87171]" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>}
           <button type="submit" disabled={loading} className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white disabled:opacity-40" style={{ background: '#233E58' }}>
@@ -1453,8 +1482,115 @@ function txLabel(tx) {
   return tx.description || map[tx.type] || tx.type
 }
 
+// ── Modal Detalle de movimiento (incluye comprobante de retiro) ───────────────
+
+function TxDetailModal({ tx, open, onClose, currency }) {
+  const [proof, setProof]     = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
+
+  useEffect(() => {
+    if (!open) { setProof(null); setError(''); setLoading(false) }
+  }, [open])
+
+  if (!tx) return null
+
+  const m       = tx.metadata ?? {}
+  const isWithdrawal = tx.type === 'withdrawal'
+  const hasProof = tx.hasComprobante || m.withdrawalProof?.present
+
+  async function loadProof() {
+    setLoading(true); setError('')
+    try {
+      const data = await request(`/wallet/transactions/${encodeURIComponent(tx.wtxId)}/comprobante`)
+      setProof(data)
+    } catch (err) {
+      setError(err.message ?? 'No se pudo cargar el comprobante.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const isPdf = proof?.mimeType === 'application/pdf'
+  const src   = proof ? `data:${proof.mimeType};base64,${proof.base64}` : ''
+
+  return (
+    <Modal open={open} onClose={onClose} title="Detalle del movimiento">
+      <div className="space-y-4">
+        <div className="bg-[#F8FAFC] rounded-2xl p-4 border border-[#E2E8F0] space-y-2.5">
+          <div className="flex justify-between"><span className="text-[0.75rem] text-[#94A3B8]">Tipo</span>
+            <span className="text-[0.875rem] font-semibold text-[#0F172A]">{txLabel(tx)}</span></div>
+          <div className="flex justify-between"><span className="text-[0.75rem] text-[#94A3B8]">Monto</span>
+            <span className="text-[0.875rem] font-bold text-[#0F172A]">{currency === 'USDC' ? formatUSDC(tx.amount) : formatBOB(tx.amount)}</span></div>
+          <div className="flex justify-between items-center"><span className="text-[0.75rem] text-[#94A3B8]">Estado</span>
+            <TxStatusBadge status={tx.status} /></div>
+          <div className="flex justify-between"><span className="text-[0.75rem] text-[#94A3B8]">Fecha</span>
+            <span className="text-[0.8125rem] text-[#0F172A]">{formatDate(tx.createdAt)}</span></div>
+          {tx.reference && (
+            <div className="flex justify-between gap-3"><span className="text-[0.75rem] text-[#94A3B8] flex-shrink-0">Referencia</span>
+              <span className="text-[0.75rem] font-mono text-[#0F172A] truncate">{tx.reference}</span></div>
+          )}
+        </div>
+
+        {/* Cuenta destino del retiro */}
+        {isWithdrawal && (m.bankName || m.accountNumber) && (
+          <div className="bg-[#F8FAFC] rounded-2xl p-4 border border-[#E2E8F0] space-y-1.5">
+            <p className="text-[0.6875rem] font-semibold text-[#64748B] uppercase tracking-wider mb-1">Cuenta de destino</p>
+            {m.bankName      && <div className="flex justify-between"><span className="text-[0.75rem] text-[#94A3B8]">Banco</span><span className="text-[0.8125rem] text-[#0F172A]">{m.bankName}</span></div>}
+            {m.accountHolder && <div className="flex justify-between"><span className="text-[0.75rem] text-[#94A3B8]">Titular</span><span className="text-[0.8125rem] text-[#0F172A]">{m.accountHolder}</span></div>}
+            {m.accountNumber && <div className="flex justify-between"><span className="text-[0.75rem] text-[#94A3B8]">N° cuenta</span><span className="text-[0.8125rem] font-mono text-[#0F172A]">{m.accountNumber}</span></div>}
+            {m.accountType   && <div className="flex justify-between"><span className="text-[0.75rem] text-[#94A3B8]">Tipo</span><span className="text-[0.8125rem] text-[#0F172A]">{m.accountType}</span></div>}
+            {m.method === 'qr' && !m.bankName && <p className="text-[0.75rem] text-[#94A3B8]">Retiro solicitado vía QR bancario.</p>}
+          </div>
+        )}
+
+        {/* Comprobante de la transferencia (subido por Alyto al completar) */}
+        {isWithdrawal && (
+          <div className="rounded-2xl border border-[#E2E8F0] overflow-hidden">
+            <div className="px-4 py-3 flex items-center gap-2 bg-[#F8FAFC] border-b border-[#E2E8F0]">
+              <FileText size={15} className="text-[#64748B]" />
+              <p className="text-[0.8125rem] font-bold text-[#0F172A]">Comprobante de transferencia</p>
+            </div>
+            <div className="p-4">
+              {!hasProof ? (
+                <p className="text-[0.8125rem] text-[#94A3B8]">
+                  {tx.status === 'completed'
+                    ? 'Este retiro se completó sin comprobante adjunto.'
+                    : 'El comprobante estará disponible cuando se procese tu retiro.'}
+                </p>
+              ) : !proof ? (
+                <button onClick={loadProof} disabled={loading}
+                  className="w-full py-3 rounded-xl font-semibold text-[0.875rem] text-white flex items-center justify-center gap-2 disabled:opacity-40"
+                  style={{ background: '#233E58' }}>
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : <><Eye size={16} /> Ver comprobante</>}
+                </button>
+              ) : isPdf ? (
+                <a href={src} download={proof.filename ?? 'comprobante.pdf'} target="_blank" rel="noreferrer"
+                  className="w-full py-3 rounded-xl font-semibold text-[0.875rem] text-white flex items-center justify-center gap-2"
+                  style={{ background: '#233E58' }}>
+                  <Download size={16} /> Descargar {proof.filename ?? 'comprobante.pdf'}
+                </a>
+              ) : (
+                <div className="space-y-3">
+                  <img src={src} alt="Comprobante" className="w-full rounded-xl" style={{ border: '1px solid #E2E8F0' }} />
+                  <a href={src} download={proof.filename ?? 'comprobante.png'} target="_blank" rel="noreferrer"
+                    className="w-full py-2.5 rounded-xl font-semibold text-[0.8125rem] flex items-center justify-center gap-2 border border-[#E2E8F0] text-[#64748B]">
+                    <Download size={14} /> Descargar
+                  </a>
+                </div>
+              )}
+              {error && <p className="text-[0.8125rem] text-[#F87171] mt-2">{error}</p>}
+            </div>
+          </div>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
 function TxList({ txs, txLoading, txPages, txPage, setTxPage, currency }) {
   const isCredit = (type) => ['deposit', 'receive', 'unfreeze', 'usdc_deposit', 'p2p_receive'].includes(type)
+  const [selectedTx, setSelectedTx] = useState(null)
 
   if (txLoading && txs.length === 0) {
     return (
@@ -1479,18 +1615,24 @@ function TxList({ txs, txLoading, txPages, txPage, setTxPage, currency }) {
   return (
     <div>
       <div className="space-y-2">
-        {txs.map(tx => (
-          <div key={tx._id ?? tx.wtxId}
-            className="flex items-center gap-3 px-4 py-3.5 rounded-2xl"
+        {txs.map(tx => {
+          const clickable = tx.type === 'withdrawal'
+          return (
+          <button key={tx._id ?? tx.wtxId} type="button"
+            onClick={clickable ? () => setSelectedTx(tx) : undefined}
+            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left ${clickable ? 'hover:border-[#CBD5E1] transition-colors cursor-pointer' : 'cursor-default'}`}
             style={{ background: 'white', border: '1px solid #E2E8F0' }}>
             <TxIcon type={tx.type} />
             <div className="flex-1 min-w-0">
               <p className="text-[0.875rem] font-semibold text-[#0F172A] truncate">
                 {txLabel(tx)}
               </p>
-              <p className="text-[0.6875rem] text-[#94A3B8] mt-0.5">
+              <p className="text-[0.6875rem] text-[#94A3B8] mt-0.5 flex items-center gap-1">
                 {formatDate(tx.createdAt)}
                 {tx.metadata?.fee > 0 && ` · fee ${formatUSDC(tx.metadata.fee)}`}
+                {tx.type === 'withdrawal' && (tx.hasComprobante || tx.metadata?.withdrawalProof?.present) && (
+                  <span className="inline-flex items-center gap-0.5 text-[#22C55E]"><FileText size={11} /> comprobante</span>
+                )}
               </p>
             </div>
             <div className="text-right flex-shrink-0">
@@ -1501,9 +1643,11 @@ function TxList({ txs, txLoading, txPages, txPage, setTxPage, currency }) {
               </p>
               <TxStatusBadge status={tx.status} />
             </div>
-          </div>
-        ))}
+          </button>
+          )
+        })}
       </div>
+      <TxDetailModal tx={selectedTx} open={!!selectedTx} onClose={() => setSelectedTx(null)} currency={currency} />
       {txPages > 1 && (
         <div className="flex items-center justify-between mt-4">
           <button onClick={() => setTxPage(p => Math.max(1, p - 1))} disabled={txPage === 1}
