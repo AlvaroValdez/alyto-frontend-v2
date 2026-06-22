@@ -334,7 +334,7 @@ function PayinManualBanner({ tx, onConfirmed }) {
           value={note}
           onChange={e => setNote(e.target.value)}
           rows={2}
-          placeholder='Ej: "Confirmado Banco Bisa — transferencia recibida"'
+          placeholder='Ej: "Confirmado Banco Económico — transferencia recibida"'
           className="w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white border border-[#FBBF2430] bg-[#1A2340] focus:outline-none focus:border-[#FBBF24] transition-colors resize-none placeholder-[#4E5A7A]"
         />
       </div>

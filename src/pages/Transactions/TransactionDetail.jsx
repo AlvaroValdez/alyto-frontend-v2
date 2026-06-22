@@ -157,7 +157,7 @@ function PaymentInstructionsModal({ tx, onClose }) {
             </div>
             <div className="px-4 divide-y divide-[#E2E8F0]">
               {[
-                ['Banco',   bank.bankName     ?? 'Banco Bisa'],
+                ['Banco',   bank.bankName     ?? 'Banco Económico'],
                 ['Titular', bank.accountHolder ?? bank.holder ?? 'AV Finance SRL'],
                 ['Cuenta',  bank.accountNumber ?? '—'],
                 ['Tipo',    bank.accountType   ?? 'Cuenta Corriente'],

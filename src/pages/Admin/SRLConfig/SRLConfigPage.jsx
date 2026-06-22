@@ -118,7 +118,7 @@ function UploadModal({ onClose, onUploaded, scope = 'sendmoney' }) {
           <label className={labelCls}>Label del QR *</label>
           <input
             className={inputCls}
-            placeholder="ej. Tigo Money, Banco Bisa QR"
+            placeholder="ej. Tigo Money, Banco Económico QR"
             value={label}
             onChange={e => setLabel(e.target.value)}
           />
@@ -245,7 +245,7 @@ function BankDataCard({ initial, onSaved }) {
           <label className={labelCls}>Banco *</label>
           <input
             className={inputCls}
-            placeholder="ej. Banco Bisa"
+            placeholder="ej. Banco Económico"
             value={form.bankName}
             onChange={e => set('bankName', e.target.value)}
           />

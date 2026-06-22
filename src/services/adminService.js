@@ -386,7 +386,7 @@ export function getSRLConfig() {
 
 /**
  * Sube un nuevo QR de pago para Bolivia.
- * @param {string} label — ej. "Tigo Money", "Banco Bisa QR"
+ * @param {string} label — ej. "Tigo Money", "Banco Económico QR"
  * @param {File}   file  — imagen PNG/JPG/WebP del QR, máx 2 MB
  * @returns {Promise<{ qrImage }>}
  */
@@ -437,7 +437,7 @@ export function updateSRLBankData(bankData) {
 
 /**
  * Sube un nuevo QR de depósito Wallet BOB.
- * @param {string} label — ej. "Banco Bisa QR", "Tigo Money"
+ * @param {string} label — ej. "Banco Económico QR", "Tigo Money"
  * @param {File}   file  — imagen PNG/JPG/WebP, máx 2 MB
  */
 export function uploadWalletSRLQR(label, file) {

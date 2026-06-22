@@ -255,7 +255,7 @@ function ManualPayinScreen({ stepData }) {
               <p className="text-[0.875rem] font-bold text-[#0D1F3C]">Datos de transferencia</p>
             </div>
             <div className="px-5 py-1">
-              <InfoRow label="Banco"   value={bank.bankName     ?? 'Banco Bisa'} />
+              <InfoRow label="Banco"   value={bank.bankName     ?? 'Banco Económico'} />
               <InfoRow label="Titular" value={bank.accountHolder ?? bank.holder ?? 'AV Finance SRL'} />
               <InfoRow label="Cuenta"  value={bank.accountNumber ?? '—'} mono />
               <InfoRow label="Tipo"    value={bank.accountType   ?? 'Cuenta Corriente'} />
