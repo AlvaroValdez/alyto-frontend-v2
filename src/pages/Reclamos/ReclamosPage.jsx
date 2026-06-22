@@ -363,7 +363,7 @@ export default function ReclamosPage() {
   const fetchReclamos = useCallback(async (p = 1) => {
     setLoading(true)
     try {
-      const data = await request('GET', `/reclamos?page=${p}&limit=10`)
+      const data = await request(`/reclamos?page=${p}&limit=10`)
       setReclamos(data.reclamos ?? [])
       setTotalPages(data.pagination?.totalPages ?? 1)
       setPage(p)
