@@ -77,8 +77,13 @@ export function StellarInstructions({ address, memo, amount, assetCode = 'USDC' 
       <div className="flex items-start gap-2 mt-4 bg-[#F59E0B1A] rounded-xl px-3 py-2.5">
         <Info size={15} className="text-[#F59E0B] flex-shrink-0 mt-0.5" />
         <p className="text-[0.75rem] text-[#92610A] leading-snug">
-          Incluí el <strong>memo</strong> exactamente como aparece. Sin el memo no podemos
-          asociar tu transferencia y los fondos podrían demorarse.
+          {memo ? (
+            <>Incluí el <strong>memo</strong> exactamente como aparece. Sin el memo no podemos
+            asociar tu transferencia y los fondos podrían demorarse.</>
+          ) : (
+            <>Enviá únicamente <strong>{assetCode}</strong> (red Stellar) a esta dirección.
+            Es tu dirección exclusiva — <strong>no necesitás memo</strong>.</>
+          )}
         </p>
       </div>
     </div>
