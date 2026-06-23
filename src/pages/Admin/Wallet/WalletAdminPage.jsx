@@ -417,6 +417,109 @@ function ConfirmWithdrawalModal({ withdrawal, open, onClose, onSuccess }) {
   )
 }
 
+// ── Modal Dispersar Retiro (BANECO §9 Planillas) ───────────────────────────────
+
+function DispatchWithdrawalModal({ withdrawal, open, onClose, onSuccess }) {
+  const [bankCode, setBankCode]         = useState('')
+  const [docId, setDocId]               = useState('')
+  const [loading, setLoading]           = useState(false)
+  const [error, setError]               = useState('')
+
+  function handleClose() {
+    setBankCode(''); setDocId(''); setError(''); onClose()
+  }
+
+  async function handleDispatch(e) {
+    e.preventDefault(); setError('')
+    if (!bankCode.trim()) return setError('El código ASFI de la entidad destino es obligatorio.')
+    setLoading(true)
+    try {
+      await request('/admin/wallet/withdrawal/dispatch', {
+        method: 'POST',
+        body: JSON.stringify({
+          wtxId: withdrawal?.wtxId,
+          bankCode: bankCode.trim(),
+          ...(docId.trim() ? { beneficiaryDocId: docId.trim() } : {}),
+        }),
+      })
+      onSuccess?.(); handleClose()
+    } catch (err) {
+      setError(err.message ?? 'Error al dispersar el retiro.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!open || !withdrawal) return null
+
+  const { bankName, accountNumber, accountHolder, accountType } = withdrawal.metadata ?? {}
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: '#0F162299' }}>
+      <div className="w-full max-w-md bg-[#1A2340] rounded-2xl p-6 max-h-[90vh] overflow-y-auto" style={{ border: '1px solid #263050' }}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-[1rem] font-bold text-white flex items-center gap-2">
+            <ArrowUpRight size={16} className="text-[#3B82F6]" /> Dispersar vía BANECO
+          </h3>
+          <button onClick={handleClose} className="w-8 h-8 rounded-full bg-[#0F1628] flex items-center justify-center">
+            <X size={16} className="text-[#8A96B8]" />
+          </button>
+        </div>
+
+        <div className="bg-[#0F1628] rounded-xl p-4 mb-4 space-y-2">
+          <div className="flex justify-between">
+            <span className="text-[0.75rem] text-[#8A96B8]">Usuario</span>
+            <span className="text-[0.875rem] font-semibold text-white">{withdrawal.userId?.firstName} {withdrawal.userId?.lastName}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[0.75rem] text-[#8A96B8]">Monto</span>
+            <span className="text-[0.9375rem] font-bold text-[#3B82F6]">{formatBOB(withdrawal.amount)}</span>
+          </div>
+          <div className="pt-2 border-t border-[#263050] space-y-1.5">
+            <p className="text-[0.6875rem] font-semibold text-[#8A96B8] uppercase tracking-wider">Cuenta destino</p>
+            {bankName && <div className="flex justify-between"><span className="text-[0.75rem] text-[#8A96B8]">Banco</span><span className="text-[0.75rem] text-white">{bankName}</span></div>}
+            {accountHolder && <div className="flex justify-between"><span className="text-[0.75rem] text-[#8A96B8]">Titular</span><span className="text-[0.75rem] text-white">{accountHolder}</span></div>}
+            {accountNumber && <div className="flex justify-between"><span className="text-[0.75rem] text-[#8A96B8]">N° cuenta</span><span className="text-[0.75rem] font-mono text-white">{accountNumber}</span></div>}
+            {accountType && <div className="flex justify-between"><span className="text-[0.75rem] text-[#8A96B8]">Tipo</span><span className="text-[0.75rem] text-white">{accountType}</span></div>}
+          </div>
+        </div>
+
+        <form onSubmit={handleDispatch} className="space-y-4">
+          <div>
+            <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">
+              Código ASFI entidad destino <span className="text-[#F87171]">*</span>
+            </label>
+            <input type="text" value={bankCode} onChange={e => setBankCode(e.target.value)}
+              placeholder="ej. 1016 (Banco Económico)" list="asfi-bank-codes"
+              className="w-full bg-[#0F1628] border border-[#263050] rounded-xl px-4 py-3 text-white text-[0.875rem] focus:border-[#3B82F6] focus:outline-none" />
+            <datalist id="asfi-bank-codes">
+              <option value="1016">Banco Económico</option>
+            </datalist>
+            <p className="text-[0.6875rem] text-[#4E5A7A] mt-1">Catálogo de códigos ASFI provisto por BANECO. En sandbox cualquier valor sirve.</p>
+          </div>
+          <div>
+            <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">CI/NIT del beneficiario (opcional)</label>
+            <input type="text" value={docId} onChange={e => setDocId(e.target.value)}
+              placeholder="Documento del titular"
+              className="w-full bg-[#0F1628] border border-[#263050] rounded-xl px-4 py-3 text-white text-[0.875rem] focus:border-[#3B82F6] focus:outline-none" />
+          </div>
+          {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-2">{error}</p>}
+          <div className="flex gap-3">
+            <button type="button" onClick={handleClose}
+              className="flex-1 py-3 rounded-xl font-semibold text-[0.875rem] text-white" style={{ border: '1.5px solid #263050' }}>
+              Cancelar
+            </button>
+            <button type="submit" disabled={loading}
+              className="flex-1 py-3 rounded-xl font-bold text-[0.875rem] text-white disabled:opacity-40" style={{ background: '#3B82F6' }}>
+              {loading ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Dispersar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 // ── Modal Rechazar Retiro ──────────────────────────────────────────────────────
 
 function RejectWithdrawalModal({ withdrawal, open, onClose, onSuccess }) {
@@ -1052,6 +1155,8 @@ export default function WalletAdminPage() {
   const [viewProof, setViewProof]                   = useState(null)
   const [confirmWithdrawal, setConfirmWithdrawal]   = useState(null)
   const [rejectWithdrawal, setRejectWithdrawal]     = useState(null)
+  const [dispatchWithdrawal, setDispatchWithdrawal] = useState(null)
+  const [simulatingId, setSimulatingId]             = useState(null)
   const [confirmConv, setConfirmConv]               = useState(null)
   const [rejectConv, setRejectConv]                 = useState(null)
   const [freezeWallet, setFreezeWallet]             = useState(null)
@@ -1077,6 +1182,22 @@ export default function WalletAdminPage() {
   }, [statusFilter])
 
   useEffect(() => { fetchAll() }, [fetchAll])
+
+  // Simula la confirmación del banco (notifyStatus) para retiros 'dispatched' en staging.
+  async function handleSimulateSettle(wdr, accepted) {
+    setSimulatingId(wdr.wtxId)
+    try {
+      await request('/admin/wallet/withdrawal/simulate-settle', {
+        method: 'POST',
+        body: JSON.stringify({ wtxId: wdr.wtxId, accepted }),
+      })
+      fetchAll()
+    } catch (err) {
+      alert(err.message ?? 'Error al simular la confirmación.')
+    } finally {
+      setSimulatingId(null)
+    }
+  }
 
   async function handleUnfreeze(userId) {
     try {
@@ -1239,20 +1360,49 @@ export default function WalletAdminPage() {
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-[1.0625rem] font-bold text-[#F59E0B] mb-2">{formatBOB(wdr.amount)}</p>
-                    <div className="flex flex-col gap-1.5">
-                      <button
-                        onClick={() => setConfirmWithdrawal(wdr)}
-                        className="text-[0.75rem] font-bold px-3 py-1.5 rounded-xl text-[#0F1628]"
-                        style={{ background: '#22C55E' }}>
-                        Confirmar
-                      </button>
-                      <button
-                        onClick={() => setRejectWithdrawal(wdr)}
-                        className="text-[0.75rem] font-bold px-3 py-1.5 rounded-xl"
-                        style={{ background: '#EF44441A', color: '#F87171', border: '1px solid #EF444433' }}>
-                        Rechazar
-                      </button>
-                    </div>
+                    {wdr.status === 'dispatched' ? (
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-[0.6875rem] font-bold px-2 py-1 rounded-full"
+                          style={{ background: '#3B82F61A', color: '#60A5FA', border: '1px solid #3B82F633' }}>
+                          Dispersado · esperando banco
+                        </span>
+                        <button
+                          onClick={() => handleSimulateSettle(wdr, true)} disabled={simulatingId === wdr.wtxId}
+                          className="text-[0.75rem] font-bold px-3 py-1.5 rounded-xl text-[#0F1628] disabled:opacity-40"
+                          style={{ background: '#22C55E' }}>
+                          {simulatingId === wdr.wtxId ? '…' : 'Simular ACEP (sandbox)'}
+                        </button>
+                        <button
+                          onClick={() => handleSimulateSettle(wdr, false)} disabled={simulatingId === wdr.wtxId}
+                          className="text-[0.75rem] font-bold px-3 py-1.5 rounded-xl disabled:opacity-40"
+                          style={{ background: '#EF44441A', color: '#F87171', border: '1px solid #EF444433' }}>
+                          Simular RECH (sandbox)
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-1.5">
+                        {wdr.metadata?.method === 'bank' && (
+                          <button
+                            onClick={() => setDispatchWithdrawal(wdr)}
+                            className="text-[0.75rem] font-bold px-3 py-1.5 rounded-xl text-white"
+                            style={{ background: '#3B82F6' }}>
+                            Dispersar (BANECO)
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setConfirmWithdrawal(wdr)}
+                          className="text-[0.75rem] font-bold px-3 py-1.5 rounded-xl text-[#0F1628]"
+                          style={{ background: '#22C55E' }}>
+                          Confirmar manual
+                        </button>
+                        <button
+                          onClick={() => setRejectWithdrawal(wdr)}
+                          className="text-[0.75rem] font-bold px-3 py-1.5 rounded-xl"
+                          style={{ background: '#EF44441A', color: '#F87171', border: '1px solid #EF444433' }}>
+                          Rechazar
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )
@@ -1433,6 +1583,12 @@ export default function WalletAdminPage() {
         withdrawal={rejectWithdrawal}
         open={!!rejectWithdrawal}
         onClose={() => setRejectWithdrawal(null)}
+        onSuccess={fetchAll}
+      />
+      <DispatchWithdrawalModal
+        withdrawal={dispatchWithdrawal}
+        open={!!dispatchWithdrawal}
+        onClose={() => setDispatchWithdrawal(null)}
         onSuccess={fetchAll}
       />
       <FreezeModal
