@@ -58,6 +58,7 @@ import LedgerPage          from '../pages/Admin/Ledger/LedgerPage'
 import CorridorsPanel      from '../pages/Admin/Ledger/CorridorsPanel'
 import AnalyticsPage       from '../pages/Admin/Analytics/AnalyticsPage'
 import FundingPage         from '../pages/Admin/Funding/FundingPage'
+import BankMonitorPage     from '../pages/Admin/Bank/BankMonitorPage'
 import KybListPage         from '../pages/Admin/Kyb/KybListPage'
 import KybDetailPage       from '../pages/Admin/Kyb/KybDetailPage'
 import SRLConfigPage       from '../pages/Admin/SRLConfig/SRLConfigPage'
@@ -188,6 +189,7 @@ export default function AppRouter() {
         <Route path="/admin/corridors"       element={<CorridorsPanel />}    />
         <Route path="/admin/analytics"       element={<AnalyticsPage />}     />
         <Route path="/admin/funding"         element={<FundingPage />}       />
+        <Route path="/admin/banks"           element={<BankMonitorPage />}   />
         <Route path="/admin/kyb"             element={<KybListPage />}       />
         <Route path="/admin/kyb/:businessId" element={<KybDetailPage />}     />
         <Route path="/admin/srl-config"      element={<SRLConfigPage />}     />

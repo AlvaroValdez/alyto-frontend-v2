@@ -543,3 +543,34 @@ export async function getBusinessInvoice(transactionId) {
   URL.revokeObjectURL(url)
 }
 
+
+// ── Monitoreo bancario (bank-agnostic, Fase 1 read-only) ─────────────────────
+
+/** Lista el registro de cuentas bancarias de tesorería + estado del adapter. */
+export function getBanks() {
+  return request('/admin/banks')
+}
+
+/** Saldo en vivo de una cuenta bancaria (§8). `fresh` salta el cache de 30s. */
+export function getBankBalance(code, fresh = false) {
+  return request(`/admin/banks/${encodeURIComponent(code)}/balance${fresh ? '?fresh=1' : ''}`)
+}
+
+/** Extracto de movimientos normalizado por rango (yyyy-MM-dd). */
+export function getBankMovements(code, { from, to } = {}) {
+  const qs = new URLSearchParams()
+  if (from) qs.set('from', from)
+  if (to)   qs.set('to', to)
+  const query = qs.toString()
+  return request(`/admin/banks/${encodeURIComponent(code)}/movements${query ? `?${query}` : ''}`)
+}
+
+/** Cobertura de tesorería vs pasivo a usuarios (BOB banco + USDC Stellar). */
+export function getTreasuryCoverage(entity = 'SRL') {
+  return request(`/admin/treasury/coverage?entity=${encodeURIComponent(entity)}`)
+}
+
+/** Resumen de saldos + movimientos de un usuario. */
+export function getUserWalletSummary(userId, limit = 50) {
+  return request(`/admin/users/${encodeURIComponent(userId)}/wallet-summary?limit=${limit}`)
+}

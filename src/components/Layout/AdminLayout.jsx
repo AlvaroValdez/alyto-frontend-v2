@@ -6,7 +6,7 @@
 
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
-import { BarChart2, Layers, ArrowLeft, ShieldCheck, TrendingUp, Wallet, Building2, QrCode, Banknote, AlertCircle, ShieldAlert, Settings2, AlertTriangle, CheckCircle2, X, Bell, UserPlus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, FileText, Send, Shield as ShieldIcon, CheckCheck, Loader2, Users, Percent } from 'lucide-react'
+import { BarChart2, Layers, ArrowLeft, ShieldCheck, TrendingUp, Wallet, Building2, QrCode, Banknote, AlertCircle, ShieldAlert, Settings2, AlertTriangle, CheckCircle2, X, Bell, UserPlus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, FileText, Send, Shield as ShieldIcon, CheckCheck, Loader2, Users, Percent, Landmark } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { request, fetchUnreadCount, fetchNotifications, markNotificationsRead } from '../../services/api'
 
@@ -171,6 +171,7 @@ export default function AdminLayout() {
         <SidebarLink to="/admin/corridors"  icon={Layers}     label="Corredores"  />
         <SidebarLink to="/admin/analytics"  icon={TrendingUp} label="Analytics"   />
         <SidebarLink to="/admin/funding"    icon={Wallet}     label="Fondeo"      />
+        <SidebarLink to="/admin/banks"      icon={Landmark}   label="Bancos & Tesorería" />
         <SidebarLink to="/admin/srl-config" icon={QrCode}     label="Bolivia — QR" />
         <SidebarLink to="/admin/spa-config" icon={Settings2}  label="Chile — Transferencias" />
         <SidebarLink to="/admin/kyb"        icon={Building2}  label="KYB"         />
