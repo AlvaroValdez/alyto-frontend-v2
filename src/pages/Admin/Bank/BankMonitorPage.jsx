@@ -61,7 +61,13 @@ function CoverageCard({ title, flag, treasury, liabilities, ratio, surplus, stat
           <p className="text-[1.25rem] font-extrabold text-white leading-none">
             {fmt(treasury?.available, dec)} <span className="text-[0.7rem] font-semibold text-[#8A96B8]">{asset}</span>
           </p>
-          <p className="text-[0.65rem] text-[#4E5A7A] mt-1">fuente: {treasury?.source ?? '—'}{treasury?.mock ? ' · mock' : ''}</p>
+          {treasury?.custodial != null ? (
+            <p className="text-[0.6rem] text-[#4E5A7A] mt-1">
+              tesorería {fmt(treasury.treasuryAvailable, dec)} + custodia {fmt(treasury.custodial, dec)}{treasury.partial ? ' · parcial ⚠️' : ''}
+            </p>
+          ) : (
+            <p className="text-[0.65rem] text-[#4E5A7A] mt-1">fuente: {treasury?.source ?? '—'}{treasury?.mock ? ' · mock' : ''}</p>
+          )}
         </div>
         <div className="rounded-xl p-3" style={{ background: '#0F1628', border: '1px solid #263050' }}>
           <p className="text-[0.65rem] uppercase tracking-wide text-[#8A96B8] mb-1">Pasivo a usuarios</p>
