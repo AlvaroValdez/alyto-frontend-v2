@@ -32,14 +32,16 @@ function isoDay(d) { return d.toISOString().slice(0, 10) }
 
 // ── Subcomponente: card de cobertura por activo ──────────────────────────────────
 
-function CoverageCard({ title, flag, treasury, liabilities, ratio, surplus, dec = 2, asset }) {
-  // Semáforo de cobertura: ≥1 cubierto, <1 sub-colateralizado, null sin pasivo.
-  const covered = ratio == null ? null : ratio >= 1
-  const tone = covered === null
-    ? { color: '#8A96B8', bg: '#1A2340', border: '#263050', badge: 'Sin pasivo' }
-    : covered
-      ? { color: '#22C55E', bg: '#22C55E0A', border: '#22C55E40', badge: '✅ Cubierto' }
-      : { color: '#EF4444', bg: '#EF44441A', border: '#EF444440', badge: '⚠️ Sub-colateralizado' }
+function CoverageCard({ title, flag, treasury, liabilities, ratio, surplus, status, dec = 2, asset }) {
+  // Semáforo por estado de solvencia explícito del backend.
+  const TONES = {
+    covered:             { color: '#22C55E', bg: '#22C55E0A', border: '#22C55E40', badge: '✅ Cubierto' },
+    undercollateralized: { color: '#EF4444', bg: '#EF44441A', border: '#EF444440', badge: '⚠️ Sub-colateralizado' },
+    no_liability:        { color: '#8A96B8', bg: '#1A2340',   border: '#263050',   badge: 'Sin pasivo' },
+    unknown:             { color: '#FBBF24', bg: '#F59E0B0F', border: '#FBBF2440', badge: '— Sin dato de tesorería' },
+  }
+  const tone = TONES[status] ?? TONES.unknown
+  const deficit = surplus != null && surplus < 0
 
   return (
     <div className="rounded-2xl p-5" style={{ background: tone.bg, border: `1px solid ${tone.border}` }}>
@@ -78,8 +80,8 @@ function CoverageCard({ title, flag, treasury, liabilities, ratio, surplus, dec 
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[0.65rem] text-[#8A96B8]">Excedente</p>
-          <p className="text-[1.05rem] font-bold" style={{ color: surplus >= 0 ? '#22C55E' : '#EF4444' }}>
+          <p className="text-[0.65rem] text-[#8A96B8]">{deficit ? 'Déficit' : 'Excedente'}</p>
+          <p className="text-[1.05rem] font-bold" style={{ color: deficit ? '#EF4444' : '#22C55E' }}>
             {surplus == null ? '—' : `${surplus >= 0 ? '+' : ''}${fmt(surplus, dec)}`}
           </p>
         </div>
@@ -202,13 +204,24 @@ export default function BankMonitorPage() {
           <h2 className="text-[0.9375rem] font-bold text-white">Cobertura de tesorería</h2>
           <span className="text-[0.7rem] text-[#4E5A7A]">· actualizado {fmtDateTime(coverage?.checkedAt)}</span>
         </div>
+        {coverage?.alert && (
+          <div className="rounded-xl px-4 py-3 mb-4 flex items-start gap-2.5" style={{ background: '#EF44441A', border: '1px solid #EF444440' }}>
+            <AlertTriangle size={18} className="text-[#F87171] flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-[0.8125rem] font-bold text-[#F87171]">Sub-colateralización detectada</p>
+              <p className="text-[0.75rem] text-[#FCA5A5]">
+                La tesorería no alcanza a cubrir el pasivo de usuarios en al menos un activo. Fondear la tesorería hasta cubrir el déficit antes de habilitar más operaciones.
+              </p>
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-7">
           <CoverageCard title="BOB · Banco" flag="🇧🇴" asset="BOB" dec={2}
             treasury={coverage?.bob?.treasury} liabilities={coverage?.bob?.liabilities}
-            ratio={coverage?.bob?.coverageRatio} surplus={coverage?.bob?.surplus} />
+            ratio={coverage?.bob?.coverageRatio} surplus={coverage?.bob?.surplus} status={coverage?.bob?.status} />
           <CoverageCard title="USDC · Stellar" flag="⭐" asset="USDC" dec={2}
             treasury={coverage?.usdc?.treasury} liabilities={coverage?.usdc?.liabilities}
-            ratio={coverage?.usdc?.coverageRatio} surplus={coverage?.usdc?.surplus} />
+            ratio={coverage?.usdc?.coverageRatio} surplus={coverage?.usdc?.surplus} status={coverage?.usdc?.status} />
         </div>
 
         {/* Selector de banco + saldo en vivo */}
