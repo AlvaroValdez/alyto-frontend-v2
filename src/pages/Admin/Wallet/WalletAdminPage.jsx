@@ -15,6 +15,7 @@ import {
 import { request, requestFormData } from '../../../services/api'
 import {
   listPendingConversions, confirmConversion, rejectConversion,
+  listPendingUSDCtoBOB, confirmUSDCtoBOB, rejectUSDCtoBOB,
   getWalletFees, updateWalletFees, getWalletFeeRevenue,
 } from '../../../services/adminService'
 
@@ -695,10 +696,12 @@ function FreezeModal({ wallet, open, onClose, onSuccess }) {
 
 // ── Modal Confirmar Conversión ────────────────────────────────────────────────
 
-function ConfirmConversionModal({ conversion, open, onClose, onSuccess }) {
+function ConfirmConversionModal({ conversion, open, onClose, onSuccess, kind = 'bob_to_usdc' }) {
   const [note, setNote]       = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
+
+  const isSell = kind === 'usdc_to_bob'   // USDC→BOB: débito USDC, crédito BOB
 
   function handleClose() {
     setNote(''); setError(''); onClose()
@@ -708,7 +711,7 @@ function ConfirmConversionModal({ conversion, open, onClose, onSuccess }) {
     e.preventDefault(); setError('')
     setLoading(true)
     try {
-      await confirmConversion(conversion?.wtxId, note)
+      await (isSell ? confirmUSDCtoBOB : confirmConversion)(conversion?.wtxId, note)
       onSuccess?.()
       handleClose()
     } catch (err) {
@@ -728,7 +731,7 @@ function ConfirmConversionModal({ conversion, open, onClose, onSuccess }) {
       <div className="w-full max-w-md bg-[#1A2340] rounded-2xl p-6"
         style={{ border: '1px solid #263050' }}>
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-[1rem] font-bold text-white">Confirmar conversión BOB→USDC</h3>
+          <h3 className="text-[1rem] font-bold text-white">Confirmar conversión {isSell ? 'USDC→BOB' : 'BOB→USDC'}</h3>
           <button onClick={handleClose} className="w-8 h-8 rounded-full bg-[#0F1628] flex items-center justify-center">
             <X size={16} className="text-[#8A96B8]" />
           </button>
@@ -746,12 +749,16 @@ function ConfirmConversionModal({ conversion, open, onClose, onSuccess }) {
             <span className="text-[0.875rem] text-[#C4CBD8]">{conversion.userId?.email}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-[0.75rem] text-[#8A96B8]">Débito BOB</span>
-            <span className="text-[0.9375rem] font-bold text-[#F87171]">-{formatBOB(bobAmount)}</span>
+            <span className="text-[0.75rem] text-[#8A96B8]">Débito {isSell ? 'USDC' : 'BOB'}</span>
+            <span className="text-[0.9375rem] font-bold text-[#F87171]">
+              {isSell ? `-${Number(usdcAmount ?? 0).toFixed(6)} USDC` : `-${formatBOB(bobAmount)}`}
+            </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-[0.75rem] text-[#8A96B8]">Crédito USDC</span>
-            <span className="text-[0.9375rem] font-bold text-[#22C55E]">+{Number(usdcAmount ?? 0).toFixed(6)} USDC</span>
+            <span className="text-[0.75rem] text-[#8A96B8]">Crédito {isSell ? 'BOB' : 'USDC'}</span>
+            <span className="text-[0.9375rem] font-bold text-[#22C55E]">
+              {isSell ? `+${formatBOB(bobAmount)}` : `+${Number(usdcAmount ?? 0).toFixed(6)} USDC`}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-[0.75rem] text-[#8A96B8]">Tasa</span>
@@ -791,10 +798,12 @@ function ConfirmConversionModal({ conversion, open, onClose, onSuccess }) {
 
 // ── Modal Rechazar Conversión ─────────────────────────────────────────────────
 
-function RejectConversionModal({ conversion, open, onClose, onSuccess }) {
+function RejectConversionModal({ conversion, open, onClose, onSuccess, kind = 'bob_to_usdc' }) {
   const [reason, setReason]   = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
+
+  const isSell = kind === 'usdc_to_bob'
 
   function handleClose() {
     setReason(''); setError(''); onClose()
@@ -805,7 +814,7 @@ function RejectConversionModal({ conversion, open, onClose, onSuccess }) {
     if (!reason.trim()) return setError('Indica la razón del rechazo.')
     setLoading(true)
     try {
-      await rejectConversion(conversion?.wtxId, reason)
+      await (isSell ? rejectUSDCtoBOB : rejectConversion)(conversion?.wtxId, reason)
       onSuccess?.()
       handleClose()
     } catch (err) {
@@ -1147,6 +1156,7 @@ export default function WalletAdminPage() {
   const [deposits, setDeposits]         = useState([])
   const [withdrawals, setWithdrawals]   = useState([])
   const [conversions, setConversions]   = useState([])
+  const [bobConversions, setBobConversions] = useState([])   // USDC→BOB pendientes
   const [wallets, setWallets]           = useState([])
   const [loading, setLoading]           = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
@@ -1159,20 +1169,24 @@ export default function WalletAdminPage() {
   const [simulatingId, setSimulatingId]             = useState(null)
   const [confirmConv, setConfirmConv]               = useState(null)
   const [rejectConv, setRejectConv]                 = useState(null)
+  const [confirmBobConv, setConfirmBobConv]         = useState(null)   // USDC→BOB
+  const [rejectBobConv, setRejectBobConv]           = useState(null)   // USDC→BOB
   const [freezeWallet, setFreezeWallet]             = useState(null)
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
-      const [dep, wdr, conv, wal] = await Promise.all([
+      const [dep, wdr, conv, bobConv, wal] = await Promise.all([
         request('/admin/wallet/deposits/pending'),
         request('/admin/wallet/withdrawals/pending'),
         listPendingConversions(),
+        listPendingUSDCtoBOB(),
         request(`/admin/wallet${statusFilter ? `?status=${statusFilter}` : ''}`),
       ])
       setDeposits(dep.deposits ?? [])
       setWithdrawals(wdr.withdrawals ?? [])
       setConversions(conv.conversions ?? [])
+      setBobConversions(bobConv.conversions ?? [])
       setWallets(wal.wallets ?? [])
     } catch {
       // silencioso
@@ -1478,6 +1492,73 @@ export default function WalletAdminPage() {
         )}
       </section>
 
+      {/* ── SECCIÓN 4: Conversiones USDC→BOB pendientes ─────────────────── */}
+      <section>
+        <div className="flex items-center gap-3 mb-4">
+          <h2 className="text-[1rem] font-bold text-white flex items-center gap-2">
+            <ArrowRightLeft size={16} className="text-[#C4CBD8]" />
+            Conversiones USDC→BOB
+          </h2>
+          {bobConversions.length > 0 && (
+            <span className="text-[0.6875rem] font-bold px-2 py-0.5 rounded-full"
+              style={{ background: '#F59E0B1A', color: '#F59E0B', border: '1px solid #F59E0B33' }}>
+              {bobConversions.length}
+            </span>
+          )}
+        </div>
+
+        {bobConversions.length === 0 ? (
+          <div className="bg-[#1A2340] rounded-2xl p-8 text-center" style={{ border: '1px solid #263050' }}>
+            <CheckCircle2 size={28} className="mx-auto text-[#22C55E] mb-2" />
+            <p className="text-[0.875rem] font-semibold text-[#8A96B8]">Sin conversiones pendientes</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {bobConversions.map(conv => {
+              const { bobAmount, usdcAmount, bobPerUsdc } = conv.metadata ?? {}
+              return (
+                <div key={conv._id ?? conv.wtxId}
+                  className="flex items-center gap-4 px-5 py-4 rounded-2xl"
+                  style={{ background: '#1A2340', border: '1px solid #263050' }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="text-[0.9375rem] font-bold text-white">
+                        {conv.userId?.firstName} {conv.userId?.lastName}
+                      </p>
+                      <span className="text-[0.625rem] font-semibold px-2 py-0.5 rounded-full"
+                        style={{ background: '#C4CBD81A', color: '#C4CBD8' }}>
+                        {conv.userId?.kycStatus}
+                      </span>
+                    </div>
+                    <p className="text-[0.75rem] text-[#8A96B8]">{conv.userId?.email}</p>
+                    <p className="text-[0.6875rem] text-[#4E5A7A] mt-0.5">
+                      {Number(usdcAmount ?? 0).toFixed(6)} USDC → {formatBOB(bobAmount)}
+                      <span className="text-[#4E5A7A] ml-1">(1 USDC = {Number(bobPerUsdc ?? 0).toFixed(2)} BOB)</span>
+                    </p>
+                    <p className="text-[0.6875rem] text-[#4E5A7A] font-mono">Ref: {conv.wtxId}</p>
+                    <p className="text-[0.6875rem] text-[#4E5A7A]">{formatDate(conv.createdAt)}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0 space-y-1.5">
+                    <button
+                      onClick={() => setConfirmBobConv(conv)}
+                      className="block w-full text-[0.75rem] font-bold px-3 py-1.5 rounded-xl text-[#0F1628]"
+                      style={{ background: '#22C55E' }}>
+                      Aprobar
+                    </button>
+                    <button
+                      onClick={() => setRejectBobConv(conv)}
+                      className="block w-full text-[0.75rem] font-bold px-3 py-1.5 rounded-xl text-[#F87171]"
+                      style={{ background: '#EF44441A', border: '1px solid #EF444433' }}>
+                      Rechazar
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
+
       {/* ── SECCIÓN 3: Wallets activas ──────────────────────────────────── */}
       <section>
         <div className="flex items-center justify-between mb-4">
@@ -1607,6 +1688,20 @@ export default function WalletAdminPage() {
         conversion={rejectConv}
         open={!!rejectConv}
         onClose={() => setRejectConv(null)}
+        onSuccess={fetchAll}
+      />
+      <ConfirmConversionModal
+        kind="usdc_to_bob"
+        conversion={confirmBobConv}
+        open={!!confirmBobConv}
+        onClose={() => setConfirmBobConv(null)}
+        onSuccess={fetchAll}
+      />
+      <RejectConversionModal
+        kind="usdc_to_bob"
+        conversion={rejectBobConv}
+        open={!!rejectBobConv}
+        onClose={() => setRejectBobConv(null)}
         onSuccess={fetchAll}
       />
     </div>

@@ -502,6 +502,26 @@ export function rejectConversion(wtxId, rejectReason) {
   })
 }
 
+// ── Conversiones USDC → BOB (Admin) ──────────────────────────────────────────
+
+export function listPendingUSDCtoBOB() {
+  return request('/admin/wallet/bob/conversions/pending')
+}
+
+export function confirmUSDCtoBOB(wtxId, note) {
+  return request('/admin/wallet/bob/conversions/confirm', {
+    method: 'POST',
+    body:   JSON.stringify({ wtxId, note }),
+  })
+}
+
+export function rejectUSDCtoBOB(wtxId, rejectReason) {
+  return request('/admin/wallet/bob/conversions/reject', {
+    method: 'POST',
+    body:   JSON.stringify({ wtxId, rejectReason }),
+  })
+}
+
 // ── Notificaciones push manuales ──────────────────────────────────────────────
 
 /**

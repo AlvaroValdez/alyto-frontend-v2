@@ -1353,30 +1353,42 @@ function USDCDepositModal({ open, onClose, instructions }) {
   )
 }
 
-// ── Modal Convertir BOB → USDC ─────────────────────────────────────────────────
+// ── Modal Swap BOB ⇄ USDC (conversión bidireccional unificada) ──────────────────
 
-function ConvertModal({ open, onClose, onSuccess, bobBalance, rate }) {
+const SWAP_MIN_BOB  = 50
+const SWAP_MIN_USDC = 5
+
+function ConvertModal({ open, onClose, onSuccess, bobBalance, usdcBalance, buyRate, sellRate }) {
+  const [direction, setDirection] = useState('bob_to_usdc') // 'bob_to_usdc' | 'usdc_to_bob'
   const [amount, setAmount]   = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult]   = useState(null)
   const [error, setError]     = useState('')
 
-  function handleClose() {
-    setAmount(''); setResult(null); setError(''); onClose()
-  }
+  const isBuy      = direction === 'bob_to_usdc'
+  const rate       = isBuy ? buyRate : sellRate           // bobPerUsdc (compra o venta)
+  const min        = isBuy ? SWAP_MIN_BOB : SWAP_MIN_USDC
+  const srcBalance = isBuy ? bobBalance : usdcBalance
+  const srcLabel   = isBuy ? 'BOB' : 'USDC'
+  const dstLabel   = isBuy ? 'USDC' : 'BOB'
+  const fmtSrc     = isBuy ? formatBOB : formatUSDC
+  const fmtDst     = isBuy ? formatUSDC : formatBOB
+
+  const n      = Number(amount)
+  const estOut = (rate && n) ? (isBuy ? n / rate : n * rate) : null
+
+  function handleClose() { setAmount(''); setResult(null); setError(''); setDirection('bob_to_usdc'); onClose() }
+  function switchDir(d)  { if (d === direction) return; setDirection(d); setAmount(''); setError(''); setResult(null) }
 
   async function handleSubmit(e) {
     e.preventDefault(); setError('')
-    const n = Number(amount)
-    if (!n || n < 50)      return setError('El monto mínimo de conversión es Bs. 50.')
-    if (n > bobBalance)    return setError(`Saldo BOB insuficiente. Disponible: ${formatBOB(bobBalance)}.`)
+    if (!n || n < min)   return setError(`El monto mínimo es ${isBuy ? `Bs. ${SWAP_MIN_BOB}` : `${SWAP_MIN_USDC} USDC`}.`)
+    if (n > srcBalance)  return setError(`Saldo ${srcLabel} insuficiente. Disponible: ${fmtSrc(srcBalance)}.`)
     setLoading(true)
     try {
-      const data = await request('/wallet/usdc/convert-bob', {
-        method: 'POST',
-        body: JSON.stringify({ amount: n }),
-      })
-      setResult(data)
+      const endpoint = isBuy ? '/wallet/usdc/convert-bob' : '/wallet/usdc/convert-to-bob'
+      const data = await request(endpoint, { method: 'POST', body: JSON.stringify({ amount: n }) })
+      setResult({ ...data, direction })
       onSuccess?.()
     } catch (err) {
       setError(err.message ?? 'Error al solicitar la conversión.')
@@ -1385,79 +1397,110 @@ function ConvertModal({ open, onClose, onSuccess, bobBalance, rate }) {
     }
   }
 
-  return (
-    <Modal open={open} onClose={handleClose} title="Convertir BOB a USDC">
-      {result ? (
+  // ── Pantalla de resultado ──
+  if (result) {
+    const completed = result.status === 'completed'   // auto-conversión instantánea
+    const rBuy      = result.direction === 'bob_to_usdc'
+    const debit     = rBuy ? formatBOB(result.bobAmount)  : formatUSDC(result.usdcAmount)
+    const credit    = rBuy ? formatUSDC(result.usdcAmount) : formatBOB(result.bobAmount)
+    return (
+      <Modal open={open} onClose={handleClose} title="Convertir">
         <div className="space-y-4">
           <div className="text-center py-2">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: '#22C55E1A' }}>
-              <ArrowRightLeft size={28} className="text-[#22C55E]" />
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3"
+              style={{ background: completed ? '#22C55E1A' : '#233E580D' }}>
+              {completed
+                ? <CheckCircle2 size={28} className="text-[#22C55E]" />
+                : <ArrowRightLeft size={28} className="text-[#233E58]" />}
             </div>
-            <p className="text-[#0F172A] font-bold text-[1rem]">Solicitud enviada</p>
+            <p className="text-[#0F172A] font-bold text-[1rem]">{completed ? 'Conversión completada' : 'Solicitud enviada'}</p>
           </div>
           <div className="bg-[#F8FAFC] rounded-2xl p-4 border border-[#E2E8F0] space-y-3">
             <div className="flex justify-between">
-              <span className="text-[0.75rem] text-[#64748B]">Débito BOB</span>
-              <span className="text-[0.875rem] font-bold text-[#F87171]">- {formatBOB(result.bobAmount)}</span>
+              <span className="text-[0.75rem] text-[#64748B]">Débito {rBuy ? 'BOB' : 'USDC'}</span>
+              <span className="text-[0.875rem] font-bold text-[#F87171]">- {debit}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[0.75rem] text-[#64748B]">Recibirás USDC</span>
-              <span className="text-[0.875rem] font-bold text-[#22C55E]">≈ {formatUSDC(result.usdcAmount)}</span>
+              <span className="text-[0.75rem] text-[#64748B]">{completed ? 'Acreditado' : 'Recibirás'} {rBuy ? 'USDC' : 'BOB'}</span>
+              <span className="text-[0.875rem] font-bold text-[#22C55E]">≈ {credit}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-[0.75rem] text-[#64748B]">Tipo de cambio</span>
               <span className="text-[0.875rem] text-[#0F172A]">{result.bobPerUsdc?.toFixed(2)} BOB = 1 USDC</span>
             </div>
           </div>
-          <p className="text-[0.75rem] text-[#64748B] text-center">El equipo Alyto confirmará la conversión en <span className="text-[#0F172A] font-semibold">1-4 horas hábiles</span>.</p>
+          <p className="text-[0.75rem] text-[#64748B] text-center">
+            {completed
+              ? <>Los fondos ya están en tu saldo <span className="text-[#0F172A] font-semibold">{rBuy ? 'USDC' : 'BOB'}</span>.</>
+              : <>El equipo Alyto confirmará la conversión en <span className="text-[#0F172A] font-semibold">1-4 horas hábiles</span>.</>}
+          </p>
           <button onClick={handleClose} className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white" style={{ background: '#233E58' }}>Cerrar</button>
         </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Saldo disponible prominente */}
-          <div className="rounded-2xl px-4 py-3 flex items-center justify-between"
-            style={{ background: '#233E580D', border: '1px solid #233E5820' }}>
-            <span className="text-[0.75rem] text-[#64748B]">Saldo disponible en BOB</span>
-            <span className="text-[1rem] font-bold text-[#233E58]">{formatBOB(bobBalance)}</span>
+      </Modal>
+    )
+  }
+
+  // ── Formulario ──
+  return (
+    <Modal open={open} onClose={handleClose} title="Convertir">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Toggle de dirección */}
+        <div className="grid grid-cols-2 gap-1 p-1 rounded-2xl" style={{ background: '#F1F5F9' }}>
+          {[
+            { id: 'bob_to_usdc', label: 'BOB → USDC' },
+            { id: 'usdc_to_bob', label: 'USDC → BOB' },
+          ].map(opt => (
+            <button key={opt.id} type="button" onClick={() => switchDir(opt.id)}
+              className="py-2.5 rounded-xl text-[0.8125rem] font-bold transition-colors"
+              style={direction === opt.id
+                ? { background: '#233E58', color: '#fff' }
+                : { background: 'transparent', color: '#64748B' }}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Saldo disponible de la moneda origen */}
+        <div className="rounded-2xl px-4 py-3 flex items-center justify-between"
+          style={{ background: '#233E580D', border: '1px solid #233E5820' }}>
+          <span className="text-[0.75rem] text-[#64748B]">Saldo disponible en {srcLabel}</span>
+          <span className="text-[1rem] font-bold text-[#233E58]">{fmtSrc(srcBalance)}</span>
+        </div>
+
+        {/* Tipo de cambio + estimación */}
+        <div className="flex items-center justify-between rounded-xl px-4 py-3"
+          style={{ background: '#22C55E0D', border: '1px solid #22C55E22' }}>
+          <div className="flex items-center gap-2">
+            <ArrowRightLeft size={13} className="text-[#22C55E]" />
+            <span className="text-[0.8125rem] font-semibold text-[#22C55E]">
+              {rate ? `1 USDC = Bs. ${rate.toFixed(2)}` : 'Cargando tasa...'}
+            </span>
           </div>
-          <div className="rounded-2xl px-4 py-3 flex items-start gap-3"
-            style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-            <Info size={15} className="text-[#94A3B8] mt-0.5 flex-shrink-0" />
-            <p className="text-[0.75rem] text-[#64748B] leading-relaxed">
-              Convierte tus Bolivianos (BOB) a USDC al tipo de cambio Alyto vigente. Mínimo Bs. 50.
-            </p>
+          {estOut != null && n >= min && (
+            <span className="text-[0.8125rem] font-bold text-[#22C55E]">
+              ≈ {isBuy ? `${estOut.toFixed(4)} USDC` : formatBOB(estOut)}
+            </span>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">¿Cuánto {srcLabel} quieres convertir?</label>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-semibold text-sm">{isBuy ? 'Bs.' : 'USDC'}</span>
+            <input type="number" min={min} step="any" value={amount} onChange={e => setAmount(e.target.value)}
+              placeholder={isBuy ? '100' : '10'}
+              className={`w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl ${isBuy ? 'pl-10' : 'pl-16'} pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none`} />
           </div>
-          {/* Tipo de cambio siempre visible */}
-          <div className="flex items-center justify-between rounded-xl px-4 py-3"
-            style={{ background: '#22C55E0D', border: '1px solid #22C55E22' }}>
-            <div className="flex items-center gap-2">
-              <ArrowRightLeft size={13} className="text-[#22C55E]" />
-              <span className="text-[0.8125rem] font-semibold text-[#22C55E]">
-                {rate ? `1 USDC = Bs. ${rate.toFixed(2)}` : 'Cargando tasa...'}
-              </span>
-            </div>
-            {rate && amount && Number(amount) >= 50 && (
-              <span className="text-[0.8125rem] font-bold text-[#22C55E]">
-                ≈ {(Number(amount) / rate).toFixed(4)} USDC
-              </span>
-            )}
-          </div>
-          <div>
-            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">¿Cuántos BOB quieres convertir?</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-semibold text-sm">Bs.</span>
-              <input type="number" min={50} value={amount} onChange={e => setAmount(e.target.value)} placeholder="100"
-                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none" />
-            </div>
-          </div>
-          {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>}
-          <button type="submit" disabled={loading || !amount}
-            className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white disabled:opacity-40"
-            style={{ background: '#233E58' }}>
-            {loading ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Solicitar conversión'}
-          </button>
-        </form>
-      )}
+          <p className="text-[0.6875rem] text-[#94A3B8] mt-1.5">Recibirás {dstLabel} al tipo de cambio Alyto vigente. Mínimo {isBuy ? `Bs. ${SWAP_MIN_BOB}` : `${SWAP_MIN_USDC} USDC`}.</p>
+        </div>
+
+        {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3">{error}</p>}
+        <button type="submit" disabled={loading || !amount}
+          className="w-full py-3.5 rounded-2xl font-bold text-[0.9375rem] text-white disabled:opacity-40"
+          style={{ background: '#233E58' }}>
+          {loading ? <Loader2 size={18} className="animate-spin mx-auto" /> : `Convertir ${srcLabel} → ${dstLabel}`}
+        </button>
+      </form>
     </Modal>
   )
 }
@@ -2055,6 +2098,7 @@ export default function WalletPage() {
   const [usdcHistory,       setUsdcHistory]       = useState([])
   const [dailyLimits,       setDailyLimits]       = useState(null)
   const [usdcRate,          setUsdcRate]          = useState(null)
+  const [usdcSellRate,      setUsdcSellRate]      = useState(null)
   const [bobTxFilter,       setBobTxFilter]       = useState('all')
   const [usdcTxFilter,      setUsdcTxFilter]      = useState('all')
   const [copiedMemo,        setCopiedMemo]        = useState(false)
@@ -2156,6 +2200,9 @@ export default function WalletPage() {
       const n = Number(r)
       if (Number.isFinite(n) && n > 0) setUsdcRate(n)
       else console.warn('[fetchUSDCRate] respuesta sin tasa válida:', data)
+      // Tasa de venta (USDC→BOB) para el swap unificado
+      const s = Number(data?.sellBobPerUsdc)
+      if (Number.isFinite(s) && s > 0) setUsdcSellRate(s)
     } catch (err) {
       console.warn('[fetchUSDCRate] error al obtener tasa:', err?.status, err?.message)
     }
@@ -2576,7 +2623,9 @@ export default function WalletPage() {
         onClose={() => setShowConvert(false)}
         onSuccess={handleRefresh}
         bobBalance={bobAvailable}
-        rate={usdcRate}
+        usdcBalance={usdcAvailable}
+        buyRate={usdcRate}
+        sellRate={usdcSellRate}
       />
       <AliasModal
         open={showAlias}
