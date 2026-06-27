@@ -1359,7 +1359,7 @@ function USDCDepositModal({ open, onClose, instructions }) {
 const SWAP_MIN_BOB  = 50
 const SWAP_MIN_USDC = 5
 
-function ConvertModal({ open, onClose, onSuccess, bobBalance, usdcBalance, buyRate, sellRate, initialDirection = 'bob_to_usdc' }) {
+function ConvertModal({ open, onClose, onSuccess, bobBalance, usdcBalance, buyRate, sellRate, marketRate, initialDirection = 'bob_to_usdc' }) {
   const [direction, setDirection] = useState(initialDirection) // 'bob_to_usdc' | 'usdc_to_bob'
   const [amount, setAmount]   = useState('')
   const [loading, setLoading] = useState(false)
@@ -1382,6 +1382,17 @@ function ConvertModal({ open, onClose, onSuccess, bobBalance, usdcBalance, buyRa
 
   const n      = Number(amount)
   const estOut = (rate && n) ? (isBuy ? n / rate : n * rate) : null
+
+  // Spread por dirección (vs. tasa de mercado) + comisión estimada para este monto.
+  // Compra (BOB→USDC): perdés USDC vs. mercado. Venta (USDC→BOB): perdés BOB vs. mercado.
+  const spreadPct = (rate && marketRate)
+    ? (isBuy ? (rate / marketRate - 1) : (1 - rate / marketRate)) * 100
+    : null
+  const feeEst = (rate && marketRate && n)
+    ? (isBuy ? (n / marketRate - n / rate)        // comisión en USDC
+             : (n * marketRate - n * rate))       // comisión en BOB
+    : null
+  const fmtFee = (v) => isBuy ? `${v.toFixed(4)} USDC` : formatBOB(v)
 
   function handleClose() { setAmount(''); setResult(null); setError(''); setDirection(initialDirection); onClose() }
   function switchDir(d)  { if (d === direction) return; setDirection(d); setAmount(''); setError(''); setResult(null) }
@@ -1409,6 +1420,14 @@ function ConvertModal({ open, onClose, onSuccess, bobBalance, usdcBalance, buyRa
     const rBuy      = result.direction === 'bob_to_usdc'
     const debit     = rBuy ? formatBOB(result.bobAmount)  : formatUSDC(result.usdcAmount)
     const credit    = rBuy ? formatUSDC(result.usdcAmount) : formatBOB(result.bobAmount)
+    // Spread aplicado + comisión de esta conversión (vs. tasa de mercado)
+    const rSpreadPct = (result.bobPerUsdc && marketRate)
+      ? (rBuy ? (result.bobPerUsdc / marketRate - 1) : (1 - result.bobPerUsdc / marketRate)) * 100
+      : null
+    const rFee = (result.bobPerUsdc && marketRate)
+      ? (rBuy ? (result.bobAmount / marketRate - result.usdcAmount)
+              : (result.usdcAmount * marketRate - result.bobAmount))
+      : null
     return (
       <Modal open={open} onClose={handleClose} title="Convertir">
         <div className="space-y-4">
@@ -1434,6 +1453,14 @@ function ConvertModal({ open, onClose, onSuccess, bobBalance, usdcBalance, buyRa
               <span className="text-[0.75rem] text-[#64748B]">Tipo de cambio</span>
               <span className="text-[0.875rem] text-[#0F172A]">{result.bobPerUsdc?.toFixed(2)} BOB = 1 USDC</span>
             </div>
+            {rSpreadPct != null && (
+              <div className="flex justify-between pt-2 border-t border-[#E2E8F0]">
+                <span className="text-[0.75rem] text-[#64748B]">Spread incluido ({rSpreadPct.toFixed(2)}%)</span>
+                <span className="text-[0.875rem] text-[#94A3B8]">
+                  ≈ {rBuy ? `${rFee.toFixed(4)} USDC` : formatBOB(rFee)}
+                </span>
+              </div>
+            )}
           </div>
           <p className="text-[0.75rem] text-[#64748B] text-center">
             {completed
@@ -1488,6 +1515,19 @@ function ConvertModal({ open, onClose, onSuccess, bobBalance, usdcBalance, buyRa
             </span>
           )}
         </div>
+
+        {/* Spread / comisión de la conversión */}
+        {spreadPct != null && (
+          <div className="flex items-center justify-between rounded-xl px-4 py-2.5"
+            style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+            <span className="text-[0.75rem] text-[#64748B]">
+              Spread incluido <span className="font-semibold text-[#0F172A]">{spreadPct.toFixed(2)}%</span>
+            </span>
+            {feeEst != null && n >= min && (
+              <span className="text-[0.75rem] font-semibold text-[#94A3B8]">≈ {fmtFee(feeEst)}</span>
+            )}
+          </div>
+        )}
 
         <div>
           <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">¿Cuánto {srcLabel} quieres convertir?</label>
@@ -2108,6 +2148,7 @@ export default function WalletPage() {
   const [dailyLimits,       setDailyLimits]       = useState(null)
   const [usdcRate,          setUsdcRate]          = useState(null)
   const [usdcSellRate,      setUsdcSellRate]      = useState(null)
+  const [usdcMarketRate,    setUsdcMarketRate]    = useState(null)
   const [bobTxFilter,       setBobTxFilter]       = useState('all')
   const [usdcTxFilter,      setUsdcTxFilter]      = useState('all')
   const [copiedMemo,        setCopiedMemo]        = useState(false)
@@ -2212,6 +2253,9 @@ export default function WalletPage() {
       // Tasa de venta (USDC→BOB) para el swap unificado
       const s = Number(data?.sellBobPerUsdc)
       if (Number.isFinite(s) && s > 0) setUsdcSellRate(s)
+      // Tasa de mercado (referencia sin spread) para mostrar la comisión por conversión
+      const mk = Number(data?.marketRate)
+      if (Number.isFinite(mk) && mk > 0) setUsdcMarketRate(mk)
     } catch (err) {
       console.warn('[fetchUSDCRate] error al obtener tasa:', err?.status, err?.message)
     }
@@ -2650,6 +2694,7 @@ export default function WalletPage() {
         usdcBalance={usdcAvailable}
         buyRate={usdcRate}
         sellRate={usdcSellRate}
+        marketRate={usdcMarketRate}
         initialDirection={convertDirection}
       />
       <AliasModal
