@@ -903,7 +903,11 @@ const FEE_FIELDS = [
   'businessUsdcP2pFeePercent', 'businessUsdcP2pFeeFixed',
   'usdcP2pMinPerTx', 'usdcP2pMaxPerTx', 'usdcP2pMaxDaily',
   'businessUsdcP2pMaxPerTx', 'businessUsdcP2pMaxDaily',
+  'convertBuySpreadPct', 'convertSellSpreadPct',
 ]
+
+// Campos que admiten vacío = null ("usar default de entorno" / sin techo).
+const NULLABLE_FEE_FIELDS = ['usdcP2pFeeMax', 'convertBuySpreadPct', 'convertSellSpreadPct']
 
 // Normaliza un valor de config a string para el input (null → '')
 const toStr = v => (v == null ? '' : String(v))
@@ -997,8 +1001,8 @@ function WalletFeesPanel() {
     const out = {}
     if (form.usdcP2pEnabled !== !!cfg.usdcP2pEnabled) out.usdcP2pEnabled = form.usdcP2pEnabled
     for (const k of FEE_FIELDS) {
-      if (k === 'usdcP2pFeeMax') {
-        // null/'' = sin techo
+      if (NULLABLE_FEE_FIELDS.includes(k)) {
+        // null/'' = usar default de entorno (o sin techo)
         const formNull = form[k] === '' || form[k] == null
         const cfgNull  = cfg[k] == null
         if (formNull && cfgNull) continue
@@ -1036,7 +1040,7 @@ function WalletFeesPanel() {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-[1rem] font-bold text-white flex items-center gap-2">
           <Percent size={17} className="text-[#C4CBD8]" />
-          Comisiones P2P USDC
+          Comisiones & Spreads de Wallet
         </h2>
         <button onClick={load}
           className="flex items-center gap-2 text-[0.8125rem] font-medium text-[#8A96B8] hover:text-white px-3 py-2 rounded-xl transition-colors"
@@ -1086,6 +1090,25 @@ function WalletFeesPanel() {
             <FeeGroup title="Límites business">
               <FeeField label="Máx por tx"    value={form.businessUsdcP2pMaxPerTx} onChange={v => set('businessUsdcP2pMaxPerTx', v)} suffix="USDC" />
               <FeeField label="Máx diario"    value={form.businessUsdcP2pMaxDaily} onChange={v => set('businessUsdcP2pMaxDaily', v)} suffix="USDC" />
+            </FeeGroup>
+
+            <FeeGroup title="Spreads de conversión — Swap BOB ⇄ USDC">
+              <FeeField
+                label="Spread compra (BOB→USDC)"
+                value={form.convertBuySpreadPct}
+                onChange={v => set('convertBuySpreadPct', v)}
+                suffix="%"
+                placeholder={`def ${cfg?.effectiveConvertBuySpreadPct ?? 2}`}
+                help={`Vacío = usar default de entorno (activo: ${cfg?.effectiveConvertBuySpreadPct ?? 2}%)`}
+              />
+              <FeeField
+                label="Spread venta (USDC→BOB)"
+                value={form.convertSellSpreadPct}
+                onChange={v => set('convertSellSpreadPct', v)}
+                suffix="%"
+                placeholder={`def ${cfg?.effectiveConvertSellSpreadPct ?? 2}`}
+                help={`Vacío = usar default de entorno (activo: ${cfg?.effectiveConvertSellSpreadPct ?? 2}%)`}
+              />
             </FeeGroup>
 
             {error && (
