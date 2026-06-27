@@ -1359,12 +1359,17 @@ function USDCDepositModal({ open, onClose, instructions }) {
 const SWAP_MIN_BOB  = 50
 const SWAP_MIN_USDC = 5
 
-function ConvertModal({ open, onClose, onSuccess, bobBalance, usdcBalance, buyRate, sellRate }) {
-  const [direction, setDirection] = useState('bob_to_usdc') // 'bob_to_usdc' | 'usdc_to_bob'
+function ConvertModal({ open, onClose, onSuccess, bobBalance, usdcBalance, buyRate, sellRate, initialDirection = 'bob_to_usdc' }) {
+  const [direction, setDirection] = useState(initialDirection) // 'bob_to_usdc' | 'usdc_to_bob'
   const [amount, setAmount]   = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult]   = useState(null)
   const [error, setError]     = useState('')
+
+  // Al abrir, preseleccionar la dirección según la card desde donde se invocó.
+  useEffect(() => {
+    if (open) { setDirection(initialDirection); setAmount(''); setResult(null); setError('') }
+  }, [open, initialDirection])
 
   const isBuy      = direction === 'bob_to_usdc'
   const rate       = isBuy ? buyRate : sellRate           // bobPerUsdc (compra o venta)
@@ -1378,7 +1383,7 @@ function ConvertModal({ open, onClose, onSuccess, bobBalance, usdcBalance, buyRa
   const n      = Number(amount)
   const estOut = (rate && n) ? (isBuy ? n / rate : n * rate) : null
 
-  function handleClose() { setAmount(''); setResult(null); setError(''); setDirection('bob_to_usdc'); onClose() }
+  function handleClose() { setAmount(''); setResult(null); setError(''); setDirection(initialDirection); onClose() }
   function switchDir(d)  { if (d === direction) return; setDirection(d); setAmount(''); setError(''); setResult(null) }
 
   async function handleSubmit(e) {
@@ -2091,6 +2096,8 @@ export default function WalletPage() {
 
   const [showUSDCDeposit,   setShowUSDCDeposit]   = useState(false)
   const [showConvert,       setShowConvert]       = useState(false)
+  const [convertDirection,  setConvertDirection]  = useState('bob_to_usdc')
+  const openConvert = (dir) => { setConvertDirection(dir); setShowConvert(true) }
   const [showAlias,         setShowAlias]         = useState(false)
   const [showReceiveUSDC,   setShowReceiveUSDC]   = useState(false)
   const [aliasData,         setAliasData]         = useState(null)  // { alias, canChangeAt } | false
@@ -2378,7 +2385,19 @@ export default function WalletPage() {
                   </button>
                 ))}
               </div>
-            ) : (
+            ) : null}
+
+            {/* Conversión directa BOB → USDC */}
+            {wallet?.status === 'active' && (
+              <button onClick={() => openConvert('bob_to_usdc')}
+                className="w-full mt-2.5 flex items-center justify-center gap-2 py-3 rounded-2xl transition-all active:scale-95"
+                style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.28)' }}>
+                <ArrowRightLeft size={16} className="text-white" />
+                <span className="text-[0.8125rem] font-semibold text-white">Convertir a USDC</span>
+              </button>
+            )}
+
+            {wallet?.status !== 'active' && wallet?.status && (
               <div className="mt-4 rounded-2xl px-4 py-3 flex items-center gap-3"
                 style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)' }}>
                 <AlertCircle size={18} className="text-[#F87171] flex-shrink-0" />
@@ -2518,7 +2537,6 @@ export default function WalletPage() {
                     { label: 'Depositar', icon: ArrowDownToLine, action: openUSDCDeposit,                        primary: true  },
                     { label: 'Enviar',    icon: ArrowUpRight,    action: () => navigate('/wallet/usdc/send'),     primary: false },
                     { label: 'Cobrar',    icon: QrCode,          action: () => setShowReceiveUSDC(true),          primary: false },
-                    { label: 'Convertir', icon: ArrowRightLeft,  action: () => setShowConvert(true),              primary: false },
                   ].map(({ label, icon: Icon, action, primary }) => (
                     <button key={label} onClick={action}
                       className="flex-1 flex flex-col items-center gap-2 py-3.5 rounded-2xl transition-all active:scale-95"
@@ -2531,12 +2549,15 @@ export default function WalletPage() {
                     </button>
                   ))}
                 </div>
-                {usdcRate && (
-                  <div className="mt-3 flex items-center justify-center gap-1.5">
-                    <ArrowRightLeft size={11} className="text-white/50" />
-                    <span className="text-[0.6875rem] text-white/60">1 USDC = Bs. {usdcRate.toFixed(2)}</span>
-                  </div>
-                )}
+                {/* Conversión directa USDC → BOB */}
+                <button onClick={() => openConvert('usdc_to_bob')}
+                  className="w-full mt-2.5 flex items-center justify-center gap-2 py-3 rounded-2xl transition-all active:scale-95"
+                  style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.28)' }}>
+                  <ArrowRightLeft size={16} className="text-white" />
+                  <span className="text-[0.8125rem] font-semibold text-white">
+                    Convertir a BOB{usdcRate ? ` · 1 USDC = Bs. ${usdcRate.toFixed(2)}` : ''}
+                  </span>
+                </button>
               </>
             )}
           </div>
@@ -2629,6 +2650,7 @@ export default function WalletPage() {
         usdcBalance={usdcAvailable}
         buyRate={usdcRate}
         sellRate={usdcSellRate}
+        initialDirection={convertDirection}
       />
       <AliasModal
         open={showAlias}
