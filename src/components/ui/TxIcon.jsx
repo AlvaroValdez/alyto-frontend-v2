@@ -19,6 +19,7 @@ const TYPE_MAP = {
   unfreeze:     { Icon: Unlock,         bg: 'var(--color-accent-bg)',   color: 'var(--color-accent)'   },
   fee:          { Icon: DollarSign,     bg: 'var(--color-warning-bg)',  color: 'var(--color-warning)'  },
   bob_to_usdc:  { Icon: RefreshCw,      bg: 'var(--color-transit-bg)',  color: 'var(--color-transit)'  },
+  usdc_to_bob:  { Icon: RefreshCw,      bg: 'var(--color-transit-bg)',  color: 'var(--color-transit)'  },
   usdc_deposit: { Icon: Landmark,       bg: 'var(--color-accent-bg)',   color: 'var(--color-accent)'   },
 };
 

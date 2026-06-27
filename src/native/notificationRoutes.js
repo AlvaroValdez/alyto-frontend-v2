@@ -19,20 +19,22 @@ export function resolveNotificationUrl(data = {}) {
     type === 'payout_sent'
   )) return `/transactions/${txId}`;
 
-  // Wallet BOB
+  // Wallet BOB (incluye USDC→BOB, cuyo resultado acredita BOB)
   if (
-    type === 'deposit_confirmed'    ||
-    type === 'withdrawal_requested' ||
-    type === 'wallet_frozen'        ||
-    type === 'wallet_unfrozen'      ||
-    type === 'p2p_received'
+    type === 'deposit_confirmed'     ||
+    type === 'withdrawal_requested'  ||
+    type === 'wallet_frozen'         ||
+    type === 'wallet_unfrozen'       ||
+    type === 'p2p_received'          ||
+    type === 'usdc_to_bob_confirmed' ||
+    type === 'usdc_to_bob_rejected'
   ) return '/wallet';
 
-  // Wallet USDC
+  // Wallet USDC (incluye BOB→USDC, cuyo resultado acredita USDC)
   if (
-    type === 'usdc_received'             ||
-    type === 'usdc_conversion_confirmed' ||
-    type === 'usdc_conversion_rejected'
+    type === 'usdc_received'        ||
+    type === 'conversion_confirmed' ||
+    type === 'conversion_rejected'
   ) return '/wallet/usdc';
 
   // KYB

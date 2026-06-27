@@ -92,6 +92,7 @@ function TxIcon({ type }) {
     unfreeze:    { icon: CheckCircle2,    color: '#22C55E', bg: '#22C55E1A' },
     fee:         { icon: ArrowRightLeft,  color: '#8A96B8', bg: '#C4CBD81A' },
     bob_to_usdc: { icon: ArrowRightLeft,  color: '#F59E0B', bg: '#F59E0B1A' },
+    usdc_to_bob: { icon: ArrowRightLeft,  color: '#F59E0B', bg: '#F59E0B1A' },
     usdc_deposit:{ icon: ArrowDownToLine, color: '#22C55E', bg: '#22C55E1A' },
     p2p_send:    { icon: ArrowUpRight,    color: '#F87171', bg: '#EF44441A' },
     p2p_receive: { icon: ArrowDownToLine, color: '#22C55E', bg: '#22C55E1A' },
@@ -1518,6 +1519,7 @@ function txLabel(tx) {
     unfreeze:     'Descongelamiento',
     fee:          'Comisión',
     bob_to_usdc:  'Conversión BOB → USDC',
+    usdc_to_bob:  'Conversión USDC → BOB',
     usdc_deposit: 'Depósito USDC',
     p2p_send:     tx.metadata?.recipientAlias ? `Para @${tx.metadata.recipientAlias}` : 'Envío USDC',
     p2p_receive:  tx.metadata?.senderAlias    ? `De @${tx.metadata.senderAlias}`       : 'USDC recibido',
@@ -2415,11 +2417,12 @@ export default function WalletPage() {
             <div className="mb-3">
               <FilterChips
                 filters={[
-                  { key: 'all',        label: 'Todos'     },
-                  { key: 'deposit',    label: 'Depósitos' },
-                  { key: 'send',       label: 'Envíos'    },
-                  { key: 'withdrawal', label: 'Retiros'   },
-                  { key: 'receive',    label: 'Recibidos' },
+                  { key: 'all',         label: 'Todos'        },
+                  { key: 'deposit',     label: 'Depósitos'    },
+                  { key: 'send',        label: 'Envíos'       },
+                  { key: 'withdrawal',  label: 'Retiros'      },
+                  { key: 'receive',     label: 'Recibidos'    },
+                  { key: 'bob_to_usdc', label: 'Conversiones' },
                 ]}
                 active={bobTxFilter}
                 onChange={f => { setBobTxFilter(f); setTxPage(1) }}
@@ -2595,7 +2598,7 @@ export default function WalletPage() {
                   { key: 'receive',      label: 'Recibidos'    },
                   { key: 'send',         label: 'Enviados'     },
                   { key: 'usdc_deposit', label: 'Depósitos'    },
-                  { key: 'bob_to_usdc',  label: 'Conversiones' },
+                  { key: 'usdc_to_bob',  label: 'Conversiones' },
                 ]}
                 active={usdcTxFilter}
                 onChange={f => { setUsdcTxFilter(f); setUsdcTxPage(1) }}

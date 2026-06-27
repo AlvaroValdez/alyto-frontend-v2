@@ -29,6 +29,8 @@ const TYPE_CONFIG = {
   p2p_received:         { Icon: Wallet,         color: '#1D3461', bg: '#1D34611A' },
   conversion_confirmed: { Icon: ArrowRightLeft, color: '#1D3461', bg: '#1D34611A' },
   conversion_rejected:  { Icon: AlertCircle,    color: '#EF4444', bg: '#EF44441A' },
+  usdc_to_bob_confirmed:{ Icon: ArrowRightLeft, color: '#1D3461', bg: '#1D34611A' },
+  usdc_to_bob_rejected: { Icon: AlertCircle,    color: '#EF4444', bg: '#EF44441A' },
   qr_payment:           { Icon: Wallet,         color: '#3B82F6', bg: '#3B82F61A' },
   kyc:                  { Icon: CheckCircle2,   color: '#F59E0B', bg: '#F59E0B1A' },
   // ── KYB / cuenta business ──
