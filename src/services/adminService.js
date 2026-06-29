@@ -186,6 +186,22 @@ export function getTransactionComprobante(transactionId) {
   return request(`/admin/transactions/${encodeURIComponent(transactionId)}/comprobante`)
 }
 
+// ── Trazabilidad de retiros (soporte) ───────────────────────────────────────────
+
+/**
+ * Trazabilidad completa de los retiros de un usuario. Busca por email, userId,
+ * wtxId, alias o nombre y devuelve cada retiro enriquecido (montos, horas, banco
+ * destino, admin que procesó, comprobante y audit trail Stellar).
+ * @param {string} query  email | userId | wtxId | alias | nombre
+ * @param {string} [status]  filtro opcional por estado del retiro
+ * @returns {Promise<{ matchedBy, query, usuarios, resumen, retiros }>}
+ */
+export function traceWithdrawals(query, status) {
+  const params = new URLSearchParams({ query })
+  if (status) params.set('status', status)
+  return request(`/admin/wallet/withdrawals/trace?${params.toString()}`)
+}
+
 // ── Fondeo ─────────────────────────────────────────────────────────────────────
 
 /**
