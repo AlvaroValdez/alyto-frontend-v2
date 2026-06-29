@@ -11,12 +11,14 @@ import {
   Wallet, CheckCircle2, AlertCircle, Loader2, RefreshCw,
   ChevronDown, X, Lock, Unlock, ArrowRightLeft, ArrowUpRight, QrCode,
   Percent, Save, Coins, Eye, FileText, Phone, CreditCard, Upload,
+  Search, ExternalLink, Landmark, Clock, User, History,
 } from 'lucide-react'
 import { request, requestFormData } from '../../../services/api'
 import {
   listPendingConversions, confirmConversion, rejectConversion,
   listPendingUSDCtoBOB, confirmUSDCtoBOB, rejectUSDCtoBOB,
   getWalletFees, updateWalletFees, getWalletFeeRevenue,
+  traceWithdrawals,
 } from '../../../services/adminService'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -54,7 +56,7 @@ function depUser(d) {
 
 // ── Modal Ver Comprobante ─────────────────────────────────────────────────────
 
-function ProofViewerModal({ wtxId, open, onClose }) {
+function ProofViewerModal({ wtxId, open, onClose, kind = 'deposit' }) {
   const [loading, setLoading] = useState(false)
   const [proof, setProof]     = useState(null)
   const [error, setError]     = useState('')
@@ -63,12 +65,15 @@ function ProofViewerModal({ wtxId, open, onClose }) {
     if (!open || !wtxId) return
     let active = true
     setLoading(true); setError(''); setProof(null)
-    request(`/admin/wallet/deposits/${encodeURIComponent(wtxId)}/comprobante`)
+    const path = kind === 'withdrawal'
+      ? `/admin/wallet/withdrawals/${encodeURIComponent(wtxId)}/comprobante`
+      : `/admin/wallet/deposits/${encodeURIComponent(wtxId)}/comprobante`
+    request(path)
       .then(d => { if (active) setProof(d) })
       .catch(e => { if (active) setError(e.message ?? 'No se pudo cargar el comprobante.') })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [open, wtxId])
+  }, [open, wtxId, kind])
 
   if (!open) return null
   const isPdf = proof?.mimeType === 'application/pdf'
@@ -276,21 +281,15 @@ function ConfirmWithdrawalModal({ withdrawal, open, onClose, onSuccess }) {
   async function handleConfirm(e) {
     e.preventDefault(); setError('')
     if (!bankReference.trim()) return setError('La referencia bancaria es obligatoria.')
+    if (!proofFile) return setError('El comprobante de la transferencia es obligatorio.')
     setLoading(true)
     try {
-      if (proofFile) {
-        const fd = new FormData()
-        fd.append('wtxId', withdrawal?.wtxId)
-        fd.append('bankReference', bankReference)
-        fd.append('note', note)
-        fd.append('comprobante', proofFile)
-        await requestFormData('/admin/wallet/withdrawal/confirm', fd)
-      } else {
-        await request('/admin/wallet/withdrawal/confirm', {
-          method: 'POST',
-          body: JSON.stringify({ wtxId: withdrawal?.wtxId, bankReference, note }),
-        })
-      }
+      const fd = new FormData()
+      fd.append('wtxId', withdrawal?.wtxId)
+      fd.append('bankReference', bankReference)
+      fd.append('note', note)
+      fd.append('comprobante', proofFile)
+      await requestFormData('/admin/wallet/withdrawal/confirm', fd)
       onSuccess?.(); handleClose()
     } catch (err) {
       setError(err.message ?? 'Error al confirmar el retiro.')
@@ -371,7 +370,8 @@ function ConfirmWithdrawalModal({ withdrawal, open, onClose, onSuccess }) {
           </div>
           <div>
             <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">
-              Comprobante de la transferencia <span className="text-[#8A96B8] font-normal">(lo verá el usuario)</span>
+              Comprobante de la transferencia <span className="text-[#F87171]">*</span>
+              <span className="text-[#8A96B8] font-normal"> (obligatorio — lo verá el usuario)</span>
             </label>
             {!proofFile ? (
               <label className="flex flex-col items-center gap-1.5 py-4 rounded-xl cursor-pointer transition-colors hover:bg-[#0F1628]"
@@ -1175,6 +1175,227 @@ function WalletFeesPanel() {
   )
 }
 
+// ── Badge de estado de retiro ──────────────────────────────────────────────────
+
+function WithdrawalStatusBadge({ status }) {
+  const map = {
+    pending:    { bg: '#C4CBD81A', text: '#C4CBD8', label: 'Pendiente' },
+    dispatched: { bg: '#3B82F61A', text: '#60A5FA', label: 'Dispersado' },
+    completed:  { bg: '#22C55E1A', text: '#22C55E', label: 'Completado' },
+    failed:     { bg: '#EF44441A', text: '#F87171', label: 'Fallido' },
+    reversed:   { bg: '#EF44441A', text: '#F87171', label: 'Revertido' },
+  }
+  const s = map[status] ?? { bg: '#4E5A7A1A', text: '#8A96B8', label: status ?? '—' }
+  return (
+    <span className="text-[0.625rem] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+      style={{ background: s.bg, color: s.text }}>
+      {s.label}
+    </span>
+  )
+}
+
+// ── Sección: Trazabilidad de retiros (soporte) ──────────────────────────────────
+
+/**
+ * Buscador de retiros por usuario para que soporte responda de forma óptima.
+ * Muestra cada retiro con montos, horas, banco destino, admin que procesó,
+ * comprobante y audit trail Stellar.
+ */
+function WithdrawalTraceSection() {
+  const [query, setQuery]     = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
+  const [data, setData]       = useState(null)
+  const [viewProof, setViewProof] = useState(null)   // wtxId del comprobante a ver
+
+  async function handleSearch(e) {
+    e?.preventDefault()
+    const q = query.trim()
+    if (!q) return
+    setLoading(true); setError(''); setData(null)
+    try {
+      const res = await traceWithdrawals(q)
+      setData(res)
+    } catch (err) {
+      setError(err.message ?? 'No se pudo obtener la trazabilidad.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <section>
+      <div className="flex items-center gap-2 mb-1">
+        <History size={16} className="text-[#C4CBD8]" />
+        <h2 className="text-[1rem] font-bold text-white">Trazabilidad de retiros</h2>
+      </div>
+      <p className="text-[0.8125rem] text-[#8A96B8] mb-4">
+        Busca por email, nombre, alias, userId o wtxId para ver el historial completo de retiros de un usuario.
+      </p>
+
+      {/* Buscador */}
+      <form onSubmit={handleSearch} className="flex gap-2 mb-4">
+        <div className="relative flex-1">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4E5A7A]" />
+          <input
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="email, nombre, alias, userId o WTX-…"
+            className="w-full bg-[#1A2340] text-white text-[0.9375rem] rounded-xl pl-9 pr-3 py-3 placeholder:text-[#4E5A7A] focus:outline-none"
+            style={{ border: '1px solid #263050' }}
+            onFocus={e => (e.target.style.borderColor = '#C4CBD8')}
+            onBlur={e => (e.target.style.borderColor = '#263050')}
+          />
+        </div>
+        <button type="submit" disabled={loading || !query.trim()}
+          className="flex items-center gap-2 font-bold text-[0.9375rem] px-5 rounded-xl transition-colors disabled:opacity-40"
+          style={{ background: '#C4CBD8', color: '#0F1628' }}>
+          {loading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+          Buscar
+        </button>
+      </form>
+
+      {error && (
+        <div className="flex items-center gap-2 text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3 mb-4">
+          <AlertCircle size={15} /> {error}
+        </div>
+      )}
+
+      {data && (
+        <div className="space-y-4">
+          {/* Resumen */}
+          <div className="flex flex-wrap items-center gap-3 text-[0.8125rem]">
+            <span className="text-[#8A96B8]">
+              {data.usuarios?.length === 1
+                ? <>Usuario: <span className="text-white font-semibold">{data.usuarios[0].nombre}</span> <span className="text-[#4E5A7A]">· {data.usuarios[0].email}</span></>
+                : <><span className="text-white font-semibold">{data.usuarios?.length ?? 0}</span> usuarios coincidentes</>}
+            </span>
+            <span className="px-2.5 py-1 rounded-full" style={{ background: '#C4CBD81A', color: '#C4CBD8' }}>
+              {data.resumen?.totalRetiros ?? 0} retiros
+            </span>
+            <span className="px-2.5 py-1 rounded-full" style={{ background: '#22C55E1A', color: '#22C55E' }}>
+              {formatBOB(data.resumen?.totalRetiradoBOB)} retirado
+            </span>
+          </div>
+
+          {(data.retiros?.length ?? 0) === 0 ? (
+            <div className="text-[0.8125rem] text-[#8A96B8] bg-[#1A2340] rounded-xl px-4 py-6 text-center"
+              style={{ border: '1px solid #263050' }}>
+              Este usuario no tiene retiros registrados.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {data.retiros.map((r) => (
+                <div key={r.wtxId} className="bg-[#1A2340] rounded-2xl p-4"
+                  style={{ border: '1px solid #263050' }}>
+
+                  {/* Cabecera: monto + estado */}
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                      <p className="text-[1.125rem] font-extrabold text-white leading-none">{formatBOB(r.monto)}</p>
+                      <p className="text-[0.6875rem] text-[#4E5A7A] mt-1 font-mono">{r.wtxId}</p>
+                    </div>
+                    <WithdrawalStatusBadge status={r.estado} />
+                  </div>
+
+                  {/* Grid de detalle */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-[0.8125rem]">
+                    {/* Usuario */}
+                    <div className="flex items-start gap-2">
+                      <User size={13} className="text-[#4E5A7A] mt-0.5 shrink-0" />
+                      <span className="text-[#8A96B8]">
+                        {r.usuario?.nombre}{r.usuario?.email ? <span className="text-[#4E5A7A]"> · {r.usuario.email}</span> : null}
+                      </span>
+                    </div>
+                    {/* Banco destino */}
+                    <div className="flex items-start gap-2">
+                      <Landmark size={13} className="text-[#4E5A7A] mt-0.5 shrink-0" />
+                      <span className="text-[#8A96B8]">
+                        {r.destino?.banco ?? r.destino?.metodo ?? '—'}
+                        {r.destino?.numeroCuenta ? <span className="text-[#4E5A7A]"> · {r.destino.numeroCuenta}</span> : null}
+                        {r.destino?.titular ? <><br /><span className="text-[#4E5A7A]">{r.destino.titular} · {r.destino.tipoCuenta ?? ''}</span></> : null}
+                      </span>
+                    </div>
+                    {/* Solicitado */}
+                    <div className="flex items-start gap-2">
+                      <Clock size={13} className="text-[#4E5A7A] mt-0.5 shrink-0" />
+                      <span className="text-[#8A96B8]">Solicitado: <span className="text-white">{formatDate(r.tiempos?.solicitado)}</span></span>
+                    </div>
+                    {/* Confirmado */}
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 size={13} className="text-[#4E5A7A] mt-0.5 shrink-0" />
+                      <span className="text-[#8A96B8]">
+                        {r.tiempos?.confirmado
+                          ? <>Confirmado: <span className="text-white">{formatDate(r.tiempos.confirmado)}</span></>
+                          : <span className="text-[#4E5A7A]">Sin confirmar</span>}
+                      </span>
+                    </div>
+                    {/* Referencia bancaria */}
+                    {r.destino?.referenciaBancaria && (
+                      <div className="flex items-start gap-2">
+                        <FileText size={13} className="text-[#4E5A7A] mt-0.5 shrink-0" />
+                        <span className="text-[#8A96B8]">Ref. banco: <span className="text-white">{r.destino.referenciaBancaria}</span></span>
+                      </div>
+                    )}
+                    {/* Procesado por */}
+                    {(r.procesadoPor?.confirmadoPor || r.procesadoPor?.dispersadoPor) && (
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 size={13} className="text-[#4E5A7A] mt-0.5 shrink-0" />
+                        <span className="text-[#8A96B8]">Procesado por: <span className="text-white">{r.procesadoPor.confirmadoPor ?? r.procesadoPor.dispersadoPor}</span></span>
+                      </div>
+                    )}
+                    {/* Rechazo */}
+                    {r.destino?.rechazo && (
+                      <div className="flex items-start gap-2 sm:col-span-2">
+                        <AlertCircle size={13} className="text-[#F87171] mt-0.5 shrink-0" />
+                        <span className="text-[#F87171]">{r.destino.rechazo}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Acciones: comprobante + Stellar */}
+                  <div className="flex flex-wrap items-center gap-2 mt-3 pt-3" style={{ borderTop: '1px solid #263050' }}>
+                    {r.comprobante?.disponible ? (
+                      <button onClick={() => setViewProof(r.wtxId)}
+                        className="flex items-center gap-1.5 text-[0.75rem] font-semibold px-3 py-1.5 rounded-lg"
+                        style={{ background: '#C4CBD81A', color: '#C4CBD8', border: '1px solid #C4CBD833' }}>
+                        <Eye size={13} /> Ver comprobante
+                      </button>
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-[0.75rem] text-[#4E5A7A] px-3 py-1.5">
+                        <FileText size={13} /> Sin comprobante
+                      </span>
+                    )}
+                    {r.stellar?.txId ? (
+                      <a href={r.stellar.explorerUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-[0.75rem] font-semibold px-3 py-1.5 rounded-lg"
+                        style={{ background: '#22C55E1A', color: '#22C55E', border: '1px solid #22C55E33' }}>
+                        <ExternalLink size={13} /> Audit trail Stellar
+                      </a>
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-[0.75rem] text-[#4E5A7A] px-3 py-1.5">
+                        <AlertCircle size={13} /> Sin audit trail on-chain
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Visor de comprobante de retiro */}
+      <ProofViewerModal
+        kind="withdrawal"
+        wtxId={viewProof}
+        open={!!viewProof}
+        onClose={() => setViewProof(null)}
+      />
+    </section>
+  )
+}
+
 export default function WalletAdminPage() {
   const [deposits, setDeposits]         = useState([])
   const [withdrawals, setWithdrawals]   = useState([])
@@ -1664,6 +1885,9 @@ export default function WalletAdminPage() {
 
       {/* ── SECCIÓN 5: Comisiones P2P USDC ──────────────────────────────── */}
       <WalletFeesPanel />
+
+      {/* ── SECCIÓN 6: Trazabilidad de retiros (soporte) ────────────────── */}
+      <WithdrawalTraceSection />
 
       {/* ── Modals ──────────────────────────────────────────────────────── */}
       <ConfirmDepositModal
