@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { User, Phone, Globe, Languages, DollarSign, Lock, Edit2, Check, X, Loader2 } from 'lucide-react'
+import { User, Mail, Phone, Globe, Languages, DollarSign, Lock, Edit2, Check, X, Loader2 } from 'lucide-react'
 
 const LANGUAGES = [
   { value: 'es', label: 'Español' },
@@ -198,6 +198,19 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
               />
             </div>
 
+            {/* Correo electrónico — solo lectura, es el correo de registro */}
+            <div className="px-4 py-3">
+              <label className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
+                Correo electrónico
+              </label>
+              <div className="flex items-center gap-2 bg-[#F0F2F7] border border-[#E2E8F0] rounded-xl px-3 py-2.5">
+                <Mail size={14} className="text-[#94A3B8]" />
+                <span className="text-[0.9375rem] text-[#94A3B8] flex-1 truncate">{profile?.email ?? '—'}</span>
+                <Lock size={12} className="text-[#94A3B8]" />
+              </div>
+              <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Es el correo con el que te registraste.</p>
+            </div>
+
             {/* Teléfono */}
             <div className="px-4 py-3">
               <label className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
@@ -260,6 +273,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
           /* ── Modo lectura ─────────────────────────────────────── */
           <>
             <ReadField icon={User}      label="Nombre"          value={`${profile?.firstName ?? ''} ${profile?.lastName ?? ''}`.trim()} />
+            <ReadField icon={Mail}      label="Correo electrónico" value={profile?.email} locked />
             <ReadField icon={Phone}     label="Teléfono"        value={profile?.phone} />
             <ReadField icon={Globe}     label="País / Entidad"  value={countryLabel} locked />
             <ReadField icon={Languages} label="Idioma"          value={LANGUAGES.find(l => l.value === (profile?.preferences?.language ?? 'es'))?.label} />
