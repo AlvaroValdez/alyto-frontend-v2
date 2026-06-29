@@ -18,7 +18,7 @@ import {
   listPendingConversions, confirmConversion, rejectConversion,
   listPendingUSDCtoBOB, confirmUSDCtoBOB, rejectUSDCtoBOB,
   getWalletFees, updateWalletFees, getWalletFeeRevenue,
-  traceWithdrawals,
+  traceWithdrawals, attachWithdrawalComprobante, listAllWithdrawals,
 } from '../../../services/adminService'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -1194,6 +1194,39 @@ function WithdrawalStatusBadge({ status }) {
   )
 }
 
+// ── Botón: adjuntar comprobante a un retiro existente ───────────────────────────
+
+function ComprobanteAttachButton({ wtxId, onUploaded }) {
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
+
+  async function handleFile(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''   // permite re-seleccionar el mismo archivo
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) { setError('Máx 5 MB'); return }
+    setLoading(true); setError('')
+    try {
+      await attachWithdrawalComprobante(wtxId, file)
+      onUploaded?.()
+    } catch (err) {
+      setError(err.message ?? 'Error al adjuntar')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <label className="flex items-center gap-1.5 text-[0.75rem] font-semibold px-3 py-1.5 rounded-lg cursor-pointer"
+      style={{ background: error ? '#EF44441A' : '#C4CBD81A', color: error ? '#F87171' : '#C4CBD8', border: `1px dashed ${error ? '#EF444433' : '#C4CBD833'}` }}
+      title="Adjuntar comprobante de la transferencia">
+      {loading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+      {error || 'Adjuntar comprobante'}
+      <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" onChange={handleFile} disabled={loading} />
+    </label>
+  )
+}
+
 // ── Sección: Trazabilidad de retiros (soporte) ──────────────────────────────────
 
 /**
@@ -1362,9 +1395,7 @@ function WithdrawalTraceSection() {
                         <Eye size={13} /> Ver comprobante
                       </button>
                     ) : (
-                      <span className="flex items-center gap-1.5 text-[0.75rem] text-[#4E5A7A] px-3 py-1.5">
-                        <FileText size={13} /> Sin comprobante
-                      </span>
+                      <ComprobanteAttachButton wtxId={r.wtxId} onUploaded={() => handleSearch()} />
                     )}
                     {r.stellar?.txId ? (
                       <a href={r.stellar.explorerUrl} target="_blank" rel="noopener noreferrer"
@@ -1392,6 +1423,228 @@ function WithdrawalTraceSection() {
         open={!!viewProof}
         onClose={() => setViewProof(null)}
       />
+    </section>
+  )
+}
+
+// ── Sección: Historial global de retiros ────────────────────────────────────────
+
+const WITHDRAWAL_STATUSES = [
+  { value: '',            label: 'Todos los estados' },
+  { value: 'pending',     label: 'Pendiente'  },
+  { value: 'dispatched',  label: 'Dispersado' },
+  { value: 'completed',   label: 'Completado' },
+  { value: 'failed',      label: 'Fallido'    },
+  { value: 'reversed',    label: 'Revertido'  },
+]
+
+/** Formatea un monto según su moneda (BOB con Bs., USDC con sufijo). */
+function formatWithdrawalAmount(amount, currency) {
+  if (currency === 'USDC') {
+    const n = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount ?? 0)
+    return `${n} USDC`
+  }
+  return formatBOB(amount)
+}
+
+/**
+ * Listado global y paginado de TODOS los retiros (cualquier estado), con filtros
+ * por estado, moneda y rango de fechas. Para auditoría y seguimiento operativo.
+ */
+function AllWithdrawalsSection() {
+  const [filters, setFilters] = useState({ status: '', currency: '', from: '', to: '' })
+  const [page, setPage]       = useState(1)
+  const [data, setData]       = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
+  const [viewProof, setViewProof] = useState(null)
+  const limit = 25
+
+  const load = useCallback(async (opts) => {
+    setLoading(true); setError('')
+    try {
+      const res = await listAllWithdrawals({ ...opts, limit })
+      setData(res)
+    } catch (err) {
+      setError(err.message ?? 'No se pudo obtener el historial de retiros.')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // Carga inicial + recarga al cambiar de página.
+  useEffect(() => {
+    load({ ...filters, page })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page])
+
+  function applyFilters(e) {
+    e?.preventDefault()
+    if (page === 1) load({ ...filters, page: 1 })
+    else setPage(1)   // el efecto recarga
+  }
+
+  function updateFilter(key, value) {
+    setFilters(prev => ({ ...prev, [key]: value }))
+  }
+
+  const totalPages = data?.totalPages ?? 1
+
+  return (
+    <section>
+      <div className="flex items-center gap-2 mb-1">
+        <ArrowUpRight size={16} className="text-[#C4CBD8]" />
+        <h2 className="text-[1rem] font-bold text-white">Historial de retiros</h2>
+        {data?.total != null && (
+          <span className="text-[0.75rem] font-semibold px-2.5 py-0.5 rounded-full"
+            style={{ background: '#C4CBD81A', color: '#C4CBD8' }}>
+            {data.total} total
+          </span>
+        )}
+      </div>
+      <p className="text-[0.8125rem] text-[#8A96B8] mb-4">
+        Todos los retiros de todos los usuarios, en cualquier estado. Filtra por estado, moneda o fecha.
+      </p>
+
+      {/* Filtros */}
+      <form onSubmit={applyFilters} className="flex flex-wrap items-end gap-2 mb-4">
+        <div className="flex flex-col gap-1">
+          <label className="text-[0.6875rem] text-[#8A96B8] uppercase tracking-wide">Estado</label>
+          <select value={filters.status} onChange={e => updateFilter('status', e.target.value)}
+            className="bg-[#1A2340] text-white text-[0.875rem] rounded-xl px-3 py-2.5 focus:outline-none"
+            style={{ border: '1px solid #263050' }}>
+            {WITHDRAWAL_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[0.6875rem] text-[#8A96B8] uppercase tracking-wide">Moneda</label>
+          <select value={filters.currency} onChange={e => updateFilter('currency', e.target.value)}
+            className="bg-[#1A2340] text-white text-[0.875rem] rounded-xl px-3 py-2.5 focus:outline-none"
+            style={{ border: '1px solid #263050' }}>
+            <option value="">Todas</option>
+            <option value="BOB">BOB</option>
+            <option value="USDC">USDC</option>
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[0.6875rem] text-[#8A96B8] uppercase tracking-wide">Desde</label>
+          <input type="date" value={filters.from} onChange={e => updateFilter('from', e.target.value)}
+            className="bg-[#1A2340] text-white text-[0.875rem] rounded-xl px-3 py-2.5 focus:outline-none"
+            style={{ border: '1px solid #263050' }} />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[0.6875rem] text-[#8A96B8] uppercase tracking-wide">Hasta</label>
+          <input type="date" value={filters.to} onChange={e => updateFilter('to', e.target.value)}
+            className="bg-[#1A2340] text-white text-[0.875rem] rounded-xl px-3 py-2.5 focus:outline-none"
+            style={{ border: '1px solid #263050' }} />
+        </div>
+        <button type="submit" disabled={loading}
+          className="flex items-center gap-2 font-bold text-[0.875rem] px-5 py-2.5 rounded-xl transition-colors disabled:opacity-40"
+          style={{ background: '#C4CBD8', color: '#0F1628' }}>
+          {loading ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
+          Filtrar
+        </button>
+      </form>
+
+      {error && (
+        <div className="flex items-center gap-2 text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-3 mb-4">
+          <AlertCircle size={15} /> {error}
+        </div>
+      )}
+
+      {/* Lista */}
+      {(data?.withdrawals?.length ?? 0) === 0 && !loading ? (
+        <div className="text-[0.8125rem] text-[#8A96B8] bg-[#1A2340] rounded-xl px-4 py-6 text-center"
+          style={{ border: '1px solid #263050' }}>
+          No hay retiros para los filtros seleccionados.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {data?.withdrawals?.map((w) => {
+            const u = w.userId
+            const m = w.metadata ?? {}
+            return (
+              <div key={w._id} className="bg-[#1A2340] rounded-2xl p-4" style={{ border: '1px solid #263050' }}>
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <p className="text-[1.0625rem] font-extrabold text-white leading-none">
+                      {formatWithdrawalAmount(w.amount, w.currency)}
+                    </p>
+                    <p className="text-[0.6875rem] text-[#4E5A7A] mt-1 font-mono">{w.wtxId}</p>
+                  </div>
+                  <WithdrawalStatusBadge status={w.status} />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-[0.8125rem]">
+                  <div className="flex items-start gap-2">
+                    <User size={13} className="text-[#4E5A7A] mt-0.5 shrink-0" />
+                    <span className="text-[#8A96B8]">
+                      {u ? `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || u.email : '—'}
+                      {u?.email ? <span className="text-[#4E5A7A]"> · {u.email}</span> : null}
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Landmark size={13} className="text-[#4E5A7A] mt-0.5 shrink-0" />
+                    <span className="text-[#8A96B8]">
+                      {m.bankName ?? m.method ?? '—'}
+                      {m.accountNumber ? <span className="text-[#4E5A7A]"> · {m.accountNumber}</span> : null}
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Clock size={13} className="text-[#4E5A7A] mt-0.5 shrink-0" />
+                    <span className="text-[#8A96B8]">Solicitado: <span className="text-white">{formatDate(w.createdAt)}</span></span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={13} className="text-[#4E5A7A] mt-0.5 shrink-0" />
+                    <span className="text-[#8A96B8]">
+                      {w.confirmedAt
+                        ? <>Confirmado: <span className="text-white">{formatDate(w.confirmedAt)}</span></>
+                        : <span className="text-[#4E5A7A]">Sin confirmar</span>}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 mt-3 pt-3" style={{ borderTop: '1px solid #263050' }}>
+                  {w.comprobanteDisponible && (
+                    <button onClick={() => setViewProof(w.wtxId)}
+                      className="flex items-center gap-1.5 text-[0.75rem] font-semibold px-3 py-1.5 rounded-lg"
+                      style={{ background: '#C4CBD81A', color: '#C4CBD8', border: '1px solid #C4CBD833' }}>
+                      <Eye size={13} /> Ver comprobante
+                    </button>
+                  )}
+                  {w.stellarTxId && w.stellarExplorerUrl && (
+                    <a href={w.stellarExplorerUrl}
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-[0.75rem] font-semibold px-3 py-1.5 rounded-lg"
+                      style={{ background: '#22C55E1A', color: '#22C55E', border: '1px solid #22C55E33' }}>
+                      <ExternalLink size={13} /> Audit trail Stellar
+                    </a>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 mt-4">
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1 || loading}
+            className="text-[0.8125rem] font-semibold px-3 py-1.5 rounded-lg disabled:opacity-40"
+            style={{ background: '#1A2340', color: '#C4CBD8', border: '1px solid #263050' }}>
+            Anterior
+          </button>
+          <span className="text-[0.8125rem] text-[#8A96B8]">Página {page} de {totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages || loading}
+            className="text-[0.8125rem] font-semibold px-3 py-1.5 rounded-lg disabled:opacity-40"
+            style={{ background: '#1A2340', color: '#C4CBD8', border: '1px solid #263050' }}>
+            Siguiente
+          </button>
+        </div>
+      )}
+
+      <ProofViewerModal kind="withdrawal" wtxId={viewProof} open={!!viewProof} onClose={() => setViewProof(null)} />
     </section>
   )
 }
@@ -1886,7 +2139,10 @@ export default function WalletAdminPage() {
       {/* ── SECCIÓN 5: Comisiones P2P USDC ──────────────────────────────── */}
       <WalletFeesPanel />
 
-      {/* ── SECCIÓN 6: Trazabilidad de retiros (soporte) ────────────────── */}
+      {/* ── SECCIÓN 6: Historial global de retiros ──────────────────────── */}
+      <AllWithdrawalsSection />
+
+      {/* ── SECCIÓN 7: Trazabilidad de retiros (soporte) ────────────────── */}
       <WithdrawalTraceSection />
 
       {/* ── Modals ──────────────────────────────────────────────────────── */}

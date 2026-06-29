@@ -202,6 +202,42 @@ export function traceWithdrawals(query, status) {
   return request(`/admin/wallet/withdrawals/trace?${params.toString()}`)
 }
 
+/**
+ * Listado global paginado de TODOS los retiros (cualquier estado), con filtros.
+ * @param {object} [opts]
+ * @param {string} [opts.status]   estado del retiro
+ * @param {string} [opts.currency] BOB | USDC
+ * @param {string} [opts.from]     fecha ISO (desde)
+ * @param {string} [opts.to]       fecha ISO (hasta)
+ * @param {number} [opts.page]     página (1-based)
+ * @param {number} [opts.limit]    tamaño de página
+ * @returns {Promise<{ withdrawals, total, page, limit, totalPages }>}
+ */
+export function listAllWithdrawals(opts = {}) {
+  const params = new URLSearchParams()
+  if (opts.status)   params.set('status',   opts.status)
+  if (opts.currency) params.set('currency', opts.currency)
+  if (opts.from)     params.set('from',     opts.from)
+  if (opts.to)       params.set('to',       opts.to)
+  if (opts.page)     params.set('page',     String(opts.page))
+  if (opts.limit)    params.set('limit',    String(opts.limit))
+  const qs = params.toString()
+  return request(`/admin/wallet/withdrawals${qs ? `?${qs}` : ''}`)
+}
+
+/**
+ * Adjunta (o reemplaza) el comprobante de la transferencia a un retiro existente,
+ * sin importar su estado. Para cerrar el respaldo ASFI de retiros completados antes
+ * de que el comprobante fuera obligatorio.
+ * @param {string} wtxId
+ * @param {File} file  imagen o PDF del comprobante
+ */
+export function attachWithdrawalComprobante(wtxId, file) {
+  const fd = new FormData()
+  fd.append('comprobante', file)
+  return requestFormData(`/admin/wallet/withdrawals/${encodeURIComponent(wtxId)}/comprobante`, fd)
+}
+
 // ── Fondeo ─────────────────────────────────────────────────────────────────────
 
 /**
