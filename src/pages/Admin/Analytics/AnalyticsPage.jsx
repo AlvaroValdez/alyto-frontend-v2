@@ -24,6 +24,12 @@ function fmt(n) {
   return n != null ? n.toLocaleString('es-CL') : '—'
 }
 
+// Formatea con código de moneda (ej. "1.234,50 BOB"). USD con prefijo $.
+function money(n, currency = 'USD') {
+  if (n == null) return '—'
+  return currency === 'USD' ? `$${fmt(n)}` : `${fmt(n)} ${currency}`
+}
+
 // ─── KPI card ─────────────────────────────────────────────────────────────────
 
 function KpiCard({ icon: Icon, label, value, sub, color = '#C4CBD8' }) {
@@ -44,7 +50,7 @@ function KpiCard({ icon: Icon, label, value, sub, color = '#C4CBD8' }) {
 
 // ─── Entity card ──────────────────────────────────────────────────────────────
 
-function EntityCard({ label, flag, txns, volume, tag, color }) {
+function EntityCard({ label, flag, txns, volumeUsd, revenueUsd, nativeVolume, nativeRevenue, currency, tag, color }) {
   return (
     <div
       className="bg-[#1A2340] rounded-2xl px-5 py-5 border"
@@ -70,9 +76,20 @@ function EntityCard({ label, flag, txns, volume, tag, color }) {
         <div className="flex items-center justify-between">
           <span className="text-[0.75rem] text-[#4E5A7A]">Volumen</span>
           <span className="text-[0.875rem] font-bold text-white tabular-nums">
-            {volume != null ? `$${fmt(volume)}` : '—'}
+            {volumeUsd != null ? `$${fmt(volumeUsd)}` : '—'}
           </span>
         </div>
+        <div className="flex items-center justify-between">
+          <span className="text-[0.75rem] text-[#4E5A7A]">Ganancia</span>
+          <span className="text-[0.875rem] font-bold tabular-nums" style={{ color: '#22C55E' }}>
+            {revenueUsd != null ? `$${fmt(revenueUsd)}` : '—'}
+          </span>
+        </div>
+        {currency && currency !== 'USD' && (nativeVolume > 0 || nativeRevenue > 0) && (
+          <p className="text-[0.6875rem] text-[#4E5A7A] pt-1">
+            Nativo: {money(nativeVolume, currency)} vol · {money(nativeRevenue, currency)} gan.
+          </p>
+        )}
       </div>
     </div>
   )
@@ -167,15 +184,15 @@ export default function AnalyticsPage() {
             <KpiCard
               icon={DollarSign}
               label="Volumen total"
-              value={global.totalVolumeCLP != null ? `$${fmt(global.totalVolumeCLP)}` : '—'}
-              sub="origen"
+              value={global.totalVolumeUsd != null ? `$${fmt(global.totalVolumeUsd)}` : '—'}
+              sub="USD (normalizado)"
               color="#C4CBD8"
             />
             <KpiCard
               icon={TrendingUp}
               label="Ganancia total"
-              value={global.totalRevenueCLP != null ? `$${fmt(global.totalRevenueCLP)}` : '—'}
-              sub="origen"
+              value={global.totalRevenueUsd != null ? `$${fmt(global.totalRevenueUsd)}` : '—'}
+              sub="USD (normalizado)"
               color="#22C55E"
             />
             <KpiCard
@@ -195,7 +212,11 @@ export default function AnalyticsPage() {
                 label="AV Finance SpA"
                 flag="🇨🇱"
                 txns={byEntity.SpA?.transactions}
-                volume={byEntity.SpA?.volume}
+                volumeUsd={byEntity.SpA?.volumeUsd}
+                revenueUsd={byEntity.SpA?.revenueUsd}
+                nativeVolume={byEntity.SpA?.volume}
+                nativeRevenue={byEntity.SpA?.revenue}
+                currency={byEntity.SpA?.currency}
                 tag="SpA · Chile"
                 color="#8AB4F8"
               />
@@ -203,7 +224,11 @@ export default function AnalyticsPage() {
                 label="AV Finance LLC"
                 flag="🇺🇸"
                 txns={byEntity.LLC?.transactions}
-                volume={byEntity.LLC?.volume}
+                volumeUsd={byEntity.LLC?.volumeUsd}
+                revenueUsd={byEntity.LLC?.revenueUsd}
+                nativeVolume={byEntity.LLC?.volume}
+                nativeRevenue={byEntity.LLC?.revenue}
+                currency={byEntity.LLC?.currency}
                 tag="LLC · EE.UU."
                 color="#C4CBD8"
               />
@@ -211,7 +236,11 @@ export default function AnalyticsPage() {
                 label="AV Finance SRL"
                 flag="🇧🇴"
                 txns={byEntity.SRL?.transactions}
-                volume={byEntity.SRL?.volume}
+                volumeUsd={byEntity.SRL?.volumeUsd}
+                revenueUsd={byEntity.SRL?.revenueUsd}
+                nativeVolume={byEntity.SRL?.volume}
+                nativeRevenue={byEntity.SRL?.revenue}
+                currency={byEntity.SRL?.currency}
                 tag="SRL · Bolivia"
                 color="#22C55E"
               />
@@ -253,13 +282,19 @@ export default function AnalyticsPage() {
                         </td>
                         <td className="px-5 py-4">
                           <p className="text-[0.8125rem] font-semibold text-white tabular-nums">
-                            {row.volume != null ? `$${fmt(row.volume)}` : '—'}
+                            {money(row.volume, row.currency)}
                           </p>
+                          {row.currency && row.currency !== 'USD' && (
+                            <p className="text-[0.625rem] text-[#4E5A7A] tabular-nums">≈ ${fmt(row.volumeUsd)} USD</p>
+                          )}
                         </td>
                         <td className="px-5 py-4">
                           <p className="text-[0.8125rem] font-semibold text-[#22C55E] tabular-nums">
-                            {row.revenue != null ? `$${fmt(row.revenue)}` : '—'}
+                            {money(row.revenue, row.currency)}
                           </p>
+                          {row.currency && row.currency !== 'USD' && (
+                            <p className="text-[0.625rem] text-[#4E5A7A] tabular-nums">≈ ${fmt(row.revenueUsd)} USD</p>
+                          )}
                         </td>
                         <td className="px-5 py-4">
                           <p className="text-[0.8125rem] font-semibold text-[#FBBF24] tabular-nums">

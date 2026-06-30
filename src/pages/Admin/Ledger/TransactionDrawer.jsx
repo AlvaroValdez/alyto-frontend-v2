@@ -849,7 +849,26 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
                 <Field label="Corredor" value={tx.routingScenario ? `Escenario ${tx.routingScenario}` : null} dim />
               </div>
 
-              {tx.feeBreakdown && (
+              {/* Desglose de fees actual (Transaction.fees). Incluye la ganancia
+                  Alyto = spread + fijo + retención (admin only). payoutFee va en
+                  moneda destino; el resto en moneda origen (feeCurrency). */}
+              {tx.fees ? (() => {
+                const f   = tx.fees
+                const cur = f.feeCurrency ?? tx.originCurrency ?? ''
+                const num = n => (n != null ? Number(n).toLocaleString('es-CL') : null)
+                const ganancia = (f.alytoCSpread ?? 0) + (f.fixedFee ?? 0) + (f.profitRetention ?? 0)
+                return (
+                  <div className="mt-3 p-3 rounded-xl bg-[#1A2340] border border-[#263050] grid grid-cols-2 gap-2">
+                    <Field label="Spread Alyto"        value={f.alytoCSpread != null ? `${num(f.alytoCSpread)} ${cur}` : null} dim />
+                    <Field label="Fee fijo"            value={f.fixedFee != null ? `${num(f.fixedFee)} ${cur}` : null} dim />
+                    <Field label="Fee payin (prov.)"   value={f.payinFee != null ? `${num(f.payinFee)} ${cur}` : null} dim />
+                    <Field label="Fee payout (prov.)"  value={f.payoutFee != null ? `${num(f.payoutFee)} ${tx.destinationCurrency ?? ''}` : null} dim />
+                    <Field label="Retención (interna)" value={f.profitRetention != null ? `${num(f.profitRetention)} ${cur}` : null} dim />
+                    <Field label="Total deducido (usuario)" value={f.totalDeducted != null ? `${num(f.totalDeducted)} ${cur}` : null} dim />
+                    <Field label="Ganancia Alyto"      value={`${num(ganancia)} ${cur}`} />
+                  </div>
+                )
+              })() : tx.feeBreakdown && (
                 <div className="mt-3 p-3 rounded-xl bg-[#1A2340] border border-[#263050] grid grid-cols-2 gap-2">
                   <Field label="Fee proveedor" value={tx.feeBreakdown.providerFee != null ? tx.feeBreakdown.providerFee?.toLocaleString('es-CL') : null} dim />
                   <Field label="Spread Alyto" value={tx.feeBreakdown.alytoFee != null ? tx.feeBreakdown.alytoFee?.toLocaleString('es-CL') : null} dim />
