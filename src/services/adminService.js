@@ -359,6 +359,20 @@ export function getWalletFeeRevenue() {
   return request('/admin/wallet-fees/revenue')
 }
 
+/**
+ * Ganancia por spread de conversiones swap (BOB↔USDC): acumulado + desglose por
+ * dirección (buy/sell) + verificación cruzada.
+ * @param {object} [opts] { from, to } — rango de fechas ISO opcional
+ * @returns {Promise<{ currency, swapRevenueAccruedBob, byDirection, totals, verification }>}
+ */
+export function getSwapRevenue(opts = {}) {
+  const params = new URLSearchParams()
+  if (opts.from) params.set('from', opts.from)
+  if (opts.to)   params.set('to',   opts.to)
+  const qs = params.toString()
+  return request(`/admin/wallet/swap-revenue${qs ? `?${qs}` : ''}`)
+}
+
 // ── Tasas de cambio ────────────────────────────────────────────────────────────
 
 /**

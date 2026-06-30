@@ -16,9 +16,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Percent, Save, RefreshCw, CheckCircle2, AlertCircle,
-  Loader2, TrendingUp, Users, Building2, ShieldCheck,
+  Loader2, TrendingUp, Users, Building2, ShieldCheck, ArrowRightLeft,
 } from 'lucide-react'
-import { getWalletFees, updateWalletFees, getWalletFeeRevenue } from '../../../services/adminService'
+import { getWalletFees, updateWalletFees, getWalletFeeRevenue, getSwapRevenue } from '../../../services/adminService'
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const BG_CARD    = '#1A2340'
@@ -291,7 +291,8 @@ export default function WalletFeesPage() {
   const [saveErr,  setSaveErr]  = useState(null)
   const [toast,    setToast]    = useState(null)
   const [meta,     setMeta]     = useState(null)   // { updatedBy, updatedAt }
-  const [revenue,  setRevenue]  = useState(null)   // from /revenue
+  const [revenue,  setRevenue]  = useState(null)   // from /revenue (P2P)
+  const [swapRev,  setSwapRev]  = useState(null)   // from /wallet/swap-revenue (conversiones)
 
   const [form, setForm] = useState(configToForm({}))
 
@@ -306,13 +307,15 @@ export default function WalletFeesPage() {
     setLoading(true)
     setError(null)
     try {
-      const [config, rev] = await Promise.all([
+      const [config, rev, swap] = await Promise.all([
         getWalletFees(),
         getWalletFeeRevenue().catch(() => null),
+        getSwapRevenue().catch(() => null),
       ])
       setForm(configToForm(config))
       setMeta({ updatedBy: config.updatedBy, updatedAt: config.updatedAt })
-      if (rev) setRevenue(rev)
+      if (rev)  setRevenue(rev)
+      if (swap) setSwapRev(swap)
     } catch (err) {
       setError(err.message || 'Error al cargar la configuración.')
     } finally {
@@ -626,6 +629,87 @@ export default function WalletFeesPage() {
           <div className="rounded-xl p-6 flex items-center justify-center" style={{ background: BG_DEEP, border: `1px solid ${BORDER}` }}>
             <p className="text-[0.8125rem]" style={{ color: TEXT_MUTED }}>
               No hay datos de revenue disponibles aún.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          BLOQUE 4 — Ganancia por conversiones Swap (read-only)
+      ══════════════════════════════════════════════════════════════════ */}
+      <div className="rounded-2xl p-6 space-y-4" style={{ background: BG_CARD, border: `1px solid ${BORDER}` }}>
+        <div className="flex items-center gap-2">
+          <ArrowRightLeft size={18} style={{ color: SILVER }} />
+          <h2 className="text-[0.9375rem] font-bold text-white">Ganancia por conversiones (Swap BOB ⇄ USDC)</h2>
+        </div>
+        <p className="text-[0.75rem] -mt-2" style={{ color: TEXT_MUTED }}>
+          Margen acumulado por el spread aplicado en las conversiones, expresado en BOB.
+        </p>
+
+        {swapRev ? (
+          <div className="flex flex-col gap-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+              {/* Total acumulado */}
+              <div className="rounded-xl px-5 py-4" style={{ background: BG_DEEP, border: `1px solid ${BORDER}` }}>
+                <p className="text-[0.75rem] font-medium mb-1" style={{ color: TEXT_MUTED }}>
+                  Ganancia total acumulada
+                </p>
+                <p className="text-[2rem] font-extrabold text-white tabular-nums leading-none">
+                  Bs. {(swapRev.swapRevenueAccruedBob ?? 0).toFixed(2)}
+                </p>
+                <p className="text-[0.75rem] mt-1.5" style={{ color: TEXT_MUTED }}>
+                  {swapRev.totals?.conversions ?? 0} conversiones
+                </p>
+              </div>
+
+              {/* Verificación */}
+              <div className="space-y-3">
+                <div
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[0.8125rem] font-semibold"
+                  style={swapRev.verification?.matches
+                    ? { background: '#22C55E1A', border: '1px solid #22C55E33', color: '#22C55E' }
+                    : { background: '#EF44441A', border: '1px solid #EF444433', color: '#EF4444' }
+                  }
+                >
+                  {swapRev.verification?.matches
+                    ? <><CheckCircle2 size={15} /> Integridad verificada</>
+                    : <><AlertCircle  size={15} /> Desajuste — revisar manualmente</>
+                  }
+                </div>
+                {swapRev.verification && (
+                  <p className="text-[0.75rem]" style={{ color: TEXT_MUTED }}>
+                    Suma en ledger: Bs. {(swapRev.verification.sumSwapTransactions ?? 0).toFixed(2)}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Desglose por dirección */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="rounded-xl px-4 py-3" style={{ background: BG_DEEP, border: `1px solid ${BORDER}` }}>
+                <p className="text-[0.75rem] font-semibold mb-1" style={{ color: TEXT_SEC }}>Compra (BOB → USDC)</p>
+                <p className="text-[1.25rem] font-extrabold text-white tabular-nums leading-none">
+                  Bs. {(swapRev.byDirection?.buy?.revenueBob ?? 0).toFixed(2)}
+                </p>
+                <p className="text-[0.75rem] mt-1" style={{ color: TEXT_MUTED }}>
+                  {swapRev.byDirection?.buy?.conversions ?? 0} conversiones
+                </p>
+              </div>
+              <div className="rounded-xl px-4 py-3" style={{ background: BG_DEEP, border: `1px solid ${BORDER}` }}>
+                <p className="text-[0.75rem] font-semibold mb-1" style={{ color: TEXT_SEC }}>Venta (USDC → BOB)</p>
+                <p className="text-[1.25rem] font-extrabold text-white tabular-nums leading-none">
+                  Bs. {(swapRev.byDirection?.sell?.revenueBob ?? 0).toFixed(2)}
+                </p>
+                <p className="text-[0.75rem] mt-1" style={{ color: TEXT_MUTED }}>
+                  {swapRev.byDirection?.sell?.conversions ?? 0} conversiones
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-xl p-6 flex items-center justify-center" style={{ background: BG_DEEP, border: `1px solid ${BORDER}` }}>
+            <p className="text-[0.8125rem]" style={{ color: TEXT_MUTED }}>
+              Aún no hay ganancias de conversiones registradas.
             </p>
           </div>
         )}
