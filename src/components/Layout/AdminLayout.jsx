@@ -177,6 +177,7 @@ export default function AdminLayout() {
         <SidebarLink to="/admin/kyb"        icon={Building2}  label="KYB"         />
         <SidebarLink to="/admin/wallet"      icon={Banknote}   label="Wallets Bolivia"      />
         <SidebarLink to="/admin/wallet-fees" icon={Percent}    label="Comisiones P2P"       />
+        <SidebarLink to="/admin/swaps"       icon={ArrowRightLeft} label="Swaps BOB ⇄ USDC" />
         <SidebarLink to="/admin/reclamos"   icon={AlertCircle}   label="Reclamos PRILI"  />
         <SidebarLink to="/admin/sanctions"  icon={ShieldAlert}   label="Sanciones AML"   />
         <SidebarLink to="/admin/users"      icon={Users}         label="Usuarios"        />

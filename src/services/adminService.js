@@ -588,6 +588,23 @@ export function rejectUSDCtoBOB(wtxId, rejectReason) {
   })
 }
 
+/**
+ * Historial global de conversiones swap (ambas direcciones, cualquier estado).
+ * @param {object} [opts] { direction:'buy'|'sell', status, from, to, page, limit }
+ * @returns {Promise<{ conversions, total, page, limit, totalPages }>}
+ */
+export function listAllConversions(opts = {}) {
+  const params = new URLSearchParams()
+  if (opts.direction) params.set('direction', opts.direction)
+  if (opts.status)    params.set('status',    opts.status)
+  if (opts.from)      params.set('from',      opts.from)
+  if (opts.to)        params.set('to',        opts.to)
+  if (opts.page)      params.set('page',      String(opts.page))
+  if (opts.limit)     params.set('limit',     String(opts.limit))
+  const qs = params.toString()
+  return request(`/admin/wallet/conversions${qs ? `?${qs}` : ''}`)
+}
+
 // ── Notificaciones push manuales ──────────────────────────────────────────────
 
 /**

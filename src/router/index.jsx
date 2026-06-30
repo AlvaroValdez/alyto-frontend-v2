@@ -65,6 +65,7 @@ import SRLConfigPage       from '../pages/Admin/SRLConfig/SRLConfigPage'
 import SpAConfigPage       from '../pages/Admin/SpAConfig/SpAConfigPage'
 import WalletAdminPage     from '../pages/Admin/Wallet/WalletAdminPage'
 import WalletFeesPage      from '../pages/Admin/WalletFees/WalletFeesPage'
+import SwapsDashboardPage  from '../pages/Admin/Swaps/SwapsDashboardPage'
 import ReclamosAdminPage   from '../pages/Admin/Reclamos/ReclamosAdminPage'
 import SanctionsPage       from '../pages/Admin/Sanctions/SanctionsPage'
 import UsersPage           from '../pages/Admin/Users/UsersPage'
@@ -196,6 +197,7 @@ export default function AppRouter() {
         <Route path="/admin/spa-config"      element={<SpAConfigPage />}     />
         <Route path="/admin/wallet"          element={<WalletAdminPage />}   />
         <Route path="/admin/wallet-fees"     element={<WalletFeesPage />}    />
+        <Route path="/admin/swaps"           element={<SwapsDashboardPage />} />
         <Route path="/admin/reclamos"        element={<ReclamosAdminPage />} />
         <Route path="/admin/sanctions"       element={<SanctionsPage />}     />
         <Route path="/admin/users"           element={<UsersPage />}         />
