@@ -20,7 +20,7 @@ import {
   CheckCircle2, AlertCircle, X, Clock, User, History, Check,
 } from 'lucide-react'
 import {
-  getSwapRevenue, getWalletFees, updateWalletFees,
+  getSwapRevenue, resyncSwapRevenue, getWalletFees, updateWalletFees,
   listPendingConversions, confirmConversion, rejectConversion,
   listPendingUSDCtoBOB, confirmUSDCtoBOB, rejectUSDCtoBOB,
   listAllConversions,
@@ -109,7 +109,8 @@ export default function SwapsDashboardPage() {
   const [error, setError]     = useState(null)
   const [toast, setToast]     = useState(null)
 
-  const [swapRev, setSwapRev] = useState(null)
+  const [swapRev, setSwapRev] = useState(null)   // global (headline + resync)
+  const [resyncing, setResyncing] = useState(false)
 
   // Spreads
   const [spread, setSpread]   = useState({ buy: '', sell: '', effBuy: null, effSell: null })
@@ -120,19 +121,28 @@ export default function SwapsDashboardPage() {
   const [processing, setProcessing] = useState(null)   // wtxId en proceso
   const [rejectTarget, setRejectTarget] = useState(null) // { wtxId, direction }
 
-  // Historial
+  // Informe por dirección (pestañas) + historial
+  const [tab, setTab]         = useState('all')   // 'all' | 'buy' | 'sell'
+  const [report, setReport]   = useState(null)    // swap-revenue filtrado por fecha
   const [history, setHistory] = useState(null)
-  const [filters, setFilters] = useState({ direction: '', status: '', from: '', to: '' })
-  const [page, setPage] = useState(1)
+  const [filters, setFilters] = useState({ status: '', from: '', to: '' })
+  const [page, setPage]       = useState(1)
+  const [filterToken, setFilterToken] = useState(0)
   const limit = 25
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type }); setTimeout(() => setToast(null), 3000)
   }
 
-  const fetchHistory = useCallback(async (opts) => {
-    const res = await listAllConversions({ ...opts, limit }).catch(() => null)
-    if (res) setHistory(res)
+  // Carga el informe (subtotales por dirección, con fecha) + el listado del tab activo.
+  const loadReport = useCallback(async ({ tab, filters, page }) => {
+    const direction = tab === 'all' ? '' : tab
+    const [hist, rep] = await Promise.all([
+      listAllConversions({ direction, status: filters.status, from: filters.from, to: filters.to, page, limit }).catch(() => null),
+      getSwapRevenue({ from: filters.from, to: filters.to }).catch(() => null),
+    ])
+    if (hist) setHistory(hist)
+    if (rep)  setReport(rep)
   }, [])
 
   const fetchCore = useCallback(async () => {
@@ -163,8 +173,14 @@ export default function SwapsDashboardPage() {
     }
   }, [])
 
-  useEffect(() => { fetchCore(); fetchHistory({ page: 1 }) }, [fetchCore, fetchHistory])
-  useEffect(() => { fetchHistory({ ...filters, page }) /* eslint-disable-next-line */ }, [page])
+  useEffect(() => { fetchCore() }, [fetchCore])
+  // Recarga informe + historial al cambiar tab, página o al aplicar filtros (token).
+  useEffect(() => { loadReport({ tab, filters, page }) /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [tab, page, filterToken, loadReport])
+
+  function selectTab(t) {
+    if (t === tab) return
+    setTab(t); setPage(1)
+  }
 
   async function saveSpread() {
     setSavingSpread(true)
@@ -194,7 +210,7 @@ export default function SwapsDashboardPage() {
       if (c._direction === 'buy') await confirmConversion(c.wtxId)
       else                        await confirmUSDCtoBOB(c.wtxId)
       showToast('Conversión confirmada.')
-      await Promise.all([fetchCore(), fetchHistory({ ...filters, page })])
+      await Promise.all([fetchCore(), loadReport({ tab, filters, page }), getSwapRevenue().then(r => r && setSwapRev(r)).catch(() => {})])
     } catch (err) {
       showToast(err.data?.error || err.message || 'Error al confirmar.', 'error')
     } finally {
@@ -210,7 +226,7 @@ export default function SwapsDashboardPage() {
       else                       await rejectUSDCtoBOB(c.wtxId, reason)
       setRejectTarget(null)
       showToast('Conversión rechazada.')
-      await Promise.all([fetchCore(), fetchHistory({ ...filters, page })])
+      await Promise.all([fetchCore(), loadReport({ tab, filters, page })])
     } catch (err) {
       showToast(err.data?.error || err.message || 'Error al rechazar.', 'error')
     } finally {
@@ -220,8 +236,25 @@ export default function SwapsDashboardPage() {
 
   function applyFilters(e) {
     e?.preventDefault()
-    if (page === 1) fetchHistory({ ...filters, page: 1 })
-    else setPage(1)
+    setPage(1); setFilterToken(t => t + 1)
+  }
+
+  async function handleResync() {
+    setResyncing(true)
+    try {
+      await resyncSwapRevenue()
+      const [global, ranged] = await Promise.all([
+        getSwapRevenue().catch(() => null),
+        getSwapRevenue({ from: filters.from, to: filters.to }).catch(() => null),
+      ])
+      if (global) setSwapRev(global)
+      if (ranged) setReport(ranged)
+      showToast('Ganancia resincronizada con las transacciones.')
+    } catch (err) {
+      showToast(err.message || 'Error al resincronizar.', 'error')
+    } finally {
+      setResyncing(false)
+    }
   }
 
   const inputCls = 'text-white text-[0.875rem] rounded-xl px-3 py-2.5 focus:outline-none'
@@ -276,13 +309,29 @@ export default function SwapsDashboardPage() {
                 </p>
               </div>
               {swapRev.verification && (
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[0.8125rem] font-semibold"
-                  style={swapRev.verification.matches
-                    ? { background: '#22C55E1A', color: '#22C55E' }
-                    : { background: '#EF44441A', color: '#F87171' }}>
-                  {swapRev.verification.matches
-                    ? <><CheckCircle2 size={15} /> Integridad verificada</>
-                    : <><AlertCircle size={15} /> Desajuste — revisar</>}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[0.8125rem] font-semibold"
+                    style={swapRev.verification.matches
+                      ? { background: '#22C55E1A', color: '#22C55E' }
+                      : { background: '#EF44441A', color: '#F87171' }}>
+                    {swapRev.verification.matches
+                      ? <><CheckCircle2 size={15} /> Integridad verificada</>
+                      : <><AlertCircle size={15} /> Desajuste — revisar</>}
+                  </div>
+                  {!swapRev.verification.matches && (
+                    <>
+                      <p className="text-[0.6875rem]" style={{ color: TEXT_MUTED }}>
+                        Acumulado: {fmtBOB(swapRev.swapRevenueAccruedBob)} · en transacciones: {fmtBOB(swapRev.verification.sumSwapTransactions)}.
+                        Suele ocurrir al borrar transacciones de prueba.
+                      </p>
+                      <button onClick={handleResync} disabled={resyncing}
+                        className="flex items-center gap-1.5 text-[0.75rem] font-bold px-3 py-1.5 rounded-lg self-start disabled:opacity-60"
+                        style={{ background: SILVER, color: '#0F1628' }}>
+                        {resyncing ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                        Resincronizar
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -395,27 +444,58 @@ export default function SwapsDashboardPage() {
         )}
       </div>
 
-      {/* 4 — Historial */}
+      {/* 4 — Informe por dirección (pestañas) */}
       <div className="rounded-2xl p-6 space-y-4" style={{ background: BG_CARD, border: `1px solid ${BORDER}` }}>
         <div className="flex items-center gap-2">
           <History size={18} style={{ color: SILVER }} />
-          <h2 className="text-[0.9375rem] font-bold text-white">Historial de conversiones</h2>
+          <h2 className="text-[0.9375rem] font-bold text-white">Informe de conversiones por dirección</h2>
           {history?.total != null && (
             <span className="text-[0.75rem] font-semibold px-2.5 py-0.5 rounded-full" style={{ background: '#C4CBD81A', color: SILVER }}>
-              {history.total} total
+              {history.total} en la vista
             </span>
           )}
         </div>
 
+        {/* Pestañas */}
+        <div className="inline-flex rounded-xl p-1 gap-1" style={{ background: BG_DEEP, border: `1px solid ${BORDER}` }}>
+          {[
+            { key: 'all',  label: 'Consolidado' },
+            { key: 'buy',  label: 'BOB → USDC' },
+            { key: 'sell', label: 'USDC → BOB' },
+          ].map(t => (
+            <button key={t.key} onClick={() => selectTab(t.key)}
+              className="text-[0.8125rem] font-bold px-4 py-2 rounded-lg transition-colors"
+              style={tab === t.key
+                ? { background: SILVER, color: '#0F1628' }
+                : { background: 'transparent', color: TEXT_SEC }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Subtotal del informe (respeta el rango de fechas) */}
+        {report && (() => {
+          const stat = tab === 'buy' ? report.byDirection?.buy
+                     : tab === 'sell' ? report.byDirection?.sell
+                     : { revenueBob: report.totals?.revenueBob, conversions: report.totals?.conversions }
+          return (
+            <div className="rounded-xl px-5 py-4 flex flex-wrap items-end gap-x-8 gap-y-2" style={{ background: BG_DEEP, border: `1px solid ${BORDER}` }}>
+              <div>
+                <p className="text-[0.75rem] font-medium mb-1" style={{ color: TEXT_MUTED }}>
+                  Ganancia {tab === 'all' ? 'consolidada' : tab === 'buy' ? '— compra (BOB→USDC)' : '— venta (USDC→BOB)'}
+                </p>
+                <p className="text-[1.75rem] font-extrabold text-white tabular-nums leading-none">{fmtBOB(stat?.revenueBob)}</p>
+              </div>
+              <div>
+                <p className="text-[0.75rem] font-medium mb-1" style={{ color: TEXT_MUTED }}>Conversiones</p>
+                <p className="text-[1.25rem] font-bold text-white tabular-nums leading-none">{stat?.conversions ?? 0}</p>
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* Filtros (estado + fechas) */}
         <form onSubmit={applyFilters} className="flex flex-wrap items-end gap-2">
-          <div className="flex flex-col gap-1">
-            <label className="text-[0.6875rem] uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Dirección</label>
-            <select value={filters.direction} onChange={e => setFilters(f => ({ ...f, direction: e.target.value }))} className={inputCls} style={inputStyle}>
-              <option value="">Todas</option>
-              <option value="buy">BOB → USDC</option>
-              <option value="sell">USDC → BOB</option>
-            </select>
-          </div>
           <div className="flex flex-col gap-1">
             <label className="text-[0.6875rem] uppercase tracking-wide" style={{ color: TEXT_MUTED }}>Estado</label>
             <select value={filters.status} onChange={e => setFilters(f => ({ ...f, status: e.target.value }))} className={inputCls} style={inputStyle}>
@@ -436,6 +516,7 @@ export default function SwapsDashboardPage() {
           <button type="submit" className="text-[0.875rem] font-bold px-4 py-2.5 rounded-xl" style={{ background: SILVER, color: '#0F1628' }}>Filtrar</button>
         </form>
 
+        {/* Listado con ganancia por conversión */}
         {(history?.conversions?.length ?? 0) === 0 ? (
           <p className="text-[0.8125rem]" style={{ color: TEXT_MUTED }}>No hay conversiones para los filtros seleccionados.</p>
         ) : (
@@ -452,11 +533,17 @@ export default function SwapsDashboardPage() {
                       : `${fmtUSDC(c.usdcAmount)} → ${fmtBOB(c.bobAmount)}`}
                   </span>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="text-[0.75rem]" style={{ color: TEXT_SEC }}>
-                    {c.usuario?.nombre || c.usuario?.email || '—'}
-                  </p>
-                  <p className="text-[0.6875rem]" style={{ color: TEXT_MUTED }}>{fmtDate(c.createdAt)}</p>
+                <div className="flex items-center gap-5 shrink-0">
+                  {c.swapRevenueBob != null && (
+                    <div className="text-right">
+                      <p className="text-[0.625rem]" style={{ color: TEXT_MUTED }}>Ganancia</p>
+                      <p className="text-[0.875rem] font-bold tabular-nums" style={{ color: '#22C55E' }}>+{fmtBOB(c.swapRevenueBob)}</p>
+                    </div>
+                  )}
+                  <div className="text-right">
+                    <p className="text-[0.75rem]" style={{ color: TEXT_SEC }}>{c.usuario?.nombre || c.usuario?.email || '—'}</p>
+                    <p className="text-[0.6875rem]" style={{ color: TEXT_MUTED }}>{fmtDate(c.createdAt)}</p>
+                  </div>
                 </div>
               </div>
             ))}

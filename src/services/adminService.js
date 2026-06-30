@@ -373,6 +373,14 @@ export function getSwapRevenue(opts = {}) {
   return request(`/admin/wallet/swap-revenue${qs ? `?${qs}` : ''}`)
 }
 
+/**
+ * Resincroniza el acumulador de ganancia de swaps con la suma real de transacciones.
+ * @returns {Promise<{ swapRevenueAccruedBob, resynced }>}
+ */
+export function resyncSwapRevenue() {
+  return request('/admin/wallet/swap-revenue/resync', { method: 'POST' })
+}
+
 // ── Tasas de cambio ────────────────────────────────────────────────────────────
 
 /**
