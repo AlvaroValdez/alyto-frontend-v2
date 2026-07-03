@@ -31,6 +31,19 @@ import { createIdentitySession }                       from '../services/api'
 // Inicializar Stripe una sola vez fuera del componente
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
+// Etiqueta del documento según la jurisdicción del usuario. El número declarado
+// se persiste para listarlo en el Comprobante Oficial de Transacción (ASFI).
+const DOC_LABEL = {
+  SRL: 'Carnet de Identidad (CI)',
+  SpA: 'RUT',
+  LLC: 'Documento de identidad',
+}
+const DOC_PLACEHOLDER = {
+  SRL: 'Ej: 1234567 LP',
+  SpA: 'Ej: 12.345.678-9',
+  LLC: 'Número de documento',
+}
+
 // ── Success screen ────────────────────────────────────────────────────────────
 
 function SuccessScreen({ entityName, onBack }) {
@@ -96,23 +109,26 @@ export default function ModernKycView() {
   const entName  = ENTITY_NAMES[entity]   ?? 'AV Finance LLC'
   const entJuris = ENTITY_JURISDICTIONS[entity] ?? 'Delaware, EE.UU.'
 
-  const [tosAccepted, setTosAccepted] = useState(false)
-  const [loading,     setLoading]     = useState(false)
-  const [error,       setError]       = useState('')
-  const [success,     setSuccess]     = useState(false)
+  const [tosAccepted,    setTosAccepted]    = useState(false)
+  const [documentNumber, setDocumentNumber] = useState('')
+  const [loading,        setLoading]        = useState(false)
+  const [error,          setError]          = useState('')
+  const [success,        setSuccess]        = useState(false)
+
+  const docValid = documentNumber.trim().length >= 4
 
   if (success) {
     return <SuccessScreen entityName={entName} onBack={() => navigate('/')} />
   }
 
   const handleVerify = async () => {
-    if (!tosAccepted || loading) return
+    if (!tosAccepted || !docValid || loading) return
     setError('')
     setLoading(true)
 
     try {
-      // 1. Obtener client_secret del backend
-      const { clientSecret } = await createIdentitySession()
+      // 1. Obtener client_secret del backend (con el documento declarado)
+      const { clientSecret } = await createIdentitySession({ documentNumber: documentNumber.trim() })
 
       // 2. Cargar Stripe y abrir el modal nativo de verificación biométrica
       const stripe = await stripePromise
@@ -276,6 +292,31 @@ export default function ModernKycView() {
           </span>
         </div>
 
+        {/* ── NÚMERO DE DOCUMENTO (CI / RUT) ───────────────────────── */}
+        <div className="mb-5">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-6 h-6 rounded-lg bg-[#C4CBD81A] flex items-center justify-center">
+              <FileText size={13} className="text-[#C4CBD8]" />
+            </div>
+            <p className="text-[0.9375rem] font-bold text-white">
+              {DOC_LABEL[entity] ?? 'Número de documento'}
+            </p>
+          </div>
+          <input
+            type="text"
+            inputMode="text"
+            value={documentNumber}
+            onChange={(e) => setDocumentNumber(e.target.value)}
+            placeholder={DOC_PLACEHOLDER[entity] ?? 'Ingresa tu número de documento'}
+            maxLength={30}
+            className="w-full rounded-xl px-4 py-3.5 text-[0.9375rem] text-white bg-[#1A2340] border border-[#263050] placeholder:text-[#4E5A7A] focus:border-[#C4CBD8] focus:outline-none focus:ring-2 focus:ring-[#C4CBD820] transition-all"
+          />
+          <p className="text-[0.6875rem] text-[#4E5A7A] mt-2 leading-relaxed">
+            Debe coincidir con el documento que vas a escanear. Se incluye en tu
+            Comprobante Oficial de Transacción.
+          </p>
+        </div>
+
         {/* ── TÉRMINOS DE SERVICIO ─────────────────────────────────── */}
         <div className="mb-5">
           <div className="flex items-center gap-2 mb-3">
@@ -352,16 +393,16 @@ export default function ModernKycView() {
         <button
           type="button"
           onClick={handleVerify}
-          disabled={!tosAccepted || loading}
+          disabled={!tosAccepted || !docValid || loading}
           className={`w-full py-4 rounded-2xl font-bold text-[0.9375rem] flex items-center justify-center gap-2.5 transition-all duration-200
-            ${tosAccepted && !loading
+            ${tosAccepted && docValid && !loading
               ? 'text-[#0F1628] hover:opacity-90 active:scale-[0.98]'
               : 'text-[#4E5A7A] cursor-not-allowed'
             }`}
           style={{
-            background: tosAccepted && !loading ? '#C4CBD8' : '#1A2340',
-            boxShadow:  tosAccepted && !loading ? '0 4px 20px rgba(196,203,216,0.3)' : 'none',
-            border:     tosAccepted && !loading ? 'none' : '1px solid #263050',
+            background: tosAccepted && docValid && !loading ? '#C4CBD8' : '#1A2340',
+            boxShadow:  tosAccepted && docValid && !loading ? '0 4px 20px rgba(196,203,216,0.3)' : 'none',
+            border:     tosAccepted && docValid && !loading ? 'none' : '1px solid #263050',
           }}
         >
           {loading ? (
@@ -373,7 +414,11 @@ export default function ModernKycView() {
             <>
               <ScanFace size={18} />
               <span>
-                {tosAccepted ? 'Iniciar verificación biométrica' : 'Acepta los términos para continuar'}
+                {!docValid
+                  ? 'Ingresa tu número de documento'
+                  : !tosAccepted
+                    ? 'Acepta los términos para continuar'
+                    : 'Iniciar verificación biométrica'}
               </span>
             </>
           )}

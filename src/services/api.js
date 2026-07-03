@@ -258,10 +258,15 @@ export function initiateCorporateOnRamp(payload) {
  * El backend genera la sesión biométrica y devuelve la client_secret
  * necesaria para abrir el modal nativo de Stripe en el frontend.
  *
+ * @param {{ documentNumber?: string }} [data] - Número de documento (CI/RUT)
+ *   declarado por el usuario; el backend lo persiste para el Comprobante ASFI.
  * @returns {Promise<{ clientSecret: string, sessionId: string }>}
  */
-export function createIdentitySession() {
-  return request('/identity/verify', { method: 'POST' })
+export function createIdentitySession(data = {}) {
+  return request('/identity/verify', {
+    method: 'POST',
+    body:   JSON.stringify({ documentNumber: data.documentNumber }),
+  })
 }
 
 // ── Admin ──────────────────────────────────────────────────────────────────
