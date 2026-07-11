@@ -8,7 +8,7 @@ function formatBOB(amount) {
 }
 
 function formatUSDC(amount) {
-  return `${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USDC`
+  return `${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`
 }
 
 function StatusDot({ status }) {
