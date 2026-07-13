@@ -19,7 +19,12 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 
-const WS_BASE    = import.meta.env.VITE_WS_URL ?? 'ws://localhost:3000'
+// WS base: usa VITE_WS_URL si está definida; si no, se deriva de VITE_API_URL
+// (https://api-x.alyto.app/api/v1 → wss://api-x.alyto.app). Evita que un build
+// sin VITE_WS_URL caiga a ws://localhost:3000 y rompa la cotización en vivo.
+const API_BASE   = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1'
+const WS_BASE    = import.meta.env.VITE_WS_URL
+  ?? API_BASE.replace(/^http/, 'ws').replace(/\/api\/v1\/?$/, '')
 const WS_URL     = `${WS_BASE}/ws/quote`
 const DEBOUNCE_MS = 600
 const BACKOFF_MS  = [1000, 2000, 4000, 8000, 16000, 30000]

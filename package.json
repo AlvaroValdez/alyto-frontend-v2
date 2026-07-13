@@ -10,9 +10,12 @@
     "inject:sw": "node scripts/inject-firebase-sw.js",
     "check:production": "node scripts/checkProduction.js",
     "build:production": "npm run check:production && vite build && node scripts/inject-firebase-sw.js",
+    "build:staging": "vite build --mode staging && node scripts/inject-firebase-sw.js",
     "cap:sync": "npm run build && npx cap sync android",
+    "cap:sync:staging": "npm run build:staging && npx cap sync android",
     "cap:open": "npx cap open android",
-    "cap:run": "npm run build && npx cap run android"
+    "cap:run": "npm run build && npx cap run android",
+    "cap:run:staging": "npm run build:staging && npx cap run android"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",
