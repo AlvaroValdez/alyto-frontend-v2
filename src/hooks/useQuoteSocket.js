@@ -18,6 +18,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { request } from '../services/api'
 
 // WS base: usa VITE_WS_URL si está definida; si no, se deriva de VITE_API_URL
 // (https://api-x.alyto.app/api/v1 → wss://api-x.alyto.app). Evita que un build
@@ -29,6 +30,10 @@ const WS_URL     = `${WS_BASE}/ws/quote`
 const DEBOUNCE_MS = 600
 const BACKOFF_MS  = [1000, 2000, 4000, 8000, 16000, 30000]
 const MAX_RETRIES = 5
+// Fallback REST: si el WS agota los reintentos (fallo de conexión, no errores
+// de negocio), se cotiza vía GET /payments/quote con polling. La UI sigue
+// funcionando aunque el socket esté caído.
+const REST_POLL_MS = 45000
 
 export function useQuoteSocket(originAmount, destinationCountry, corridorId) {
   const [quote,      setQuote]      = useState(null)
@@ -44,6 +49,8 @@ export function useQuoteSocket(originAmount, destinationCountry, corridorId) {
   const debounceRef = useRef(null)
   const cdInterval  = useRef(null)
   const alive       = useRef(true)
+  const restMode    = useRef(false)  // true = cotizando vía REST (WS caído)
+  const restTimer   = useRef(null)
   const params      = useRef({ originAmount, destinationCountry, corridorId })
 
   // Always keep params ref current so callbacks read the latest values
@@ -77,6 +84,45 @@ export function useQuoteSocket(originAmount, destinationCountry, corridorId) {
     cdInterval.current = setInterval(tick, 1000)
   }, [clearCountdown])
 
+  // ── Fallback REST (WS caído) ─────────────────────────────────────────────
+
+  const stopRestFallback = useCallback(() => {
+    restMode.current = false
+    if (restTimer.current) { clearInterval(restTimer.current); restTimer.current = null }
+  }, [])
+
+  const fetchRestQuote = useCallback(async () => {
+    const { originAmount: amt, destinationCountry: country, corridorId: cid } = params.current
+    if (!amt || !country) return
+    try {
+      const qs = new URLSearchParams({
+        destinationCountry: country,
+        originAmount:       String(amt),
+        ...(cid ? { corridorId: cid } : {}),
+      })
+      const data = await request(`/payments/quote?${qs.toString()}`)
+      if (!alive.current || !restMode.current) return
+      setQuote({ rateConfidence: 'estimated', ...data })
+      setStatus('connected')
+      setIsStale(false)
+      setError(null)
+      setErrorMeta(null)
+      if (data.quoteExpiresAt) startCountdown(data.quoteExpiresAt)
+    } catch (err) {
+      if (!alive.current || !restMode.current) return
+      setError(err.message ?? 'No se pudo obtener la cotización.')
+      setStatus('error')
+    }
+  }, [startCountdown])
+
+  const startRestFallback = useCallback(() => {
+    if (restMode.current) return
+    restMode.current = true
+    console.warn('[Quote] WS caído — usando fallback REST /payments/quote')
+    fetchRestQuote()
+    restTimer.current = setInterval(fetchRestQuote, REST_POLL_MS)
+  }, [fetchRestQuote])
+
   // ── Core connect ─────────────────────────────────────────────────────────
 
   const connect = useCallback(() => {
@@ -109,6 +155,7 @@ export function useQuoteSocket(originAmount, destinationCountry, corridorId) {
       if (!alive.current || wsRef.current !== socket) return
       console.log('[WS] Connected')
       retries.current = 0
+      stopRestFallback() // el WS vuelve a mandar; apagar el polling REST
       socket.send(JSON.stringify({
         type:               'subscribe_quote',
         originAmount:       params.current.originAmount,
@@ -161,8 +208,9 @@ export function useQuoteSocket(originAmount, destinationCountry, corridorId) {
 
       // Cierre recuperable — backoff exponencial
       if (retries.current >= MAX_RETRIES) {
-        setError('No se pudo restablecer la conexión. Verificá tu internet.')
-        setStatus('error')
+        // Fallo de CONEXIÓN (no de negocio): cotizar vía REST para no bloquear
+        // el flujo. Si el REST también falla, ahí sí queda en 'error'.
+        startRestFallback()
         return
       }
 
@@ -173,15 +221,16 @@ export function useQuoteSocket(originAmount, destinationCountry, corridorId) {
         if (alive.current) connect()
       }, delay)
     }
-  }, [clearCountdown, startCountdown]) // connect is stable
+  }, [clearCountdown, startCountdown, startRestFallback, stopRestFallback]) // connect is stable
 
   // ── Manual reconnect ─────────────────────────────────────────────────────
 
   const reconnect = useCallback(() => {
     retries.current = 0
+    stopRestFallback()
     if (retryTimer.current) { clearTimeout(retryTimer.current); retryTimer.current = null }
     connect()
-  }, [connect])
+  }, [connect, stopRestFallback])
 
   // ── Mount / unmount ───────────────────────────────────────────────────────
 
@@ -194,6 +243,7 @@ export function useQuoteSocket(originAmount, destinationCountry, corridorId) {
       clearCountdown()
       if (debounceRef.current) clearTimeout(debounceRef.current)
       if (retryTimer.current)  clearTimeout(retryTimer.current)
+      if (restTimer.current)   clearInterval(restTimer.current)
       if (wsRef.current) { wsRef.current.onclose = null; wsRef.current.close(); wsRef.current = null }
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -221,7 +271,12 @@ export function useQuoteSocket(originAmount, destinationCountry, corridorId) {
 
     if (!originAmount) { setQuote(null); return }
 
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
+    if (restMode.current) {
+      // Modo fallback REST: recotizar con debounce por el mismo canal
+      setStatus('updating')
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      debounceRef.current = setTimeout(() => { fetchRestQuote() }, DEBOUNCE_MS)
+    } else if (wsRef.current?.readyState === WebSocket.OPEN) {
       setStatus('updating')
       if (debounceRef.current) clearTimeout(debounceRef.current)
       debounceRef.current = setTimeout(() => {
@@ -233,7 +288,7 @@ export function useQuoteSocket(originAmount, destinationCountry, corridorId) {
       // Sin conexión activa — iniciar una nueva
       connect()
     }
-  }, [originAmount, connect])
+  }, [originAmount, connect, fetchRestQuote])
 
   return { quote, status, error, errorMeta, isStale, countdown, reconnect }
 }
