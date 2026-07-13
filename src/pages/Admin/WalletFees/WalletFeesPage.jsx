@@ -277,6 +277,7 @@ function validateForm(form) {
 function formatDate(d) {
   if (!d) return '—'
   return new Date(d).toLocaleString('es-BO', {
+    timeZone: 'America/La_Paz',
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })

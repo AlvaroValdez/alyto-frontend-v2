@@ -125,7 +125,8 @@ function Timeline({ ipnLog = [] }) {
               )}
               <p className="text-[0.6875rem] text-[#4E5A7A] mt-0.5">
                 {entry.receivedAt
-                  ? new Date(entry.receivedAt).toLocaleString('es-CL', {
+                  ? new Date(entry.receivedAt).toLocaleString('es-BO', {
+                      timeZone: 'America/La_Paz',
                       day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
                     })
                   : '—'
@@ -158,7 +159,7 @@ function IpnLogEntry({ entry, index }) {
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className="text-[0.625rem] text-[#4E5A7A]">
-            {entry.receivedAt ? new Date(entry.receivedAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : ''}
+            {entry.receivedAt ? new Date(entry.receivedAt).toLocaleTimeString('es-BO', { timeZone: 'America/La_Paz', hour: '2-digit', minute: '2-digit' }) : ''}
           </span>
           {open ? <ChevronDown size={12} className="text-[#4E5A7A]" /> : <ChevronRight size={12} className="text-[#4E5A7A]" />}
         </div>
@@ -388,7 +389,8 @@ function PaymentProofSection({ paymentProof }) {
   const isImage = !isPdf
 
   const uploadedLabel = paymentProof?.uploadedAt
-    ? new Date(paymentProof.uploadedAt).toLocaleString('es-CL', {
+    ? new Date(paymentProof.uploadedAt).toLocaleString('es-BO', {
+        timeZone: 'America/La_Paz',
         day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
       })
     : null
@@ -824,7 +826,7 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
                   </div>
                   {tx.harborTransfer.expiresAt && (
                     <p className="text-[0.75rem] text-[#F87171]">
-                      ⏰ Expira: {new Date(tx.harborTransfer.expiresAt).toLocaleString('es-CL')}
+                      ⏰ Expira: {new Date(tx.harborTransfer.expiresAt).toLocaleString('es-BO', { timeZone: 'America/La_Paz' })}
                     </p>
                   )}
                 </div>

@@ -20,7 +20,7 @@ function formatDate(dateStr) {
   if (diffHrs  < 24)  return `Hace ${diffHrs} h`
   if (diffDays === 1) return 'Ayer'
   if (diffDays < 7)   return `Hace ${diffDays} días`
-  return date.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
+  return date.toLocaleDateString('es-BO', { timeZone: 'America/La_Paz', day: 'numeric', month: 'short' })
 }
 
 function formatAmount(amount, currency) {

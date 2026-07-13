@@ -67,7 +67,7 @@ function timeAgo(dateStr) {
   if (mins < 60) return `Hace ${mins} min`
   if (hours < 24) return `Hace ${hours}h`
   if (days < 7)  return `Hace ${days}d`
-  return new Date(dateStr).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
+  return new Date(dateStr).toLocaleDateString('es-BO', { timeZone: 'America/La_Paz', day: '2-digit', month: 'short' })
 }
 
 // ── Componente ───────────────────────────────────────────────────────────────

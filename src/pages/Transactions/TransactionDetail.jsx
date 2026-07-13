@@ -312,7 +312,8 @@ function formatAmount(amount, currency) {
 
 function formatExactDate(dateStr) {
   if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleString('es-CL', {
+  return new Date(dateStr).toLocaleString('es-BO', {
+    timeZone: 'America/La_Paz',   // Bolivia (UTC-4) — no la zona del dispositivo
     day:    '2-digit',
     month:  'short',
     year:   'numeric',

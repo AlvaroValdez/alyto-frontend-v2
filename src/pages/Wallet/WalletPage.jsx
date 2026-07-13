@@ -44,6 +44,7 @@ function formatUSDC(amount) {
 function formatDate(d) {
   if (!d) return ''
   return new Intl.DateTimeFormat('es-BO', {
+    timeZone: 'America/La_Paz',   // Bolivia (UTC-4) — no la zona del dispositivo
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   }).format(new Date(d))

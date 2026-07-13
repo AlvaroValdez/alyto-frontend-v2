@@ -126,7 +126,7 @@ function SettlementCard({ tx, cardState, onProcess, bobRate }) {
               )}
             </div>
             <p className="text-[0.6875rem] text-[#4E5A7A]">
-              {new Date(tx.createdAt).toLocaleString('es-BO', { dateStyle: 'medium', timeStyle: 'short' })}
+              {new Date(tx.createdAt).toLocaleString('es-BO', { timeZone: 'America/La_Paz', dateStyle: 'medium', timeStyle: 'short' })}
             </p>
           </div>
           <div
