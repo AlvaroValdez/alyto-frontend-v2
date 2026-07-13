@@ -885,26 +885,30 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
                 </div>
               )}
 
-              {/* ── Harbor Transfer (owlPay off-ramp) ────────────────────── */}
+              {/* ── Harbor Transfer (owlPay off-ramp) — panel INFORMATIVO ──
+                   Estilo neutro (no ámbar) para no confundirlo con el banner de
+                   "Acción requerida — Enviar USDC a Harbor". El off-ramp es
+                   automático (OWLPAY_USDC_SEND_ENABLED=1); esto solo muestra el
+                   detalle del transfer ya creado/enviado. */}
               {tx.harborTransfer?.transferId && (
-                <div className="mt-4 p-4 rounded-2xl border border-[#F59E0B40] bg-[#F59E0B08]">
-                  <p className="text-[0.6875rem] font-bold text-[#F59E0B] uppercase tracking-wider mb-3">
-                    Harbor Transfer · USDC Off-ramp
+                <div className="mt-4 p-4 rounded-2xl border border-[#263050] bg-[#1A2340]">
+                  <p className="text-[0.6875rem] font-bold text-[#8A96B8] uppercase tracking-wider mb-3">
+                    Off-ramp Harbor (automático)
                   </p>
                   <div className="grid grid-cols-2 gap-2.5">
                     <Field label="Transfer ID" value={tx.harborTransfer.transferId} mono />
                     <Field label="Estado Harbor" value={tx.harborTransfer.status ?? '—'} dim />
-                    <Field label="USDC requerido" value={tx.harborTransfer.usdcAmountRequired != null ? `${tx.harborTransfer.usdcAmountRequired} USDC` : null} />
+                    <Field label="USDC enviado" value={tx.harborTransfer.usdcAmountRequired != null ? `${tx.harborTransfer.usdcAmountRequired} USDC` : null} />
                     <Field label="Red / Chain" value={tx.harborTransfer.instructionChain ?? '—'} dim />
                     <Field label="Memo" value={tx.harborTransfer.instructionMemo ?? null} mono />
-                    <Field label="Vence" value={tx.harborTransfer.expiresAt ? new Date(tx.harborTransfer.expiresAt).toLocaleString('es-CL') : null} dim />
+                    <Field label="Vence" value={tx.harborTransfer.expiresAt ? new Date(tx.harborTransfer.expiresAt).toLocaleString('es-BO', { timeZone: 'America/La_Paz' }) : null} dim />
                   </div>
                   {tx.harborTransfer.instructionAddress && (
                     <div className="mt-2.5">
                       <p className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1">
                         Dirección USDC destino
                       </p>
-                      <p className="text-[0.8125rem] font-mono text-[#F59E0B] break-all leading-relaxed">
+                      <p className="text-[0.8125rem] font-mono text-[#8A96B8] break-all leading-relaxed">
                         {tx.harborTransfer.instructionAddress}
                       </p>
                     </div>
