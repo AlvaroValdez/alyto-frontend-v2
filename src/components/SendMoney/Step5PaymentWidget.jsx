@@ -18,9 +18,9 @@ import {
   Copy, CheckCheck, Clock, Download, Paperclip, Upload, CheckCircle2, Smartphone,
 } from 'lucide-react'
 import { getTransactionStatus, getPaymentQR, uploadComprobante } from '../../services/paymentsService'
+import { subscribeTxStatus } from '../../services/txStatusStream'
 import Sentry from '../../services/sentry.js'
 
-const POLL_INTERVAL_MS = 5_000
 const TIMEOUT_MS       = 15 * 60 * 1000
 const FINAL_STATUSES   = new Set(['payin_confirmed', 'payin_completed', 'completed', 'in_transit'])
 
@@ -413,19 +413,14 @@ function BankQrPayinScreen({ stepData }) {
   const [qrLoading, setQrLoading] = useState(!paymentQR && !!transactionId)
   const [confirmed, setConfirmed] = useState(false)
 
-  // Polling automático — banco notifica al backend via webhook; FE solo verifica
+  // Estado en tiempo real vía SSE (con fallback REST) — el banco notifica al
+  // backend por webhook; el FE solo escucha los cambios de estado.
   useEffect(() => {
-    if (confirmed) return
-    const interval = setInterval(async () => {
-      try {
-        const data = await getTransactionStatus(transactionId)
-        if (FINAL_STATUSES.has(data.status)) {
-          setConfirmed(true)
-          clearInterval(interval)
-        }
-      } catch { /* silent */ }
-    }, POLL_INTERVAL_MS)
-    return () => clearInterval(interval)
+    if (confirmed || !transactionId) return
+    const unsub = subscribeTxStatus(transactionId, (data) => {
+      if (FINAL_STATUSES.has(data.status)) { setConfirmed(true); unsub() }
+    })
+    return unsub
   }, [transactionId, confirmed])
 
   // Cargar QR del backend si no vino en stepData
@@ -584,32 +579,25 @@ function PollingPayinScreen({ stepData, onNext }) {
   const [timedOut,     setTimedOut]     = useState(false)
   const [pollError,    setPollError]    = useState(null)
 
-  const pollTimer    = useRef(null)
+  const pollUnsub    = useRef(null)
   const timeoutTimer = useRef(null)
 
   const stopPolling = useCallback(() => {
     setPolling(false)
-    if (pollTimer.current)    clearInterval(pollTimer.current)
+    if (pollUnsub.current)    { pollUnsub.current(); pollUnsub.current = null }
     if (timeoutTimer.current) clearTimeout(timeoutTimer.current)
   }, [])
 
   const startPolling = useCallback(() => {
     setPolling(true)
 
-    const doPoll = async () => {
-      try {
-        const data = await getTransactionStatus(transactionId)
-        if (FINAL_STATUSES.has(data.status)) {
-          stopPolling()
-          onNext({ completedAt: data.updatedAt || new Date().toISOString() })
-        }
-      } catch (err) {
-        setPollError(err.message)
+    // SSE en tiempo real (con fallback REST 20s) en vez de polling cada 5s.
+    pollUnsub.current = subscribeTxStatus(transactionId, (data) => {
+      if (FINAL_STATUSES.has(data.status)) {
+        stopPolling()
+        onNext({ completedAt: data.updatedAt || new Date().toISOString() })
       }
-    }
-
-    doPoll()
-    pollTimer.current = setInterval(doPoll, POLL_INTERVAL_MS)
+    })
 
     timeoutTimer.current = setTimeout(() => {
       stopPolling()

@@ -284,6 +284,8 @@ function DepositModal({ open, onClose, onSuccess }) {
 
   // Polling del estado del depósito bankQr — el banco confirma vía IPN y el saldo
   // se acredita solo. Detectamos el cambio a 'completed'/'failed' en el historial.
+  // Intervalo a 12s (antes 5s): la confirmación real la dan el IPN + el job de
+  // reconciliación; este poll es solo feedback de UI, no necesita ser agresivo.
   useEffect(() => {
     if (view !== 'bankqr' || !result?.wtxId || bankConfirmed || bankFailed) return
     let active = true
@@ -297,7 +299,7 @@ function DepositModal({ open, onClose, onSuccess }) {
       } catch { /* reintenta en el próximo tick */ }
     }
     poll()
-    const id = setInterval(poll, 5000)
+    const id = setInterval(poll, 12_000)
     return () => { active = false; clearInterval(id) }
   }, [view, result, bankConfirmed, bankFailed])
 
