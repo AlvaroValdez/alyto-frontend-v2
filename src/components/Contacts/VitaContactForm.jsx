@@ -61,7 +61,8 @@ export const COUNTRY_META = {
   // OwlPay Global
   US: { name: 'Estados Unidos',   currency: 'USD', flagCode: 'us' },
   GB: { name: 'Reino Unido',      currency: 'GBP', flagCode: 'gb' },
-  EU: { name: 'Europa (SEPA)',    currency: 'EUR', flagCode: 'eu' },
+  EU: { name: 'Europa (SEPA)',    currency: 'EUR', flagCode: 'eu',
+        keywords: 'españa spain alemania germany francia france italia italy portugal paises bajos netherlands irlanda austria belgica sepa euro' },
   ES: { name: 'España',           currency: 'EUR', flagCode: 'es' },
   PL: { name: 'Polonia',          currency: 'PLN', flagCode: 'pl' },
   HK: { name: 'Hong Kong',        currency: 'HKD', flagCode: 'hk' },
@@ -74,7 +75,15 @@ export const COUNTRY_META = {
   AU: { name: 'Australia',        currency: 'AUD', flagCode: 'au' },
 }
 
-const COUNTRY_LIST = Object.entries(COUNTRY_META).map(([code, m]) => ({ code, ...m }))
+// No seleccionables para contactos nuevos (siguen en COUNTRY_META para
+// renderizar contactos ya guardados con esos países):
+//   AU — corredor bo-au inactivo: withdrawal-rules devuelve 404
+//   ES — cubierto por EU (SEPA): el corredor bo-es usa destinationCountry='EU'
+const NON_SELECTABLE_COUNTRIES = new Set(['AU', 'ES'])
+
+const COUNTRY_LIST = Object.entries(COUNTRY_META)
+  .filter(([code]) => !NON_SELECTABLE_COUNTRIES.has(code))
+  .map(([code, m]) => ({ code, ...m }))
 
 function flagUrl(flagCode) {
   return `https://flagcdn.com/w80/${flagCode}.png`
@@ -303,7 +312,8 @@ function CountryPickerModal({ selected, onSelect, onClose }) {
     ? COUNTRY_LIST.filter(c =>
         c.name.toLowerCase().includes(query.toLowerCase()) ||
         c.currency.toLowerCase().includes(query.toLowerCase()) ||
-        c.code.toLowerCase().includes(query.toLowerCase()))
+        c.code.toLowerCase().includes(query.toLowerCase()) ||
+        (c.keywords ?? '').includes(query.toLowerCase()))
     : COUNTRY_LIST
 
   return (
