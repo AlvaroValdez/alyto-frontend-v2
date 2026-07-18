@@ -16,7 +16,8 @@
 import { useContacts } from '../../hooks/useContacts'
 
 function contactDisplayName(c) {
-  return (c.nickname ?? `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim()) || '?'
+  // nickname llega como '' (no null) cuando el contacto se guardó sin alias
+  return c.nickname || `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || '?'
 }
 
 function Avatar({ name, size = 38 }) {

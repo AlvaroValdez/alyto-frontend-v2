@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Users, Star, Trash2, Loader2, AlertCircle,
   Search, Plus, X, Send, ChevronRight, Check,
-  CreditCard, FileText, Building2, Mail, UserCheck, Pencil, Filter,
+  CreditCard, FileText, Building2, Mail, Phone, UserCheck, Pencil, Filter,
   Globe, Zap, Hash, Shield,
 } from 'lucide-react'
 import { useContacts } from '../../hooks/useContacts'
@@ -99,7 +99,8 @@ function Avatar({ name, size = 46 }) {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function contactName(c) {
-  return (c.nickname ?? `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim()) || 'Sin nombre'
+  // nickname llega como '' (no null) cuando el contacto se guardó sin alias
+  return c.nickname || `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || 'Sin nombre'
 }
 
 function timeAgo(iso) {
@@ -461,7 +462,7 @@ function ContactDetailSheet({ contact, onClose, onDelete, onToggleFavorite, onSe
               <DetailRow icon={Mail}     label="Email"          value={email} />
             )}
             {phone && (
-              <DetailRow icon={Mail}     label="Teléfono"       value={phone} />
+              <DetailRow icon={Phone}    label="Teléfono"       value={phone} />
             )}
           </div>
 
