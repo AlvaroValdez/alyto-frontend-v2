@@ -608,11 +608,12 @@ function FreezeModal({ wallet, open, onClose, onSuccess }) {
   async function handleFreeze(e) {
     e.preventDefault(); setError('')
     if (!reason.trim()) return setError('El motivo es obligatorio.')
+    if (!reportNumber.trim()) return setError('La referencia del oficio o instrucción regulatoria es obligatoria.')
     setLoading(true)
     try {
       await request(`/admin/wallet/${wallet?.userId?._id ?? wallet?.userId}/freeze`, {
         method: 'PATCH',
-        body: JSON.stringify({ reason, reportNumber: reportNumber || undefined }),
+        body: JSON.stringify({ reason, regulatoryRef: reportNumber.trim() }),
       })
       onSuccess?.(); handleClose()
     } catch (err) {
@@ -670,9 +671,9 @@ function FreezeModal({ wallet, open, onClose, onSuccess }) {
               className="w-full bg-[#0F1628] border border-[#263050] rounded-xl px-4 py-3 text-white text-[0.875rem] focus:border-[#C4CBD8] focus:outline-none resize-none" />
           </div>
           <div>
-            <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">N° de reporte UIF (opcional)</label>
+            <label className="block text-[0.75rem] font-medium text-[#8A96B8] mb-1.5">Referencia del oficio / instrucción regulatoria *</label>
             <input type="text" value={reportNumber} onChange={e => setReportNumber(e.target.value)}
-              placeholder="ROS-2026-XXX"
+              placeholder="Ej. Oficio ASFI-2026-XXX / ROS-2026-XXX"
               className="w-full bg-[#0F1628] border border-[#263050] rounded-xl px-4 py-3 text-white text-[0.875rem] focus:border-[#C4CBD8] focus:outline-none" />
           </div>
           {error && <p className="text-[0.8125rem] text-[#F87171] bg-[#EF44441A] rounded-xl px-4 py-2">{error}</p>}
