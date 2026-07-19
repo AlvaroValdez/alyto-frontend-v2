@@ -685,3 +685,26 @@ export function getTreasuryCoverage(entity = 'SRL') {
 export function getUserWalletSummary(userId, limit = 50) {
   return request(`/admin/users/${encodeURIComponent(userId)}/wallet-summary?limit=${limit}`)
 }
+
+// ── AnchorAdmin — Fase 1 (observabilidad, solo lectura) ──────────────────────
+// Gated en el backend por ANCHOR_ADMIN_ENABLED. Prefijo /admin/anchor.
+
+/** 4.2 — Estado del listener de Horizon (polling + heartbeat). */
+export function getAnchorListener() {
+  return request('/admin/anchor/listener')
+}
+
+/** 4.3 — Tesorería on-chain: SRL (USDC/XLM/trustline) + channel account. */
+export function getAnchorTreasury() {
+  return request('/admin/anchor/treasury')
+}
+
+/** 4.4 — Reconciliación del dual ledger (espejo MongoDB vs on-chain). */
+export function getAnchorReconciliation(limit = 500) {
+  return request(`/admin/anchor/reconciliation?limit=${limit}`)
+}
+
+/** 4.5 — Cuadre de reservas contra pasivos (prueba de solvencia). */
+export function getAnchorSolvency() {
+  return request('/admin/anchor/solvency')
+}
