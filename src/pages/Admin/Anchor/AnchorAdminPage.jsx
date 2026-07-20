@@ -9,13 +9,15 @@
  * los endpoints devuelven 404 y la página lo indica). Nunca muestra secretKeys.
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Fragment } from 'react'
 import {
   Radio, RefreshCw, Loader, AlertTriangle, Activity, Coins, Scale,
-  Fuel, ExternalLink, CheckCircle2, ShieldCheck,
+  Fuel, ExternalLink, CheckCircle2, ShieldCheck, Snowflake, ScrollText,
+  ChevronRight, ChevronDown, ChevronLeft,
 } from 'lucide-react'
 import {
   getAnchorListener, getAnchorTreasury, getAnchorReconciliation, getAnchorSolvency,
+  getAnchorFrozen, getAnchorAudit,
 } from '../../../services/adminService'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -80,19 +82,30 @@ export default function AnchorAdminPage() {
   const [treasury, setTreasury] = useState(null)
   const [solvency, setSolvency] = useState(null)
   const [recon, setRecon]       = useState(null)
+  const [frozen, setFrozen]     = useState(null)
   const [loading, setLoading]   = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [reconLoading, setReconLoading] = useState(false)
   const [error, setError]       = useState(null)
   const [disabled, setDisabled] = useState(false)   // ANCHOR_ADMIN_ENABLED apagado
 
+  // §5 — auditoría (paginada, filtro por acción)
+  const [audit, setAudit]             = useState(null)
+  const [auditPage, setAuditPage]     = useState(1)
+  const [auditAction, setAuditAction] = useState('')
+  const [auditLoading, setAuditLoading] = useState(false)
+  const [expandedLog, setExpandedLog] = useState(null)
+
   const loadCore = useCallback(async () => {
     try {
-      const [l, t, s] = await Promise.all([getAnchorListener(), getAnchorTreasury(), getAnchorSolvency()])
-      setListener(l); setTreasury(t); setSolvency(s); setError(null); setDisabled(false)
+      const [l, t, s, f] = await Promise.all([
+        getAnchorListener(), getAnchorTreasury(), getAnchorSolvency(), getAnchorFrozen(),
+      ])
+      setListener(l); setTreasury(t); setSolvency(s); setFrozen(f); setError(null); setDisabled(false)
     } catch (e) {
-      // 404 = el módulo está apagado en el backend (feature flag off)
-      if (/404|not found/i.test(e.message)) setDisabled(true)
+      // 404 = el módulo está apagado en el backend (feature flag off). Se detecta
+      // por status: el mensaje del catch-all es "Endpoint no encontrado." (español).
+      if (e.status === 404) setDisabled(true)
       else setError(e.message)
     }
   }, [])
@@ -100,15 +113,29 @@ export default function AnchorAdminPage() {
   const loadRecon = useCallback(async () => {
     setReconLoading(true)
     try { setRecon(await getAnchorReconciliation(500)) }
-    catch (e) { if (!/404/i.test(e.message)) setError(e.message) }
+    catch (e) { if (e.status !== 404) setError(e.message) }
     finally { setReconLoading(false) }
   }, [])
 
-  useEffect(() => {
-    (async () => { setLoading(true); await loadCore(); setLoading(false) })()
-  }, [loadCore])
+  const loadAudit = useCallback(async (page = 1, action = '') => {
+    setAuditLoading(true)
+    try {
+      setAudit(await getAnchorAudit({ page, limit: 20, action: action || undefined }))
+      setAuditPage(page)
+      setExpandedLog(null)
+    } catch (e) { if (e.status !== 404) setError(e.message) }
+    finally { setAuditLoading(false) }
+  }, [])
 
-  const refresh = async () => { setRefreshing(true); await loadCore(); setRefreshing(false) }
+  useEffect(() => {
+    (async () => { setLoading(true); await Promise.all([loadCore(), loadAudit(1, '')]); setLoading(false) })()
+  }, [loadCore, loadAudit])
+
+  const refresh = async () => {
+    setRefreshing(true)
+    await Promise.all([loadCore(), loadAudit(auditPage, auditAction)])
+    setRefreshing(false)
+  }
 
   if (loading) {
     return (
@@ -351,6 +378,184 @@ export default function AnchorAdminPage() {
                     <p className="text-[0.6rem] text-[#4E5A7A] mt-3">{recon.coverageNote}</p>
                   )}
                   <p className="text-[0.6rem] text-[#4E5A7A] mt-1">ejecutado {fmtDateTime(recon.ranAt)}</p>
+                </>
+              )}
+            </div>
+
+            {/* 4.7 — Congelamientos activos */}
+            <SectionTitle icon={Snowflake} right={
+              <span className="text-[0.7rem] font-semibold px-2.5 py-1 rounded-full"
+                style={{
+                  background: frozen?.count > 0 ? '#EF44441A' : '#22C55E1A',
+                  color: frozen?.count > 0 ? '#F87171' : '#22C55E',
+                }}>
+                {frozen?.count ?? 0} activos
+              </span>
+            }>Congelamientos regulatorios activos</SectionTitle>
+
+            <div className="rounded-2xl p-5 mb-7" style={{ background: '#1A2340', border: '1px solid #263050' }}>
+              {!frozen?.count ? (
+                <div className="flex items-center gap-2 text-[0.8125rem] text-[#22C55E]">
+                  <CheckCircle2 size={16} /> Sin congelamientos activos. El histórico vive en la auditoría (acción wallet.freeze).
+                </div>
+              ) : (
+                <div className="rounded-xl overflow-x-auto" style={{ border: '1px solid #263050' }}>
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr style={{ background: '#0F1628', borderBottom: '1px solid #263050' }}>
+                        {['Usuario', 'Entidad', 'Ledgers congelados', 'Motivo (oficio)', 'Desde'].map(h => (
+                          <th key={h} className="px-3 py-2 text-[0.65rem] uppercase tracking-wide text-[#8A96B8] font-semibold whitespace-nowrap">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {frozen.frozen.map(f => (
+                        <tr key={f.userId} style={{ borderBottom: '1px solid #1A2340' }}>
+                          <td className="px-3 py-2">
+                            <p className="text-[0.75rem] font-semibold text-white">{f.user?.name || '(sin nombre)'}</p>
+                            <p className="text-[0.65rem] text-[#8A96B8]">{f.user?.email ?? shortKey(f.userId)}</p>
+                          </td>
+                          <td className="px-3 py-2">
+                            <span className="text-[0.65rem] font-semibold px-2 py-0.5 rounded-full" style={{ background: '#26305080', color: '#8A96B8' }}>
+                              {f.user?.legalEntity ?? '—'}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            {['BOB', 'USDC'].map(l => f.ledgers?.[l] && (
+                              <span key={l} className="text-[0.65rem] font-semibold px-2 py-0.5 rounded-full mr-1.5 inline-flex items-center gap-1"
+                                style={{ background: '#EF44441A', color: '#F87171' }}>
+                                <Snowflake size={10} /> {l}: {fmt(f.ledgers[l].balanceFrozen)}
+                              </span>
+                            ))}
+                          </td>
+                          <td className="px-3 py-2 text-[0.7rem] text-[#C4CBD8] max-w-[220px]">{f.frozenReason ?? '—'}</td>
+                          <td className="px-3 py-2 text-[0.7rem] text-[#8A96B8] whitespace-nowrap">{fmtDateTime(f.frozenAt)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* §5 — Auditoría de acciones admin */}
+            <SectionTitle icon={ScrollText} right={
+              <select
+                value={auditAction}
+                onChange={e => { setAuditAction(e.target.value); loadAudit(1, e.target.value) }}
+                className="text-[0.75rem] font-semibold rounded-lg px-2.5 py-1.5"
+                style={{ background: '#1A2340', border: '1px solid #263050', color: '#C4CBD8', outline: 'none' }}
+              >
+                <option value="">Todas las acciones</option>
+                <option value="wallet.freeze">wallet.freeze</option>
+                <option value="wallet.unfreeze">wallet.unfreeze</option>
+                <option value="fee.update">fee.update</option>
+              </select>
+            }>Auditoría de acciones admin</SectionTitle>
+
+            <div className="rounded-2xl p-5 mb-8" style={{ background: '#1A2340', border: '1px solid #263050' }}>
+              {auditLoading && !audit ? (
+                <div className="flex justify-center py-6"><Loader className="animate-spin text-[#C4CBD8]" size={20} /></div>
+              ) : !audit?.logs?.length ? (
+                <p className="text-[0.8125rem] text-[#8A96B8]">
+                  Sin registros de auditoría{auditAction ? ` para la acción ${auditAction}` : ''}. Cada acción sensible del panel (congelamientos, cambios de comisión) queda registrada aquí, append-only.
+                </p>
+              ) : (
+                <>
+                  <div className="rounded-xl overflow-x-auto" style={{ border: '1px solid #263050' }}>
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr style={{ background: '#0F1628', borderBottom: '1px solid #263050' }}>
+                          {['', 'Fecha', 'Actor', 'Acción', 'Objeto', 'Motivo (oficio)', 'Resultado'].map((h, i) => (
+                            <th key={i} className="px-3 py-2 text-[0.65rem] uppercase tracking-wide text-[#8A96B8] font-semibold whitespace-nowrap">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {audit.logs.map(log => (
+                          <Fragment key={log._id}>
+                            <tr onClick={() => setExpandedLog(expandedLog === log._id ? null : log._id)}
+                              className="cursor-pointer" style={{ borderBottom: '1px solid #1A2340' }}>
+                              <td className="px-2 py-2 text-[#4E5A7A]">
+                                {expandedLog === log._id ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                              </td>
+                              <td className="px-3 py-2 text-[0.7rem] text-[#8A96B8] whitespace-nowrap">{fmtDateTime(log.createdAt)}</td>
+                              <td className="px-3 py-2 text-[0.7rem] text-[#C4CBD8] whitespace-nowrap">{log.actorEmail || shortKey(String(log.actorId ?? ''))}</td>
+                              <td className="px-3 py-2 whitespace-nowrap">
+                                <span className="text-[0.65rem] font-semibold px-2 py-0.5 rounded-full"
+                                  style={log.action === 'wallet.freeze'
+                                    ? { background: '#EF44441A', color: '#F87171' }
+                                    : log.action === 'wallet.unfreeze'
+                                      ? { background: '#22C55E1A', color: '#22C55E' }
+                                      : { background: '#C4CBD81A', color: '#C4CBD8' }}>
+                                  {log.action}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2 text-[0.65rem] text-[#8A96B8] font-mono whitespace-nowrap">
+                                {log.targetType}{log.targetId ? `: ${shortKey(log.targetId)}` : ''}
+                              </td>
+                              <td className="px-3 py-2 text-[0.7rem] text-[#C4CBD8] max-w-[220px]">{log.reason || '—'}</td>
+                              <td className="px-3 py-2">
+                                <span className="text-[0.65rem] font-semibold px-2 py-0.5 rounded-full"
+                                  style={log.result === 'failure'
+                                    ? { background: '#EF44441A', color: '#F87171' }
+                                    : { background: '#22C55E1A', color: '#22C55E' }}>
+                                  {log.result === 'failure' ? 'falló' : 'ok'}
+                                </span>
+                              </td>
+                            </tr>
+                            {expandedLog === log._id && (
+                              <tr style={{ borderBottom: '1px solid #1A2340', background: '#0F1628' }}>
+                                <td colSpan={7} className="px-4 py-3">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div>
+                                      <p className="text-[0.6rem] uppercase tracking-wide text-[#8A96B8] mb-1">Valor anterior</p>
+                                      <pre className="text-[0.65rem] text-[#C4CBD8] rounded-lg p-2.5 overflow-x-auto" style={{ background: '#1A2340', border: '1px solid #263050' }}>
+                                        {log.before ? JSON.stringify(log.before, null, 2) : '(sin dato)'}
+                                      </pre>
+                                    </div>
+                                    <div>
+                                      <p className="text-[0.6rem] uppercase tracking-wide text-[#8A96B8] mb-1">Valor nuevo</p>
+                                      <pre className="text-[0.65rem] text-[#C4CBD8] rounded-lg p-2.5 overflow-x-auto" style={{ background: '#1A2340', border: '1px solid #263050' }}>
+                                        {log.after ? JSON.stringify(log.after, null, 2) : '(sin dato)'}
+                                      </pre>
+                                    </div>
+                                  </div>
+                                  <p className="text-[0.6rem] text-[#4E5A7A] mt-2">
+                                    IP: {log.ip || '—'} · rol: {log.actorRole || '—'}
+                                    {log.errorMessage ? ` · error: ${log.errorMessage}` : ''}
+                                  </p>
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Paginación */}
+                  <div className="flex items-center justify-between mt-3">
+                    <p className="text-[0.65rem] text-[#4E5A7A]">
+                      {audit.pagination.total} registros, página {audit.pagination.page} de {audit.pagination.pages}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => loadAudit(auditPage - 1, auditAction)}
+                        disabled={auditLoading || auditPage <= 1}
+                        className="p-1.5 rounded-lg text-[#C4CBD8] disabled:opacity-30"
+                        style={{ background: '#0F1628', border: '1px solid #263050' }}>
+                        <ChevronLeft size={14} />
+                      </button>
+                      <button
+                        onClick={() => loadAudit(auditPage + 1, auditAction)}
+                        disabled={auditLoading || auditPage >= (audit.pagination.pages ?? 1)}
+                        className="p-1.5 rounded-lg text-[#C4CBD8] disabled:opacity-30"
+                        style={{ background: '#0F1628', border: '1px solid #263050' }}>
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
                 </>
               )}
             </div>

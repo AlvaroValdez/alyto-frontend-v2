@@ -708,3 +708,22 @@ export function getAnchorReconciliation(limit = 500) {
 export function getAnchorSolvency() {
   return request('/admin/anchor/solvency')
 }
+
+/** 4.7 — Congelamientos activos (BOB + USDC) con datos del usuario. */
+export function getAnchorFrozen() {
+  return request('/admin/anchor/frozen')
+}
+
+/**
+ * §5 — Registro de acciones sensibles del admin (append-only).
+ * @param {{ action?, actorId?, targetType?, targetId?, from?, to?, page?, limit? }} params
+ * @returns {Promise<{ logs, pagination }>}
+ */
+export function getAnchorAudit(params = {}) {
+  const qs = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== '') qs.set(k, String(v))
+  }
+  const query = qs.toString()
+  return request(`/admin/anchor/audit${query ? `?${query}` : ''}`)
+}
