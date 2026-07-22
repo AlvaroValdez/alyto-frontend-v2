@@ -299,14 +299,37 @@ export default function AnchorAdminPage() {
                 )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Metric label="Pasivo (saldos usuarios)" value={fmt(solvency?.liabilitiesUSDC)} unit="USDC" />
-                <Metric label="Reserva (USDC on-chain)" value={fmt(solvency?.reservesUSDC)} unit="USDC" />
+                <Metric label="Pasivo total" value={fmt(solvency?.liabilitiesUSDC)} unit="USDC" />
+                <Metric label="Reserva total" value={fmt(solvency?.reservesUSDC)} unit="USDC" />
                 <Metric label={solvency?.differenceUSDC >= 0 ? 'Excedente' : 'Déficit'}
                   value={`${solvency?.differenceUSDC >= 0 ? '+' : ''}${fmt(solvency?.differenceUSDC)}`} unit="USDC"
                   color={solvency?.differenceUSDC >= 0 ? '#22C55E' : '#EF4444'} />
               </div>
+
+              {/* Desglose de los dos lados (modelo custodial + tesorería) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                <div className="rounded-xl p-3" style={{ background: '#0F1628', border: '1px solid #263050' }}>
+                  <p className="text-[0.6rem] uppercase tracking-wide text-[#8A96B8] mb-2">Reserva = custodial + tesorería</p>
+                  <div className="flex justify-between text-[0.75rem] text-[#C4CBD8]">
+                    <span>USDC custodial (depósitos)</span><span className="font-semibold text-white">{fmt(solvency?.custodialReserveUSDC)}</span>
+                  </div>
+                  <div className="flex justify-between text-[0.75rem] text-[#C4CBD8] mt-1">
+                    <span>USDC tesorería SRL</span><span className="font-semibold text-white">{fmt(solvency?.treasuryReserveUSDC)}</span>
+                  </div>
+                </div>
+                <div className="rounded-xl p-3" style={{ background: '#0F1628', border: '1px solid #263050' }}>
+                  <p className="text-[0.6rem] uppercase tracking-wide text-[#8A96B8] mb-2">Pasivo = saldos usuarios + payouts en vuelo</p>
+                  <div className="flex justify-between text-[0.75rem] text-[#C4CBD8]">
+                    <span>Saldos USDC de usuarios</span><span className="font-semibold text-white">{fmt(solvency?.userLiabilitiesUSDC)}</span>
+                  </div>
+                  <div className="flex justify-between text-[0.75rem] text-[#C4CBD8] mt-1">
+                    <span>Payouts comprometidos/en vuelo</span><span className="font-semibold text-white">{fmt(solvency?.inflightPayoutUSDC)}</span>
+                  </div>
+                </div>
+              </div>
+
               <p className="text-[0.6rem] text-[#4E5A7A] mt-3">
-                {solvency?.custodialAddresses ?? 0} direcciones custodiales · {solvency?.walletCount ?? 0} wallets. Identidad contable (pasivo = balance + congelado) pendiente de confirmar antes de cablear alertas.
+                {solvency?.custodialAddresses ?? 0} direcciones custodiales · {solvency?.walletCount ?? 0} wallets. Solvencia de dos lados: el USDC de conversiones BOB→USDC y P2P se respalda en la tesorería (no en la cuenta custodial del usuario), por eso la reserva suma ambos pozos.
               </p>
             </div>
 
@@ -339,6 +362,13 @@ export default function AnchorAdminPage() {
                       <CheckCircle2 size={16} /> Todo cuadra. Espejo y on-chain coinciden.
                     </div>
                   ) : (
+                    <>
+                    <div className="rounded-xl px-3 py-2.5 mb-3 flex items-start gap-2" style={{ background: '#26305033', border: '1px solid #263050' }}>
+                      <ShieldCheck size={14} className="text-[#8A96B8] flex-shrink-0 mt-0.5" />
+                      <p className="text-[0.65rem] text-[#8A96B8] leading-relaxed">
+                        Un delta positivo (espejo &gt; on-chain) es <span className="text-[#C4CBD8]">esperado</span> en el modelo ledger-only: el USDC de conversiones BOB→USDC y P2P se respalda en la tesorería, no en la cuenta custodial del usuario. La cobertura real se mide arriba en Solvencia (dos lados). Un delta negativo (on-chain &gt; espejo) sí sería una anomalía: inflow no registrado.
+                      </p>
+                    </div>
                     <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #263050' }}>
                       <table className="w-full text-left">
                         <thead>
@@ -372,6 +402,7 @@ export default function AnchorAdminPage() {
                         </tbody>
                       </table>
                     </div>
+                    </>
                   )}
 
                   {recon.coverageNote && (
