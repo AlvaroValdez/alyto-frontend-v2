@@ -3,7 +3,12 @@
  *
  * Recolecta los elementos que Stripe Identity no provee y que Harbor/anchors
  * exigen para reusar nuestro KYC (evita el doble KYC):
- *   fecha de nacimiento · nacionalidad · teléfono · domicilio · origen de fondos
+ *   fecha de nacimiento · nacionalidad · documento (CI/RUT) · teléfono ·
+ *   domicilio · origen de fondos
+ *
+ * El número de documento DECLARADO es la fuente primaria para el Comprobante
+ * Oficial ASFI — Stripe Identity no devuelve id_number de forma confiable
+ * para CI boliviano.
  *
  * Se renderiza dentro de KycPage cuando emailVerified && !kycProfileCompleted.
  * Al guardar con éxito, llama onComplete() para avanzar a la verificación Stripe.
@@ -27,10 +32,11 @@ export default function KycProfileForm({ onComplete }) {
   const { updateUser } = useAuth()
 
   const [form, setForm] = useState({
-    dateOfBirth:   '',
-    nationality:   '',
-    phone:         '',
-    sourceOfFunds: '',
+    dateOfBirth:    '',
+    nationality:    '',
+    documentNumber: '',
+    phone:          '',
+    sourceOfFunds:  '',
     street: '', city: '', state: '', zip: '', country: '',
   })
   const [errors,     setErrors]     = useState({})
@@ -47,10 +53,11 @@ export default function KycProfileForm({ onComplete }) {
         const dob = p.dateOfBirth ? String(p.dateOfBirth).slice(0, 10) : ''
         setForm(f => ({
           ...f,
-          dateOfBirth:   dob,
-          nationality:   p.nationality   ?? '',
-          phone:         p.phone         ?? '',
-          sourceOfFunds: p.sourceOfFunds ?? '',
+          dateOfBirth:    dob,
+          nationality:    p.nationality    ?? '',
+          documentNumber: p.documentNumber ?? '',
+          phone:          p.phone          ?? '',
+          sourceOfFunds:  p.sourceOfFunds  ?? '',
           street:  p.address?.street  ?? '',
           city:    p.address?.city    ?? '',
           state:   p.address?.state   ?? '',
@@ -81,6 +88,9 @@ export default function KycProfileForm({ onComplete }) {
       else if (age > 120)         e.dateOfBirth = 'Fecha inválida'
     }
     if (!form.nationality)   e.nationality   = 'Selecciona tu nacionalidad'
+    const doc = form.documentNumber.trim()
+    if (!doc)                                e.documentNumber = 'Requerido'
+    else if (doc.length < 4 || doc.length > 30) e.documentNumber = 'Entre 4 y 30 caracteres'
     if (!form.phone.trim())  e.phone         = 'Requerido'
     if (!form.sourceOfFunds) e.sourceOfFunds = 'Selecciona una opción'
     if (!form.street.trim()) e.street        = 'Requerido'
@@ -100,10 +110,11 @@ export default function KycProfileForm({ onComplete }) {
     setTopError('')
     try {
       await updateKycProfile({
-        dateOfBirth:   form.dateOfBirth,
-        nationality:   form.nationality,
-        sourceOfFunds: form.sourceOfFunds,
-        phone:         form.phone.trim(),
+        dateOfBirth:    form.dateOfBirth,
+        nationality:    form.nationality,
+        documentNumber: form.documentNumber.trim(),
+        sourceOfFunds:  form.sourceOfFunds,
+        phone:          form.phone.trim(),
         address: {
           street:  form.street.trim(),
           city:    form.city.trim(),
@@ -160,6 +171,11 @@ export default function KycProfileForm({ onComplete }) {
         label="Nacionalidad" name="nationality" value={form.nationality}
         onChange={onInput} options={COUNTRIES.map(c => ({ value: c.code, label: c.name }))}
         placeholder="Selecciona tu nacionalidad" error={errors.nationality}
+      />
+      <Input
+        label="Número de documento" name="documentNumber"
+        placeholder="CI / RUT / Pasaporte" value={form.documentNumber}
+        onChange={onInput} error={errors.documentNumber}
       />
       <Input
         label="Teléfono" type="tel" name="phone" inputMode="tel"
