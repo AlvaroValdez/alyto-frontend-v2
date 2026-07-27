@@ -70,6 +70,7 @@ import ReclamosAdminPage   from '../pages/Admin/Reclamos/ReclamosAdminPage'
 import SanctionsPage       from '../pages/Admin/Sanctions/SanctionsPage'
 import UsersPage           from '../pages/Admin/Users/UsersPage'
 import AnchorAdminPage     from '../pages/Admin/Anchor/AnchorAdminPage'
+import AccountingPage       from '../pages/Admin/Accounting/AccountingPage'
 
 // ── Páginas legacy ────────────────────────────────────────────────────────────
 import TransferView   from '../components/TransferView'
@@ -203,6 +204,7 @@ export default function AppRouter() {
         <Route path="/admin/sanctions"       element={<SanctionsPage />}     />
         <Route path="/admin/users"           element={<UsersPage />}         />
         <Route path="/admin/anchor"          element={<AnchorAdminPage />}   />
+        <Route path="/admin/accounting"      element={<AccountingPage />}    />
       </Route>
 
       {/* ── 404 ─────────────────────────────────────────────────────────── */}

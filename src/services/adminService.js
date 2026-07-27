@@ -727,3 +727,44 @@ export function getAnchorAudit(params = {}) {
   const query = qs.toString()
   return request(`/admin/anchor/audit${query ? `?${query}` : ''}`)
 }
+
+// ── Libro Mayor / contabilidad (Fase 3) ──────────────────────────────────────
+// Gated en el backend por LEDGER_POSTING_ENABLED. Prefijo /admin/ledger.
+
+/** Balance de comprobación (Σdébito=Σcrédito por moneda + saldo por cuenta). */
+export function getLedgerTrialBalance() {
+  return request('/admin/ledger/trial-balance')
+}
+
+/** Reconciliación: GL vs saldos de wallets vs on-chain. */
+export function getLedgerReconciliation() {
+  return request('/admin/ledger/reconciliation')
+}
+
+/** Balance general (activo = pasivo + patrimonio + resultado, por moneda). */
+export function getLedgerBalanceSheet() {
+  return request('/admin/ledger/balance-sheet')
+}
+
+/** Estado de resultados (P&L) por período. */
+export function getLedgerPnl(from, to) {
+  const qs = new URLSearchParams()
+  if (from) qs.set('from', from)
+  if (to)   qs.set('to', to)
+  const q = qs.toString()
+  return request(`/admin/ledger/pnl${q ? `?${q}` : ''}`)
+}
+
+/** Estado de cuenta de una cuenta con saldo corriente. */
+export function getLedgerTreasury(account, from, to) {
+  const qs = new URLSearchParams()
+  if (from) qs.set('from', from)
+  if (to)   qs.set('to', to)
+  const q = qs.toString()
+  return request(`/admin/ledger/treasury/${encodeURIComponent(account)}${q ? `?${q}` : ''}`)
+}
+
+/** Dispara la proyección forward bajo demanda (respeta el flag en el backend). */
+export function runLedgerSync() {
+  return request('/admin/ledger/sync', { method: 'POST' })
+}
