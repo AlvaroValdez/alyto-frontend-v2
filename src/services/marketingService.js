@@ -90,6 +90,39 @@ export function rechazarPieza(id, motivo) {
   })
 }
 
+/**
+ * Publica una pieza aprobada en su red social. Irreversible desde el panel.
+ *
+ * @throws error con `.status`:
+ *   409 ya publicada / intento sin resolver / estado no publicable
+ *   422 contiene una prohibición absoluta
+ *   501 la red no acepta este tipo de contenido (TikTok con texto)
+ *   503 publicación deshabilitada o publicador sin configurar
+ *   504 no hubo respuesta de la red — la pieza queda trabada
+ */
+export function listarPublicables(params = {}) {
+  const qs = new URLSearchParams()
+  if (params.page)  qs.set('page',  params.page)
+  if (params.limit) qs.set('limit', params.limit)
+  const q = qs.toString()
+  return request(`/admin/marketing/publicables${q ? `?${q}` : ''}`)
+}
+
+export function publicarPieza(id) {
+  return request(`/admin/marketing/${id}/publicar`, { method: 'POST' })
+}
+
+/**
+ * Libera una pieza trabada por un intento que no cerró.
+ * Solo después de verificar en la red que el post NO salió.
+ */
+export function destrabarPieza(id, motivo) {
+  return request(`/admin/marketing/${id}/destrabar`, {
+    method: 'POST',
+    body:   JSON.stringify({ motivo: motivo || '' }),
+  })
+}
+
 export default {
   getMarketingEstado,
   generarPieza,
@@ -97,4 +130,7 @@ export default {
   listarHistorial,
   aprobarPieza,
   rechazarPieza,
+  listarPublicables,
+  publicarPieza,
+  destrabarPieza,
 }

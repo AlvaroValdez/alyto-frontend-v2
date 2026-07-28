@@ -28,11 +28,11 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Megaphone, RefreshCw, Loader, AlertTriangle, Ban, CheckCircle2, XCircle,
   Sparkles, Inbox, History, Image as ImageIcon, Bot, ShieldCheck, Send,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Rocket, ExternalLink, Unlock, Clock,
 } from 'lucide-react'
 import {
-  getMarketingEstado, generarPieza, listarPendientes, listarHistorial,
-  aprobarPieza, rechazarPieza,
+  getMarketingEstado, generarPieza, listarPendientes, listarPublicables,
+  listarHistorial, aprobarPieza, rechazarPieza, publicarPieza, destrabarPieza,
 } from '../../../services/marketingService'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -164,7 +164,8 @@ function Paginacion({ pagination, onPage }) {
  * Una pieza. En la cola trae acciones; en el historial es solo lectura.
  * `pieza.prohibida` viene del backend solo en la cola.
  */
-function PiezaCard({ pieza, acciones = false, onAprobar, onRechazar, ocupada }) {
+function PiezaCard({ pieza, acciones = false, publicacion = false,
+                    onAprobar, onRechazar, onPublicar, onDestrabar, ocupada }) {
   const [motivoRechazo, setMotivoRechazo] = useState('')
   const [mostrarRechazo, setMostrarRechazo] = useState(false)
 
@@ -246,6 +247,65 @@ function PiezaCard({ pieza, acciones = false, onAprobar, onRechazar, ocupada }) 
         )}
       </div>
 
+      {/* Ya publicada — enlace al post real */}
+      {pieza.publicacion?.postId && (
+        <a href={pieza.publicacion.url} target="_blank" rel="noreferrer"
+           className="mt-4 inline-flex items-center gap-2 text-[0.75rem] font-semibold"
+           style={{ color: '#22C55E' }}>
+          <ExternalLink size={13} /> Ver publicación · {fmtFecha(pieza.publicacion.publicadoEn)}
+        </a>
+      )}
+
+      {/* Intento sin resolver: no sabemos si el post salió */}
+      {pieza.publicacion?.enCurso && (
+        <div className="rounded-xl p-3 mt-4 flex items-start gap-3"
+             style={{ background: '#FBBF241A', border: '1px solid #FBBF2440' }}>
+          <Clock size={18} className="text-[#FBBF24] flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-[0.8rem] font-bold text-[#FBBF24]">Intento de publicación sin resolver</p>
+            <p className="text-[0.75rem] text-[#FDE68A] mt-0.5 leading-relaxed">
+              No hubo respuesta de la red, así que no sabemos si el post salió. Revisá la página
+              antes de reintentar: publicar de nuevo podría duplicarlo.
+              {pieza.publicacion.ultimoError && <><br /><span className="text-[#4E5A7A]">{pieza.publicacion.ultimoError}</span></>}
+            </p>
+            {publicacion && (
+              <button
+                onClick={() => onDestrabar(pieza._id)} disabled={ocupada}
+                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.72rem] font-semibold disabled:opacity-40"
+                style={{ background: 'transparent', border: '1px solid #FBBF2440', color: '#FBBF24' }}
+              ><Unlock size={12} /> Ya verifiqué: no salió, destrabar</button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Último error de publicación (sin traba) */}
+      {publicacion && !pieza.publicacion?.enCurso && pieza.publicacion?.ultimoError && !pieza.publicacion?.postId && (
+        <p className="mt-3 text-[0.72rem] text-[#F87171]">
+          Último intento falló: {pieza.publicacion.ultimoError}
+        </p>
+      )}
+
+      {/* Acción de publicar */}
+      {publicacion && !pieza.publicacion?.postId && !pieza.publicacion?.enCurso && (
+        <div className="mt-4 pt-4" style={{ borderTop: '1px solid #263050' }}>
+          {pieza.publicable === false ? (
+            <p className="text-[0.75rem] text-[#8A96B8] flex items-center gap-2">
+              <AlertTriangle size={13} className="text-[#FBBF24]" />
+              {pieza.motivoNoPublicable}
+            </p>
+          ) : (
+            <button
+              onClick={() => onPublicar(pieza._id)} disabled={ocupada}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[0.8rem] font-bold disabled:opacity-40"
+              style={{ background: '#C4CBD8', color: '#0F1628', boxShadow: '0 4px 20px rgba(196,203,216,0.25)' }}
+            >
+              <Rocket size={15} /> Publicar en {CANAL_LABEL[pieza.canal] ?? pieza.canal}
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Acciones (solo en la cola) */}
       {acciones && (
         <div className="mt-4 pt-4" style={{ borderTop: '1px solid #263050' }}>
@@ -309,9 +369,10 @@ function PiezaCard({ pieza, acciones = false, onAprobar, onRechazar, ocupada }) 
 // ── Página ────────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'cola',      label: 'Cola de aprobación', icon: Inbox },
-  { id: 'generar',   label: 'Generar pieza',      icon: Sparkles },
-  { id: 'historial', label: 'Historial',          icon: History },
+  { id: 'cola',        label: 'Cola de aprobación',  icon: Inbox },
+  { id: 'publicables', label: 'Listas para publicar', icon: Rocket },
+  { id: 'generar',     label: 'Generar pieza',        icon: Sparkles },
+  { id: 'historial',   label: 'Historial',            icon: History },
 ]
 
 const EJEMPLOS = [
@@ -337,6 +398,11 @@ export default function MarketingAgentPage() {
   const [tarea, setTarea]           = useState('')
   const [generando, setGenerando]   = useState(false)
   const [ultima, setUltima]         = useState(null)
+
+  // Listas para publicar
+  const [pubs, setPubs]             = useState({ piezas: [], pagination: null })
+  const [cargandoPubs, setCargandoPubs] = useState(false)
+  const [pagPubs, setPagPubs]       = useState(1)
 
   // Historial
   const [hist, setHist]             = useState({ piezas: [], pagination: null })
@@ -370,6 +436,17 @@ export default function MarketingAgentPage() {
     }
   }, [])
 
+  const cargarPublicables = useCallback(async (page = 1) => {
+    setCargandoPubs(true)
+    try {
+      setPubs(await listarPublicables({ page, limit: 10 }))
+    } catch (e) {
+      if (e.status !== 404) setError(e.message)
+    } finally {
+      setCargandoPubs(false)
+    }
+  }, [])
+
   const cargarHistorial = useCallback(async (page = 1, estadoFiltro = '') => {
     setCargandoHist(true)
     try {
@@ -385,6 +462,9 @@ export default function MarketingAgentPage() {
   useEffect(() => {
     if (tab === 'historial') cargarHistorial(pagHist, filtroEstado)
   }, [tab, pagHist, filtroEstado, cargarHistorial])
+  useEffect(() => {
+    if (tab === 'publicables') cargarPublicables(pagPubs)
+  }, [tab, pagPubs, cargarPublicables])
 
   // ── Acciones ────────────────────────────────────────────────────────────────
 
@@ -436,6 +516,34 @@ export default function MarketingAgentPage() {
         setError('Otro administrador ya resolvió esta pieza.')
         await cargarCola(pagCola)
       } else setError(e.message)
+    } finally {
+      setOcupada(null)
+    }
+  }
+
+  async function handlePublicar(id) {
+    setOcupada(id); setError(null); setAviso(null)
+    try {
+      const { pieza } = await publicarPieza(id)
+      setAviso(`Publicada en ${CANAL_LABEL[pieza.canal] ?? pieza.canal}.`)
+      await Promise.all([cargarPublicables(pagPubs), cargarEstado()])
+    } catch (e) {
+      // 504 = no hubo respuesta de la red: la pieza queda trabada a propósito.
+      setError(e.message)
+      await cargarPublicables(pagPubs)
+    } finally {
+      setOcupada(null)
+    }
+  }
+
+  async function handleDestrabar(id) {
+    setOcupada(id); setError(null); setAviso(null)
+    try {
+      await destrabarPieza(id, 'Verificado en la red: el post no salió.')
+      setAviso('Pieza destrabada. Podés reintentar la publicación.')
+      await cargarPublicables(pagPubs)
+    } catch (e) {
+      setError(e.message)
     } finally {
       setOcupada(null)
     }
@@ -509,7 +617,7 @@ export default function MarketingAgentPage() {
             { label: 'En cola',        valor: pendientes,                                   color: pendientes > 0 ? '#FBBF24' : '#FFFFFF' },
             { label: 'Autopublicadas', valor: estado.piezas?.autopublicado ?? 0,             color: '#22C55E' },
             { label: 'Aprobadas',      valor: estado.piezas?.aprobado ?? 0,                  color: '#22C55E' },
-            { label: 'Rechazadas',     valor: estado.piezas?.rechazado ?? 0,                 color: '#F87171' },
+            { label: 'Publicadas',     valor: estado.piezas?.publicado ?? 0,                 color: '#22C55E' },
           ].map(m => (
             <div key={m.label} className="rounded-xl p-3.5" style={{ background: '#1A2340', border: '1px solid #263050' }}>
               <p className="text-[0.62rem] uppercase tracking-wide text-[#8A96B8] mb-1">{m.label}</p>
@@ -581,6 +689,44 @@ export default function MarketingAgentPage() {
             <Paginacion pagination={cola.pagination} onPage={(n) => { setPagCola(n); cargarCola(n) }} />
           </>
         )
+      )}
+
+      {/* ── Listas para publicar ── */}
+      {tab === 'publicables' && (
+        <>
+          {estado?.publicacion && !estado.publicacion.habilitada && (
+            <div className="rounded-xl p-3.5 mb-4 flex items-start gap-3"
+                 style={{ background: '#C4CBD81A', border: '1px solid #C4CBD833' }}>
+              <AlertTriangle size={16} className="text-[#C4CBD8] flex-shrink-0 mt-0.5" />
+              <p className="text-[0.8rem] text-[#C4CBD8]">
+                La publicación a redes está deshabilitada. Para activarla, poné{' '}
+                <code className="px-1.5 py-0.5 rounded text-[0.75rem]" style={{ background: '#0F1628' }}>
+                  MARKETING_PUBLISH_ENABLED=true
+                </code>.
+              </p>
+            </div>
+          )}
+
+          {cargandoPubs ? (
+            <div className="flex justify-center py-16"><Loader size={22} className="animate-spin text-[#C4CBD8]" /></div>
+          ) : pubs.piezas.length === 0 ? (
+            <Empty icon={Rocket} titulo="Nada listo para publicar"
+                   sub="Acá aparecen las piezas aprobadas y las de bajo riesgo que todavía no salieron al aire." />
+          ) : (
+            <>
+              <div className="flex flex-col gap-4">
+                {pubs.piezas.map(p => (
+                  <PiezaCard
+                    key={p._id} pieza={p} publicacion
+                    onPublicar={handlePublicar} onDestrabar={handleDestrabar}
+                    ocupada={ocupada === p._id}
+                  />
+                ))}
+              </div>
+              <Paginacion pagination={pubs.pagination} onPage={setPagPubs} />
+            </>
+          )}
+        </>
       )}
 
       {/* ── Generar ── */}
