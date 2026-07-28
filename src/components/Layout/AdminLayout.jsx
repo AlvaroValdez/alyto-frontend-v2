@@ -6,7 +6,8 @@
 
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
-import { BarChart2, Layers, ArrowLeft, ShieldCheck, TrendingUp, Wallet, Building2, QrCode, Banknote, AlertCircle, ShieldAlert, Settings2, AlertTriangle, CheckCircle2, X, Bell, UserPlus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, FileText, Send, Shield as ShieldIcon, CheckCheck, Loader2, Users, Percent, Landmark, Radio, BookText } from 'lucide-react'
+import { BarChart2, Layers, ArrowLeft, ShieldCheck, TrendingUp, Wallet, Building2, QrCode, Banknote, AlertCircle, ShieldAlert, Settings2, AlertTriangle, CheckCircle2, X, Bell, UserPlus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, FileText, Send, Shield as ShieldIcon, CheckCheck, Loader2, Users, Percent, Landmark, Radio, BookText, Megaphone
+} from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { request, fetchUnreadCount, fetchNotifications, markNotificationsRead } from '../../services/api'
 
@@ -182,6 +183,7 @@ export default function AdminLayout() {
         <SidebarLink to="/admin/swaps"       icon={ArrowRightLeft} label="Swaps BOB ⇄ USDC" />
         <SidebarLink to="/admin/reclamos"   icon={AlertCircle}   label="Reclamos PRILI"  />
         <SidebarLink to="/admin/sanctions"  icon={ShieldAlert}   label="Sanciones AML"   />
+        <SidebarLink to="/admin/marketing"  icon={Megaphone}     label="Marketing · IA"  />
         <SidebarLink to="/admin/users"      icon={Users}         label="Usuarios"        />
 
         <div className="mt-auto">
