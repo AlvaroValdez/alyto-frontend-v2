@@ -1,6 +1,6 @@
 // src/components/support/SupportChatWidget.jsx
 //
-// Widget flotante del asistente IA de soporte "Aly" (AWS-4 Bedrock).
+// Widget flotante del asistente IA de soporte "Aly" (API Anthropic vía backend).
 // Burbuja inferior-derecha + panel de chat. Se monta en AppLayout, por lo que
 // solo aparece en la app de usuario autenticada (admin usa AdminLayout aparte).
 //
@@ -135,7 +135,7 @@ export default function SupportChatWidget() {
               <MessageCircle size={18} />
             </div>
             <div className="flex-1 min-w-0">
-              <p style={{ fontSize: '0.9375rem', fontWeight: 700, lineHeight: 1.1 }}>Asistente Alyto</p>
+              <p style={{ fontSize: '0.9375rem', fontWeight: 700, lineHeight: 1.1 }}>Aly, tu asistente IA</p>
               <p style={{ fontSize: '0.75rem', opacity: 0.8, lineHeight: 1.3 }}>
                 <span
                   style={{
