@@ -768,3 +768,18 @@ export function getLedgerTreasury(account, from, to) {
 export function runLedgerSync() {
   return request('/admin/ledger/sync', { method: 'POST' })
 }
+
+/** Fecha hasta la que el período contable está cerrado (o null). */
+export function getLedgerClosedThrough() {
+  return request('/admin/ledger/closed-through')
+}
+
+/** Cierra el período hasta `asOf` (ISO date). dryRun=true solo previsualiza. */
+export function closeLedgerPeriod(asOf, dryRun = false) {
+  return request('/admin/ledger/close', { method: 'POST', body: JSON.stringify({ asOf, dryRun }) })
+}
+
+/** Storno (reversa) de un asiento contable. */
+export function reverseLedgerEntry(entryId, reason) {
+  return request(`/admin/ledger/entries/${encodeURIComponent(entryId)}/reverse`, { method: 'POST', body: JSON.stringify({ reason }) })
+}

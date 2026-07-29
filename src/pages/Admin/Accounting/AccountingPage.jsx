@@ -13,11 +13,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   BookText, RefreshCw, Loader, AlertTriangle, Scale, ClipboardCheck,
-  TrendingUp, Landmark, CheckCircle2, PlayCircle,
+  TrendingUp, Landmark, CheckCircle2, PlayCircle, Lock,
 } from 'lucide-react'
 import {
   getLedgerReconciliation, getLedgerTrialBalance, getLedgerBalanceSheet,
   getLedgerPnl, getLedgerTreasury, runLedgerSync,
+  getLedgerClosedThrough, closeLedgerPeriod,
 } from '../../../services/adminService'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -84,16 +85,29 @@ export default function AccountingPage() {
   const [pnlFrom, setPnlFrom] = useState(monthStart())
   const [pnlTo, setPnlTo]     = useState(todayStr())
   const [stmtAcct, setStmtAcct] = useState('1030')
+  const [closedThrough, setClosedThrough] = useState(null)
+  const [closing, setClosing] = useState(false)
 
   const loadCore = useCallback(async () => {
     try {
-      const [r, t, b] = await Promise.all([getLedgerReconciliation(), getLedgerTrialBalance(), getLedgerBalanceSheet()])
-      setRecon(r); setTrial(t); setBalance(b); setError(null); setDisabled(false)
+      const [r, t, b, c] = await Promise.all([
+        getLedgerReconciliation(), getLedgerTrialBalance(), getLedgerBalanceSheet(), getLedgerClosedThrough(),
+      ])
+      setRecon(r); setTrial(t); setBalance(b); setClosedThrough(c?.closedThrough ?? null); setError(null); setDisabled(false)
     } catch (e) {
       if (e.status === 404) setDisabled(true)
       else setError(e.message)
     }
   }, [])
+
+  const doClose = async () => {
+    const asOf = todayStr()
+    if (!window.confirm(`¿Cerrar el período contable al ${asOf}? El resultado (ingreso − gasto) se traslada a Resultados acumulados y se bloquea el retro-posteo con fecha ≤ ${asOf}. Esta acción no se deshace.`)) return
+    setClosing(true)
+    try { await closeLedgerPeriod(asOf); await refresh() }
+    catch (e) { setError(e.message) }
+    finally { setClosing(false) }
+  }
 
   const loadPnl = useCallback(async (from, to) => {
     try { setPnl(await getLedgerPnl(from, to)) } catch (e) { if (e.status !== 404) setError(e.message) }
@@ -174,6 +188,23 @@ export default function AccountingPage() {
 
         {!disabled && (
           <>
+            {/* Cierre de período */}
+            <div className="rounded-xl px-4 py-3 mb-6 flex items-center justify-between flex-wrap gap-3"
+              style={{ background: '#1A2340', border: '1px solid #263050' }}>
+              <div className="flex items-center gap-2.5">
+                <Lock size={16} className="text-[#C4CBD8]" />
+                <span className="text-[0.8125rem] text-[#C4CBD8]">
+                  Período cerrado hasta:{' '}
+                  <span className="font-bold text-white">{closedThrough ? new Date(closedThrough).toISOString().slice(0, 10) : '— (abierto)'}</span>
+                </span>
+              </div>
+              <button onClick={doClose} disabled={closing}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-[0.8125rem] font-semibold text-white"
+                style={{ background: '#0F1628', border: '1px solid #263050' }}>
+                {closing ? <Loader size={14} className="animate-spin" /> : <Lock size={14} />}Cerrar período al {todayStr()}
+              </button>
+            </div>
+
             {/* Reconciliación */}
             <SectionTitle icon={ClipboardCheck} right={<Pill ok={recon?.controlOk} okLabel="Reconciliado" badLabel="Con desvíos" />}>
               Reconciliación (GL vs wallets vs on-chain)
