@@ -13,12 +13,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   BookText, RefreshCw, Loader, AlertTriangle, Scale, ClipboardCheck,
-  TrendingUp, Landmark, CheckCircle2, PlayCircle, Lock,
+  TrendingUp, Landmark, CheckCircle2, PlayCircle, Lock, Globe,
 } from 'lucide-react'
 import {
   getLedgerReconciliation, getLedgerTrialBalance, getLedgerBalanceSheet,
   getLedgerPnl, getLedgerTreasury, runLedgerSync,
-  getLedgerClosedThrough, closeLedgerPeriod,
+  getLedgerClosedThrough, closeLedgerPeriod, getLedgerConsolidated,
 } from '../../../services/adminService'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -87,6 +87,8 @@ export default function AccountingPage() {
   const [stmtAcct, setStmtAcct] = useState('1030')
   const [closedThrough, setClosedThrough] = useState(null)
   const [closing, setClosing] = useState(false)
+  const [consol, setConsol]   = useState(null)
+  const [functional, setFunctional] = useState('USD')
 
   const loadCore = useCallback(async () => {
     try {
@@ -115,19 +117,22 @@ export default function AccountingPage() {
   const loadStmt = useCallback(async (acct) => {
     try { setStmt(await getLedgerTreasury(acct)) } catch (e) { if (e.status !== 404) setError(e.message) }
   }, [])
+  const loadConsol = useCallback(async (f) => {
+    try { setConsol(await getLedgerConsolidated(f)) } catch (e) { if (e.status !== 404) setError(e.message) }
+  }, [])
 
   useEffect(() => {
     (async () => {
       setLoading(true)
       await loadCore()
-      await Promise.all([loadPnl(pnlFrom, pnlTo), loadStmt(stmtAcct)])
+      await Promise.all([loadPnl(pnlFrom, pnlTo), loadStmt(stmtAcct), loadConsol(functional)])
       setLoading(false)
     })()
   }, [loadCore, loadPnl, loadStmt]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const refresh = async () => {
     setRefreshing(true)
-    await Promise.all([loadCore(), loadPnl(pnlFrom, pnlTo), loadStmt(stmtAcct)])
+    await Promise.all([loadCore(), loadPnl(pnlFrom, pnlTo), loadStmt(stmtAcct), loadConsol(functional)])
     setRefreshing(false)
   }
   const doSync = async () => {
@@ -312,6 +317,64 @@ export default function AccountingPage() {
                 </Card>
               ))}
             </div>
+
+            {/* Balance general consolidado (moneda funcional) */}
+            <SectionTitle icon={Globe} right={
+              <div className="flex items-center gap-1.5">
+                {['USD', 'BOB'].map((f) => (
+                  <button key={f} onClick={() => { setFunctional(f); loadConsol(f) }}
+                    className="text-[0.72rem] font-bold px-2.5 py-1 rounded-lg"
+                    style={f === functional
+                      ? { background: SILVER, color: '#0F1628' }
+                      : { background: '#1A2340', border: '1px solid #263050', color: '#C4CBD8' }}>{f}</button>
+                ))}
+              </div>
+            }>Balance general consolidado</SectionTitle>
+            <Card style={{ marginBottom: 28 }}>
+              {!consol ? (
+                <p className="text-[0.8125rem] text-[#8A96B8]">Sin datos consolidados.</p>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                    <span className="text-[0.7rem] text-[#8A96B8]">
+                      Moneda funcional <span className="font-bold text-white">{consol.functional}</span> · tasa BOB/USD {fmt(consol.rates?.bobPerUsd)}
+                    </span>
+                    <Pill ok={consol.balanced} />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[0.65rem] uppercase tracking-wide text-[#8A96B8] mb-1">Activo</p>
+                      {(consol.assets ?? []).map((a) => (
+                        <div key={a.account} className="flex justify-between text-[0.75rem] text-[#C4CBD8]">
+                          <span>{a.account} {a.name}</span><span className="text-white font-semibold">{fmt(a.value)}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between text-[0.75rem] font-bold text-white border-t mt-1 pt-1" style={{ borderColor: '#263050' }}>
+                        <span>Total activo</span><span>{fmt(consol.totalAssets)} {consol.functional}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[0.65rem] uppercase tracking-wide text-[#8A96B8] mb-1">Pasivo + Patrimonio</p>
+                      {[...(consol.liabilities ?? []), ...(consol.equity ?? [])].map((l) => (
+                        <div key={l.account} className="flex justify-between text-[0.75rem] text-[#C4CBD8]">
+                          <span>{l.account} {l.name}</span><span className="text-white font-semibold">{fmt(l.value)}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between text-[0.75rem] text-[#C4CBD8]">
+                        <span>Resultado del período</span>
+                        <span className="font-semibold" style={{ color: consol.result >= 0 ? OK : BAD }}>{fmt(consol.result)}</span>
+                      </div>
+                      <div className="flex justify-between text-[0.75rem] font-bold text-white border-t mt-1 pt-1" style={{ borderColor: '#263050' }}>
+                        <span>Total pasivo + patrimonio</span><span>{fmt(consol.liabPlusEquity)} {consol.functional}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-[0.6rem] text-[#4E5A7A] mt-3">
+                    Posición cambiaria neta (clearing 1090, en {consol.functional}): {fmt(consol.fxPositionClearing)}. Los saldos en otras monedas se traducen a la tasa de cierre — así se revalúa la posición FX a efectos de reporte (§12.2). La realización se cristaliza al fondear la conversión.
+                  </p>
+                </>
+              )}
+            </Card>
 
             {/* Estado de resultados (P&L) */}
             <SectionTitle icon={TrendingUp} right={

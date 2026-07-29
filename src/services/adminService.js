@@ -783,3 +783,8 @@ export function closeLedgerPeriod(asOf, dryRun = false) {
 export function reverseLedgerEntry(entryId, reason) {
   return request(`/admin/ledger/entries/${encodeURIComponent(entryId)}/reverse`, { method: 'POST', body: JSON.stringify({ reason }) })
 }
+
+/** Balance general consolidado en una moneda funcional (USD por defecto; también BOB). */
+export function getLedgerConsolidated(functional = 'USD') {
+  return request(`/admin/ledger/consolidated?functional=${encodeURIComponent(functional)}`)
+}
