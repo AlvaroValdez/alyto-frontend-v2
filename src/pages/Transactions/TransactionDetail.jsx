@@ -211,6 +211,7 @@ import { getPaymentQR, uploadComprobante } from '../../services/paymentsService.
 import { downloadBusinessInvoice } from '../../services/api.js'
 import { useAuth }                 from '../../context/AuthContext.jsx'
 import { StellarInstructions }     from '../Sep24/Sep24Shared.jsx'
+import { stellarExpertTx }         from '../../utils/stellar.js'
 
 // ── Configuración de estados ──────────────────────────────────────────────────
 
@@ -1299,10 +1300,7 @@ export default function TransactionDetail() {
                   )}
 
                   <a
-                    href={`https://stellar.expert/explorer/${
-                      tx.stellarNetwork
-                        ?? (import.meta.env.VITE_STELLAR_NETWORK === 'mainnet' ? 'public' : 'testnet')
-                    }/tx/${tx.stellarTxId}`}
+                    href={stellarExpertTx(tx.stellarTxId, tx.stellarNetwork)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-1 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#1D346133] text-[#1D3461] text-sm font-medium transition-colors hover:bg-[#233E581A]"
