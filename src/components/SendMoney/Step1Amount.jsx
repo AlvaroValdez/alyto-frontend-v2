@@ -455,14 +455,17 @@ export default function Step1Amount({ initialData, onNext }) {
   const { quote, status, error, errorMeta, isStale, countdown, reconnect } =
     useQuoteSocket(rawAmount || null, selectedCountry?.code || null, quoteCorridorId)
 
-  // ── Mínimo owlPay — calculado con la tasa real del quote Harbor ─────────────
-  // Para BOB: usa quote.exchangeRate (1 BOB = X USD) cuando está disponible —
-  // es la única tasa que refleja el rate real de Harbor (mercado, no ASFI).
+  // ── Mínimo del corredor (en USD) ────────────────────────────────────────────
+  // Para BOB: usa quote.bobPerUsdc cuando está disponible — la misma tasa con la
+  // que el backend convierte el mínimo (resolveMinAmountOrigin), así lo mostrado
+  // coincide con lo que valida el servidor.
   // Si aún no hay quote, muestra solo el mínimo en USD sin equivalente BOB.
   const minAmountForCorridor = (() => {
-    // owlPay y auto-ruteados (ej. EU Harbor+Vita) muestran el piso en USD.
-    // Para auto-ruteados el min es el más bajo del grupo (Vita), enviado por el backend.
-    if (selectedCountry?.payoutMethod !== 'owlPay' && !selectedCountry?.autoRouted) return null
+    // Aplica a CUALQUIER corredor con minAmountUSD configurado — el backend lo
+    // valida igual (resolveMinAmountOrigin) sin importar el proveedor. Antes solo
+    // se mostraba para owlPay/auto-ruteados, así que los corredores Vita (ej. EU,
+    // que dejó de ser auto-ruteado al fijarse en Vita) enviaban al usuario a un
+    // 400 del backend sin aviso previo en pantalla.
     const usdMin = selectedCountry?.minAmountUSD
     if (!usdMin) return null
     if (origin.currency === 'BOB') {
@@ -723,7 +726,7 @@ export default function Step1Amount({ initialData, onNext }) {
             </div>
           )}
 
-          {/* Hint de mínimo owlPay — visible siempre que el corredor lo requiera */}
+          {/* Hint de mínimo del corredor — visible siempre que el corredor lo requiera */}
           {minAmountForCorridor && (
             <div className={`flex items-center gap-2 rounded-xl px-3 py-2 ${
               belowMinimum
