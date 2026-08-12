@@ -549,7 +549,7 @@ function PaymentMethodSelector({
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
-export default function Step3Beneficiary({ destinationCountry, corridorId, onNext }) {
+export default function Step3Beneficiary({ destinationCountry, corridorId, initialData, onNext }) {
   const { rules, payoutMethod, loading, error: loadError, refetch } = useWithdrawalRules(destinationCountry, corridorId)
   const { user } = useAuth()
 
@@ -581,7 +581,7 @@ export default function Step3Beneficiary({ destinationCountry, corridorId, onNex
     return normalized.filter(m => supported.includes(m.method))
   }, [usesHarborMethods, harborMethodsRaw, destinationCountry])
 
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null)
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(initialData?.owlPayMethod ?? null)
 
   // Auto-seleccionar el método recomendado (o el primero) cuando llegan
   useEffect(() => {
@@ -592,7 +592,10 @@ export default function Step3Beneficiary({ destinationCountry, corridorId, onNex
     setSelectedPaymentMethod(rec.method)
   }, [usesHarborMethods, availableMethods, selectedPaymentMethod])
 
-  const [values,  setValues]  = useState({})
+  // Rehidratamos desde stepData: si el usuario vuelve al Step 1 (por ejemplo para
+  // refrescar la cotización o cambiar el monto) y regresa, el formulario no puede
+  // aparecer vacío — son 9-15 campos dinámicos escritos a mano.
+  const [values,  setValues]  = useState(() => initialData?.beneficiaryData ?? {})
   const [touched, setTouched] = useState({})
 
   // Inicializar defaults de campos OwlPay (ej. is_self_transfer = false)
@@ -610,8 +613,8 @@ export default function Step3Beneficiary({ destinationCountry, corridorId, onNex
   }, [isOwlPay, owlPayForm])
 
   // ── Prefill & save-as-contact state ──────────────────────────────────────
-  const [isSavedContact, setIsSavedContact] = useState(false)
-  const [contactId,      setContactId]      = useState(null)
+  const [isSavedContact, setIsSavedContact] = useState(!!initialData?.contactId)
+  const [contactId,      setContactId]      = useState(initialData?.contactId ?? null)
   const [prefillName,    setPrefillName]    = useState(null)
   const [saveAsContact,  setSaveAsContact]  = useState(false)
   const [contactAlias,   setContactAlias]   = useState('')

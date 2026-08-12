@@ -16,6 +16,7 @@ import { ArrowLeft, X, AlertTriangle } from 'lucide-react'
 
 import { useSendMoney }          from '../../hooks/useSendMoney'
 import { useAuth }               from '../../context/AuthContext'
+import { QuoteProvider }         from '../../context/QuoteContext'
 import StepIndicator             from '../../components/SendMoney/StepIndicator'
 import Step1Amount               from '../../components/SendMoney/Step1Amount'
 import Step2PayinMethod          from '../../components/SendMoney/Step2PayinMethod'
@@ -129,6 +130,7 @@ export default function SendMoneyPage() {
   }
 
   return (
+    <QuoteProvider>
     <div className="font-sans flex flex-col max-w-[430px] mx-auto">
 
       {/* ── Sub-header de pasos (bajo el AppLayout header) ── */}
@@ -183,6 +185,7 @@ export default function SendMoneyPage() {
           <Step3Beneficiary
             destinationCountry={stepData.destinationCountry}
             corridorId={stepData.corridorId ?? null}
+            initialData={stepData}
             onNext={(data) => nextStep(data)}
           />
         )}
@@ -302,5 +305,6 @@ export default function SendMoneyPage() {
         </div>
       )}
     </div>
+    </QuoteProvider>
   )
 }

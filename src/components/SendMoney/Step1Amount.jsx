@@ -4,14 +4,15 @@
  * - Lista de países destino obtenida del backend (GET /payments/corridors)
  *   filtrada por la entidad del usuario autenticado — sin hardcode.
  * - Input en la moneda del usuario (CLP/BOB/USD según legalEntity).
- * - Cotización en tiempo real vía WebSocket (useQuoteSocket).
+ * - Cotización en tiempo real vía WebSocket (QuoteContext — el socket vive en el
+ *   proveedor, no aquí, para que siga vivo en los pasos siguientes).
  * - Desglose de fees colapsable.
  * - Contador regresivo de la cotización.
  */
 
 import { useState, useEffect, useRef } from 'react'
 import { ChevronDown, ChevronUp, Clock, AlertCircle, RefreshCw, WifiOff, Loader2, Search, X, ChevronRight } from 'lucide-react'
-import { useQuoteSocket } from '../../hooks/useQuoteSocket'
+import { useQuoteContext } from '../../context/QuoteContext'
 import { useAuth }        from '../../context/AuthContext'
 import { listUserCorridors, getCurrentExchangeRates } from '../../services/paymentsService'
 
@@ -452,8 +453,20 @@ export default function Step1Amount({ initialData, onNext }) {
   const isEuAutoRoute = selectedCountry?.autoRouted === true
   const quoteCorridorId = isEuAutoRoute ? null : (selectedCountry?.corridorId || null)
 
-  const { quote, status, error, errorMeta, isStale, countdown, reconnect } =
-    useQuoteSocket(rawAmount || null, selectedCountry?.code || null, quoteCorridorId)
+  const { quote, status, error, errorMeta, isStale, countdown, reconnect, setQuoteParams } =
+    useQuoteContext()
+
+  // Publicamos los parámetros al proveedor; él mantiene el socket abierto durante
+  // todo el flujo, así la cotización se sigue renovando mientras el usuario llena
+  // los datos del beneficiario en el Step 3.
+  const destinationCode = selectedCountry?.code || null
+  useEffect(() => {
+    setQuoteParams({
+      originAmount:       rawAmount || null,
+      destinationCountry: destinationCode,
+      corridorId:         quoteCorridorId,
+    })
+  }, [rawAmount, destinationCode, quoteCorridorId, setQuoteParams])
 
   // ── Mínimo owlPay — calculado con la tasa real del quote Harbor ─────────────
   // Para BOB: usa quote.exchangeRate (1 BOB = X USD) cuando está disponible —
