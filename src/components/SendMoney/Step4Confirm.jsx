@@ -1,8 +1,10 @@
 /**
  * Step4Confirm.jsx — Resumen de confirmación antes de iniciar el pago.
  *
- * Muestra fees visibles (alytoCSpread + fixedFee + payinFee).
- * NO muestra profitRetention.
+ * Muestra fees visibles (alytoCSpread + fixedFee + payinFee) en moneda ORIGEN, y
+ * aparte la fija del banco destino en SU moneda — esa ya viene descontada de
+ * "Recibe", así que se etiqueta pero no se suma al costo del envío.
+ * NO muestra profitRetention (el backend ya no la envía: toPublicFees es lista blanca).
  * Llama POST /payments/crossborder al confirmar.
  */
 
@@ -246,6 +248,12 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
   const comisionServicio = (fees.alytoCSpread || 0) + (fees.fixedFee || 0)
   const feeProcesamiento = (fees.payinFee     || 0) + (fees.payoutFee || 0)
 
+  // Fija que cobra el proveedor en el país destino (ej. 5 EUR de Vita en SEPA).
+  // Está en MONEDA DESTINO y el backend ya la restó de destinationAmount, así que
+  // NO entra en costoEnvio — sumarla mezclaría unidades. Se muestra etiquetada.
+  const comisionDestino       = fees.providerFixedFee || 0
+  const monedaComisionDestino = fees.providerFixedFeeCurrency || quote?.destinationCurrency || ''
+
   const payinMethodLabel = payinMethod?.startsWith('bankQr')
     ? 'QR Bancario'
     : ({
@@ -430,6 +438,17 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
                   <span className="text-[0.75rem] text-[#94A3B8]">· Fee de procesamiento</span>
                   <span className="text-[0.75rem] text-[#94A3B8]">
                     ${feeProcesamiento.toLocaleString('es-CL')} {originCurrency}
+                  </span>
+                </div>
+              )}
+              {/* Fija del banco destino: va en MONEDA DESTINO y ya está descontada
+                  de "Recibe", por eso no suma al costo del envío. Se muestra igual
+                  para que el usuario entienda de dónde sale la diferencia. */}
+              {comisionDestino > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-[0.75rem] text-[#94A3B8]">· Comisión del banco destino</span>
+                  <span className="text-[0.75rem] text-[#94A3B8]">
+                    {comisionDestino.toLocaleString('es-CL')} {monedaComisionDestino}
                   </span>
                 </div>
               )}

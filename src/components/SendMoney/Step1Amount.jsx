@@ -830,6 +830,11 @@ export default function Step1Amount({ initialData, onNext }) {
                   (f.payinFee     || 0) + (f.payoutFee || 0)
                 const comisionServicio = (f.alytoCSpread || 0) + (f.fixedFee || 0)
                 const feeProcesamiento = (f.payinFee     || 0) + (f.payoutFee || 0)
+                // Fija del proveedor en el país destino (ej. 5 EUR de Vita en SEPA).
+                // Va en MONEDA DESTINO y ya está restada de lo que recibe el
+                // beneficiario → fuera de totalCosto, pero visible y etiquetada.
+                const comisionDestino       = f.providerFixedFee || 0
+                const monedaComisionDestino = f.providerFixedFeeCurrency || quote.destinationCurrency || ''
                 return (
                   <>
                     <button
@@ -863,6 +868,14 @@ export default function Step1Amount({ initialData, onNext }) {
                             <span className="text-[0.6875rem] text-[#94A3B8]">· Fee de procesamiento</span>
                             <span className="text-[0.6875rem] text-[#4A5568]">
                               {origin.symbol}{feeProcesamiento.toLocaleString('es-CL')} {activeCurrency}
+                            </span>
+                          </div>
+                        )}
+                        {comisionDestino > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-[0.6875rem] text-[#94A3B8]">· Comisión del banco destino</span>
+                            <span className="text-[0.6875rem] text-[#4A5568]">
+                              {comisionDestino.toLocaleString('es-CL')} {monedaComisionDestino}
                             </span>
                           </div>
                         )}
