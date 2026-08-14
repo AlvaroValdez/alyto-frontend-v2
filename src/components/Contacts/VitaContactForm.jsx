@@ -24,58 +24,11 @@ import { useWithdrawalRules } from '../../hooks/useWithdrawalRules'
 import { OWLPAY_FORMS, GENERIC_OWLPAY_FORM } from '../SendMoney/owlPayForms'
 import { runFieldValidator, ibanCountry } from '../SendMoney/formValidators'
 import { listUserCorridors } from '../../services/paymentsService'
+import { COUNTRY_META, phonePrefix, flagUrl } from '../../config/countries'
 
-// ── Prefijos de teléfono ──────────────────────────────────────────────────────
-
-const PHONE_PREFIXES = {
-  CO: '+57', PE: '+51', AR: '+54', BO: '+591',
-  MX: '+52', BR: '+55', CL: '+56', EC: '+593',
-  VE: '+58', GT: '+502', SV: '+503', ES: '+34',
-  PL: '+48', HK: '+852', HT: '+509', PA: '+507',
-  DO: '+1',  CR: '+506', PY: '+595', UY: '+598',
-  US: '+1',  GB: '+44',  CN: '+86',  NG: '+234',
-  IN: '+91', AE: '+971', JP: '+81',  SG: '+65',
-  AU: '+61', EU: '+',
-}
 
 // ── Metadatos de países (Vita LatAm + OwlPay Global) ─────────────────────────
 
-export const COUNTRY_META = {
-  // LatAm — Vita Wallet
-  CO: { name: 'Colombia',         currency: 'COP', flagCode: 'co' },
-  PE: { name: 'Perú',             currency: 'PEN', flagCode: 'pe' },
-  BO: { name: 'Bolivia',          currency: 'BOB', flagCode: 'bo' },
-  AR: { name: 'Argentina',        currency: 'ARS', flagCode: 'ar' },
-  MX: { name: 'México',           currency: 'MXN', flagCode: 'mx' },
-  BR: { name: 'Brasil',           currency: 'BRL', flagCode: 'br' },
-  CL: { name: 'Chile',            currency: 'CLP', flagCode: 'cl' },
-  EC: { name: 'Ecuador',          currency: 'USD', flagCode: 'ec' },
-  VE: { name: 'Venezuela',        currency: 'USD', flagCode: 've' },
-  PY: { name: 'Paraguay',         currency: 'PYG', flagCode: 'py' },
-  UY: { name: 'Uruguay',          currency: 'UYU', flagCode: 'uy' },
-  CR: { name: 'Costa Rica',       currency: 'CRC', flagCode: 'cr' },
-  PA: { name: 'Panamá',           currency: 'USD', flagCode: 'pa' },
-  DO: { name: 'Rep. Dominicana',  currency: 'DOP', flagCode: 'do' },
-  GT: { name: 'Guatemala',        currency: 'GTQ', flagCode: 'gt' },
-  SV: { name: 'El Salvador',      currency: 'USD', flagCode: 'sv' },
-  HT: { name: 'Haití',            currency: 'USD', flagCode: 'ht' },
-  // OwlPay Global
-  CA: { name: 'Canadá',           currency: 'USD', flagCode: 'ca' },   // Vita paga USD (causd)
-  US: { name: 'Estados Unidos',   currency: 'USD', flagCode: 'us' },
-  GB: { name: 'Reino Unido',      currency: 'GBP', flagCode: 'gb' },
-  EU: { name: 'Europa (SEPA)',    currency: 'EUR', flagCode: 'eu',
-        keywords: 'españa spain alemania germany francia france italia italy portugal paises bajos netherlands irlanda austria belgica sepa euro' },
-  ES: { name: 'España',           currency: 'EUR', flagCode: 'es' },
-  PL: { name: 'Polonia',          currency: 'PLN', flagCode: 'pl' },
-  HK: { name: 'Hong Kong',        currency: 'HKD', flagCode: 'hk' },
-  CN: { name: 'China',            currency: 'CNY', flagCode: 'cn' },
-  NG: { name: 'Nigeria',          currency: 'NGN', flagCode: 'ng' },
-  IN: { name: 'India',            currency: 'INR', flagCode: 'in' },
-  AE: { name: 'Emiratos Árabes',  currency: 'AED', flagCode: 'ae' },
-  JP: { name: 'Japón',            currency: 'JPY', flagCode: 'jp' },
-  SG: { name: 'Singapur',         currency: 'SGD', flagCode: 'sg' },
-  AU: { name: 'Australia',        currency: 'AUD', flagCode: 'au' },
-}
 
 // ⚠️ COUNTRY_META es SOLO para nombres/banderas de contactos ya guardados —
 // nunca para decidir qué países se pueden ELEGIR ni la moneda. La lista
@@ -119,9 +72,6 @@ function useSelectableCountries() {
   return { countries, error }
 }
 
-function flagUrl(flagCode) {
-  return `https://flagcdn.com/w80/${flagCode}.png`
-}
 
 // ── Labels en español para campos Vita (OwlPay ya los tiene en config) ────────
 
@@ -311,7 +261,7 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
         <div className="flex gap-2">
           <span className="flex items-center px-3 bg-white border border-[#E2E8F0] rounded-xl
             text-[0.875rem] text-[#4A5568] flex-shrink-0 min-w-[64px] justify-center">
-            {PHONE_PREFIXES[countryCode] ?? ''}
+            {phonePrefix(countryCode)}
           </span>
           <input type="tel" value={value ?? ''} onChange={e => onChange(key, e.target.value)}
             onBlur={() => onBlur(key)} placeholder={placeholder || 'Número sin prefijo'}

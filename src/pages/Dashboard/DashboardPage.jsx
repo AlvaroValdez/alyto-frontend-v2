@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth }            from '../../context/AuthContext'
 import { useDashboard }       from '../../hooks/useDashboard'
 import { listUserCorridors }  from '../../services/paymentsService'
+import { COUNTRY_META }       from '../../config/countries'
 import WelcomeBanner          from './WelcomeBanner'
 import QuickActions           from './QuickActions'
 import RecentTransactions     from './RecentTransactions'
@@ -54,39 +55,6 @@ function StatsSkeletons() {
 
 // ── Country meta ──────────────────────────────────────────────────────────────
 
-const COUNTRY_META = {
-  CO: { name: 'Colombia',         currencyName: 'Peso colombiano',    flag: '🇨🇴' },
-  PE: { name: 'Perú',             currencyName: 'Sol peruano',         flag: '🇵🇪' },
-  BO: { name: 'Bolivia',          currencyName: 'Boliviano',           flag: '🇧🇴' },
-  AR: { name: 'Argentina',        currencyName: 'Peso argentino',      flag: '🇦🇷' },
-  MX: { name: 'México',           currencyName: 'Peso mexicano',       flag: '🇲🇽' },
-  BR: { name: 'Brasil',           currencyName: 'Real brasileño',      flag: '🇧🇷' },
-  CL: { name: 'Chile',            currencyName: 'Peso chileno',        flag: '🇨🇱' },
-  EC: { name: 'Ecuador',          currencyName: 'Dólar',               flag: '🇪🇨' },
-  VE: { name: 'Venezuela',        currencyName: 'Dólar',               flag: '🇻🇪' },
-  PY: { name: 'Paraguay',         currencyName: 'Guaraní',             flag: '🇵🇾' },
-  UY: { name: 'Uruguay',          currencyName: 'Peso uruguayo',       flag: '🇺🇾' },
-  CR: { name: 'Costa Rica',       currencyName: 'Colón',               flag: '🇨🇷' },
-  PA: { name: 'Panamá',           currencyName: 'Dólar',               flag: '🇵🇦' },
-  DO: { name: 'Rep. Dominicana',  currencyName: 'Peso dominicano',     flag: '🇩🇴' },
-  GT: { name: 'Guatemala',        currencyName: 'Quetzal',             flag: '🇬🇹' },
-  HT: { name: 'Haití',            currencyName: 'Gourde',              flag: '🇭🇹' },
-  SV: { name: 'El Salvador',      currencyName: 'Dólar',               flag: '🇸🇻' },
-  ES: { name: 'España',           currencyName: 'Euro',                flag: '🇪🇸' },
-  PL: { name: 'Polonia',          currencyName: 'Esloti polaco',       flag: '🇵🇱' },
-  US: { name: 'Estados Unidos',   currencyName: 'Dólar',               flag: '🇺🇸' },
-  EU: { name: 'Europa',           currencyName: 'Euro',                flag: '🇪🇺' },
-  CN: { name: 'China',            currencyName: 'Yuan chino',          flag: '🇨🇳' },
-  AE: { name: 'Emiratos Árabes',  currencyName: 'Dírham emiratí',      flag: '🇦🇪' },
-  GB: { name: 'Reino Unido',      currencyName: 'Libra esterlina',     flag: '🇬🇧' },
-  CA: { name: 'Canadá',           currencyName: 'Dólar canadiense',    flag: '🇨🇦' },
-  AU: { name: 'Australia',        currencyName: 'Dólar australiano',   flag: '🇦🇺' },
-  HK: { name: 'Hong Kong',        currencyName: 'Dólar de Hong Kong',  flag: '🇭🇰' },
-  JP: { name: 'Japón',            currencyName: 'Yen japonés',         flag: '🇯🇵' },
-  SG: { name: 'Singapur',         currencyName: 'Dólar de Singapur',   flag: '🇸🇬' },
-  ZA: { name: 'Sudáfrica',        currencyName: 'Rand sudafricano',    flag: '🇿🇦' },
-  NG: { name: 'Nigeria',          currencyName: 'Naira nigeriana',     flag: '🇳🇬' },
-}
 
 function CountryFlag({ code }) {
   return (

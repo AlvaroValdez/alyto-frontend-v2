@@ -6,8 +6,8 @@
 
 import { useNavigate } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
+import { countryName } from '../../config/countries'
 
-const COUNTRY_NAMES = { CO: 'Colombia', PE: 'Perú', BO: 'Bolivia' }
 
 function formatTransactionId(id) {
   if (!id) return '—'
@@ -88,7 +88,7 @@ export default function Step6Success({ stepData, onReset }) {
           {[
             { label: 'Beneficiario',  value: beneficiary?.fullName },
             { label: 'Banco',         value: beneficiary?.bankName },
-            { label: 'País destino',  value: COUNTRY_NAMES[destinationCountry] || destinationCountry },
+            { label: 'País destino',  value: countryName(destinationCountry) },
             { label: 'Tiempo est.',   value: quote?.estimatedDelivery || '1 día hábil' },
           ].map(({ label, value }) => (
             <div key={label} className="flex justify-between items-center py-2.5">

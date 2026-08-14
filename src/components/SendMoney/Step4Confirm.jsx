@@ -13,6 +13,7 @@ import { Loader2, AlertCircle, ChevronDown, ChevronUp, Clock, RefreshCw, Info, C
 import { initPayment, fetchHarborQuote, getQuote } from '../../services/paymentsService'
 import { useAuth } from '../../context/AuthContext'
 import Sentry from '../../services/sentry.js'
+import { countryName } from '../../config/countries'
 
 // Tiempo máximo que consideramos válida una cotización si no viene quoteExpiresAt
 const QUOTE_MAX_AGE_MS = 4 * 60 * 1000  // 4 minutos
@@ -26,12 +27,6 @@ function formatCountdown(secs) {
 
 const ENTITY_ORIGIN_CURRENCY = { SpA: 'CLP', LLC: 'USD', SRL: 'BOB' }
 
-const COUNTRY_NAMES = {
-  CO: 'Colombia',       PE: 'Perú',     BO: 'Bolivia',
-  AR: 'Argentina',      MX: 'México',   BR: 'Brasil',
-  US: 'Estados Unidos', EC: 'Ecuador',  VE: 'Venezuela',
-  PY: 'Paraguay',       UY: 'Uruguay',
-}
 
 function maskAccount(accountNumber) {
   if (!accountNumber) return '—'
@@ -554,7 +549,7 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
               : '—')
           }
         />
-        <Row label="País" value={COUNTRY_NAMES[destinationCountry] || destinationCountry} />
+        <Row label="País" value={countryName(destinationCountry)} />
         <BeneficiaryRows beneficiary={beneficiary} destinationCountry={destinationCountry} />
         <Row label="Método de pago" value={payinMethodLabel} valueClass="text-[#0D1F3C] text-[0.8125rem]" />
       </div>

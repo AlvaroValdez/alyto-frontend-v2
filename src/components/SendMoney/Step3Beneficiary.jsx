@@ -13,6 +13,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { AlertCircle }              from 'lucide-react'
+import { phonePrefix }              from '../../config/countries'
 import { useWithdrawalRules }       from '../../hooks/useWithdrawalRules'
 import { useHarborRequirements }    from '../../hooks/useHarborRequirements'
 import { useAuth }                  from '../../context/AuthContext'
@@ -23,10 +24,6 @@ import { runFieldValidator, ibanCountry } from './formValidators'
 
 // ── Prefijos de teléfono por país ─────────────────────────────────────────────
 
-const PHONE_PREFIXES = {
-  CO: '+57', PE: '+51', AR: '+54', BO: '+591',
-  MX: '+52', BR: '+55', CL: '+56', EC: '+593',
-}
 
 // ── Corredores OwlPay con selector de método (Harbor) ────────────────────────
 //
@@ -40,7 +37,7 @@ const HARBOR_DEST_CURRENCY = {
   MX: 'MXN',
   AE: 'AED',
   GB: 'USD',  // corredor bo-gb usa USD via WIRE — confirmado Jolin OwlPay 2026-06-09
-  JP: 'JPY',
+  JP: 'USD',  // Harbor solo paga USD en Japón (JPY da 3018) — corredor bo-jp es USD desde 2026-08-14
   SG: 'SGD',
   HK: 'HKD',
   NG: 'NGN',
@@ -430,7 +427,7 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
         <div className="flex gap-2">
           <span className="flex items-center px-3 bg-white border border-[#E2E8F0] rounded-xl
             text-[0.875rem] text-[#4A5568] flex-shrink-0 min-w-[64px] justify-center">
-            {PHONE_PREFIXES[countryCode] ?? ''}
+            {phonePrefix(countryCode)}
           </span>
           <input
             type="tel"

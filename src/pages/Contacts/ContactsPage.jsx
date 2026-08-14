@@ -9,43 +9,10 @@ import {
 import { useContacts } from '../../hooks/useContacts'
 import { deleteContact, toggleContactFavorite, createContact, updateContact } from '../../services/api'
 import VitaContactForm from '../../components/Contacts/VitaContactForm'
+import { COUNTRY_META, flagUrl } from '../../config/countries'
 
 // ── Datos de países (Vita LatAm + OwlPay Global) ─────────────────────────────
 
-const COUNTRY_META = {
-  // LatAm — Vita Wallet
-  CO: { name: 'Colombia',         currency: 'COP', flagCode: 'co' },
-  PE: { name: 'Perú',             currency: 'PEN', flagCode: 'pe' },
-  BO: { name: 'Bolivia',          currency: 'BOB', flagCode: 'bo' },
-  AR: { name: 'Argentina',        currency: 'ARS', flagCode: 'ar' },
-  MX: { name: 'México',           currency: 'MXN', flagCode: 'mx' },
-  BR: { name: 'Brasil',           currency: 'BRL', flagCode: 'br' },
-  CL: { name: 'Chile',            currency: 'CLP', flagCode: 'cl' },
-  EC: { name: 'Ecuador',          currency: 'USD', flagCode: 'ec' },
-  VE: { name: 'Venezuela',        currency: 'USD', flagCode: 've' },
-  PY: { name: 'Paraguay',         currency: 'PYG', flagCode: 'py' },
-  UY: { name: 'Uruguay',          currency: 'UYU', flagCode: 'uy' },
-  CR: { name: 'Costa Rica',       currency: 'CRC', flagCode: 'cr' },
-  PA: { name: 'Panamá',           currency: 'USD', flagCode: 'pa' },
-  DO: { name: 'Rep. Dominicana',  currency: 'DOP', flagCode: 'do' },
-  GT: { name: 'Guatemala',        currency: 'GTQ', flagCode: 'gt' },
-  SV: { name: 'El Salvador',      currency: 'USD', flagCode: 'sv' },
-  HT: { name: 'Haití',            currency: 'USD', flagCode: 'ht' },
-  // OwlPay Global
-  US: { name: 'Estados Unidos',   currency: 'USD', flagCode: 'us' },
-  GB: { name: 'Reino Unido',      currency: 'GBP', flagCode: 'gb' },
-  EU: { name: 'Europa (SEPA)',    currency: 'EUR', flagCode: 'eu' },
-  ES: { name: 'España',           currency: 'EUR', flagCode: 'es' },
-  PL: { name: 'Polonia',          currency: 'PLN', flagCode: 'pl' },
-  HK: { name: 'Hong Kong',        currency: 'HKD', flagCode: 'hk' },
-  CN: { name: 'China',            currency: 'CNY', flagCode: 'cn' },
-  NG: { name: 'Nigeria',          currency: 'NGN', flagCode: 'ng' },
-  IN: { name: 'India',            currency: 'INR', flagCode: 'in' },
-  AE: { name: 'Emiratos Árabes',  currency: 'AED', flagCode: 'ae' },
-  JP: { name: 'Japón',            currency: 'JPY', flagCode: 'jp' },
-  SG: { name: 'Singapur',         currency: 'SGD', flagCode: 'sg' },
-  AU: { name: 'Australia',        currency: 'AUD', flagCode: 'au' },
-}
 
 const COUNTRY_LIST = Object.entries(COUNTRY_META).map(([code, m]) => ({ code, ...m }))
 

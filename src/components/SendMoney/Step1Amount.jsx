@@ -14,6 +14,7 @@ import { ChevronDown, ChevronUp, Clock, AlertCircle, RefreshCw, WifiOff, Loader2
 import { useQuoteSocket } from '../../hooks/useQuoteSocket'
 import { useAuth }        from '../../context/AuthContext'
 import { listUserCorridors, getCurrentExchangeRates } from '../../services/paymentsService'
+import { COUNTRY_META, CURRENCY_NAMES, flagUrl } from '../../config/countries'
 
 // ── Origen según entidad legal ────────────────────────────────────────────────
 
@@ -23,60 +24,8 @@ const ENTITY_ORIGIN = {
   SRL: { country: 'Bolivia', currency: 'BOB', flag: '🇧🇴', symbol: 'Bs', currencyName: 'Boliviano'    },
 }
 
-// ── Info de países para enriquecer la respuesta del backend ──────────────────
 
-const COUNTRY_INFO = {
-  // LatAm — Vita
-  CO: { name: 'Colombia',          currency: 'COP', currencyName: 'Peso Colombiano',    flagCode: 'co' },
-  PE: { name: 'Perú',              currency: 'PEN', currencyName: 'Sol Peruano',         flagCode: 'pe' },
-  BO: { name: 'Bolivia',           currency: 'BOB', currencyName: 'Boliviano',           flagCode: 'bo' },
-  AR: { name: 'Argentina',         currency: 'ARS', currencyName: 'Peso Argentino',      flagCode: 'ar' },
-  MX: { name: 'México',            currency: 'MXN', currencyName: 'Peso Mexicano',       flagCode: 'mx' },
-  BR: { name: 'Brasil',            currency: 'BRL', currencyName: 'Real Brasileño',      flagCode: 'br' },
-  CL: { name: 'Chile',             currency: 'CLP', currencyName: 'Peso Chileno',        flagCode: 'cl' },
-  EC: { name: 'Ecuador',           currency: 'USD', currencyName: 'Dólar Americano',     flagCode: 'ec' },
-  VE: { name: 'Venezuela',         currency: 'USD', currencyName: 'Dólar Americano',     flagCode: 've' },
-  PY: { name: 'Paraguay',          currency: 'PYG', currencyName: 'Guaraní',             flagCode: 'py' },
-  UY: { name: 'Uruguay',           currency: 'UYU', currencyName: 'Peso Uruguayo',       flagCode: 'uy' },
-  CR: { name: 'Costa Rica',        currency: 'CRC', currencyName: 'Colón Costarricense', flagCode: 'cr' },
-  PA: { name: 'Panamá',            currency: 'USD', currencyName: 'Dólar Americano',     flagCode: 'pa' },
-  DO: { name: 'Rep. Dominicana',   currency: 'DOP', currencyName: 'Peso Dominicano',     flagCode: 'do' },
-  GT: { name: 'Guatemala',         currency: 'GTQ', currencyName: 'Quetzal',             flagCode: 'gt' },
-  // Global — OwlPay
-  US: { name: 'Estados Unidos',    currency: 'USD', currencyName: 'Dólar Americano',     flagCode: 'us' },
-  EU: { name: 'Europa',            currency: 'EUR', currencyName: 'Euro',                flagCode: 'eu' },
-  CN: { name: 'China',             currency: 'CNY', currencyName: 'Yuan Chino',          flagCode: 'cn' },
-  AE: { name: 'Emiratos Árabes',   currency: 'AED', currencyName: 'Dírham Emiratí',      flagCode: 'ae' },
-  GB: { name: 'Reino Unido',       currency: 'GBP', currencyName: 'Libra Esterlina',     flagCode: 'gb' },
-  CA: { name: 'Canadá',            currency: 'CAD', currencyName: 'Dólar Canadiense',    flagCode: 'ca' },
-  AU: { name: 'Australia',         currency: 'AUD', currencyName: 'Dólar Australiano',   flagCode: 'au' },
-  JP: { name: 'Japón',             currency: 'JPY', currencyName: 'Yen Japonés',         flagCode: 'jp' },
-  IN: { name: 'India',             currency: 'INR', currencyName: 'Rupia India',         flagCode: 'in' },
-  SG: { name: 'Singapur',          currency: 'SGD', currencyName: 'Dólar de Singapur',   flagCode: 'sg' },
-  HK: { name: 'Hong Kong',         currency: 'HKD', currencyName: 'Dólar HK',             flagCode: 'hk' },
-  NG: { name: 'Nigeria',           currency: 'NGN', currencyName: 'Naira Nigeriana',       flagCode: 'ng' },
-  HT: { name: 'Haití',             currency: 'HTG', currencyName: 'Gourde',                flagCode: 'ht' },
-  SV: { name: 'El Salvador',       currency: 'USD', currencyName: 'Dólar Americano',       flagCode: 'sv' },
-  PL: { name: 'Polonia',           currency: 'PLN', currencyName: 'Zloty',                 flagCode: 'pl' },
-}
 
-/** URL de bandera desde flagcdn.com (imágenes reales circulares) */
-function flagUrl(code) {
-  return `https://flagcdn.com/w80/${code}.png`
-}
-
-// Nombres de moneda por código ISO — para el subtítulo del picker
-const CURRENCY_NAMES = {
-  AED: 'Dírham Emiratí',   ARS: 'Peso Argentino',   AUD: 'Dólar Australiano',
-  BOB: 'Boliviano',        BRL: 'Real Brasileño',   CAD: 'Dólar Canadiense',
-  CLP: 'Peso Chileno',     CNY: 'Yuan Chino',       COP: 'Peso Colombiano',
-  CRC: 'Colón Costaricc.',  DOP: 'Peso Dominicano',  EUR: 'Euro',
-  GBP: 'Libra Esterlina',  GTQ: 'Quetzal',          HKD: 'Dólar HK',
-  HTG: 'Gourde',           INR: 'Rupia India',       JPY: 'Yen Japonés',
-  KRW: 'Won Coreano',      MXN: 'Peso Mexicano',    NGN: 'Naira Nigeriana',
-  PEN: 'Sol Peruano',      PLN: 'Zloty',             PYG: 'Guaraní',
-  SGD: 'Dólar Singapur',   USD: 'Dólar Americano',  UYU: 'Peso Uruguayo',
-}
 
 /** Convierte la lista de corredores en opciones de destino únicas.
  *  Deduplica por (destinationCountry + destinationCurrency) para permitir
@@ -98,7 +47,7 @@ function corridorsToCountries(corridors) {
     const key      = `${code}:${currency}`
     if (!code || seen.has(key)) continue
     seen.add(key)
-    const info        = COUNTRY_INFO[code] ?? {}
+    const info        = COUNTRY_META[code] ?? {}
     const baseName    = info.name ?? code
     const multiCorridor = (countryCount[code] ?? 1) > 1
     result.push({
