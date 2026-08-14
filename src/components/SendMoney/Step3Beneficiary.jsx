@@ -12,6 +12,7 @@
  */
 
 import { useState, useMemo, useEffect } from 'react'
+import { AlertCircle }              from 'lucide-react'
 import { useWithdrawalRules }       from '../../hooks/useWithdrawalRules'
 import { useHarborRequirements }    from '../../hooks/useHarborRequirements'
 import { useAuth }                  from '../../context/AuthContext'
@@ -616,42 +617,63 @@ export default function Step3Beneficiary({ destinationCountry, corridorId, onNex
   const [saveAsContact,  setSaveAsContact]  = useState(false)
   const [contactAlias,   setContactAlias]   = useState('')
 
+  // Contacto pendiente de pre-llenar: se aplica recién cuando se conoce el
+  // proveedor ACTUAL del corredor, para poder comparar formatos.
+  const [pendingContact,     setPendingContact]     = useState(null)
+  const [staleContactNotice, setStaleContactNotice] = useState(null)
+
   useEffect(() => {
     const raw = sessionStorage.getItem('alyto_prefill_contact')
     if (!raw) return
     try {
-      const contact = JSON.parse(raw)
-      if (contact.beneficiaryData && typeof contact.beneficiaryData === 'object') {
-        setValues(contact.beneficiaryData)
-      }
-      setIsSavedContact(true)
-      setContactId(contact._id ?? null)
-      const name = contact.nickname ||
-        `${contact.firstName ?? ''} ${contact.lastName ?? ''}`.trim()
-      if (name) setPrefillName(name)
+      setPendingContact(JSON.parse(raw))
     } catch (e) {
       console.warn('[Step3] Failed to parse prefill contact:', e)
     }
     sessionStorage.removeItem('alyto_prefill_contact')
   }, [])
 
+  // ── Aplicar el prefill SOLO si el formato del contacto coincide con el
+  //    proveedor vigente. Antes se volcaba beneficiaryData a ciegas: un contacto
+  //    guardado cuando el corredor era Harbor (ej. EU con iban/bic) caía sobre
+  //    un formulario Vita con claves distintas — campos requeridos vacíos y un
+  //    "Campo requerido" sin explicación. El formato viejo ya no se vuelca y se
+  //    le dice al usuario qué pasó.
+  useEffect(() => {
+    if (!pendingContact || loading || !payoutMethod) return
+    const contact = pendingContact
+    setPendingContact(null)
+
+    const expected = payoutMethod === 'owlPay' ? 'owlpay' : 'vita'
+    const name = contact.nickname ||
+      `${contact.firstName ?? ''} ${contact.lastName ?? ''}`.trim()
+
+    const compatible = !contact.formType || contact.formType === expected
+    if (compatible && contact.beneficiaryData && typeof contact.beneficiaryData === 'object') {
+      setValues(contact.beneficiaryData)
+      setIsSavedContact(true)
+      setContactId(contact._id ?? null)
+      if (name) setPrefillName(name)
+      return
+    }
+    // Formato viejo: no volcar datos incompatibles. Se conserva el contactId
+    // para que recordSent siga contando envíos si el usuario completa a mano.
+    setContactId(contact._id ?? null)
+    setStaleContactNotice(name || 'este contacto')
+  }, [pendingContact, payoutMethod, loading])
+
   function clearPrefill() {
     setPrefillName(null)
     setIsSavedContact(false)
     setContactId(null)
+    setStaleContactNotice(null)
     setValues({})
     setTouched({})
   }
 
   function handleContactPick(contact) {
-    if (contact.beneficiaryData && typeof contact.beneficiaryData === 'object') {
-      setValues(contact.beneficiaryData)
-    }
-    setContactId(contact._id ?? null)
-    setIsSavedContact(true)
-    const name = contact.nickname ||
-      `${contact.firstName ?? ''} ${contact.lastName ?? ''}`.trim()
-    if (name) setPrefillName(name)
+    setStaleContactNotice(null)
+    setPendingContact(contact)
     setTouched({})
   }
 
@@ -815,6 +837,29 @@ export default function Step3Beneficiary({ destinationCountry, corridorId, onNex
           selectedId={contactId}
           onSelect={handleContactPick}
         />
+      )}
+
+      {/* Contacto con formato anterior: los datos guardados no calzan con el
+          formulario vigente (el corredor cambió de proveedor). Se pide
+          completar de nuevo en vez de volcar claves incompatibles. */}
+      {staleContactNotice && (
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: 8,
+          background: '#FFFBEB', border: '1px solid #F59E0B55',
+          borderRadius: 'var(--radius-md)', padding: '10px 14px',
+        }}>
+          <AlertCircle size={16} style={{ color: '#F59E0B', flexShrink: 0, marginTop: 2 }} />
+          <span style={{ flex: 1, fontSize: '0.8125rem', color: '#78350F', lineHeight: 1.5 }}>
+            Los datos guardados de <strong>{staleContactNotice}</strong> usan un formato
+            anterior y el formulario de este destino cambió. Completa los datos del
+            beneficiario nuevamente — al enviar puedes volver a guardarlo actualizado.
+          </span>
+          <button type="button" onClick={clearPrefill}
+            style={{ background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: '0.8125rem', color: '#92400E', padding: '2px 6px', flexShrink: 0 }}>
+            Entendido
+          </button>
+        </div>
       )}
 
       {/* Prefill banner */}

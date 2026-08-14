@@ -23,6 +23,7 @@ import { AlertCircle, Loader2, X, Search, Check, Globe, Zap } from 'lucide-react
 import { useWithdrawalRules } from '../../hooks/useWithdrawalRules'
 import { OWLPAY_FORMS, GENERIC_OWLPAY_FORM } from '../SendMoney/owlPayForms'
 import { runFieldValidator, ibanCountry } from '../SendMoney/formValidators'
+import { listUserCorridors } from '../../services/paymentsService'
 
 // ── Prefijos de teléfono ──────────────────────────────────────────────────────
 
@@ -59,6 +60,7 @@ export const COUNTRY_META = {
   SV: { name: 'El Salvador',      currency: 'USD', flagCode: 'sv' },
   HT: { name: 'Haití',            currency: 'USD', flagCode: 'ht' },
   // OwlPay Global
+  CA: { name: 'Canadá',           currency: 'USD', flagCode: 'ca' },   // Vita paga USD (causd)
   US: { name: 'Estados Unidos',   currency: 'USD', flagCode: 'us' },
   GB: { name: 'Reino Unido',      currency: 'GBP', flagCode: 'gb' },
   EU: { name: 'Europa (SEPA)',    currency: 'EUR', flagCode: 'eu',
@@ -75,15 +77,47 @@ export const COUNTRY_META = {
   AU: { name: 'Australia',        currency: 'AUD', flagCode: 'au' },
 }
 
-// No seleccionables para contactos nuevos (siguen en COUNTRY_META para
-// renderizar contactos ya guardados con esos países):
-//   AU — corredor bo-au inactivo: withdrawal-rules devuelve 404
-//   ES — cubierto por EU (SEPA): el corredor bo-es usa destinationCountry='EU'
-const NON_SELECTABLE_COUNTRIES = new Set(['AU', 'ES'])
+// ⚠️ COUNTRY_META es SOLO para nombres/banderas de contactos ya guardados —
+// nunca para decidir qué países se pueden ELEGIR ni la moneda. La lista
+// hardcodeada mentía por los dos lados: ofrecía GT/HT/SV/IN (corredores
+// desactivados → el form daba 404), no ofrecía Canadá (bo-ca activo), bloqueaba
+// AU con un comentario ya falso (bo-au está activo) y estampaba monedas viejas
+// (JP "JPY" cuando el corredor paga USD). La lista REAL sale de
+// GET /payments/corridors — la misma fuente que usa el flujo de envío.
+function useSelectableCountries() {
+  const [countries, setCountries] = useState(null)   // null = cargando
+  const [error,     setError]     = useState(null)
 
-const COUNTRY_LIST = Object.entries(COUNTRY_META)
-  .filter(([code]) => !NON_SELECTABLE_COUNTRIES.has(code))
-  .map(([code, m]) => ({ code, ...m }))
+  useEffect(() => {
+    let alive = true
+    listUserCorridors()
+      .then(data => {
+        if (!alive) return
+        const seen = new Set()
+        const list = []
+        for (const c of (data?.corridors ?? [])) {
+          const code = c.destinationCountry
+          if (!code || seen.has(code)) continue
+          seen.add(code)
+          const meta = COUNTRY_META[code] ?? {}
+          list.push({
+            code,
+            name:     meta.name ?? code,
+            // La moneda es la del CORREDOR (fuente de verdad), no la de la tabla.
+            currency: c.destinationCurrency || meta.currency || '',
+            flagCode: meta.flagCode ?? code.toLowerCase(),
+            keywords: meta.keywords ?? '',
+          })
+        }
+        list.sort((a, b) => a.name.localeCompare(b.name, 'es'))
+        setCountries(list)
+      })
+      .catch(err => { if (alive) setError(err) })
+    return () => { alive = false }
+  }, [])
+
+  return { countries, error }
+}
 
 function flagUrl(flagCode) {
   return `https://flagcdn.com/w80/${flagCode}.png`
@@ -306,15 +340,16 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
 
 // ── Selector de país ──────────────────────────────────────────────────────────
 
-function CountryPickerModal({ selected, onSelect, onClose }) {
+function CountryPickerModal({ countries, selected, onSelect, onClose }) {
   const [query, setQuery] = useState('')
+  const base = countries ?? []
   const filtered = query.trim()
-    ? COUNTRY_LIST.filter(c =>
+    ? base.filter(c =>
         c.name.toLowerCase().includes(query.toLowerCase()) ||
         c.currency.toLowerCase().includes(query.toLowerCase()) ||
         c.code.toLowerCase().includes(query.toLowerCase()) ||
         (c.keywords ?? '').includes(query.toLowerCase()))
-    : COUNTRY_LIST
+    : base
 
   return (
     <div
@@ -354,6 +389,12 @@ function CountryPickerModal({ selected, onSelect, onClose }) {
 
         <div style={{ overflowY: 'auto', flex: 1,
           paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+          {countries === null && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: 8, padding: '28px 0', color: '#94A3B8', fontSize: '0.8125rem' }}>
+              <Loader2 size={16} className="animate-spin" /> Cargando destinos…
+            </div>
+          )}
           {filtered.map(c => {
             const isActive = selected === c.code
             return (
@@ -406,7 +447,16 @@ export default function VitaContactForm({
   const [touched,          setTouched]          = useState({})
 
   const countryLocked = !!initialDestinationCountry
-  const meta          = COUNTRY_META[country]
+
+  // Países elegibles = corredores activos reales. `selectable` es la entrada
+  // del país actual con SU moneda de corredor; COUNTRY_META queda como fallback
+  // de nombre/bandera para contactos guardados de países hoy inactivos.
+  const { countries: selectableCountries } = useSelectableCountries()
+  const selectable = selectableCountries?.find(c => c.code === country) ?? null
+  const metaBase   = COUNTRY_META[country]
+  const meta = selectable
+    ? { name: selectable.name, currency: selectable.currency, flagCode: selectable.flagCode }
+    : metaBase
 
   const { rules, payoutMethod, loading: rulesLoading, error: rulesError, refetch } =
     useWithdrawalRules(country)
@@ -723,6 +773,7 @@ export default function VitaContactForm({
 
       {showCountryModal && (
         <CountryPickerModal
+          countries={selectableCountries}
           selected={country}
           onSelect={handleCountrySelect}
           onClose={() => setShowCountryModal(false)}
