@@ -28,7 +28,7 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Megaphone, RefreshCw, Loader, AlertTriangle, Ban, CheckCircle2, XCircle,
   Sparkles, Inbox, History, Image as ImageIcon, Bot, ShieldCheck, Send,
-  ChevronLeft, ChevronRight, Rocket, ExternalLink, Unlock, Clock,
+  ChevronLeft, ChevronRight, Rocket, ExternalLink, Unlock, Clock, KeyRound,
 } from 'lucide-react'
 import {
   getMarketingEstado, generarPieza, listarPendientes, listarPublicables,
@@ -132,6 +132,100 @@ function Empty({ icon: Icon, titulo, sub }) {
       <p className="text-[0.95rem] font-semibold text-white">{titulo}</p>
       {sub && <p className="text-[0.8rem] text-[#8A96B8] mt-1 max-w-sm">{sub}</p>}
     </div>
+  )
+}
+
+/**
+ * Salud de las credenciales de publicación, verificada contra la red.
+ *
+ * El backend (/estado) ya no reporta solo "hay una variable seteada": consulta a
+ * la red y devuelve `credencial.ok` de TRES estados. La distinción importa y por
+ * eso se pinta distinto cada uno:
+ *
+ *   false → la red dice que no sirve. Rojo, con el motivo textual de la red.
+ *   null  → no se pudo verificar (timeout/red caída). Neutro, y se dice explícito
+ *           que NO significa que esté rota: pintarlo de rojo haría que alguien
+ *           regenere un token sano.
+ *   true  → silencio. El estado sano no merece un cartel; si además vence pronto,
+ *           ahí sí avisa.
+ *
+ * Solo se avisa de canales CONFIGURADOS (`disponible`). Un canal sin configurar
+ * devuelve ok:false con motivo "Sin configurar", pero eso ya lo dice el aviso del
+ * feature flag — repetirlo entrena a ignorar el cartel.
+ *
+ * Es informativo, no bloqueante: no deshabilita el botón de publicar. Quien
+ * decide si se puede publicar es el backend, y bloquear la UI por una
+ * verificación que pudo fallar por red sería peor que dejar intentar.
+ */
+const DIAS_AVISO_VENCIMIENTO = 14
+
+function AvisoCredenciales({ canales = [] }) {
+  const avisos = []
+
+  for (const c of canales) {
+    if (!c.disponible) continue
+    const cr = c.credencial
+    if (!cr) continue
+
+    if (cr.ok === false) {
+      avisos.push({
+        tono:   'error',
+        titulo: `La credencial de ${c.nombre} no sirve`,
+        detalle: cr.motivo,
+        codigo: cr.codigo,
+        accion: 'Regenerá el token de página y actualizá FACEBOOK_PAGE_ACCESS_TOKEN. Hasta entonces, publicar va a fallar.',
+      })
+    } else if (cr.ok === null) {
+      avisos.push({
+        tono:   'neutro',
+        titulo: `No se pudo verificar la credencial de ${c.nombre}`,
+        detalle: cr.motivo,
+        accion: 'No quiere decir que esté rota: la verificación no obtuvo respuesta. Probá actualizar en un momento.',
+      })
+    } else if (cr.expira) {
+      const dias = Math.ceil((new Date(cr.expira) - Date.now()) / 86_400_000)
+      if (dias <= DIAS_AVISO_VENCIMIENTO) {
+        avisos.push({
+          tono:   'neutro',
+          titulo: dias <= 0
+            ? `La credencial de ${c.nombre} venció`
+            : `La credencial de ${c.nombre} vence en ${dias} día${dias === 1 ? '' : 's'}`,
+          detalle: `Vencimiento: ${fmtFecha(cr.expira)}`,
+          accion: 'Conviene regenerar el token antes de que caduque.',
+        })
+      }
+    }
+  }
+
+  if (avisos.length === 0) return null
+
+  return (
+    <>
+      {avisos.map((a, i) => {
+        const err = a.tono === 'error'
+        return (
+          <div
+            key={`${a.titulo}-${i}`}
+            className="rounded-xl p-3.5 mb-4 flex items-start gap-3"
+            style={err
+              ? { background: '#EF44441A', border: '1px solid #EF444440' }
+              : { background: '#C4CBD81A', border: '1px solid #C4CBD833' }}
+          >
+            <KeyRound size={16} className={`flex-shrink-0 mt-0.5 ${err ? 'text-[#F87171]' : 'text-[#C4CBD8]'}`} />
+            <div className="flex-1 min-w-0">
+              <p className={`text-[0.8rem] font-semibold ${err ? 'text-[#FCA5A5]' : 'text-[#C4CBD8]'}`}>
+                {a.titulo}
+                {a.codigo != null && (
+                  <span className="ml-2 font-normal text-[0.72rem] text-[#8A96B8]">código {a.codigo}</span>
+                )}
+              </p>
+              {a.detalle && <p className="text-[0.75rem] text-[#8A96B8] mt-1 break-words">{a.detalle}</p>}
+              <p className="text-[0.75rem] text-[#8A96B8] mt-1">{a.accion}</p>
+            </div>
+          </div>
+        )
+      })}
+    </>
   )
 }
 
@@ -628,6 +722,12 @@ export default function MarketingAgentPage() {
       )}
 
       {/* Avisos */}
+
+      {/* Estado de las credenciales: va arriba y en TODAS las pestañas a
+          propósito. El costo de enterarse tarde es redactar y aprobar piezas
+          contando con poder publicarlas. */}
+      <AvisoCredenciales canales={estado?.publicacion?.canales} />
+
       {error && (
         <div className="rounded-xl p-3.5 mb-4 flex items-start gap-3" style={{ background: '#EF44441A', border: '1px solid #EF444440' }}>
           <AlertTriangle size={16} className="text-[#F87171] flex-shrink-0 mt-0.5" />

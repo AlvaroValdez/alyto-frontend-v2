@@ -12,8 +12,28 @@
 import { request } from './api'
 
 /**
- * Salud del módulo: flag, modelo activo y conteo de piezas por estado.
- * @returns {Promise<{ habilitado:boolean, modelo:string, piezas:Object<string,number> }>}
+ * Salud del módulo: flag, modelo activo, conteo de piezas por estado y estado de
+ * publicación por canal.
+ *
+ * `publicacion.canales[].credencial.ok` es de TRES estados, no un booleano:
+ *   true  → verificada contra la red, sirve
+ *   false → la red la reporta inválida (viene `motivo`, y a veces `codigo`)
+ *   null  → no se pudo verificar (timeout/red caída). NO es lo mismo que "rota".
+ * La verificación es una llamada real a la red, cacheada 60s del lado del backend.
+ *
+ * @returns {Promise<{
+ *   habilitado: boolean,
+ *   modelo: string,
+ *   piezas: Object<string,number>,
+ *   publicacion: {
+ *     habilitada: boolean,
+ *     canales: Array<{
+ *       canal: string, nombre: string, disponible: boolean, falta: string[],
+ *       credencial: { ok: boolean|null, motivo?: string, codigo?: number,
+ *                     expira?: string|null, permisos?: string[] },
+ *     }>,
+ *   },
+ * }>}
  */
 export function getMarketingEstado() {
   return request('/admin/marketing/estado')
