@@ -28,7 +28,7 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Megaphone, RefreshCw, Loader, AlertTriangle, Ban, CheckCircle2, XCircle,
   Sparkles, Inbox, History, Image as ImageIcon, Bot, ShieldCheck, Send,
-  ChevronLeft, ChevronRight, Rocket, ExternalLink, Unlock, Clock, KeyRound,
+  ChevronLeft, ChevronRight, Rocket, ExternalLink, Unlock, Clock, KeyRound, Layers,
 } from 'lucide-react'
 import {
   getMarketingEstado, generarPieza, listarPendientes, listarPublicables,
@@ -252,6 +252,148 @@ function Paginacion({ pagination, onPage }) {
   )
 }
 
+// ── Preview de carrusel ───────────────────────────────────────────────────────
+
+/**
+ * Vista previa de los slides de un carrusel.
+ *
+ * Existe por una razón concreta: aprobar un carrusel leyendo JSON no es revisar.
+ * En un carrusel el grueso del mensaje vive en las imágenes, así que si el
+ * motivo del gate está en el slide 4, el revisor tiene que VERLO ahí.
+ *
+ * ⚠️ Es una APROXIMACIÓN, no el render final. El PNG lo genera el backend con
+ * Inter y midiendo glifos de verdad; acá la tipografía es la del navegador y las
+ * medidas son proporcionales. Sirve para juzgar contenido y encaje aproximado,
+ * no para aprobar píxeles.
+ *
+ * Proporciones tomadas de la sección Social del design system (alyto-ux):
+ * lienzo 1:1, márgenes al 9%, y la escala tipográfica relativa al lienzo — por
+ * eso todo se expresa en % o em sobre el ancho del tile, y no en px fijos.
+ */
+
+// Presupuestos de texto del design system, a 1080px de lienzo.
+// Son estimaciones declaradas como tales: Inter es de ancho variable y el
+// renderer mide de verdad. Acá solo sirven para avisar ANTES de aprobar, que es
+// mucho mejor que enterarse cuando el render falle.
+const PRESUPUESTO = {
+  portada:    { cpl: 18, lineas: 3 },
+  titulo:     { cpl: 24, lineas: 2 },
+  texto:      { cpl: 46, lineas: 6 },
+}
+
+/** Estima en cuántas líneas cae un texto con ancho `cpl`, partiendo por palabra. */
+function lineasEstimadas(texto, cpl) {
+  const palabras = String(texto || '').trim().split(/\s+/).filter(Boolean)
+  if (!palabras.length) return 0
+
+  let lineas = 1
+  let actual = 0
+  for (const p of palabras) {
+    if (actual === 0) { actual = p.length; continue }
+    if (actual + 1 + p.length <= cpl) actual += 1 + p.length
+    else { lineas++; actual = p.length }
+  }
+  return lineas
+}
+
+function excede(texto, { cpl, lineas }) {
+  return lineasEstimadas(texto, cpl) > lineas
+}
+
+function SlidePreview({ slide, total, coincidencias }) {
+  const esPortada = slide.rol === 'portada'
+  const presTitulo = esPortada ? PRESUPUESTO.portada : PRESUPUESTO.titulo
+
+  const tituloLargo = excede(slide.titulo, presTitulo)
+  const textoLargo  = excede(slide.texto, PRESUPUESTO.texto)
+  const apretado    = tituloLargo || textoLargo
+
+  return (
+    <div className="flex-shrink-0" style={{ width: 208 }}>
+      {/* El lienzo: cuadrado, gradiente de marca, márgenes al 9% */}
+      <div
+        className="relative rounded-xl overflow-hidden"
+        style={{
+          width: 208, height: 208,
+          background: 'linear-gradient(135deg, #1D3461 0%, #0F1628 60%, #1A2030 100%)',
+          border: `1px solid ${apretado ? '#EF444466' : '#263050'}`,
+        }}
+      >
+        <div className="absolute inset-0 flex flex-col" style={{ padding: '9%' }}>
+          {/* Chevron plateado: el logo va en todos los slides, no solo en la portada */}
+          <div className="flex items-start justify-between mb-1.5">
+            <span className="text-[0.5rem] font-bold tracking-[0.12em] text-[#C4CBD8] uppercase">
+              {slide.orden} / {total}
+            </span>
+            <span className="text-[0.7rem] font-black leading-none text-[#C4CBD8]">›</span>
+          </div>
+
+          <p
+            className="font-extrabold text-white leading-[1.08]"
+            style={{ fontSize: esPortada ? '0.95rem' : '0.78rem' }}
+          >
+            <Resaltado texto={slide.titulo} coincidencias={coincidencias} />
+          </p>
+
+          {slide.texto && (
+            <p className="text-[0.53rem] leading-[1.35] text-[#C7CFE2] mt-1.5 overflow-hidden">
+              <Resaltado texto={slide.texto} coincidencias={coincidencias} />
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1.5 mt-1.5">
+        <span className="text-[0.62rem] uppercase tracking-wide text-[#4E5A7A]">{slide.rol}</span>
+        {apretado && (
+          <span className="inline-flex items-center gap-1 text-[0.62rem] text-[#F87171]"
+                title={[
+                  tituloLargo && `Titular: ~${lineasEstimadas(slide.titulo, presTitulo.cpl)} líneas (máx ${presTitulo.lineas})`,
+                  textoLargo  && `Texto: ~${lineasEstimadas(slide.texto, PRESUPUESTO.texto.cpl)} líneas (máx ${PRESUPUESTO.texto.lineas})`,
+                ].filter(Boolean).join(' · ')}>
+            <AlertTriangle size={10} /> puede no entrar
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function CarruselPreview({ slides = [], coincidencias }) {
+  if (!slides.length) return null
+
+  const ordenados = [...slides].sort((a, b) => a.orden - b.orden)
+  const apretados = ordenados.filter(s => {
+    const pres = s.rol === 'portada' ? PRESUPUESTO.portada : PRESUPUESTO.titulo
+    return excede(s.titulo, pres) || excede(s.texto, PRESUPUESTO.texto)
+  }).length
+
+  return (
+    <div className="mb-4">
+      <div className="flex items-center gap-2 mb-2">
+        <Layers size={13} className="text-[#8A96B8]" />
+        <span className="text-[0.7rem] uppercase tracking-wide text-[#8A96B8]">
+          Carrusel · {ordenados.length} slides
+        </span>
+        <span className="text-[0.65rem] text-[#4E5A7A]">vista aproximada</span>
+      </div>
+
+      <div className="flex gap-3 overflow-x-auto pb-2">
+        {ordenados.map(s => (
+          <SlidePreview key={s.orden} slide={s} total={ordenados.length} coincidencias={coincidencias} />
+        ))}
+      </div>
+
+      {apretados > 0 && (
+        <p className="text-[0.7rem] text-[#F87171] mt-1">
+          {apretados === 1 ? 'Un slide se pasa' : `${apretados} slides se pasan`} del presupuesto de
+          texto. El render mide de verdad y falla si no entra: conviene acortar antes de aprobar.
+        </p>
+      )}
+    </div>
+  )
+}
+
 // ── Tarjeta de pieza ──────────────────────────────────────────────────────────
 
 /**
@@ -272,6 +414,9 @@ function PiezaCard({ pieza, acciones = false, publicacion = false,
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <Badge label={CANAL_LABEL[pieza.canal] ?? pieza.canal} color="#C4CBD8" bg="#C4CBD81A" />
         <Badge label={TIPO_LABEL[pieza.tipo] ?? pieza.tipo} color="#8A96B8" bg="#0F1628" />
+        {pieza.formato === 'carrusel' && (
+          <Badge label={`Carrusel · ${pieza.slides?.length ?? 0}`} color="#C4CBD8" bg="#0F1628" icon={Layers} />
+        )}
         <EstadoBadge estado={pieza.estado} />
         <span className="ml-auto text-[0.7rem] text-[#4E5A7A]">{fmtFecha(pieza.createdAt)}</span>
       </div>
@@ -299,6 +444,13 @@ function PiezaCard({ pieza, acciones = false, publicacion = false,
       <p className="text-[0.85rem] text-[#C7CFE2] leading-relaxed whitespace-pre-line mb-3">
         <Resaltado texto={pieza.cuerpo} coincidencias={coincidencias} />
       </p>
+
+      {/* Los slides van DESPUÉS del cuerpo y antes de todo lo demás: en un
+          carrusel el cuerpo es solo el pie del feed, y el mensaje real está acá.
+          Aprobar sin verlos es aprobar a ciegas. */}
+      {pieza.formato === 'carrusel' && (
+        <CarruselPreview slides={pieza.slides} coincidencias={coincidencias} />
+      )}
 
       {pieza.sugerenciaVisual && (
         <div className="rounded-xl p-3 mb-4 flex items-start gap-2.5" style={{ background: '#0F1628', border: '1px solid #263050' }}>
