@@ -37,6 +37,10 @@ const AUTH_PUBLIC_PATHS = [
   '/auth/register',
   '/auth/forgot-password',
   '/auth/reset-password',
+  // Segundo factor: un 401 aquí es "código incorrecto" o "credencial intermedia
+  // vencida", no una sesión caída. Si disparara el redirect global, el usuario
+  // saldría de la pantalla de verificación al primer error de tecleo.
+  '/auth/2fa/',
 ]
 
 function isAuthPublicPath(path) {
@@ -155,6 +159,66 @@ export async function loginUser(credentials) {
     throw err
   }
   return data
+}
+
+// ── Segundo factor de autenticación (accesos con privilegios) ───────────────
+//
+// Estas tres llamadas NO usan `request()` a propósito. `request()` adjunta el
+// token de sesión de localStorage, y aquí la credencial que vale es la
+// intermedia que devolvió el login — que el backend rechaza explícitamente como
+// sesión. Mandar las dos, o la equivocada, es un 401 garantizado.
+//
+// La credencial intermedia nunca se guarda: viaja en memoria desde el login
+// hasta esta llamada y se descarta. Dura cinco minutos y sólo sirve para
+// presentar el código; persistirla sería darle almacenamiento a algo que existe
+// justamente para no durar.
+
+async function requestWithChallenge(path, challengeToken, body) {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method:      'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+      Authorization: `Bearer ${challengeToken}`,
+    },
+    body: JSON.stringify(body ?? {}),
+  })
+  const data = await res.json()
+  if (!res.ok) {
+    const err = new Error(data.error || data.message || `Error ${res.status}`)
+    err.status = res.status
+    err.data   = data
+    throw err
+  }
+  return data
+}
+
+/**
+ * Genera el secreto y lo devuelve como QR y como cadena para ingreso manual.
+ * NO activa el factor: hasta confirmar con un código válido no habilita nada.
+ * @returns {Promise<{ qrDataUrl: string, manualEntry: string, policy: object }>}
+ */
+export function enrollTwoFactor(challengeToken) {
+  return requestWithChallenge('/auth/2fa/enroll', challengeToken)
+}
+
+/**
+ * Confirma el alta con un código válido. Activa el factor, emite la sesión y
+ * devuelve los códigos de recuperación — única vez que se muestran.
+ * @returns {Promise<{ token, user, recoveryCodes: string[] }>}
+ */
+export function confirmTwoFactor(challengeToken, code) {
+  return requestWithChallenge('/auth/2fa/confirm', challengeToken, { code })
+}
+
+/**
+ * Verifica el segundo factor y obtiene la sesión.
+ * @param {{ code?: string, recoveryCode?: string, rememberMe?: boolean }} payload
+ * @returns {Promise<{ token, user, recoveryRemaining?: number }>}
+ */
+export function verifyTwoFactor(challengeToken, payload) {
+  return requestWithChallenge('/auth/2fa/verify', challengeToken, payload)
 }
 
 /**
