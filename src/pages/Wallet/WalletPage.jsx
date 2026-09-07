@@ -243,13 +243,17 @@ function Modal({ open, onClose, title, children }) {
 const DEPOSIT_MIN_BOB = parseInt(import.meta.env.VITE_DEPOSIT_MIN_BOB || '50', 10)
 const DEPOSIT_MAX_BOB = parseInt(import.meta.env.VITE_DEPOSIT_MAX_BOB || '10000', 10)
 
-// Convierte el paymentQR del banco (base64 SVG en mock BEC) a una src usable en <img>.
-// El mock BEC devuelve base64 de un SVG; el banco real podría devolver PNG/data-uri.
+// Convierte el paymentQR del banco a una src usable en <img>.
+// ⚠️ El mime NO se puede asumir: el mock BEC devuelve un SVG placeholder, pero el
+// banco REAL devuelve PNG (verificado contra producción 2026-09-01). Se detecta por
+// el prefijo del base64 — 'PHN2' = '<svg', 'iVBOR' = magic PNG. Hardcodear svg+xml
+// dejaba el QR sin renderizar en producción (mismo criterio que Step5PaymentWidget).
 function bankQrSrc(raw) {
   if (!raw) return ''
-  if (raw.startsWith('data:')) return raw
+  if (raw.startsWith('data:') || raw.startsWith('http')) return raw
   if (raw.trim().startsWith('<svg')) return `data:image/svg+xml;utf8,${encodeURIComponent(raw)}`
-  return `data:image/svg+xml;base64,${raw}`
+  const mime = raw.startsWith('PHN2') ? 'image/svg+xml' : 'image/png'
+  return `data:${mime};base64,${raw}`
 }
 
 function DepositModal({ open, onClose, onSuccess }) {
