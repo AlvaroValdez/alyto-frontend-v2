@@ -50,7 +50,14 @@ export default function LoginPage() {
     if (!form.email || !form.password) { setError('Completa todos los campos.'); return }
     setLoading(true)
     try {
-      const { user } = await login({ email: form.email.trim(), password: form.password, rememberMe: form.rememberMe })
+      const data = await login({ email: form.email.trim(), password: form.password, rememberMe: form.rememberMe })
+
+      // Acceso con privilegios: la contraseña fue correcta pero la sesión NO se
+      // emitió. Se continúa en la pantalla del segundo factor, que además cubre
+      // el alta forzada si la cuenta aún no lo tiene configurado.
+      if (data.twoFactorRequired) { navigate('/login/2fa', { replace: true }); return }
+
+      const { user } = data
       if (user.kycStatus !== 'approved') { navigate('/kyc', { replace: true }); return }
       const from = location.state?.from?.pathname ?? '/dashboard'
       navigate(from, { replace: true })

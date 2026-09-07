@@ -44,26 +44,56 @@ function EntityBadge({ entity }) {
 
 // ─── Modal de edición ─────────────────────────────────────────────────────────
 
+/**
+ * Campos que el backend trata como decisiones de control interno y no como datos
+ * operativos: escalan privilegios, dan por verificada una identidad o levantan un
+ * bloqueo de prevención. Cambiarlos exige motivo, que queda en la bitácora.
+ *
+ * La lista y la extensión mínima replican las del backend a propósito
+ * (`USER_SENSITIVE_FIELDS` y `MIN_REASON_LENGTH` en adminController). Si allá
+ * cambian, acá hay que acompañar: el panel estuvo sin poder ejecutar ninguno de
+ * los tres porque el servidor sumó la exigencia y esta pantalla no la siguió.
+ */
+const SENSITIVE_FIELDS = {
+  role:          'rol',
+  kycStatus:     'estado KYC',
+  sanctionsFlag: 'flag OFAC/AML',
+}
+const MIN_REASON_LENGTH = 10
+
 function EditUserModal({ user, onClose, onSaved }) {
-  const [form, setForm] = useState({
+  const initial = {
     accountType:   user.accountType   ?? 'personal',
     legalEntity:   user.legalEntity   ?? 'SRL',
     kycStatus:     user.kycStatus     ?? 'pending',
     role:          user.role          ?? 'user',
     isActive:      user.isActive      ?? true,
     sanctionsFlag: user.sanctionsFlag ?? false,
-  })
+  }
+  const [form, setForm] = useState(initial)
+  const [reason, setReason]   = useState('')
   const [saving, setSaving]   = useState(false)
   const [error,  setError]    = useState(null)
   const [success, setSuccess] = useState(false)
 
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }))
 
+  // Qué campos sensibles cambian DE VERDAD respecto del estado actual del
+  // usuario. Se compara contra el valor inicial, no contra la presencia del
+  // campo: el formulario manda siempre los seis, y exigir motivo por un campo
+  // presente pero sin cambio dejaría el panel inutilizable para cualquier
+  // edición corriente. Es el mismo criterio que aplica el backend.
+  const sensitiveChanged = Object.keys(SENSITIVE_FIELDS).filter(f => form[f] !== initial[f])
+  const needsReason      = sensitiveChanged.length > 0
+  const reasonOk         = !needsReason || reason.trim().length >= MIN_REASON_LENGTH
+
   async function handleSave() {
+    if (!reasonOk) return
     setSaving(true)
     setError(null)
     try {
-      const data = await updateAdminUser(user._id, form)
+      const payload = needsReason ? { ...form, reason: reason.trim() } : form
+      const data = await updateAdminUser(user._id, payload)
       onSaved(data.user)
       setSuccess(true)
       setTimeout(onClose, 800)
@@ -178,6 +208,32 @@ function EditUserModal({ user, onClose, onSaved }) {
           </div>
         )}
 
+        {/* Motivo — sólo cuando la edición comprende un cambio sensible.
+            La validación se hace acá además de en el servidor para que el
+            rechazo no llegue después de enviar: el operador se entera de que
+            falta el motivo mientras lo puede escribir, no al recibir un 400. */}
+        {needsReason && (
+          <div className={rowClass}>
+            <label className={labelClass}>
+              Motivo del cambio de {sensitiveChanged.map(f => SENSITIVE_FIELDS[f]).join(', ')}
+            </label>
+            <textarea
+              value={reason}
+              onChange={e => { setReason(e.target.value); setError(null) }}
+              rows={2}
+              autoFocus
+              placeholder="Referencia del acta, oficio o expediente que respalda el cambio"
+              className="w-full px-3 py-2.5 rounded-xl text-[0.875rem] text-white outline-none transition-all resize-none"
+              style={{ background: '#1A2340', border: `1px solid ${reasonOk ? '#263050' : '#EF444455'}` }}
+            />
+            <p className="text-[0.6875rem]" style={{ color: reasonOk ? '#4E5A7A' : '#F87171' }}>
+              {reasonOk
+                ? 'Queda registrado en la bitácora con tu usuario y la fecha.'
+                : `Faltan ${MIN_REASON_LENGTH - reason.trim().length} caracteres (mínimo ${MIN_REASON_LENGTH}).`}
+            </p>
+          </div>
+        )}
+
         {error && (
           <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
             style={{ background: '#EF44441A', border: '1px solid #EF444433' }}>
@@ -193,9 +249,15 @@ function EditUserModal({ user, onClose, onSaved }) {
             style={{ border: '1.5px solid #263050' }}>
             Cancelar
           </button>
-          <button onClick={handleSave} disabled={saving || success}
+          <button onClick={handleSave} disabled={saving || success || !reasonOk}
+            title={!reasonOk ? `Consigna un motivo de al menos ${MIN_REASON_LENGTH} caracteres` : undefined}
             className="flex-1 py-2.5 rounded-xl text-[0.875rem] font-bold transition-all flex items-center justify-center gap-2"
-            style={{ background: success ? '#22C55E' : '#C4CBD8', color: '#0F1628', opacity: saving ? 0.7 : 1 }}>
+            style={{
+              background: success ? '#22C55E' : '#C4CBD8',
+              color:      '#0F1628',
+              opacity:    saving ? 0.7 : (reasonOk ? 1 : 0.4),
+              cursor:     reasonOk ? 'pointer' : 'not-allowed',
+            }}>
             {success
               ? <><CheckCircle2 size={15} /> Guardado</>
               : saving

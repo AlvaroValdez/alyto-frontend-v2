@@ -26,6 +26,15 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [user,      setUser]      = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  /**
+   * Credencial intermedia del segundo factor: { token, enrollmentRequired, rememberMe }.
+   *
+   * Vive SOLO en memoria, a propósito. Guardarla en localStorage la pondría en el
+   * mismo lugar que la sesión y sobreviviría al cierre de la pestaña; vale cinco
+   * minutos y sólo sirve para presentar un código. Recargar la página en mitad de
+   * la verificación devuelve al acceso, que es el comportamiento correcto.
+   */
+  const [challenge, setChallenge] = useState(null)
   const lastRefreshRef   = useRef(0)
   const justLoggedInRef  = useRef(false) // prevents stale-token clear right after fresh login
 
@@ -117,13 +126,15 @@ export function AuthProvider({ children }) {
   }, [])
 
   /**
-   * login(credentials) — llama al backend (que setea la cookie) y guarda el user.
+   * finishLogin(data) — establece la sesión a partir de una respuesta que ya
+   * trae token y usuario. Lo comparten el acceso directo y el cierre del segundo
+   * factor: son dos caminos hacia la misma sesión, y duplicar el orden de estos
+   * pasos invitaría a que uno de los dos se quedara atrás.
+   *
    * CRITICAL: token MUST be in localStorage BEFORE setUser or any re-render
    * that could trigger child components to fire authenticated requests.
    */
-  const login = useCallback(async ({ rememberMe = true, ...credentials }) => {
-    const data = await apiLogin({ ...credentials, rememberMe })
-
+  const finishLogin = useCallback((data) => {
     // 1. Raise the justLoggedIn guard FIRST — prevents stale-token clear on
     //    any /auth/me that fires in the next 5s (focus, mount, etc.)
     justLoggedInRef.current = true
@@ -136,7 +147,7 @@ export function AuthProvider({ children }) {
       console.error('[Auth] NO TOKEN IN RESPONSE — backend may still be in cookie-only mode')
     }
 
-    // 3. Update React state — login response already contains the full user object
+    // 3. Update React state — the response already contains the full user object
     setUser(data.user)
     Sentry.setUser({
       id:     data.user.id,
@@ -146,6 +157,47 @@ export function AuthProvider({ children }) {
     })
     return data
   }, [])
+
+  /**
+   * login(credentials) — llama al backend (que setea la cookie) y guarda el user.
+   */
+  const login = useCallback(async ({ rememberMe = true, ...credentials }) => {
+    const data = await apiLogin({ ...credentials, rememberMe })
+
+    // Acceso con privilegios: la contraseña fue correcta pero NO hay sesión
+    // todavía. Se devuelve tal cual para que la pantalla derive al segundo
+    // factor, sin tocar el estado de sesión.
+    //
+    // Este corte va ANTES que todo lo demás por una razón concreta: abajo se lee
+    // `data.user.id` sin guarda, y una respuesta de segundo factor no trae
+    // `user`. Sin este retorno temprano eso lanzaba un TypeError que el
+    // formulario de acceso atrapaba y mostraba como «Email o contraseña
+    // incorrectos» — el peor mensaje posible, porque la contraseña era correcta
+    // y el operador habría dado la suya por perdida.
+    if (data?.twoFactorRequired) {
+      setChallenge({
+        token:              data.challengeToken,
+        enrollmentRequired: data.enrollmentRequired === true,
+        rememberMe,
+      })
+      return data
+    }
+
+    return finishLogin(data)
+  }, [finishLogin])
+
+  /**
+   * completeTwoFactor(data) — cierra el acceso con la respuesta del segundo
+   * factor, que trae la sesión ya emitida. Comparte `finishLogin` con el acceso
+   * directo para que la sesión se establezca igual por los dos caminos.
+   */
+  const completeTwoFactor = useCallback((data) => {
+    setChallenge(null)
+    return finishLogin(data)
+  }, [finishLogin])
+
+  /** Descarta la credencial intermedia (cancelar, vencimiento o volver atrás). */
+  const clearChallenge = useCallback(() => setChallenge(null), [])
 
   /**
    * register(userData) — crea la cuenta (cookie seteada por el backend) y guarda el user.
@@ -251,6 +303,9 @@ export function AuthProvider({ children }) {
     logout,
     updateUser,
     refreshUser,
+    challenge,
+    completeTwoFactor,
+    clearChallenge,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

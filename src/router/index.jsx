@@ -28,6 +28,7 @@ import AdminLayout from '../components/Layout/AdminLayout'
 
 // ── Páginas auth (públicas) ───────────────────────────────────────────────────
 import LoginPage          from '../pages/Auth/LoginPage'
+import TwoFactorPage      from '../pages/Auth/TwoFactorPage'
 import RegisterPage       from '../pages/Auth/RegisterPage'
 import EmailVerifyPage    from '../pages/Auth/EmailVerifyPage'
 import ForgotPasswordPage from '../pages/Auth/ForgotPasswordPage'
@@ -111,6 +112,7 @@ export default function AppRouter() {
       {/* ── Auth (públicas, sin AppLayout) ──────────────────────────────── */}
       <Route element={<PublicOnlyRoute><AuthLayout /></PublicOnlyRoute>}>
         <Route path="/login"                  element={<LoginPage />} />
+        <Route path="/login/2fa"              element={<TwoFactorPage />} />
         <Route path="/register"               element={<RegisterPage />} />
         <Route path="/forgot-password"        element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token"  element={<ResetPasswordPage />} />
