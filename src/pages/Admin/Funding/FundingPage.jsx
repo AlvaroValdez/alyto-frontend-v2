@@ -29,6 +29,7 @@ import {
   listFundingIntents,
   cancelFundingIntent,
 } from '../../../services/adminService'
+import { stellarExpertTx } from '../../../utils/stellar'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -1668,9 +1669,6 @@ function FundingHistoryTable({ fundings, loading }) {
 //  SEP-7. Retira el USDC del exchange a esa dirección con el memo; se concilia
 //  on-chain. NO hay lógica de red/firma aquí: solo consumo de API + mostrar/copiar.
 // ════════════════════════════════════════════════════════════════════════════
-
-const STELLAR_NETWORK = import.meta.env.VITE_STELLAR_NETWORK === 'mainnet' ? 'public' : 'testnet'
-const stellarExpertTx = hash => `https://stellar.expert/explorer/${STELLAR_NETWORK}/tx/${hash}`
 
 const INTENT_STATUS_META = {
   open:      { label: 'Abierto',    bg: '#F59E0B1A', text: '#F59E0B' },
