@@ -12,6 +12,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Loader2, AlertCircle, ChevronDown, ChevronUp, Clock, RefreshCw, Info, CheckCircle2 } from 'lucide-react'
 import { initPayment, fetchHarborQuote, getQuote } from '../../services/paymentsService'
 import { useAuth } from '../../context/AuthContext'
+import { useQuoteContext } from '../../context/QuoteContext'
 import Sentry from '../../services/sentry.js'
 import { countryName } from '../../config/countries'
 
@@ -156,13 +157,35 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
   // Modal que aparece cuando la tasa varió >0.5% al momento de confirmar
   const [rateModal, setRateModal] = useState(null) // { freshQuote, rateDiff } | null
 
+  // Destello que avisa que el monto en pantalla acaba de cambiar
+  const [rateFlash, setRateFlash] = useState(null) // { seq, direction, deltaPct } | null
+
   // Step3 guarda los datos bajo la key "beneficiaryData" (campos dinámicos de Vita)
   const {
-    quote, originAmount, destinationCountry, payinMethod,
+    quote: frozenQuote, originAmount, destinationCountry, payinMethod,
     beneficiaryData, contactId,
     owlPayMethod, harborQuoteId,
     quoteFetchedAt,
   } = stepData
+
+  // El socket sigue abierto desde el Step 1 (QuoteProvider) y renueva la
+  // cotización cada 60 s. Preferimos esa versión viva sobre la que quedó
+  // congelada en stepData al salir del Step 1; si el socket nunca llegó a
+  // conectar, caemos a la congelada.
+  const { quote: socketQuote, reconnect: refreshQuote } = useQuoteContext()
+  const quote = socketQuote ?? frozenQuote
+
+  // Anclamos la cotización AL ENTRAR a este paso: pedimos una fresca para que el
+  // contador arranque con la ventana completa. El reloj no corre en los pasos
+  // previos —ahí nada está comprometido todavía— así que si el usuario tardó
+  // cargando al beneficiario, la cotización que traía el socket podía quedar con
+  // pocos segundos y el contador arrancaría casi en cero sin razón.
+  const anchoredRef = useRef(false)
+  useEffect(() => {
+    if (anchoredRef.current) return
+    anchoredRef.current = true
+    refreshQuote()
+  }, [refreshQuote])
 
   // ── Countdown de expiración de cotización ──────────────────────────────────
   const quoteExpiry = quote?.quoteExpiresAt
@@ -184,6 +207,14 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
 
   const quoteExpired = quoteSecsLeft !== null && quoteSecsLeft === 0
   const quoteWarning = quoteSecsLeft !== null && quoteSecsLeft > 0 && quoteSecsLeft <= 60
+
+  // En corredores Vita, handleConfirm() ya re-cotiza contra el backend y abre el
+  // modal de confirmación si la tasa se movió >0.5%: el usuario nunca paga a una
+  // tasa vencida. Bloquear el botón por expiración no aporta protección, solo
+  // devuelve al usuario al Step 1. Harbor sí se bloquea porque su tasa se
+  // resuelve al montar el componente y no se revalida al confirmar.
+  const isOwlPayCorridor = quote?.payoutMethod === 'owlPay'
+  const blocksOnExpiry   = quoteExpired && isOwlPayCorridor
 
   // ── Fetch Harbor rate real al montar — solo para corredores owlPay ─────────
   useEffect(() => {
@@ -233,6 +264,45 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
     ? (liveQuote.destinationAmount - quote.destinationAmount) / quote.destinationAmount
     : 0
   const wasUpdated = Math.abs(rateDiff) > 0.02   // solo mostrar si cambio > 2%
+
+  // ── Destello "tasa actualizada" ────────────────────────────────────────────
+  // El socket refresca la cotización cada 60 s mientras el usuario está en esta
+  // pantalla, así que el monto puede cambiar bajo sus ojos. Comparamos el valor
+  // YA REDONDEADO (el que se ve) para no destellar por ruido de decimales, y
+  // avisamos el cambio con su dirección: nadie se entera en silencio.
+  const displayedDest     = Math.round(effectiveQuote?.destinationAmount ?? 0)
+  const prevDisplayedDest = useRef(null)
+  const prevLiveQuote     = useRef(liveQuote)
+  const flashSeq          = useRef(0)
+
+  useEffect(() => {
+    if (displayedDest <= 0) return
+
+    const prev             = prevDisplayedDest.current
+    const liveQuoteArrived = prevLiveQuote.current === null && liveQuote !== null
+
+    prevDisplayedDest.current = displayedDest
+    prevLiveQuote.current     = liveQuote
+
+    // Primer valor, o el monto visible no cambió: nada que anunciar
+    if (prev === null || prev === displayedDest) return
+    // El salto al quote real de Harbor ya lo explica el aviso "Tasa actualizada
+    // … desde tu cotización" — no lo duplicamos con un destello
+    if (liveQuoteArrived) return
+
+    flashSeq.current += 1
+    setRateFlash({
+      seq:       flashSeq.current,
+      direction: displayedDest > prev ? 'up' : 'down',
+      deltaPct:  (displayedDest - prev) / prev,
+    })
+  }, [displayedDest, liveQuote])
+
+  useEffect(() => {
+    if (!rateFlash) return
+    const id = setTimeout(() => setRateFlash(null), 8000)
+    return () => clearTimeout(id)
+  }, [rateFlash])
 
   const costoEnvio =
     (fees.alytoCSpread || 0) +
@@ -355,8 +425,8 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
         </p>
       </div>
 
-      {/* ── Banner: cotización expirada ── */}
-      {quoteExpired && (
+      {/* ── Banner: cotización expirada (solo Harbor bloquea) ── */}
+      {blocksOnExpiry && (
         <div className="flex items-start gap-3 bg-[#EF44441A] border border-[#EF444433] rounded-2xl px-4 py-3">
           <AlertCircle size={16} className="text-[#EF4444] flex-shrink-0 mt-0.5" />
           <div className="flex-1">
@@ -373,6 +443,17 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
               <RefreshCw size={13} /> Actualizar
             </button>
           )}
+        </div>
+      )}
+
+      {/* ── Aviso: cotización vencida en Vita — se refresca al confirmar ── */}
+      {quoteExpired && !isOwlPayCorridor && (
+        <div className="flex items-start gap-2.5 bg-[#F59E0B0F] border border-[#F59E0B33] rounded-xl px-3.5 py-2.5">
+          <RefreshCw size={14} className="text-[#F59E0B] flex-shrink-0 mt-0.5" />
+          <p className="text-[0.8125rem] text-[#F59E0B] flex-1">
+            La tasa se actualizará al confirmar. Si cambió, te pediremos que la
+            aceptes antes de cobrar.
+          </p>
         </div>
       )}
 
@@ -452,7 +533,10 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
         </div>
 
         {/* Divider highlight */}
-        <div className="py-3">
+        <div
+          className="py-3"
+          style={{ animation: rateFlash ? 'flashTeal 1.2s ease-out' : 'none' }}
+        >
           <div className="flex justify-between items-start">
             <span className="text-[0.9375rem] font-bold text-[#0D1F3C]">Recibe</span>
             <div className="text-right">
@@ -475,6 +559,40 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
                 <Loader2 size={11} className="animate-spin" />
                 Verificando tasa de cambio...
               </span>
+            </div>
+          )}
+
+          {rateFlash && !quoteLoading && (
+            <div
+              key={rateFlash.seq}
+              className="flex items-start gap-1.5 mt-2 p-2.5 rounded-xl"
+              style={{
+                background: rateFlash.direction === 'up' ? '#22C55E1A' : '#F59E0B1A',
+                border:     `1px solid ${rateFlash.direction === 'up' ? '#22C55E33' : '#F59E0B33'}`,
+                animation:  'fadeUp 0.3s ease-out',
+              }}
+            >
+              <RefreshCw
+                size={13}
+                className="mt-0.5 flex-shrink-0"
+                style={{ color: rateFlash.direction === 'up' ? '#15803D' : '#92400E' }}
+              />
+              <div>
+                <p
+                  className="text-[0.75rem] font-medium"
+                  style={{ color: rateFlash.direction === 'up' ? '#15803D' : '#92400E' }}
+                >
+                  Tasa actualizada — el beneficiario recibe{' '}
+                  {rateFlash.direction === 'up' ? 'más' : 'menos'}{' '}
+                  ({rateFlash.deltaPct > 0 ? '+' : ''}{(rateFlash.deltaPct * 100).toFixed(2)}%)
+                </p>
+                <p
+                  className="text-[0.7rem] mt-0.5"
+                  style={{ color: rateFlash.direction === 'up' ? '#15803D' : '#A16207' }}
+                >
+                  El monto de arriba ya refleja la tasa vigente.
+                </p>
+              </div>
             </div>
           )}
 
@@ -591,15 +709,21 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
       {/* ── Botón confirmar ── */}
       <button
         onClick={handleConfirm}
-        disabled={!confirmed || loading || quoteLoading || quoteExpired}
+        disabled={!confirmed || loading || quoteLoading || blocksOnExpiry}
         className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 flex items-center justify-center gap-2 ${
-          confirmed && !loading && !quoteLoading && !quoteExpired
+          confirmed && !loading && !quoteLoading && !blocksOnExpiry
             ? 'bg-[#0D1F3C] text-white shadow-[0_4px_20px_rgba(29,52,97,0.25)] active:scale-[0.98]'
             : 'bg-[#0D1F3C40] text-[#94A3B8] cursor-not-allowed'
         }`}
       >
         {(loading || quoteLoading) && <Loader2 size={18} className="animate-spin" />}
-        {loading ? 'Verificando tasa...' : quoteLoading ? 'Verificando tasa...' : quoteExpired ? 'Cotización vencida' : 'Confirmar y pagar'}
+        {loading || quoteLoading
+          ? 'Verificando tasa...'
+          : blocksOnExpiry
+            ? 'Cotización vencida'
+            : quoteExpired
+              ? 'Actualizar tasa y continuar'
+              : 'Confirmar y pagar'}
       </button>
 
       {/* ── Modal: tasa cambió >0.5% al confirmar ── */}
