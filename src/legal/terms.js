@@ -17,9 +17,11 @@ Opera como Proveedor de Servicios de Activos Virtuales (PSAV) conforme al Decret
 Maipú 378, Antofagasta, Chile | RUT: 78028602-4 | soporte@alyto.app
 Opera como intermediario de pagos transfronterizos bajo normativa chilena (CMF).
 
-▸ AV Finance LLC — Delaware, EE.UU. (Infraestructura)
-131 Continental Dr, Dover, Delaware, EE.UU. | EIN: 37-2216801 | soporte@alyto.app
-Provee infraestructura tecnológica SaaS para pagos institucionales en USD.`,
+▸ AV Finance, LLC — Delaware, EE.UU. (Entidad corporativa matriz / Infraestructura)
+Dirección registrada: 131 Continental Dr, Suite 305, Newark, DE 19713, Estados Unidos
+EIN: 37-2216801 | Tel: +1 (302) 601-5864 | pagos@alyto.app
+Industria: Financial Technology — Cross-border payments and digital asset infrastructure.
+Entidad matriz del grupo; provee infraestructura tecnológica SaaS para pagos institucionales en USD.`,
         },
         {
           title: '2. Servicios Prestados',
@@ -33,7 +35,7 @@ Usuarios chilenos (AV Finance SpA):
 - Envío de dinero internacional desde Chile (CLP) a LatAm y Bolivia.
 - Iniciación de pagos CLP vía Fintoc (débito bancario directo).
 
-Usuarios institucionales (AV Finance LLC):
+Usuarios institucionales (AV Finance, LLC):
 - Transferencias USD a destinos globales vía OwlPay Harbor.`,
         },
         {
@@ -115,7 +117,7 @@ Los tiempos son estimativos y dependen de sistemas bancarios externos.`,
           title: '12. Ley Aplicable',
           content: `• AV Finance SRL: Ley boliviana. La Paz, Bolivia. ASFI supervisora.
 - AV Finance SpA: Ley chilena. Antofagasta, Chile. CMF supervisora.
-- AV Finance LLC: Ley de Delaware, EE.UU. Arbitraje AAA.
+- AV Finance, LLC: Ley de Delaware, EE.UU. Arbitraje AAA.
 
 Reclamaciones: soporte@alyto.app (respondemos en 5 días hábiles).
 Autoridades: ASFI Bolivia (asfi.gob.bo) | CMF Chile (cmfchile.cl) | FTC EE.UU. (ftc.gov)`,
@@ -143,9 +145,11 @@ Operates as a Virtual Asset Service Provider (VASP) under Bolivian Supreme Decre
 Maipú 378, Antofagasta, Chile | RUT: 78028602-4 | soporte@alyto.app
 Operates as a cross-border payment intermediary under Chilean CMF regulations.
 
-▸ AV Finance LLC — Delaware, USA (Infrastructure Provider)
-131 Continental Dr, Dover, Delaware, USA | EIN: 37-2216801 | soporte@alyto.app
-Provides SaaS technology infrastructure for institutional USD payments.`,
+▸ AV Finance, LLC — Delaware, USA (Corporate parent / Infrastructure Provider)
+Registered address: 131 Continental Dr, Suite 305, Newark, DE 19713, United States
+EIN: 37-2216801 | Phone: +1 (302) 601-5864 | pagos@alyto.app
+Industry: Financial Technology — Cross-border payments and digital asset infrastructure.
+Group parent company; provides SaaS technology infrastructure for institutional USD payments.`,
         },
         {
           title: '2. Legal Nature of Virtual Assets',
@@ -185,7 +189,7 @@ As a VASP, AV Finance SRL is legally required to verify identity and source of f
           title: '8. Governing Law',
           content: `• AV Finance SRL: Bolivian law. La Paz jurisdiction. ASFI supervisor.
 - AV Finance SpA: Chilean law. Antofagasta courts. CMF supervisor.
-- AV Finance LLC: Delaware law. AAA arbitration.
+- AV Finance, LLC: Delaware law. AAA arbitration.
 
 Claims: soporte@alyto.app — we respond within 5 business days.
 Regulatory authorities: ASFI (asfi.gob.bo) | CMF (cmfchile.cl) | FTC (ftc.gov)`,
@@ -204,8 +208,11 @@ Opera como Provedora de Serviços de Ativos Virtuais (PSAV) sob o DS N° 5384 e 
 ▸ AV Finance SpA — Chile (Intermediário de Pagamentos)
 Maipú 378, Antofagasta, Chile | RUT: 78028602-4
 
-▸ AV Finance LLC — Delaware, EUA (Infraestrutura)
-131 Continental Dr, Dover, Delaware, EUA | EIN: 37-2216801`,
+▸ AV Finance, LLC — Delaware, EUA (Entidade matriz / Infraestrutura)
+Endereço registrado: 131 Continental Dr, Suite 305, Newark, DE 19713, Estados Unidos
+EIN: 37-2216801 | Tel: +1 (302) 601-5864 | pagos@alyto.app
+Setor: Financial Technology — Cross-border payments and digital asset infrastructure.
+Empresa matriz do grupo; provê infraestrutura tecnológica SaaS para pagamentos institucionais em USD.`,
         },
         {
           title: '2. Custódia de Fundos e Ativos Virtuais',
@@ -231,7 +238,7 @@ Maipú 378, Antofagasta, Chile | RUT: 78028602-4
           title: '6. Lei Aplicável',
           content: `• AV Finance SRL: lei boliviana, foro La Paz, supervisão ASFI.
 - AV Finance SpA: lei chilena, foro Antofagasta, supervisão CMF.
-- AV Finance LLC: lei de Delaware, arbitragem AAA.
+- AV Finance, LLC: lei de Delaware, arbitragem AAA.
 
 Contato: soporte@alyto.app | alyto.app`,
         },
@@ -245,7 +252,7 @@ Contato: soporte@alyto.app | alyto.app`,
       sections: [
         {
           title: '1. Responsable del Tratamiento',
-          content: `AV Finance LLC (131 Continental Dr, Dover, Delaware, EE.UU.), AV Finance SpA (Maipú 378, Antofagasta, Chile) y AV Finance SRL (Av. Ramiro Castillo N° 13, La Paz, Bolivia). Contacto: soporte@alyto.app`,
+          content: `AV Finance, LLC (131 Continental Dr, Suite 305, Newark, DE 19713, EE.UU.), AV Finance SpA (Maipú 378, Antofagasta, Chile) y AV Finance SRL (Av. Ramiro Castillo N° 13, La Paz, Bolivia). Contacto: soporte@alyto.app`,
         },
         {
           title: '2. Datos que Recopilamos',
@@ -283,7 +290,7 @@ Contato: soporte@alyto.app | alyto.app`,
       sections: [
         {
           title: '1. Data Controller',
-          content: `AV Finance LLC (131 Continental Dr, Dover, Delaware, USA), AV Finance SpA (Maipú 378, Antofagasta, Chile), AV Finance SRL (Av. Ramiro Castillo N° 13, La Paz, Bolivia). Contact: soporte@alyto.app`,
+          content: `AV Finance, LLC (131 Continental Dr, Suite 305, Newark, DE 19713, USA), AV Finance SpA (Maipú 378, Antofagasta, Chile), AV Finance SRL (Av. Ramiro Castillo N° 13, La Paz, Bolivia). Contact: soporte@alyto.app`,
         },
         {
           title: '2. Data We Collect',
@@ -313,7 +320,7 @@ Contato: soporte@alyto.app | alyto.app`,
       sections: [
         {
           title: '1. Controlador dos Dados',
-          content: `AV Finance LLC, AV Finance SpA e AV Finance SRL. Contato: soporte@alyto.app`,
+          content: `AV Finance, LLC (131 Continental Dr, Suite 305, Newark, DE 19713, EUA), AV Finance SpA e AV Finance SRL. Contato: soporte@alyto.app`,
         },
         {
           title: '2. Dados Coletados',
