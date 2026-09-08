@@ -175,8 +175,20 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
   // cotización cada 60 s. Preferimos esa versión viva sobre la que quedó
   // congelada en stepData al salir del Step 1; si el socket nunca llegó a
   // conectar, caemos a la congelada.
-  const { quote: socketQuote } = useQuoteContext()
+  const { quote: socketQuote, reconnect: refreshQuote } = useQuoteContext()
   const quote = socketQuote ?? frozenQuote
+
+  // Anclamos la cotización AL ENTRAR a este paso: pedimos una fresca para que el
+  // contador arranque con la ventana completa. El reloj no corre en los pasos
+  // previos —ahí nada está comprometido todavía— así que si el usuario tardó
+  // cargando al beneficiario, la cotización que traía el socket podía quedar con
+  // pocos segundos y el contador arrancaría casi en cero sin razón.
+  const anchoredRef = useRef(false)
+  useEffect(() => {
+    if (anchoredRef.current) return
+    anchoredRef.current = true
+    refreshQuote()
+  }, [refreshQuote])
 
   // ── Countdown de expiración de cotización ──────────────────────────────────
   const quoteExpiry = quote?.quoteExpiresAt

@@ -157,13 +157,6 @@ function isBobRateStale(iso) {
   return (Date.now() - new Date(iso).getTime()) > 24 * 3_600_000
 }
 
-function formatCountdown(secs) {
-  if (!secs || secs <= 0) return '0:00'
-  const m = Math.floor(secs / 60)
-  const s = secs % 60
-  return `${m}:${String(s).padStart(2, '0')}`
-}
-
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
 function QuoteSkeleton() {
@@ -453,7 +446,7 @@ export default function Step1Amount({ initialData, onNext }) {
   const isEuAutoRoute = selectedCountry?.autoRouted === true
   const quoteCorridorId = isEuAutoRoute ? null : (selectedCountry?.corridorId || null)
 
-  const { quote, status, error, errorMeta, isStale, countdown, reconnect, setQuoteParams } =
+  const { quote, status, error, errorMeta, isStale, reconnect, setQuoteParams } =
     useQuoteContext()
 
   // Publicamos los parámetros al proveedor; él mantiene el socket abierto durante
@@ -516,7 +509,10 @@ export default function Step1Amount({ initialData, onNext }) {
 
   const activeCurrency = quote?.originCurrency ?? origin.currency
 
-  const isBlocked   = status === 'connecting' || status === 'expired' ||
+  // 'expired' NO bloquea: la tasa de este paso es referencial y el socket la
+  // renueva sola. Bloquear acá dejaba al usuario sin poder avanzar por una
+  // cotización vencida que ni siquiera es la que se va a cobrar.
+  const isBlocked   = status === 'connecting' ||
                       status === 'disconnected' || status === 'error'
   const canContinue = !!quote && !isBlocked && !!rawAmount && !!selectedCountry && !belowMinimum
 
@@ -885,37 +881,19 @@ export default function Step1Amount({ initialData, onNext }) {
               <div className="my-3 border-t border-[#E2E8F0]" />
 
 
-              {/* Pie */}
-              {status === 'expired' ? (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-[#F59E0B]">
-                    <AlertCircle size={13} />
-                    <span className="text-[0.75rem] font-medium">Cotización caducada</span>
-                  </div>
-                  <button
-                    onClick={reconnect}
-                    className="flex items-center gap-1 text-[0.75rem] text-[#1D3461] hover:text-[#0D1F3C] transition-colors"
-                  >
-                    <RefreshCw size={13} /> Actualizar
-                  </button>
+              {/* Pie — sin cuenta regresiva a propósito.
+                  Acá todavía no hay nada comprometido: el usuario aún tiene que
+                  cargar al beneficiario. El reloj solo tiene sentido en el paso 4,
+                  donde se confirma; correrlo antes solo presiona mientras escribe. */}
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-1.5 text-[#4A5568]">
+                  <Clock size={13} />
+                  <span className="text-[0.75rem]">{quote.estimatedDelivery || '1 día hábil'}</span>
                 </div>
-              ) : (
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-1.5 text-[#4A5568]">
-                    <Clock size={13} />
-                    <span className="text-[0.75rem]">{quote.estimatedDelivery || '1 día hábil'}</span>
-                  </div>
-                  {countdown !== null && (
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${countdown <= 30 ? 'bg-[#FEF3C71A] border border-[#F59E0B33]' : 'bg-[#1D34611A] border border-[#1D346133]'}`}>
-                      <Clock size={12} className={countdown <= 30 ? 'text-[#F59E0B]' : 'text-[#1D3461]'} />
-                      <span className="text-[0.6875rem] text-[#64748B]">Válida</span>
-                      <span className={`text-[0.9375rem] font-bold font-mono tabular-nums ${countdown <= 30 ? 'text-[#F59E0B]' : 'text-[#1D3461]'}`}>
-                        {formatCountdown(countdown)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
+                <span className="text-[0.6875rem] text-[#64748B]">
+                  Tasa referencial
+                </span>
+              </div>
             </>
           )}
         </div>
