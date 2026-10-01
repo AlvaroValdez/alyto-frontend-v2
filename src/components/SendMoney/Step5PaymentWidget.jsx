@@ -15,8 +15,9 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Loader2, ExternalLink, AlertCircle, MessageCircle,
-  Copy, CheckCheck, Clock, Download, Paperclip, Upload, CheckCircle2, Smartphone,
+  Copy, CheckCheck, Clock, Paperclip, Upload, CheckCircle2, Smartphone,
 } from 'lucide-react'
+import BankQrActions from '../ui/BankQrActions'
 import { getTransactionStatus, getPaymentQR, uploadComprobante } from '../../services/paymentsService'
 import { subscribeTxStatus } from '../../services/txStatusStream'
 import Sentry from '../../services/sentry.js'
@@ -102,13 +103,6 @@ function ManualPayinScreen({ stepData }) {
     setTimeout(() => setCopiedRef(false), 2000)
   }
 
-  const downloadQR = () => {
-    if (!qrSrc) return
-    const a = document.createElement('a')
-    a.download = `qr-alyto-${transactionId ?? 'pago'}.png`
-    a.href = qrSrc
-    a.click()
-  }
 
   const handleDone = () => {
     if (transactionId) navigate(`/transactions/${transactionId}`)
@@ -230,12 +224,11 @@ function ManualPayinScreen({ stepData }) {
                   alt="Código QR de pago"
                   className="w-[200px] h-[200px] rounded-2xl bg-white p-2 object-contain"
                 />
-                <button
-                  onClick={downloadQR}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#E2E8F0] text-[0.8125rem] text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#0D1F3C33] transition-colors"
-                >
-                  <Download size={13} /> Descargar QR
-                </button>
+                <BankQrActions
+                  src={qrSrc}
+                  reference={transactionId}
+                  amountLabel={`${Number(originAmount ?? 0).toLocaleString('es-BO', { minimumFractionDigits: 2 })} ${originCurrency ?? 'BOB'}`}
+                />
               </>
             ) : null
           )}
@@ -438,13 +431,6 @@ function BankQrPayinScreen({ stepData }) {
     return () => { cancelled = true }
   }, [transactionId, paymentQR])
 
-  const downloadQR = () => {
-    if (!qrSrc) return
-    const a = document.createElement('a')
-    a.download = `qr-alyto-${transactionId ?? 'pago'}.png`
-    a.href = qrSrc
-    a.click()
-  }
 
   if (confirmed) {
     return (
@@ -487,12 +473,11 @@ function BankQrPayinScreen({ stepData }) {
               alt="QR de pago bancario"
               className="w-[200px] h-[200px] rounded-2xl bg-white p-2 object-contain"
             />
-            <button
-              onClick={downloadQR}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#E2E8F0] text-[0.8125rem] text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#0D1F3C33] transition-colors"
-            >
-              <Download size={13} /> Descargar QR
-            </button>
+            <BankQrActions
+              src={qrSrc}
+              reference={transactionId}
+              amountLabel={`${Number(originAmount ?? 0).toLocaleString('es-BO', { minimumFractionDigits: 2 })} BOB`}
+            />
           </>
         ) : (
           <div className="flex flex-col items-center gap-2 py-4">

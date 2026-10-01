@@ -21,6 +21,7 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import { request, requestFormData } from '../../services/api'
 import QRDisplay, { buildQRWithLogo } from '../../components/ui/QRDisplay'
+import BankQrActions from '../../components/ui/BankQrActions'
 import { shareQRImage } from '../../utils/shareImage'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -622,6 +623,13 @@ function DepositModal({ open, onClose, onSuccess }) {
                     className="w-[200px] h-[200px] object-contain" />
                 </div>
                 <p className="text-[1.25rem] font-bold text-[#0F172A]">{formatBOB(result?.amount)}</p>
+                {/* Pagar desde otro dispositivo, o que pague un tercero, sin tener
+                    que escanear la pantalla donde se generó el QR. */}
+                <BankQrActions
+                  src={bankQrSrc(result?.paymentQR)}
+                  reference={result?.wtxId}
+                  amountLabel={formatBOB(result?.amount)}
+                />
               </div>
 
               {/* Estado: esperando pago */}
