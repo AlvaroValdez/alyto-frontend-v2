@@ -15,7 +15,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate }  from 'react-router-dom'
 import { Loader2, ShieldCheck, AlertCircle } from 'lucide-react'
 import { useAuth }      from '../../context/AuthContext'
-import { getKycStatus } from '../../services/api'
+import { getKycStatus, logKycEvent } from '../../services/api'
 
 const POLL_INTERVAL_MS  = 3000
 const POLL_MAX_ATTEMPTS = 100  // 5 minutos
@@ -37,6 +37,11 @@ export default function KycReturnPage() {
 
   useEffect(() => {
     attemptRef.current = 0
+
+    // Llegar acá es la única prueba de que la página alojada de Stripe cargó:
+    // el servidor no puede observarlo por su cuenta. Un intento sin esta marca,
+    // pero con un reintento, es una página de Stripe que nunca llegó a abrirse.
+    logKycEvent('returned')
 
     pollRef.current = setInterval(async () => {
       attemptRef.current += 1

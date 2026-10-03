@@ -25,7 +25,7 @@ import {
   Lock,
 } from 'lucide-react'
 import { useAuth }            from '../../context/AuthContext'
-import { createKycSession, getKycStatus } from '../../services/api'
+import { createKycSession, getKycStatus, restartKycSession } from '../../services/api'
 import { LEGAL_TERMS, ENTITY_NAMES, ENTITY_JURISDICTIONS } from '../../utils/legalTerms'
 import KycProfileForm from './KycProfileForm'
 
@@ -161,7 +161,7 @@ function IntroState({ entName, entJuris, entity, terms, onStart, loading, error,
 
 // ── Estado: En proceso (polling) ──────────────────────────────────────────────
 
-function PendingState({ onDashboard, timedOut, onManualCheck }) {
+function PendingState({ onDashboard, timedOut, onManualCheck, onRestart, restarting, restartError }) {
   return (
     <div className="flex flex-col items-center py-10 gap-6">
       <div
@@ -203,6 +203,24 @@ function PendingState({ onDashboard, timedOut, onManualCheck }) {
         >
           ¿Ya completaste la verificación? Verificar estado
         </button>
+
+        {/* Salida para quien nunca llegó a ver la pantalla de Stripe. El estado
+            pasa a 'in_review' al crear la sesión, antes de que el usuario haga
+            nada: si esa página falla al cargar, sin este botón queda esperando
+            un resultado que no va a llegar. */}
+        <button
+          onClick={onRestart}
+          disabled={restarting}
+          className="w-full py-3.5 rounded-2xl font-semibold text-[0.875rem] text-[#0F172A] transition-colors disabled:opacity-60"
+          style={{ background: 'white', border: '1px solid #E2E8F0' }}
+        >
+          {restarting ? 'Reiniciando…' : '¿Falló la verificación? Empezar de nuevo'}
+        </button>
+
+        {restartError && (
+          <p className="text-[0.8125rem] text-[#EF4444] text-center">{restartError}</p>
+        )}
+
         <button
           onClick={onDashboard}
           className="w-full py-3.5 rounded-2xl font-semibold text-[0.9375rem] text-[#0F172A] transition-colors"
@@ -326,6 +344,8 @@ export default function KycPage() {
   const [loading,          setLoading]          = useState(false)
   const [error,            setError]            = useState('')
   const [pollTimedOut,     setPollTimedOut]      = useState(false)
+  const [restarting,       setRestarting]        = useState(false)
+  const [restartError,     setRestartError]      = useState('')
   // Paso de cumplimiento (CDD) previo a la biometría.
   const [profileDone,      setProfileDone]      = useState(!!user?.kycProfileCompleted)
   const pollAttemptRef                          = useRef(0)
@@ -425,7 +445,12 @@ export default function KycPage() {
     setLoading(true)
 
     try {
-      const { clientSecret, url } = await createKycSession()
+      // La rama que vamos a usar queda registrada en la bitácora del intento:
+      // las tres fallan distinto y sin el dato no se puede saber cuál falló.
+      const platform = Capacitor.isNativePlatform() ? 'native'
+                     : isMobileDevice()             ? 'mobile-web'
+                     :                                'desktop'
+      const { clientSecret, url } = await createKycSession(platform)
 
       // App nativa (Capacitor): abrir Stripe Identity en un Custom Tab del sistema
       // (motor Chrome completo) en vez de navegar dentro del WebView. El WebView de
@@ -483,12 +508,46 @@ export default function KycPage() {
     }
   }
 
-  // ── Reintentar (estado rejected) ──────────────────────────────────────────
-  function handleRetry() {
-    setKycStatus('pending')
-    updateUser({ kycStatus: 'pending' })
-    setError('')
-    setTosAccepted(false)
+  // ── Reintentar ────────────────────────────────────────────────────────────
+
+  /**
+   * Devuelve al usuario a la pantalla inicial para empezar de nuevo.
+   *
+   * Pasa por el backend y no solo por el estado local: en 'in_review' la sesión
+   * de Stripe sigue viva y hay que cancelarla, o compite con la siguiente por
+   * resolver el estado del usuario. El consentimiento se vuelve a pedir en cada
+   * intento (`setTosAccepted(false)`), que es lo que corresponde al relanzar la
+   * biometría.
+   */
+  async function handleRetry() {
+    if (restarting) return
+    setRestarting(true)
+    setRestartError('')
+
+    try {
+      const { kycStatus: nuevo } = await restartKycSession()
+
+      // Carrera: el backend descubrió que la verificación sí estaba aprobada.
+      if (nuevo === 'approved') {
+        stopPolling()
+        setKycStatus('approved')
+        updateUser({ kycStatus: 'approved' })
+        return
+      }
+
+      stopPolling()
+      setPollTimedOut(false)
+      setKycStatus('pending')
+      updateUser({ kycStatus: 'pending' })
+      setError('')
+      setTosAccepted(false)
+    } catch (err) {
+      // 409 = Stripe está procesando una captura ya enviada. Reiniciar ahí haría
+      // repetir el documento y la selfie sin motivo.
+      setRestartError(err.message || 'No se pudo reiniciar la verificación. Intenta nuevamente.')
+    } finally {
+      setRestarting(false)
+    }
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -547,6 +606,9 @@ export default function KycPage() {
             onDashboard={() => navigate('/dashboard')}
             timedOut={pollTimedOut}
             onManualCheck={handleManualCheck}
+            onRestart={handleRetry}
+            restarting={restarting}
+            restartError={restartError}
           />
         )}
         {kycStatus === 'approved' && (

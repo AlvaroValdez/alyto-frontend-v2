@@ -395,10 +395,16 @@ export function fetchVitaPrices() {
 
 /**
  * Obtiene una VerificationSession de Stripe Identity para iniciar el KYC.
- * @returns {Promise<{ clientSecret: string, sessionId: string }>}
+ *
+ * `platform` queda registrado en la bitácora del intento: las tres ramas del
+ * cliente (pestaña del sistema, redirección completa, modal del SDK) fallan de
+ * forma distinta, y sin el dato no hay manera de saber cuál falló.
+ *
+ * @param {'native'|'mobile-web'|'desktop'} [platform]
+ * @returns {Promise<{ clientSecret: string, sessionId: string, url: string }>}
  */
-export function createKycSession() {
-  return request('/kyc/session')
+export function createKycSession(platform) {
+  return request(platform ? `/kyc/session?platform=${platform}` : '/kyc/session')
 }
 
 /**
@@ -407,6 +413,33 @@ export function createKycSession() {
  */
 export function getKycStatus() {
   return request('/kyc/status')
+}
+
+/**
+ * Cancela la verificación en curso y devuelve al usuario a 'pending' para que
+ * pueda empezar de nuevo.
+ *
+ * Hace falta un endpoint y no basta con cambiar el estado local: el backend deja
+ * al usuario en 'in_review' al crear la sesión, y hay que cancelar la sesión en
+ * Stripe para que no compita con la siguiente.
+ *
+ * @returns {Promise<{ kycStatus: string, canceledSessionId: string|null }>}
+ */
+export function restartKycSession() {
+  return request('/kyc/session/restart', { method: 'POST' })
+}
+
+/**
+ * Anota un hito del intento de verificación. Best-effort: nunca debe interrumpir
+ * el flujo del usuario, así que se traga cualquier error.
+ *
+ * @param {'returned'} event
+ */
+export function logKycEvent(event) {
+  return request('/kyc/telemetry', {
+    method: 'POST',
+    body:   JSON.stringify({ event }),
+  }).catch(() => {})
 }
 
 /**
