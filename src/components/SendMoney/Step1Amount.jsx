@@ -59,7 +59,10 @@ function corridorsToCountries(corridors) {
       currencyName: CURRENCY_NAMES[currency] ?? CURRENCY_NAMES[info.currency] ?? '',
       flagCode:     info.flagCode ?? code.toLowerCase(),
       payoutMethod: c.payoutMethod  ?? null,
-      minAmountUSD:    c.minAmountUSD    ?? null,
+      // Sólo el mínimo en moneda de ORIGEN. `minAmountUSD` existe en la respuesta
+      // del backend pero NO se mapea a propósito: tenerlo acá es lo que llevó a
+      // reconvertirlo a BOB por cuenta propia y a anunciar un número distinto del
+      // que validaba el servidor.
       minAmountOrigin: c.minAmountOrigin ?? null,
       autoRouted:   c.autoRouted === true,   // backend colapsó multi-proveedor → ruteo por monto
     })
@@ -87,6 +90,29 @@ function formatDestAmount(amount, currency) {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   })} ${currency}`
+}
+
+/** Símbolo local de la moneda de ORIGEN. Espejo de utils/currencyDisplay.js del backend. */
+const ORIGIN_SYMBOLS = { BOB: 'Bs', CLP: '$', USD: 'US$' }
+
+/**
+ * El dinero del usuario, en SU moneda: símbolo local y sin el código ISO al lado.
+ *
+ * El código ISO se reserva para el importe de DESTINO (`formatDestAmount`), donde
+ * sí aporta: ahí el usuario necesita saber en qué moneda cobra el beneficiario. En
+ * el lado origen sólo duplica ("Bs21,67 BOB") o, peor, obliga a convertir
+ * mentalmente cuando se anuncia en una moneda que no es la suya.
+ */
+function formatOriginAmount(amount, currency) {
+  const n = Number(amount)
+  if (!isFinite(n)) return '—'
+  const decimals = INTEGER_CURRENCIES.has(currency) ? 0 : 2
+  const numero   = n.toLocaleString('es-CL', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })
+  const simbolo = ORIGIN_SYMBOLS[currency]
+  return simbolo ? `${simbolo} ${numero}` : `${numero} ${currency}`
 }
 
 function timeAgoShort(iso) {
@@ -411,38 +437,18 @@ export default function Step1Amount({ initialData, onNext }) {
   }, [rawAmount, destinationCode, quoteCorridorId, setQuoteParams])
 
   // ── Mínimo del corredor (en USD) ────────────────────────────────────────────
-  // Para BOB: usa quote.bobPerUsdc cuando está disponible — la misma tasa con la
-  // que el backend convierte el mínimo (resolveMinAmountOrigin), así lo mostrado
-  // coincide con lo que valida el servidor.
-  // Si aún no hay quote, muestra solo el mínimo en USD sin equivalente BOB.
+  // El mínimo lo calcula el backend (resolveEffectiveMinimum) y lo entrega YA en
+  // moneda de origen en `minAmountOrigin`. Acá sólo se muestra.
+  //
+  // ⚠️ Antes esto reconvertía `minAmountUSD × quote.bobPerUsdc` por su cuenta. Dos
+  // conversiones distintas sobre la misma magnitud dan dos números distintos, y el
+  // usuario los veía a la vez: el error del socket decía "241 BOB", este recuadro
+  // decía "≈246 BOB", y el botón se bloqueaba contra el segundo. Tecleabas lo que
+  // te pedía el error y no pasaba nada.
   const minAmountForCorridor = (() => {
-    // Aplica a CUALQUIER corredor con minAmountUSD configurado — el backend lo
-    // valida igual (resolveMinAmountOrigin) sin importar el proveedor. Antes solo
-    // se mostraba para owlPay/auto-ruteados, así que los corredores Vita (ej. EU,
-    // que dejó de ser auto-ruteado al fijarse en Vita) enviaban al usuario a un
-    // 400 del backend sin aviso previo en pantalla.
-    const usdMin = selectedCountry?.minAmountUSD
-    if (!usdMin) return null
-    if (origin.currency === 'BOB') {
-      // bobPerUsdc = cuántos BOB vale 1 USDC (≈ BOB/USD, ej. 9.31)
-      // minBOB = minAmountUSD × bobPerUsdc
-      const bobPerUsdc = quote?.bobPerUsdc
-      if (bobPerUsdc && bobPerUsdc > 0) {
-        return { amount: Math.ceil(usdMin * bobPerUsdc), currency: 'BOB', usd: usdMin }
-      }
-      // Sin quote aún — solo mostramos USD, sin equivalente BOB
-      return { amount: null, currency: 'BOB', usd: usdMin }
-    }
-    if (origin.currency === 'USD') {
-      return { amount: usdMin, currency: 'USD', usd: usdMin }
-    }
-    if (origin.currency === 'CLP') {
-      // Usa minAmountOrigin pre-calculado por el backend (dinámico con tasa CLP-USDT)
-      // Fallback: usdMin × 966 (tasa CLP/USD desde .env)
-      const clpMin = selectedCountry?.minAmountOrigin ?? Math.ceil(usdMin * 966)
-      return { amount: clpMin, currency: 'CLP', usd: usdMin }
-    }
-    return null
+    const min = selectedCountry?.minAmountOrigin
+    if (!min || min <= 0) return null
+    return { amount: min, currency: origin.currency }
   })()
 
   const belowMinimum = minAmountForCorridor !== null &&
@@ -695,13 +701,8 @@ export default function Step1Amount({ initialData, onNext }) {
               <span className={`text-[0.75rem] ${belowMinimum ? 'text-[#EF4444] font-medium' : 'text-[#64748B]'}`}>
                 Mínimo requerido:{' '}
                 <span className="font-semibold">
-                  USD {minAmountForCorridor.usd.toLocaleString('es-CL')}
+                  {formatOriginAmount(minAmountForCorridor.amount, minAmountForCorridor.currency)}
                 </span>
-                {minAmountForCorridor.currency !== 'USD' && minAmountForCorridor.amount !== null && (
-                  <span className="font-normal opacity-70">
-                    {' '}(≈ {formatDestAmount(minAmountForCorridor.amount, minAmountForCorridor.currency)})
-                  </span>
-                )}
               </span>
             </div>
           )}
@@ -802,7 +803,7 @@ export default function Step1Amount({ initialData, onNext }) {
                       <span className="text-[0.75rem] text-[#4A5568]">Costo del envío</span>
                       <div className="flex items-center gap-1.5">
                         <span className="text-[0.8125rem] font-semibold text-[#0D1F3C]">
-                          {totalCosto > 0 ? `${origin.symbol}${totalCosto.toLocaleString('es-CL')} ${activeCurrency}` : '—'}
+                          {totalCosto > 0 ? formatOriginAmount(totalCosto, activeCurrency) : '—'}
                         </span>
                         {feesExpanded
                           ? <ChevronUp   size={14} className="text-[#94A3B8]" />
@@ -817,7 +818,7 @@ export default function Step1Amount({ initialData, onNext }) {
                           <div className="flex justify-between">
                             <span className="text-[0.6875rem] text-[#94A3B8]">· Comisión de servicio</span>
                             <span className="text-[0.6875rem] text-[#4A5568]">
-                              {origin.symbol}{comisionServicio.toLocaleString('es-CL')} {activeCurrency}
+                              {formatOriginAmount(comisionServicio, activeCurrency)}
                             </span>
                           </div>
                         )}
@@ -825,7 +826,7 @@ export default function Step1Amount({ initialData, onNext }) {
                           <div className="flex justify-between">
                             <span className="text-[0.6875rem] text-[#94A3B8]">· Fee de procesamiento</span>
                             <span className="text-[0.6875rem] text-[#4A5568]">
-                              {origin.symbol}{feeProcesamiento.toLocaleString('es-CL')} {activeCurrency}
+                              {formatOriginAmount(feeProcesamiento, activeCurrency)}
                             </span>
                           </div>
                         )}
