@@ -316,6 +316,17 @@ export default function AnchorAdminPage() {
                   <div className="flex justify-between text-[0.75rem] text-[#C4CBD8] mt-1">
                     <span>USDC tesorería SRL</span><span className="font-semibold text-white">{fmt(solvency?.treasuryReserveUSDC)}</span>
                   </div>
+                  {/* La segregación operativa/reserva es el control que pidió la
+                      subsanación ASFI. El dato ya venía en la API y no se mostraba. */}
+                  <div className="flex justify-between text-[0.7rem] text-[#8A96B8] mt-1.5 pl-3">
+                    <span>· cuenta operativa · firma simple</span>
+                    <span className="tabular-nums">{fmt(solvency?.treasuryHotUSDC)}</span>
+                  </div>
+                  <div className="flex justify-between text-[0.7rem] mt-0.5 pl-3"
+                    style={{ color: solvency?.coldConfigured ? '#8A96B8' : '#FBBF24' }}>
+                    <span>· cuenta de reserva · {solvency?.coldConfigured ? 'multifirma' : 'sin configurar'}</span>
+                    <span className="tabular-nums">{solvency?.coldConfigured ? fmt(solvency?.treasuryColdUSDC) : '—'}</span>
+                  </div>
                 </div>
                 <div className="rounded-xl p-3" style={{ background: '#0F1628', border: '1px solid #263050' }}>
                   <p className="text-[0.6rem] uppercase tracking-wide text-[#8A96B8] mb-2">Pasivo = saldos usuarios + payouts en vuelo</p>
@@ -330,6 +341,11 @@ export default function AnchorAdminPage() {
 
               <p className="text-[0.6rem] text-[#4E5A7A] mt-3">
                 {solvency?.custodialAddresses ?? 0} direcciones custodiales · {solvency?.walletCount ?? 0} wallets. Solvencia de dos lados: el USDC de conversiones BOB→USDC y P2P se respalda en la tesorería (no en la cuenta custodial del usuario), por eso la reserva suma ambos pozos.
+              </p>
+              <p className="text-[0.6rem] text-[#4E5A7A] mt-1.5">
+                <strong className="text-[#8A96B8]">Esto es SOLVENCIA</strong>, o sea respaldo total contra pasivo total, e incluye la cuenta de reserva.
+                No confundir con la cobertura de <em>Monitor bancario</em>, que mide <strong className="text-[#8A96B8]">LIQUIDEZ</strong> y
+                deja fuera la reserva a propósito, porque mover esos fondos exige dos firmas. Los dos números son correctos y distintos.
               </p>
             </div>
 

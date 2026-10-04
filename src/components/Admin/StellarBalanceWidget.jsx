@@ -68,7 +68,14 @@ export default function StellarBalanceWidget({ entity = 'SRL', compact = false }
     })
   }
 
-  const usdc      = data?.balance?.usdc ?? 0
+  // El umbral se mide contra la OPERATIVA, no contra el respaldo total: la reserva
+  // exige dos firmas y no es liquidez ejecutable, así que una reserva sana taparía
+  // una operativa vacía que no puede pagar nada.
+  const op        = data?.accounts?.operativa ?? null
+  const rsv       = data?.accounts?.reserva   ?? null
+  const usdc      = op?.usdc ?? data?.balance?.usdc ?? 0
+  const rsvUsdc   = rsv?.usdc ?? null
+  const totalUsdc = data?.totals?.usdc ?? null
   const isOk      = usdc >= USDC_THRESHOLD
   const isWarn    = !isOk && usdc >= USDC_THRESHOLD * 0.5
   const barColor  = isOk ? '#22C55E' : isWarn ? '#F59E0B' : '#EF4444'
@@ -145,7 +152,7 @@ export default function StellarBalanceWidget({ entity = 'SRL', compact = false }
         >
           <div className="flex items-center justify-between">
             <span className="text-[0.6875rem] font-bold px-2 py-0.5 rounded-full" style={{ background: '#263050', color: '#8A96B8' }}>
-              USDC
+              USDC · OPERATIVA
             </span>
             {isOk
               ? <CheckCircle2 size={14} color="#22C55E" />
@@ -164,12 +171,41 @@ export default function StellarBalanceWidget({ entity = 'SRL', compact = false }
               <div className="h-full rounded-full transition-all duration-500" style={{ width: `${barPct}%`, background: barColor }} />
             </div>
             <div className="flex justify-between items-center mt-1">
-              <span className="text-[0.6875rem] text-[#4E5A7A]">Mínimo recomendado</span>
+              <span className="text-[0.6875rem] text-[#4E5A7A]">Mínimo de liquidez</span>
               <span className="text-[0.6875rem]" style={{ color: isOk ? '#4E5A7A' : barColor }}>
                 {formatUSDC(USDC_THRESHOLD)} USDC
               </span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Desglose: la reserva es respaldo pero NO liquidez, y el total es lo que
+          antes faltaba y hacía parecer que la operativa era todo el respaldo. */}
+      <div className="px-5 pb-4 grid grid-cols-2 gap-3">
+        <div className="rounded-xl p-3" style={{ background: '#1A2340', border: '1px solid #263050' }}>
+          <p className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1">
+            Reserva · multifirma
+          </p>
+          <p className="text-[1.125rem] font-bold leading-none tabular-nums text-[#C4CBD8]">
+            {rsvUsdc == null ? '—' : formatUSDC(rsvUsdc)}
+            <span className="text-[0.6875rem] font-medium ml-1.5 text-[#4E5A7A]">USDC</span>
+          </p>
+          <p className="text-[0.625rem] text-[#4E5A7A] mt-1.5">
+            {data?.coldConfigured === false ? 'Sin reserva configurada' : 'Respaldo, no liquidez'}
+          </p>
+        </div>
+        <div className="rounded-xl p-3" style={{ background: '#1A2340', border: '1px solid #263050' }}>
+          <p className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1">
+            Respaldo total
+          </p>
+          <p className="text-[1.125rem] font-bold leading-none tabular-nums text-white">
+            {totalUsdc == null ? '—' : formatUSDC(totalUsdc)}
+            <span className="text-[0.6875rem] font-medium ml-1.5 text-[#4E5A7A]">USDC</span>
+          </p>
+          <p className="text-[0.625rem] text-[#4E5A7A] mt-1.5">
+            {data?.totals?.partial ? 'Lectura parcial' : 'Operativa más reserva'}
+          </p>
         </div>
       </div>
 

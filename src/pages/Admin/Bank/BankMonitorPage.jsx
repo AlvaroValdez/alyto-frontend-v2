@@ -221,7 +221,7 @@ export default function BankMonitorPage() {
             </div>
           </div>
         )}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-7">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
           <CoverageCard title="BOB · Banco" flag="🇧🇴" asset="BOB" dec={2}
             treasury={coverage?.bob?.treasury} liabilities={coverage?.bob?.liabilities}
             ratio={coverage?.bob?.coverageRatio} surplus={coverage?.bob?.surplus} status={coverage?.bob?.status} />
@@ -229,6 +229,14 @@ export default function BankMonitorPage() {
             treasury={coverage?.usdc?.treasury} liabilities={coverage?.usdc?.liabilities}
             ratio={coverage?.usdc?.coverageRatio} surplus={coverage?.usdc?.surplus} status={coverage?.usdc?.status} />
         </div>
+        {/* Sin este rótulo, esta cobertura y la del panel del anchor se leen como
+            contradictorias: miden cosas distintas y las dos son correctas. */}
+        <p className="text-[0.6875rem] text-[#8A96B8] mb-7 leading-relaxed">
+          <strong className="text-[#C4CBD8]">Esta cobertura mide LIQUIDEZ</strong>: solo cuenta lo que se puede mover hoy. En BOB descuenta el
+          importe cobrado y pendiente de devolver; en USDC toma la cuenta operativa más el respaldo custodial y <strong className="text-[#C4CBD8]">deja
+          fuera la cuenta de reserva</strong>, porque mover esos fondos exige dos firmas. Para el respaldo total contra el pasivo total, ver
+          <em> Solvencia</em> en el panel del anchor, que da un número más alto y también es correcto.
+        </p>
 
         {/* Selector de banco + saldo en vivo */}
         <div className="flex items-center gap-2 mb-3">
