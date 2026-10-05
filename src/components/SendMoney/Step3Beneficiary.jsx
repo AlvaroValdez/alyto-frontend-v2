@@ -114,18 +114,31 @@ const FALLBACK_HARBOR_METHODS = {
 // Discrepancia entre schema documentado y banking partner backend.
 // SEPA removido temporalmente — usuarios EU usan WIRE (rate menor).
 // TODO: revertir cuando OwlPay arregle el bug (ticket pendiente con OwlPay support).
+// ⚠️ Esta lista FILTRA el selector y NO tiene pass-through: si el método que
+// Harbor devuelve de verdad no está acá, el selector queda VACÍO y el usuario no
+// puede avanzar. Así estaba GB — Harbor manda BANK-TRANSFER y acá decía
+// ['WIRE','FPS'], así que el filtro se quedaba sin nada.
+//
+// Tiene que reflejar lo que Harbor OFRECE, no lo que nos gustaría. Medido con
+// quotes reales a $120, $500 y $2.000 el 2026-10-05: CIPS, FPS, FTS y AANI **no
+// se ofrecen a nuestro customer** en ninguno de los tres montos.
+//
+// El orden es de barato a caro y debe coincidir con SUPPORTED_METHODS_BY_COUNTRY
+// del backend (src/utils/harborMethodSupport.js), que lo usa para elegir el riel
+// y para detectar cuándo el barato desapareció.
 const SUPPORTED_HARBOR_METHODS = {
-  CN: ['CIPS', 'WIRE'],
+  CN: ['WIRE'],                                  // CIPS no se ofrece (medido 2026-10-05)
   EU: ['WIRE'],                                  // SEPA deshabilitado (bug Harbor)
-  GB: ['WIRE', 'FPS'],                            // WIRE=USD (principal), FPS=GBP (fallback)
+  GB: ['BANK-TRANSFER', 'WIRE', 'FPS'],          // lo real es BANK-TRANSFER; FPS no se ofrece
   NG: ['BANK-TRANSFER'],                         // hyphen, no underscore
-  BR: ['PIX'],                                   // form solo PIX
+  BR: ['PIX'],                                   // ⚠️ bo-br migró a Vita (Harbor da 3018 en BRL)
   MX: ['SPEI'],                                  // form solo CLABE
-  AE: ['FTS', 'AANI', 'BANK-TRANSFER'],          // 3 métodos válidos en schema AE
+  AE: ['BANK-TRANSFER', 'FTS', 'AANI'],          // lo real es BANK-TRANSFER; FTS/AANI no se ofrecen
   HK: ['CHATS', 'WIRE'],                         // doc oficial: CHATS rail principal; sandbox solo retorna WIRE pero prod tendrá CHATS
-  JP: ['WIRE'],                                  // doc oficial: Active para SRL (rail Wire); sandbox limitado
+  JP: ['WIRE'],                                  // ⚠️ bo-jp apagado: WIRE cobra ~$25 fijos (34% en el mínimo)
   SG: ['BANK-TRANSFER'],                         // hyphen
   IN: ['IMPS'],                                  // único método verificado
+  AU: ['BANK-TRANSFER'],                         // cl-au/us-au activos; faltaba el mapeo
   US: ['ACH_PUSH', 'DOMESTIC_WIRE', 'FEDWIRE', 'WIRE'],  // 4 métodos US (mismo payout schema)
 }
 
