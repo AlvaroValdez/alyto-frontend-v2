@@ -486,7 +486,8 @@ function PaymentMethodSelector({
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#F59E0B0F] border border-[#F59E0B33]">
           <span className="text-base flex-shrink-0">⚠️</span>
           <p className="text-[0.6875rem] text-[#4A5568]">
-            No se pudieron cargar las tasas en vivo. Mostrando valores de referencia.
+            No se pudieron cargar las tasas en vivo. Usamos el método habitual de
+            este destino y te confirmamos la tasa antes de que pagues.
           </p>
         </div>
       )}
@@ -520,9 +521,19 @@ function PaymentMethodSelector({
                     )}
                   </div>
                   <p className="text-[0.75rem] text-[#4A5568] mt-1">
-                    Tasa: <span className="font-semibold text-[#0D1F3C]">
-                      {m.rate != null ? Number(m.rate).toFixed(2) : '—'} {destCurrency}/USDC
-                    </span>
+                    {/* Sin tasa no escribimos "Tasa: —": un guion al lado de la
+                        palabra "Tasa" se lee como un valor y no como su ausencia. */}
+                    {m.rate != null ? (
+                      <>
+                        Tasa: <span className="font-semibold text-[#0D1F3C]">
+                          {Number(m.rate).toFixed(2)} {destCurrency}/USDC
+                        </span>
+                      </>
+                    ) : (
+                      <span className="font-semibold text-[#0D1F3C]">
+                        Tasa a confirmar al continuar
+                      </span>
+                    )}
                     {' · '}Llegada: {m.deliveryLabel ?? '—'}
                   </p>
                 </div>
@@ -575,8 +586,31 @@ export default function Step3Beneficiary({ destinationCountry, corridorId, initi
       : (FALLBACK_HARBOR_METHODS[destinationCountry] ?? [])
     const normalized = source.map(normalizeHarborMethod)
     const supported  = SUPPORTED_HARBOR_METHODS[destinationCountry] ?? null
-    if (!supported) return normalized
-    return normalized.filter(m => supported.includes(m.method))
+    const elegibles  = supported
+      ? normalized.filter(m => supported.includes(m.method))
+      : normalized
+
+    // Sin tasas no hay elección que ofrecer.
+    //
+    // Cuando el endpoint de requisitos de Harbor falla caemos a
+    // FALLBACK_HARBOR_METHODS, donde todas las entradas tienen `rate: null`. Si
+    // las mostramos todas, el usuario elige entre varios rieles que en la
+    // pantalla se ven idénticos ("Tasa: —") pero que cuestan muy distinto:
+    // Harbor cobra un fijo en los wires, así que en `bo-us` un WIRE sobre $50 se
+    // come la mitad del envío mientras ACH_PUSH lo entrega casi completo. Elegir
+    // a ciegas ahí no es un riesgo teórico: `bo-br` devuelve 3018 en producción,
+    // o sea que este camino se recorre de verdad.
+    //
+    // Así que colapsamos al riel recomendado —que es el mismo que elegiría el
+    // backend con `pickSupportedQuote`— y dejamos de presentar una comparación
+    // que el usuario no puede hacer. La tasa real llega en el paso siguiente.
+    const sinTasas = elegibles.length > 1 && elegibles.every(m => m.rate == null)
+    if (sinTasas) {
+      const recomendado = elegibles.find(m => m.recommended) ?? elegibles[0]
+      return [recomendado]
+    }
+
+    return elegibles
   }, [usesHarborMethods, harborMethodsRaw, destinationCountry])
 
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(initialData?.owlPayMethod ?? null)
