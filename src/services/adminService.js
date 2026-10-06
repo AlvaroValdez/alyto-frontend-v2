@@ -641,6 +641,17 @@ export function sendAdminNotification(data) {
  * Descarga el Comprobante Oficial de Servicio B2B (PDF) desde el panel admin.
  * @param {string} transactionId — alytoTransactionId
  */
+/**
+ * Abre el Comprobante Oficial de Transacción (PDF BOL-) de una tx en una pestaña
+ * nueva. El backend devuelve una presigned URL de S3 (1 h).
+ * @returns {Promise<{ url, numeroComprobante, generatedAt }>}
+ */
+export async function getComprobanteOficial(transactionId) {
+  const data = await request(`/admin/transactions/${encodeURIComponent(transactionId)}/comprobante-oficial`)
+  if (data?.url) window.open(data.url, '_blank', 'noopener')
+  return data
+}
+
 export async function getBusinessInvoice(transactionId) {
   const res = await request(`/admin/transactions/${transactionId}/business-invoice`)
   const blob = await res.blob()

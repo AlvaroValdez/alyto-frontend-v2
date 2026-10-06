@@ -11,7 +11,7 @@ import {
   Clock, CheckCircle2, XCircle, AlertCircle, Loader,
   User, Banknote, List, Edit3, ArrowRight, Paperclip, ZoomIn, FileText,
 } from 'lucide-react'
-import { getTransactionDetail, updateTransactionStatus, getTransactionComprobante, getBusinessInvoice, simulateBankQrPayment } from '../../../services/adminService'
+import { getTransactionDetail, updateTransactionStatus, getTransactionComprobante, getBusinessInvoice, getComprobanteOficial, simulateBankQrPayment } from '../../../services/adminService'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -510,6 +510,8 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
   const [saveError,   setSaveError]   = useState(null)
   const [saveOk,      setSaveOk]      = useState(false)
   const [downloadingB2B, setDownloadingB2B] = useState(false)
+  const [downloadingComprobante, setDownloadingComprobante] = useState(false)
+  const [comprobanteError, setComprobanteError] = useState(null)
 
   const load = useCallback(async () => {
     if (!transactionId) return
@@ -928,6 +930,47 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
                     <Field label="Entidad" value={tx.userId.legalEntity} dim />
                     <Field label="KYC" value={tx.userId.kycStatus} dim />
                   </div>
+                  <Divider />
+                </>
+              )}
+
+              {/* ── 4a2. Comprobante Oficial retail (BOL) — SRL, no business ──── */}
+              {tx.boliviaCompliance?.numeroComprobante && tx.userId?.accountType !== 'business' && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <SectionTitle icon={FileText}>Comprobante Oficial</SectionTitle>
+                  </div>
+                  <p className="text-[0.75rem] text-[#8A96B8] mb-1">
+                    N.º {tx.boliviaCompliance.numeroComprobante}
+                  </p>
+                  <button
+                    onClick={async () => {
+                      setDownloadingComprobante(true)
+                      setComprobanteError(null)
+                      try {
+                        await getComprobanteOficial(tx.alytoTransactionId)
+                      } catch (err) {
+                        setComprobanteError(err.message || 'No se pudo abrir el comprobante.')
+                      } finally {
+                        setDownloadingComprobante(false)
+                      }
+                    }}
+                    disabled={downloadingComprobante}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[0.8125rem] font-semibold transition-all active:scale-95 disabled:opacity-50"
+                    style={{
+                      background: downloadingComprobante ? '#C4CBD840' : '#C4CBD8',
+                      color: '#0F1628',
+                      boxShadow: downloadingComprobante ? 'none' : '0 4px 20px rgba(196,203,216,0.3)',
+                    }}
+                  >
+                    {downloadingComprobante
+                      ? <Loader size={13} className="animate-spin" />
+                      : <FileText size={13} />}
+                    {downloadingComprobante ? 'Abriendo...' : 'Ver / descargar Comprobante Oficial'}
+                  </button>
+                  {comprobanteError && (
+                    <p className="text-[0.75rem] text-[#F87171] mt-1">{comprobanteError}</p>
+                  )}
                   <Divider />
                 </>
               )}
