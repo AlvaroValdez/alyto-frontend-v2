@@ -74,7 +74,9 @@ function CountdownBadge({ expiresAt }) {
     <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.75rem] font-semibold ${
       expired ? 'bg-[#EF44441A] text-[#EF4444]' :
       urgent  ? 'bg-[#F59E0B1A] text-[#F59E0B]' :
-                'bg-[#F1F5F9] text-[#94A3B8]'
+                // #233E58 y no #94A3B8: a 2.3:1 el tiempo restante no se leía, que es el
+                // único dato del chip. Los estados urgente y expirado ya pasaban.
+                'bg-[#F1F5F9] text-[#233E58]'
     }`}>
       <Clock size={12} />
       {expired ? 'Expirado' : `${mm}:${ss}`}

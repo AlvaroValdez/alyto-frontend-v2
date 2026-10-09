@@ -2027,7 +2027,9 @@ function ReceiveUSDCModal({ open, onClose, user }) {
               {user?.firstName} {user?.lastName}
             </p>
             {countdown != null && !expired && (
-              <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.75rem] font-semibold bg-[#F1F5F9] text-[#94A3B8]">
+              // #233E58 y no #94A3B8: en gris claro el contador daba 2.3:1 y el usuario no
+              // podía leer cuánto le queda, que es justo el dato por el que existe el chip.
+              <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.75rem] font-semibold bg-[#F1F5F9] text-[#233E58]">
                 <Clock size={12} /> Expira en {mm}:{ss}
               </div>
             )}

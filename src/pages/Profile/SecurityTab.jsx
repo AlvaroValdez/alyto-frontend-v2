@@ -304,7 +304,7 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
             <button
               type="submit"
               disabled={saving || !current || !allOk || !match}
-              className="w-full flex items-center justify-center gap-2 bg-[#1D3461] text-[#0D1F3C] font-bold text-[0.9375rem] rounded-xl py-3 disabled:opacity-40 transition-all hover:bg-[#1C3247] shadow-[0_4px_20px_rgba(35,62,88,0.3)]"
+              className="w-full flex items-center justify-center gap-2 bg-[#1D3461] text-white font-bold text-[0.9375rem] rounded-xl py-3 disabled:opacity-40 transition-all hover:bg-[#1C3247] shadow-[0_4px_20px_rgba(35,62,88,0.3)]"
             >
               {saving ? <Loader2 size={16} className="animate-spin" /> : <Lock size={15} />}
               Cambiar contraseña
