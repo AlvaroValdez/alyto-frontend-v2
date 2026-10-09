@@ -9,7 +9,7 @@
  */
 
 import { useState, useCallback } from 'react'
-import { request, requestFormData } from '../services/api'
+import { request, requestFormData, saveAuthToken } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 
 export function useProfile() {
@@ -67,10 +67,16 @@ export function useProfile() {
     setSaving(true)
     setError(null)
     try {
-      await request('/user/change-password', {
+      const res = await request('/user/change-password', {
         method: 'POST',
         body:   JSON.stringify(data),
       })
+      // Cambiar la contraseña cierra las sesiones de los otros dispositivos: el backend
+      // incrementa la tokenVersion, lo que invalida todos los JWT anteriores — incluido
+      // el que tenemos guardado. Viene uno nuevo en la respuesta y hay que reemplazarlo,
+      // o la cabecera Bearer quedaría con un token ya revocado.
+      if (res?.token) saveAuthToken(res.token)
+      return res
     } catch (err) {
       setError(err.message ?? 'Error al cambiar la contraseña')
       throw err
