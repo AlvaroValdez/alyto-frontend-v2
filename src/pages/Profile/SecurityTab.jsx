@@ -143,7 +143,10 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
     }
 
     try {
-      await onChangePassword({ currentPassword: current, newPassword: newPw })
+      // `confirmPassword` va al backend aunque la coincidencia ya se validó arriba:
+      // el endpoint la espera y respondía 400 sin ella, así que el cambio de
+      // contraseña nunca funcionó desde que se escribió esta pantalla.
+      await onChangePassword({ currentPassword: current, newPassword: newPw, confirmPassword: confirm })
       setPwOk(true)
       setCurrent('')
       setNewPw('')
