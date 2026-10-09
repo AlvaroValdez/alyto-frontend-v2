@@ -113,7 +113,7 @@ export default function Step6Success({ stepData, onReset }) {
       <div className="w-full flex flex-col gap-3">
         <button
           onClick={() => navigate('/')}
-          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#0D1F3C] text-[#0F1628] text-[0.9375rem] font-bold shadow-[0_4px_20px_rgba(13,31,60,0.25)] active:scale-[0.98] transition-all"
+          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#0D1F3C] text-white text-[0.9375rem] font-bold shadow-[0_4px_20px_rgba(13,31,60,0.25)] active:scale-[0.98] transition-all"
         >
           <ArrowUpRight size={18} />
           Ver mis transacciones
