@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronDown, AlertCircle, Loader2 } from 'lucide-react'
 import { initiatePayin } from '../services/api'
+import { FINTOC_ENABLED } from '../config/featureFlags'
 
 // Fallbacks — sobreescritos con valores dinámicos del backend
 const CLP_TO_USDC_FALLBACK = parseFloat(import.meta.env.VITE_CLP_TO_USDC || '0.00108')
@@ -156,7 +157,10 @@ export default function TransferView() {
 
           {/* Ruta del pago */}
           <div className="mt-4 flex items-center gap-2 text-[0.75rem] text-[#4E5A7A]">
-            <span className="px-2 py-0.5 rounded-full bg-[#22C55E1A] text-[#22C55E] font-medium">Fintoc A2A</span>
+            {/* Con FINTOC_ENABLED apagado no se nombra al proveedor del pay-in. */}
+            <span className="px-2 py-0.5 rounded-full bg-[#22C55E1A] text-[#22C55E] font-medium">
+              {FINTOC_ENABLED ? 'Fintoc A2A' : 'Transferencia A2A'}
+            </span>
             <span>→</span>
             <span className="px-2 py-0.5 rounded-full bg-[#C4CBD81A] text-[#C4CBD8] font-medium">Stellar USDC</span>
             <span>→</span>
@@ -202,7 +206,7 @@ export default function TransferView() {
           {loading ? (
             <>
               <Loader2 size={18} className="animate-spin" />
-              Conectando con Fintoc…
+              {FINTOC_ENABLED ? 'Conectando con Fintoc…' : 'Conectando con tu banco…'}
             </>
           ) : (
             'Continuar al pago →'
@@ -211,8 +215,10 @@ export default function TransferView() {
 
         {/* Nota legal */}
         <p className="text-center text-[0.6875rem] text-[#4E5A7A] px-4">
-          Al continuar serás redirigido al widget de Fintoc para autorizar el débito bancario.
-          Operación procesada por AV Finance SpA.
+          {FINTOC_ENABLED
+            ? 'Al continuar serás redirigido al widget de Fintoc para autorizar el débito bancario.'
+            : 'Al continuar serás redirigido para autorizar el débito bancario.'}
+          {' '}Operación procesada por AV Finance SpA.
         </p>
 
       </div>

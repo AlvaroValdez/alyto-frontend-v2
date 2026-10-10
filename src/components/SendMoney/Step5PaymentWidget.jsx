@@ -21,6 +21,7 @@ import BankQrActions from '../ui/BankQrActions'
 import { getTransactionStatus, getPaymentQR, uploadComprobante } from '../../services/paymentsService'
 import { subscribeTxStatus } from '../../services/txStatusStream'
 import Sentry from '../../services/sentry.js'
+import { FINTOC_ENABLED } from '../../config/featureFlags'
 
 const TIMEOUT_MS       = 15 * 60 * 1000
 const FINAL_STATUSES   = new Set(['payin_confirmed', 'payin_completed', 'completed', 'in_transit'])
@@ -673,7 +674,10 @@ function PollingPayinScreen({ stepData, onNext }) {
 
   // ── Principal ────────────────────────────────────────────────────────────
 
-  const isFintoc = payinMethod === 'fintoc'
+  // Con el flag apagado el flujo sigue funcionando (p. ej. una transacción ya
+  // creada como 'fintoc' antes de ocultarlo), pero se muestra la copy genérica
+  // del widget en vez de la marca del proveedor.
+  const isFintoc = payinMethod === 'fintoc' && FINTOC_ENABLED
 
   return (
     <div className="flex flex-col gap-5 px-4 pb-28">

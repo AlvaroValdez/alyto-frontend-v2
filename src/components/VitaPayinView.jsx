@@ -18,6 +18,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ArrowLeft, Download, ChevronRight, AlertCircle, CheckCircle, Loader, RefreshCw } from 'lucide-react'
 import { fetchPaymentMethods, createVitaPayin } from '../services/api'
+import { FINTOC_ENABLED } from '../config/featureFlags'
 
 // ─── Países soportados para Pay-in vía Vita ──────────────────────────────────
 // CL excluido: usa Fintoc propio de AV Finance SpA (TransferView → /transfer)
@@ -338,7 +339,9 @@ export default function VitaPayinView({ onBack }) {
               <div>
                 <p className="text-sm font-semibold text-white mb-1">¿Estás en Chile?</p>
                 <p className="text-xs text-[#8A96B8] leading-relaxed">
-                  Chile usa Fintoc directo de AV Finance SpA con mejores comisiones.{' '}
+                  {FINTOC_ENABLED
+                    ? 'Chile usa Fintoc directo de AV Finance SpA con mejores comisiones.'
+                    : 'Chile usa débito bancario directo de AV Finance SpA con mejores comisiones.'}{' '}
                   <a href="/transfer" className="text-[#C4CBD8] underline underline-offset-2">
                     Ir al depósito Chile →
                   </a>
