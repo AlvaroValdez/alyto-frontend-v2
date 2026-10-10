@@ -1,8 +1,8 @@
 export const LEGAL_DOCS = {
   terms: {
     es: {
-      title: 'Términos y Condiciones de Uso — v2.1',
-      lastUpdated: 'Abril 2026',
+      title: 'Términos y Condiciones de Uso — v2.2',
+      lastUpdated: 'Octubre 2026',
       sections: [
         {
           title: '1. Identificación de las Entidades Operadoras',
@@ -33,7 +33,6 @@ Entidad matriz del grupo; provee infraestructura tecnológica SaaS para pagos in
 
 Usuarios chilenos (AV Finance SpA):
 - Envío de dinero internacional desde Chile (CLP) a LatAm y Bolivia.
-- Iniciación de pagos CLP vía Fintoc (débito bancario directo).
 
 Usuarios institucionales (AV Finance, LLC):
 - Transferencias USD a destinos globales vía OwlPay Harbor.`,
@@ -129,8 +128,8 @@ Autoridades: ASFI Bolivia (asfi.gob.bo) | CMF Chile (cmfchile.cl) | FTC EE.UU. (
       ],
     },
     en: {
-      title: 'Terms of Service — v2.1',
-      lastUpdated: 'April 2026',
+      title: 'Terms of Service — v2.2',
+      lastUpdated: 'October 2026',
       sections: [
         {
           title: '1. Operating Entities and Regulatory Framework',
@@ -197,8 +196,8 @@ Regulatory authorities: ASFI (asfi.gob.bo) | CMF (cmfchile.cl) | FTC (ftc.gov)`,
       ],
     },
     pt: {
-      title: 'Termos de Serviço — v2.1',
-      lastUpdated: 'Abril 2026',
+      title: 'Termos de Serviço — v2.2',
+      lastUpdated: 'Outubro 2026',
       sections: [
         {
           title: '1. Entidades Operadoras',
@@ -248,7 +247,7 @@ Contato: soporte@alyto.app | alyto.app`,
   privacy: {
     es: {
       title: 'Política de Privacidad',
-      lastUpdated: 'Abril 2026',
+      lastUpdated: 'Octubre 2026',
       sections: [
         {
           title: '1. Responsable del Tratamiento',
@@ -264,7 +263,7 @@ Contato: soporte@alyto.app | alyto.app`,
         },
         {
           title: '4. Proveedores',
-          content: `Stripe Identity (KYC), Vita Wallet (pagos LatAm), OwlPay Harbor (pagos globales), Fintoc (pagos Chile), SendGrid (emails), Firebase (push), Stellar Network (auditoría), Sentry (errores técnicos).`,
+          content: `Stripe Identity (KYC), Vita Wallet (pagos LatAm), OwlPay Harbor (pagos globales), SendGrid (emails), Firebase (push), Stellar Network (auditoría), Sentry (errores técnicos).`,
         },
         {
           title: '5. Retención de Datos',
@@ -286,7 +285,7 @@ Contato: soporte@alyto.app | alyto.app`,
     },
     en: {
       title: 'Privacy Policy',
-      lastUpdated: 'April 2026',
+      lastUpdated: 'October 2026',
       sections: [
         {
           title: '1. Data Controller',
@@ -316,7 +315,7 @@ Contato: soporte@alyto.app | alyto.app`,
     },
     pt: {
       title: 'Política de Privacidade',
-      lastUpdated: 'Abril 2026',
+      lastUpdated: 'Outubro 2026',
       sections: [
         {
           title: '1. Controlador dos Dados',
@@ -339,4 +338,4 @@ Contato: soporte@alyto.app | alyto.app`,
   },
 };
 
-export const LEGAL_VERSION = '2.1';
+export const LEGAL_VERSION = '2.2';
