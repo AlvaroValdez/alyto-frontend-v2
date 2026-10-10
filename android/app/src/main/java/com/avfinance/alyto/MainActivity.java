@@ -1,4 +1,4 @@
-package app.alyto.android;
+package com.avfinance.alyto;
 
 import com.getcapacitor.BridgeActivity;
 
