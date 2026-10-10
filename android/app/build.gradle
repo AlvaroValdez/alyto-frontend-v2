@@ -70,11 +70,14 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
-    }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+// El plugin de Google Services SOLO se aplica si existe android/app/google-services.json.
+// Sin el archivo el build sigue funcionando, pero el push nativo (FCM) no. Antes esto
+// dependía de que `servicesJSON.text` lanzara excepción al faltar el archivo; con
+// .exists() la condición es explícita y un archivo vacío falla ruidosamente en vez de
+// saltarse el plugin en silencio. Ver docs/ANDROID_RELEASE.md §2.
+def servicesJSON = file('google-services.json')
+if (servicesJSON.exists()) {
+    apply plugin: 'com.google.gms.google-services'
+} else {
+    logger.lifecycle("[alyto] google-services.json ausente: plugin no aplicado, el push nativo no funcionara en este build.")
 }

@@ -1,8 +1,20 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- allowBackup="false": la sesión viaja como token Bearer en el localStorage del
+         WebView (ver docs/ANDROID_RELEASE.md §6). Con la copia de seguridad activada,
+         una sesión válida podría salir del dispositivo vía Google Drive o `adb backup`.
+         Para una billetera el estado correcto es desactivarla, al precio de que el
+         usuario no recupere datos locales al cambiar de teléfono (vuelve a iniciar
+         sesión, que es lo deseable).
+
+         usesCleartextTraffic explícito, no implícito: con targetSdk 36 el default de
+         plataforma ya es false, pero declararlo deja auditable la promesa de "cifrado
+         en tránsito" de la ficha de Data Safety y protege de que una librería futura lo
+         active en el merge del manifiesto. -->
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="false"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
