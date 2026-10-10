@@ -206,14 +206,14 @@ export default function SendUSDCPage() {
             </div>
 
             <div>
-              <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
+              <label htmlFor="SendUSDCPage-f1" className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
                 Alias Alyto
               </label>
               <div className="relative">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-[#0D6E521A] flex items-center justify-center flex-shrink-0">
                   <AtSign size={15} className="text-[#0D6E52]" />
                 </div>
-                <input
+                <input id="SendUSDCPage-f1"
                   type="text"
                   autoCapitalize="none"
                   autoCorrect="off"
@@ -282,12 +282,12 @@ export default function SendUSDCPage() {
 
             {/* Amount */}
             <div>
-              <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
+              <label htmlFor="SendUSDCPage-f2" className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
                 Monto en USDC
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-bold">$</span>
-                <input
+                <input id="SendUSDCPage-f2"
                   type="number"
                   inputMode="decimal"
                   min="1"
@@ -312,10 +312,10 @@ export default function SendUSDCPage() {
 
             {/* Description */}
             <div>
-              <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
+              <label htmlFor="SendUSDCPage-f3" className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
                 Descripción (opcional)
               </label>
-              <input
+              <input id="SendUSDCPage-f3"
                 type="text"
                 value={description}
                 onChange={e => setDescription(e.target.value)}

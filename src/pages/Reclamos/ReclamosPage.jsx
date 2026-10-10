@@ -129,10 +129,10 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
 
           {/* Tipo */}
           <div>
-            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
+            <label htmlFor="ReclamosPage-f1" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
               Tipo de reclamo *
             </label>
-            <select
+            <select id="ReclamosPage-f1"
               name="tipo" value={form.tipo} onChange={handleChange}
               className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_2px_#233E5820]"
               required
@@ -146,10 +146,10 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
 
           {/* Descripción */}
           <div>
-            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
+            <label htmlFor="ReclamosPage-f2" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
               Descripción * <span className="text-[#94A3B8]">(mínimo 20 caracteres)</span>
             </label>
-            <textarea
+            <textarea id="ReclamosPage-f2"
               name="descripcion" value={form.descripcion} onChange={handleChange}
               rows={4} maxLength={1000}
               placeholder="Describe detalladamente el problema..."
@@ -162,10 +162,10 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
           {/* Monto reclamado (opcional) */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
+              <label htmlFor="ReclamosPage-f3" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
                 Monto reclamado <span className="text-[#94A3B8]">(opcional)</span>
               </label>
-              <input
+              <input id="ReclamosPage-f3"
                 type="number" name="montoReclamado" value={form.montoReclamado}
                 onChange={handleChange} min="0" step="any"
                 placeholder="0.00"
@@ -173,10 +173,10 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
               />
             </div>
             <div>
-              <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
+              <label htmlFor="ReclamosPage-f4" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
                 Moneda <span className="text-[#94A3B8]">(opcional)</span>
               </label>
-              <input
+              <input id="ReclamosPage-f4"
                 type="text" name="currency" value={form.currency}
                 onChange={handleChange} placeholder="BOB, CLP, USD..."
                 maxLength={5}
@@ -187,10 +187,10 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
 
           {/* ID Transacción (opcional) */}
           <div>
-            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
+            <label htmlFor="ReclamosPage-f5" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
               ID de transacción <span className="text-[#94A3B8]">(opcional)</span>
             </label>
-            <input
+            <input id="ReclamosPage-f5"
               type="text" name="transactionId" value={form.transactionId}
               onChange={handleChange} placeholder="ALY-B-... o WTX-..."
               className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58] font-mono text-[0.8125rem]"

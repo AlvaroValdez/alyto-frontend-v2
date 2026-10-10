@@ -134,10 +134,10 @@ export default function Sep24DepositPage() {
                 <div className="w-11 h-11 rounded-2xl bg-[#22C55E1A] flex items-center justify-center mb-4">
                   <ArrowDownToLine size={20} className="text-[#22C55E]" />
                 </div>
-                <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
+                <label htmlFor="Sep24DepositPage-f1" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
                   Monto a depositar (USDC)
                 </label>
-                <input
+                <input id="Sep24DepositPage-f1"
                   type="number"
                   inputMode="decimal"
                   step="0.01"

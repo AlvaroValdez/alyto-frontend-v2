@@ -177,8 +177,8 @@ function Step1({ form, onChange }) {
       </div>
 
       <div>
-        <label className={labelCls}>Razón social *</label>
-        <input
+        <label htmlFor="KybForm-f1" className={labelCls}>Razón social *</label>
+        <input id="KybForm-f1"
           className={inputCls}
           placeholder="AV Finance SRL"
           value={form.legalName}
@@ -187,8 +187,8 @@ function Step1({ form, onChange }) {
       </div>
 
       <div>
-        <label className={labelCls}>Nombre comercial</label>
-        <input
+        <label htmlFor="KybForm-f2" className={labelCls}>Nombre comercial</label>
+        <input id="KybForm-f2"
           className={inputCls}
           placeholder="Alyto"
           value={form.tradeName}
@@ -197,8 +197,8 @@ function Step1({ form, onChange }) {
       </div>
 
       <div>
-        <label className={labelCls}>NIT *</label>
-        <input
+        <label htmlFor="KybForm-f3" className={labelCls}>NIT *</label>
+        <input id="KybForm-f3"
           className={inputCls}
           placeholder="123456789"
           value={form.taxId}
@@ -207,8 +207,8 @@ function Step1({ form, onChange }) {
       </div>
 
       <div>
-        <label className={labelCls}>País de constitución *</label>
-        <select
+        <label htmlFor="KybForm-f4" className={labelCls}>País de constitución *</label>
+        <select id="KybForm-f4"
           className={selectCls}
           value={form.country}
           onChange={e => onChange('country', e.target.value)}
@@ -221,8 +221,8 @@ function Step1({ form, onChange }) {
       </div>
 
       <div>
-        <label className={labelCls}>Tipo de empresa *</label>
-        <select
+        <label htmlFor="KybForm-f5" className={labelCls}>Tipo de empresa *</label>
+        <select id="KybForm-f5"
           className={selectCls}
           value={form.companyType}
           onChange={e => onChange('companyType', e.target.value)}
@@ -235,8 +235,8 @@ function Step1({ form, onChange }) {
       </div>
 
       <div>
-        <label className={labelCls}>Industria / Rubro *</label>
-        <select
+        <label htmlFor="KybForm-f6" className={labelCls}>Industria / Rubro *</label>
+        <select id="KybForm-f6"
           className={selectCls}
           value={form.industry}
           onChange={e => onChange('industry', e.target.value)}
@@ -249,8 +249,8 @@ function Step1({ form, onChange }) {
       </div>
 
       <div>
-        <label className={labelCls}>Sitio web</label>
-        <input
+        <label htmlFor="KybForm-f7" className={labelCls}>Sitio web</label>
+        <input id="KybForm-f7"
           className={inputCls}
           placeholder="https://empresa.com"
           type="url"
@@ -260,8 +260,8 @@ function Step1({ form, onChange }) {
       </div>
 
       <div>
-        <label className={labelCls}>Teléfono corporativo *</label>
-        <input
+        <label htmlFor="KybForm-f8" className={labelCls}>Teléfono corporativo *</label>
+        <input id="KybForm-f8"
           className={inputCls}
           placeholder="+591 2 123 4567"
           type="tel"
@@ -271,8 +271,8 @@ function Step1({ form, onChange }) {
       </div>
 
       <div>
-        <label className={labelCls}>Dirección de la empresa *</label>
-        <input
+        <label htmlFor="KybForm-f9" className={labelCls}>Dirección de la empresa *</label>
+        <input id="KybForm-f9"
           className={inputCls}
           placeholder="Calle Comercio 123, La Paz"
           value={form.address}
@@ -294,8 +294,8 @@ function Step2({ form, onChange }) {
       </div>
 
       <div>
-        <label className={labelCls}>Nombre completo *</label>
-        <input
+        <label htmlFor="KybForm-f10" className={labelCls}>Nombre completo *</label>
+        <input id="KybForm-f10"
           className={inputCls}
           placeholder="Juan Pérez López"
           value={form.repName}
@@ -304,8 +304,8 @@ function Step2({ form, onChange }) {
       </div>
 
       <div>
-        <label className={labelCls}>Tipo de documento *</label>
-        <select
+        <label htmlFor="KybForm-f11" className={labelCls}>Tipo de documento *</label>
+        <select id="KybForm-f11"
           className={selectCls}
           value={form.repDocType}
           onChange={e => onChange('repDocType', e.target.value)}
@@ -318,8 +318,8 @@ function Step2({ form, onChange }) {
       </div>
 
       <div>
-        <label className={labelCls}>Número de documento *</label>
-        <input
+        <label htmlFor="KybForm-f12" className={labelCls}>Número de documento *</label>
+        <input id="KybForm-f12"
           className={inputCls}
           placeholder="12345678"
           value={form.repDocNumber}
@@ -328,8 +328,8 @@ function Step2({ form, onChange }) {
       </div>
 
       <div>
-        <label className={labelCls}>Email corporativo *</label>
-        <input
+        <label htmlFor="KybForm-f13" className={labelCls}>Email corporativo *</label>
+        <input id="KybForm-f13"
           className={inputCls}
           placeholder="juan.perez@empresa.com"
           type="email"
@@ -339,8 +339,8 @@ function Step2({ form, onChange }) {
       </div>
 
       <div>
-        <label className={labelCls}>Teléfono del representante *</label>
-        <input
+        <label htmlFor="KybForm-f14" className={labelCls}>Teléfono del representante *</label>
+        <input id="KybForm-f14"
           className={inputCls}
           placeholder="+591 71234567"
           type="tel"
@@ -374,8 +374,8 @@ function Step3({ form, onChange, files, onFileChange, corridorOptions }) {
 
       {/* Volumen mensual */}
       <div>
-        <label className={labelCls}>Volumen mensual estimado *</label>
-        <select
+        <label htmlFor="KybForm-f15" className={labelCls}>Volumen mensual estimado *</label>
+        <select id="KybForm-f15"
           className={selectCls}
           value={form.estimatedVolume}
           onChange={e => onChange('estimatedVolume', e.target.value)}
@@ -415,8 +415,8 @@ function Step3({ form, onChange, files, onFileChange, corridorOptions }) {
 
       {/* Descripción del negocio */}
       <div>
-        <label className={labelCls}>Descripción del negocio *</label>
-        <textarea
+        <label htmlFor="KybForm-f16" className={labelCls}>Descripción del negocio *</label>
+        <textarea id="KybForm-f16"
           className={`${inputCls} resize-none`}
           rows={4}
           placeholder="Describa brevemente la actividad principal de su empresa y el propósito de los pagos internacionales…"

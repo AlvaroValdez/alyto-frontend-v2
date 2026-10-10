@@ -310,10 +310,10 @@ export default function TwoFactorPage() {
 
       <form onSubmit={alEnviar} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <label className="label-uppercase">
+          <label htmlFor="TwoFactorPage-f1" className="label-uppercase">
             {usarRecuperacion ? 'Código de recuperación' : 'Código de verificación'}
           </label>
-          <input
+          <input id="TwoFactorPage-f1"
             // `inputMode numeric` abre el teclado numérico en móvil; `one-time-code`
             // permite que iOS y Android ofrezcan el código sin teclearlo.
             type="text"

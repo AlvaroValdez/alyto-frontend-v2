@@ -1061,11 +1061,11 @@ export default function Step3Beneficiary({ destinationCountry, corridorId, initi
 
           {saveAsContact && (
             <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--color-border)' }}>
-              <label className="block text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-wide mb-2">
+              <label htmlFor="Step3Beneficiary-f1" className="block text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-wide mb-2">
                 Nombre del contacto{' '}
                 <span className="normal-case font-normal text-[0.625rem] text-[#94A3B8]">(opcional)</span>
               </label>
-              <input
+              <input id="Step3Beneficiary-f1"
                 type="text"
                 value={contactAlias}
                 onChange={e => setContactAlias(e.target.value)}

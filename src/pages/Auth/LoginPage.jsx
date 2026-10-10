@@ -118,8 +118,8 @@ export default function LoginPage() {
 
         {/* Email */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <label className="label-uppercase">Email</label>
-          <input
+          <label htmlFor="LoginPage-f1" className="label-uppercase">Email</label>
+          <input id="LoginPage-f1"
             type="email" name="email" value={form.email} onChange={handleChange}
             placeholder="tu@email.com" autoComplete="email"
             style={INPUT_STYLE}

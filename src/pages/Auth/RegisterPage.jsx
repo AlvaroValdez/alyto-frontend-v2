@@ -425,16 +425,16 @@ export default function RegisterPage() {
             {/* Nombre + Apellido */}
             <div className="flex gap-3">
               <div className="flex flex-col gap-1.5 flex-1">
-                <label className={LABEL_CLASS}>Nombre <span className="text-[#EF4444]">*</span></label>
-                <input
+                <label htmlFor="RegisterPage-f1" className={LABEL_CLASS}>Nombre <span className="text-[#EF4444]">*</span></label>
+                <input id="RegisterPage-f1"
                   type="text" name="firstName" value={form.firstName}
                   onChange={handleChange} placeholder="Ej.: Juan"
                   className={INPUT_CLASS}
                 />
               </div>
               <div className="flex flex-col gap-1.5 flex-1">
-                <label className={LABEL_CLASS}>Apellido</label>
-                <input
+                <label htmlFor="RegisterPage-f2" className={LABEL_CLASS}>Apellido</label>
+                <input id="RegisterPage-f2"
                   type="text" name="lastName" value={form.lastName}
                   onChange={handleChange} placeholder="Ej.: Pérez"
                   className={INPUT_CLASS}
@@ -444,8 +444,8 @@ export default function RegisterPage() {
 
             {/* Email */}
             <div className="flex flex-col gap-1.5">
-              <label className={LABEL_CLASS}>Email <span className="text-[#EF4444]">*</span></label>
-              <input
+              <label htmlFor="RegisterPage-f3" className={LABEL_CLASS}>Email <span className="text-[#EF4444]">*</span></label>
+              <input id="RegisterPage-f3"
                 type="email" name="email" value={form.email}
                 onChange={handleChange} placeholder="tu@email.com"
                 autoComplete="email" className={INPUT_CLASS}
@@ -454,9 +454,9 @@ export default function RegisterPage() {
 
             {/* Teléfono */}
             <div className="flex flex-col gap-1.5">
-              <label className={LABEL_CLASS}>Teléfono</label>
+              <label htmlFor="RegisterPage-f4" className={LABEL_CLASS}>Teléfono</label>
               <div className="flex gap-2">
-                <select
+                <select id="RegisterPage-f4"
                   name="phonePrefix" value={form.phonePrefix}
                   onChange={handleChange}
                   className="rounded-xl px-3 py-3.5 text-[0.9375rem] text-[#0D1F3C] bg-white border border-[#E2E8F0] focus:outline-none focus:border-[#1D3461] transition-colors cursor-pointer appearance-none min-w-[90px]"
@@ -478,8 +478,8 @@ export default function RegisterPage() {
 
             {/* País */}
             <div className="flex flex-col gap-1.5">
-              <label className={LABEL_CLASS}>País de residencia <span className="text-[#EF4444]">*</span></label>
-              <select
+              <label htmlFor="RegisterPage-f5" className={LABEL_CLASS}>País de residencia <span className="text-[#EF4444]">*</span></label>
+              <select id="RegisterPage-f5"
                 name="country" value={form.country} onChange={handleChange}
                 className="w-full rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0D1F3C] bg-white border border-[#E2E8F0] focus:outline-none focus:border-[#1D3461] transition-colors cursor-pointer appearance-none"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center' }}
@@ -527,9 +527,9 @@ export default function RegisterPage() {
 
             {/* Contraseña */}
             <div className="flex flex-col gap-1.5">
-              <label className={LABEL_CLASS}>Contraseña <span className="text-[#EF4444]">*</span></label>
+              <label htmlFor="RegisterPage-f6" className={LABEL_CLASS}>Contraseña <span className="text-[#EF4444]">*</span></label>
               <div className="relative">
-                <input
+                <input id="RegisterPage-f6"
                   type={showPwd ? 'text' : 'password'}
                   name="password" value={form.password}
                   onChange={handleChange} placeholder="Mínimo 8 caracteres"
@@ -546,9 +546,9 @@ export default function RegisterPage() {
 
             {/* Confirmar contraseña */}
             <div className="flex flex-col gap-1.5">
-              <label className={LABEL_CLASS}>Confirmar contraseña <span className="text-[#EF4444]">*</span></label>
+              <label htmlFor="RegisterPage-f7" className={LABEL_CLASS}>Confirmar contraseña <span className="text-[#EF4444]">*</span></label>
               <div className="relative">
-                <input
+                <input id="RegisterPage-f7"
                   type={showConfirm ? 'text' : 'password'}
                   name="confirmPwd" value={form.confirmPwd}
                   onChange={handleChange} placeholder="Repite la contraseña"

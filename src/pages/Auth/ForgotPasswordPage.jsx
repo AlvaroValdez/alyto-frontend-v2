@@ -92,10 +92,10 @@ export default function ForgotPasswordPage() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <label className="text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-[0.08em]">
+          <label htmlFor="ForgotPasswordPage-f1" className="text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-[0.08em]">
             Email
           </label>
-          <input
+          <input id="ForgotPasswordPage-f1"
             type="email"
             value={email}
             onChange={e => { setError(''); setEmail(e.target.value) }}
