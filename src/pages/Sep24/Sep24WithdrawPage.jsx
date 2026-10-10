@@ -141,10 +141,10 @@ export default function Sep24WithdrawPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
+                  <label htmlFor="Sep24WithdrawPage-f1" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
                     Monto a retirar (USDC)
                   </label>
-                  <input
+                  <input id="Sep24WithdrawPage-f1"
                     type="number" inputMode="decimal" step="0.01" min="0"
                     value={form.amount} onChange={onChange('amount')}
                     placeholder="100.00"
@@ -153,10 +153,10 @@ export default function Sep24WithdrawPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
+                  <label htmlFor="Sep24WithdrawPage-f2" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
                     Cuenta bancaria destino
                   </label>
-                  <input
+                  <input id="Sep24WithdrawPage-f2"
                     type="text" value={form.dest} onChange={onChange('dest')}
                     placeholder="Número de cuenta"
                     className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0F172A] focus:border-[#0D1F3C] focus:outline-none"
@@ -164,10 +164,10 @@ export default function Sep24WithdrawPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
+                  <label htmlFor="Sep24WithdrawPage-f3" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
                     Código del banco / entidad
                   </label>
-                  <input
+                  <input id="Sep24WithdrawPage-f3"
                     type="text" value={form.dest_extra} onChange={onChange('dest_extra')}
                     placeholder="Ej. código bancario / CBU / CLABE"
                     className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0F172A] focus:border-[#0D1F3C] focus:outline-none"

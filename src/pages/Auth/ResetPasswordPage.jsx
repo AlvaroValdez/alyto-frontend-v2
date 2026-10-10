@@ -162,11 +162,11 @@ export default function ResetPasswordPage() {
 
         {/* Nueva contraseña */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-[0.08em]">
+          <label htmlFor="ResetPasswordPage-f1" className="text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-[0.08em]">
             Nueva contraseña
           </label>
           <div className="relative">
-            <input
+            <input id="ResetPasswordPage-f1"
               type={showPwd ? 'text' : 'password'}
               name="password"
               value={form.password}
@@ -185,11 +185,11 @@ export default function ResetPasswordPage() {
 
         {/* Confirmar */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-[0.08em]">
+          <label htmlFor="ResetPasswordPage-f2" className="text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-[0.08em]">
             Confirmar contraseña
           </label>
           <div className="relative">
-            <input
+            <input id="ResetPasswordPage-f2"
               type={showConf ? 'text' : 'password'}
               name="confirm"
               value={form.confirm}

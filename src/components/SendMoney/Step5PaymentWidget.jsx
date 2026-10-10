@@ -21,6 +21,7 @@ import BankQrActions from '../ui/BankQrActions'
 import { getTransactionStatus, getPaymentQR, uploadComprobante } from '../../services/paymentsService'
 import { subscribeTxStatus } from '../../services/txStatusStream'
 import Sentry from '../../services/sentry.js'
+import { FINTOC_ENABLED } from '../../config/featureFlags'
 
 const TIMEOUT_MS       = 15 * 60 * 1000
 const FINAL_STATUSES   = new Set(['payin_confirmed', 'payin_completed', 'completed', 'in_transit'])
@@ -634,7 +635,7 @@ function PollingPayinScreen({ stepData, onNext }) {
           </p>
         </div>
         <a
-          href={`mailto:soporte@alyto.com?subject=URL%20de%20pago%20no%20disponible%20-%20${transactionId}`}
+          href={`mailto:soporte@alyto.app?subject=URL%20de%20pago%20no%20disponible%20-%20${transactionId}`}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-white border border-[#E2E8F0] text-[#0D1F3C] text-[0.9375rem] font-semibold no-underline hover:border-[#0D1F3C33] transition-colors"
         >
           <MessageCircle size={18} className="text-[#0D1F3C]" />
@@ -661,7 +662,7 @@ function PollingPayinScreen({ stepData, onNext }) {
           <p className="text-[0.8125rem] font-mono font-semibold text-[#0D1F3C]">{transactionId}</p>
         </div>
         <a
-          href={`mailto:soporte@alyto.com?subject=Pago%20pendiente%20${transactionId}`}
+          href={`mailto:soporte@alyto.app?subject=Pago%20pendiente%20${transactionId}`}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-white border border-[#E2E8F0] text-[#0D1F3C] text-[0.9375rem] font-semibold no-underline hover:border-[#0D1F3C33] transition-colors"
         >
           <MessageCircle size={18} className="text-[#0D1F3C]" />
@@ -673,7 +674,10 @@ function PollingPayinScreen({ stepData, onNext }) {
 
   // ── Principal ────────────────────────────────────────────────────────────
 
-  const isFintoc = payinMethod === 'fintoc'
+  // Con el flag apagado el flujo sigue funcionando (p. ej. una transacción ya
+  // creada como 'fintoc' antes de ocultarlo), pero se muestra la copy genérica
+  // del widget en vez de la marca del proveedor.
+  const isFintoc = payinMethod === 'fintoc' && FINTOC_ENABLED
 
   return (
     <div className="flex flex-col gap-5 px-4 pb-28">

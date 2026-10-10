@@ -13,7 +13,7 @@
 const TERMS_SPA = `TÉRMINOS DE SERVICIO Y POLÍTICA DE PRIVACIDAD
 AV Finance SpA — Antofagasta, Chile
 
-Versión vigente: 19 de marzo de 2026
+Versión vigente: 10 de octubre de 2026
 
 1. PARTES Y OBJETO
 Estos Términos de Servicio regulan la relación entre el Usuario y AV Finance SpA (RUT pendiente de inscripción), sociedad por acciones constituida bajo las leyes de la República de Chile, con domicilio en Antofagasta, Región de Antofagasta, Chile (en adelante "la Compañía"), para el uso de la plataforma financiera digital Alyto.
@@ -22,7 +22,7 @@ Estos Términos de Servicio regulan la relación entre el Usuario y AV Finance S
 AV Finance SpA opera en plena conformidad con la Ley N° 21.521 sobre Fomento a la Competencia e Inclusión Financiera a través de la Innovación Tecnológica (Ley Fintec) y la normativa complementaria emitida por la Comisión para el Mercado Financiero (CMF). La Compañía se compromete a registrar sus actividades ante los organismos regulatorios competentes y a cumplir con todos los estándares de seguridad, interoperabilidad y protección al consumidor financiero exigidos por dicha ley.
 
 3. OPEN BANKING Y RECAUDACIÓN LOCAL (PAY-IN)
-El Usuario autoriza expresamente a AV Finance SpA a utilizar la infraestructura de Open Banking, incluyendo el motor de iniciación de pagos Fintoc, para procesar operaciones de recaudación cuenta a cuenta (A2A) desde sus cuentas bancarias chilenas. Esta autorización es revocable en cualquier momento desde la configuración de la cuenta.
+El Usuario autoriza expresamente a AV Finance SpA a utilizar infraestructura de Open Banking y motores de iniciación de pagos provistos por terceros para procesar operaciones de recaudación cuenta a cuenta (A2A) desde sus cuentas bancarias chilenas. Esta autorización es revocable en cualquier momento desde la configuración de la cuenta.
 
 4. CROSS-BORDER PAYMENTS Y TOKENIZACIÓN
 La plataforma facilita la conversión de fondos locales (CLP) a activos digitales sobre la red Stellar (USDC, CLPX) y su liquidación en otras jurisdicciones. Estas operaciones corresponden a servicios de pago internacional y tokenización de valor, no constituyendo en ningún caso servicios de cambio de divisas regulados por el Banco Central de Chile más allá de las exenciones aplicables.
@@ -44,7 +44,7 @@ const TERMS_SRL = `TÉRMINOS DE SERVICIO Y POLÍTICA DE PRIVACIDAD
 AV Finance SRL — La Paz, Bolivia
 Domicilio legal: Av. Ramiro Castillo N° 13 | Domicilio operativo: Calle Otero de la Vega N° 295
 
-Versión vigente: 19 de marzo de 2026
+Versión vigente: 10 de octubre de 2026
 
 1. PARTES Y OBJETO
 Estos Términos de Servicio regulan la relación entre el Usuario y AV Finance SRL (NIT en proceso de inscripción), sociedad de responsabilidad limitada constituida bajo las leyes del Estado Plurinacional de Bolivia (en adelante "la Compañía"), para el uso de la plataforma financiera digital Alyto.
@@ -74,7 +74,7 @@ Al aceptar, el Usuario declara haber leído, entendido y aceptado íntegramente 
 const TERMS_LLC = `TERMS OF SERVICE AND PRIVACY POLICY
 AV Finance LLC — Wilmington, Delaware, USA
 
-Effective Date: March 19, 2026
+Effective Date: October 10, 2026
 
 1. PARTIES AND SCOPE
 These Terms of Service govern the relationship between the User and AV Finance LLC, a limited liability company incorporated under the laws of the State of Delaware, United States of America (hereinafter "the Company"), for access to and use of the Alyto institutional financial platform.

@@ -1,13 +1,14 @@
 /**
  * Step2PayinMethod.jsx — "¿Cómo pagas?"
  *
- * Para V2.0 inicial: solo Fintoc activo para CL.
+ * Para V2.0 inicial: solo Fintoc activo para CL, y sujeto a FINTOC_ENABLED.
  * Otros países/métodos muestran badge "Próximamente".
  */
 
 import { useState, useEffect } from 'react'
-import { Check, Zap, Clock } from 'lucide-react'
+import { Check, Zap, Clock, Info } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { FINTOC_ENABLED } from '../../config/featureFlags'
 
 const PAYIN_METHODS = {
   CL: [
@@ -141,7 +142,10 @@ export default function Step2PayinMethod({ onNext, originCountry = 'CL' }) {
     }
   }, [user?.legalEntity]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const methods = PAYIN_METHODS[originCountry] || []
+  // Fintoc sigue integrado de punta a punta; con el flag apagado solo se oculta
+  // la opción en el checkout (ver src/config/featureFlags.js).
+  const methods = (PAYIN_METHODS[originCountry] || [])
+    .filter(method => method.id !== 'fintoc' || FINTOC_ENABLED)
 
   function handleNext() {
     if (!selected) return
@@ -165,40 +169,59 @@ export default function Step2PayinMethod({ onNext, originCountry = 'CL' }) {
         </p>
       </div>
 
-      {/* ── Métodos disponibles ── */}
-      <div className="flex flex-col gap-3">
-        {methods.map(method => (
-          <MethodCard
-            key={method.id}
-            method={method}
-            selected={selected?.id === method.id}
-            onSelect={setSelected}
-          />
-        ))}
-      </div>
+      {methods.length === 0 ? (
+        /* Sin métodos habilitados para este país: estado explícito en lugar de
+           una lista en blanco y un botón que nunca se activa. */
+        <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-[#E2E8F0] flex items-center justify-center mx-auto mb-3">
+            <Info size={20} className="text-[#4A5568]" />
+          </div>
+          <h3 className="text-[0.9375rem] font-semibold text-[#0D1F3C] mb-1">
+            Aún no hay métodos de pago disponibles
+          </h3>
+          <p className="text-[0.8125rem] text-[#4A5568]">
+            Estamos habilitando los pagos desde {countryLabel}. Escríbenos a
+            soporte@alyto.app y te avisamos en cuanto estén activos.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* ── Métodos disponibles ── */}
+          <div className="flex flex-col gap-3">
+            {methods.map(method => (
+              <MethodCard
+                key={method.id}
+                method={method}
+                selected={selected?.id === method.id}
+                onSelect={setSelected}
+              />
+            ))}
+          </div>
 
-      {/* Nota informativa */}
-      <div className="bg-white rounded-xl px-4 py-3">
-        <p className="text-[0.75rem] text-[#4A5568] leading-relaxed">
-          {originCountry === 'BO'
-            ? 'Tu pago será procesado manualmente por AV Finance SRL. Recibirás una confirmación una vez verificado el depósito.'
-            : 'El débito se realizará desde tu cuenta bancaria chilena en tiempo real. El monto será reservado durante el proceso del pago.'
-          }
-        </p>
-      </div>
+          {/* Nota informativa */}
+          <div className="bg-white rounded-xl px-4 py-3">
+            <p className="text-[0.75rem] text-[#4A5568] leading-relaxed">
+              {originCountry === 'BO'
+                ? 'Tu pago será procesado manualmente por AV Finance SRL. Recibirás una confirmación una vez verificado el depósito.'
+                : 'El débito se realizará desde tu cuenta bancaria chilena en tiempo real. El monto será reservado durante el proceso del pago.'
+              }
+            </p>
+          </div>
 
-      {/* ── Botón continuar ── */}
-      <button
-        onClick={handleNext}
-        disabled={!selected}
-        className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
-          selected
-            ? 'bg-[#0D1F3C] text-white shadow-[0_4px_20px_rgba(13,31,60,0.25)] active:scale-[0.98]'
-            : 'bg-[#0D1F3C40] text-[#94A3B8] cursor-not-allowed'
-        }`}
-      >
-        Continuar
-      </button>
+          {/* ── Botón continuar ── */}
+          <button
+            onClick={handleNext}
+            disabled={!selected}
+            className={`w-full py-4 rounded-2xl text-[0.9375rem] font-bold transition-all duration-150 ${
+              selected
+                ? 'bg-[#0D1F3C] text-white shadow-[0_4px_20px_rgba(13,31,60,0.25)] active:scale-[0.98]'
+                : 'bg-[#0D1F3C40] text-[#94A3B8] cursor-not-allowed'
+            }`}
+          >
+            Continuar
+          </button>
+        </>
+      )}
     </div>
   )
 }

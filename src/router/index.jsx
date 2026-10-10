@@ -74,13 +74,6 @@ import AnchorAdminPage     from '../pages/Admin/Anchor/AnchorAdminPage'
 import MarketingAgentPage  from '../pages/Admin/Marketing/MarketingAgentPage'
 import AccountingPage       from '../pages/Admin/Accounting/AccountingPage'
 
-// ── Páginas legacy ────────────────────────────────────────────────────────────
-import TransferView   from '../components/TransferView'
-import CorporateView  from '../components/CorporateView'
-import SettlementView from '../components/SettlementView'
-import VitaPayoutView from '../components/VitaPayoutView'
-import VitaPayinView  from '../components/VitaPayinView'
-
 // ── SEP-24 (Interactive Anchor — público, también para webviews externas) ─────
 import Sep24DepositPage  from '../pages/Sep24/Sep24DepositPage'
 import Sep24WithdrawPage from '../pages/Sep24/Sep24WithdrawPage'
@@ -176,13 +169,6 @@ export default function AppRouter() {
         <Route path="/kyb"           element={<KybPage />} />
         <Route path="/kyb/apply"     element={<KybForm />} />
         <Route path="/kyb/status"    element={<KybStatusPage />} />
-
-        {/* Legacy */}
-        <Route path="/transfer"   element={<TransferView />} />
-        <Route path="/corporate"  element={<CorporateView />} />
-        <Route path="/settlement" element={<SettlementView />} />
-        <Route path="/payout"     element={<VitaPayoutView onBack={() => window.history.back()} />} />
-        <Route path="/deposit"    element={<VitaPayinView  onBack={() => window.history.back()} />} />
 
       </Route>
 

@@ -181,11 +181,11 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
 
           {/* Contraseña actual */}
           <div className="px-4 py-3">
-            <label className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
+            <label htmlFor="SecurityTab-f1" className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
               Contraseña actual
             </label>
             <div className="relative">
-              <input
+              <input id="SecurityTab-f1"
                 type={showCur ? 'text' : 'password'}
                 value={current}
                 onChange={e => setCurrent(e.target.value)}
@@ -204,11 +204,11 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
 
           {/* Nueva contraseña */}
           <div className="px-4 py-3">
-            <label className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
+            <label htmlFor="SecurityTab-f2" className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
               Nueva contraseña
             </label>
             <div className="relative mb-2">
-              <input
+              <input id="SecurityTab-f2"
                 type={showNew ? 'text' : 'password'}
                 value={newPw}
                 onChange={e => setNewPw(e.target.value)}
@@ -259,11 +259,11 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
 
           {/* Confirmar contraseña */}
           <div className="px-4 py-3">
-            <label className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
+            <label htmlFor="SecurityTab-f3" className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
               Confirmar nueva contraseña
             </label>
             <div className="relative">
-              <input
+              <input id="SecurityTab-f3"
                 type={showCon ? 'text' : 'password'}
                 value={confirm}
                 onChange={e => setConfirm(e.target.value)}

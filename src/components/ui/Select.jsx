@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useId } from 'react'
 
 /**
  * Select — dropdown nativo estilizado, consistente con <Input/>.
@@ -20,8 +20,14 @@ export default function Select({
   error,
   disabled = false,
   className = '',
+  id,
 }) {
   const [focused, setFocused] = useState(false)
+  // El control va dentro de un div envoltorio: el label necesita htmlFor y NO
+  // puede llevar un id fijo, porque este componente se instancia varias veces y
+  // dos elementos con el mismo id rompen la asociación. useId lo resuelve.
+  const autoId   = useId()
+  const selectId = id ?? `select-${autoId}`
 
   const borderColor = error
     ? 'var(--color-error)'
@@ -38,12 +44,12 @@ export default function Select({
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
       {label && (
-        <label className="label-uppercase" style={{ display: 'block' }}>
+        <label htmlFor={selectId} className="label-uppercase" style={{ display: 'block' }}>
           {label}
         </label>
       )}
 
-      <select
+      <select id={selectId}
         name={name}
         value={value}
         onChange={onChange}

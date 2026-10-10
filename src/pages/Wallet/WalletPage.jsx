@@ -393,12 +393,12 @@ function DepositModal({ open, onClose, onSuccess }) {
       {view === 'amount' && (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
+            <label htmlFor="WalletPage-f1" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
               Monto a depositar (BOB)
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-semibold text-sm">Bs.</span>
-              <input
+              <input id="WalletPage-f1"
                 type="number" min={DEPOSIT_MIN_BOB} max={DEPOSIT_MAX_BOB}
                 value={amount} onChange={e => setAmount(e.target.value)} placeholder="100"
                 className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none"
@@ -880,23 +880,23 @@ function SendModal({ open, onClose, onSuccess, balanceAvailable }) {
             step === 1 ? (
               <form onSubmit={handleContinue} className="space-y-4">
                 <div>
-                  <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Email del destinatario</label>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="usuario@email.com"
+                  <label htmlFor="WalletPage-f2" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Email del destinatario</label>
+                  <input id="WalletPage-f2" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="usuario@email.com"
                     className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none" />
                   <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Solo usuarios Bolivia (SRL) registrados en Alyto.</p>
                 </div>
                 <div>
-                  <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Monto (BOB)</label>
+                  <label htmlFor="WalletPage-f3" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Monto (BOB)</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-semibold text-sm">Bs.</span>
-                    <input type="number" min={1} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0"
+                    <input id="WalletPage-f3" type="number" min={1} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0"
                       className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none" />
                   </div>
                   <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Disponible: {formatBOB(balanceAvailable)}</p>
                 </div>
                 <div>
-                  <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Descripción (opcional)</label>
-                  <input type="text" value={description} onChange={e => setDescription(e.target.value)} maxLength={100}
+                  <label htmlFor="WalletPage-f4" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Descripción (opcional)</label>
+                  <input id="WalletPage-f4" type="text" value={description} onChange={e => setDescription(e.target.value)} maxLength={100}
                     placeholder="Ej. Pago alquiler"
                     className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none" />
                 </div>
@@ -1022,10 +1022,10 @@ function SendModal({ open, onClose, onSuccess, balanceAvailable }) {
                   {/* Monto libre si el QR es de tipo depósito sin monto fijo */}
                   {!(preview.amount > 0) && (
                     <div>
-                      <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Monto a enviar (BOB)</label>
+                      <label htmlFor="WalletPage-f5" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Monto a enviar (BOB)</label>
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-semibold text-sm">Bs.</span>
-                        <input
+                        <input id="WalletPage-f5"
                           type="number" min={1} value={qrAmount}
                           onChange={e => setQrAmount(e.target.value)} placeholder="0"
                           className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none"
@@ -1145,10 +1145,10 @@ function WithdrawModal({ open, onClose, onSuccess, balanceAvailable }) {
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Monto a retirar (BOB)</label>
+            <label htmlFor="WalletPage-f6" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Monto a retirar (BOB)</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-semibold text-sm">Bs.</span>
-              <input type="number" min={100} value={form.amount} onChange={e => set('amount', e.target.value)} placeholder="100"
+              <input id="WalletPage-f6" type="number" min={100} value={form.amount} onChange={e => set('amount', e.target.value)} placeholder="100"
                 className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none" />
             </div>
             <p className="text-[0.6875rem] text-[#94A3B8] mt-1">Mínimo Bs. 100. Disponible: {formatBOB(balanceAvailable)}</p>
@@ -1182,14 +1182,14 @@ function WithdrawModal({ open, onClose, onSuccess, balanceAvailable }) {
                 { key: 'accountNumber',  label: 'Número de cuenta',     placeholder: '0000000000' },
               ].map(f => (
                 <div key={f.key}>
-                  <label className="block text-[0.6875rem] font-medium text-[#64748B] mb-1">{f.label}</label>
-                  <input type="text" value={form[f.key]} onChange={e => set(f.key, e.target.value)} placeholder={f.placeholder}
+                  <label htmlFor="WalletPage-f7" className="block text-[0.6875rem] font-medium text-[#64748B] mb-1">{f.label}</label>
+                  <input id="WalletPage-f7" type="text" value={form[f.key]} onChange={e => set(f.key, e.target.value)} placeholder={f.placeholder}
                     className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.875rem] focus:border-[#233E58] focus:outline-none" />
                 </div>
               ))}
               <div>
-                <label className="block text-[0.6875rem] font-medium text-[#64748B] mb-1">Tipo de cuenta</label>
-                <select value={form.accountType} onChange={e => set('accountType', e.target.value)}
+                <label htmlFor="WalletPage-f8" className="block text-[0.6875rem] font-medium text-[#64748B] mb-1">Tipo de cuenta</label>
+                <select id="WalletPage-f8" value={form.accountType} onChange={e => set('accountType', e.target.value)}
                   className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.875rem] focus:border-[#233E58] focus:outline-none">
                   <option>Caja de ahorros</option>
                   <option>Cuenta corriente</option>
@@ -1545,10 +1545,10 @@ function ConvertModal({ open, onClose, onSuccess, bobBalance, usdcBalance, buyRa
         )}
 
         <div>
-          <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">¿Cuánto {srcLabel} quieres convertir?</label>
+          <label htmlFor="WalletPage-f9" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">¿Cuánto {srcLabel} quieres convertir?</label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] font-semibold text-sm">{isBuy ? 'Bs.' : 'USDC'}</span>
-            <input type="number" min={min} step="any" value={amount} onChange={e => setAmount(e.target.value)}
+            <input id="WalletPage-f9" type="number" min={min} step="any" value={amount} onChange={e => setAmount(e.target.value)}
               placeholder={isBuy ? '100' : '10'}
               className={`w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl ${isBuy ? 'pl-10' : 'pl-16'} pr-4 py-3.5 text-[#0F172A] text-[0.9375rem] focus:border-[#233E58] focus:outline-none`} />
           </div>
@@ -1898,12 +1898,12 @@ function AliasModal({ open, onClose, currentAlias, canChangeAt, onSaved }) {
           ) : (
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
+                <label htmlFor="WalletPage-f10" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
                   {currentAlias ? 'Cambiar alias' : 'Elegir alias'}
                 </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-semibold">@</span>
-                  <input
+                  <input id="WalletPage-f10"
                     type="text"
                     autoCapitalize="none"
                     autoCorrect="off"
@@ -2068,12 +2068,12 @@ function ReceiveUSDCModal({ open, onClose, user }) {
 
           {fixedAmount && (
             <div>
-              <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
+              <label htmlFor="WalletPage-f11" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">
                 Monto a cobrar (USDC)
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-semibold text-sm">$</span>
-                <input
+                <input id="WalletPage-f11"
                   type="number" min={1} step="0.01"
                   value={amount} onChange={e => setAmount(e.target.value)} placeholder="1.00"
                   className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-9 pr-16 py-3.5 text-[#0F172A] text-[1.25rem] font-bold focus:border-[#0D6E52] focus:outline-none"
@@ -2084,8 +2084,8 @@ function ReceiveUSDCModal({ open, onClose, user }) {
           )}
 
           <div>
-            <label className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Motivo (opcional)</label>
-            <input type="text" value={description} onChange={e => setDescription(e.target.value)} maxLength={80}
+            <label htmlFor="WalletPage-f12" className="block text-[0.75rem] font-medium text-[#64748B] mb-1.5">Motivo (opcional)</label>
+            <input id="WalletPage-f12" type="text" value={description} onChange={e => setDescription(e.target.value)} maxLength={80}
               placeholder="Ej: servicio, producto..."
               className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.9375rem] focus:border-[#0D6E52] focus:outline-none" />
           </div>

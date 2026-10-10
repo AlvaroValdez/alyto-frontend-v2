@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, X, AlertTriangle } from 'lucide-react'
 
 import { useSendMoney }          from '../../hooks/useSendMoney'
+import { FINTOC_ENABLED }        from '../../config/featureFlags'
 import { useAuth }               from '../../context/AuthContext'
 import { QuoteProvider }         from '../../context/QuoteContext'
 import StepIndicator             from '../../components/SendMoney/StepIndicator'
@@ -41,6 +42,13 @@ export default function SendMoneyPage() {
 
   const isSuccess    = step === 6
   const hasPendingTx = !!stepData.transactionId && !isSuccess
+
+  // SRL y LLC siempre pagan por transferencia manual, así que no eligen método.
+  const isManualPayin = user?.legalEntity === 'SRL' || user?.legalEntity === 'LLC'
+  // Para SpA el único pay-in es Fintoc: si está oculto NO lo forzamos a espaldas
+  // del usuario, lo mandamos a Step2 para que vea que no hay método disponible.
+  // Eso hace que el paso "Pago" vuelva a existir y el indicador deba mostrarlo.
+  const skipStep2 = isManualPayin || FINTOC_ENABLED
 
   const [showLeaveWarning, setShowLeaveWarning] = useState(false)
 
@@ -159,7 +167,7 @@ export default function SendMoneyPage() {
       {/* ── Step Indicator (no se muestra en success) ── */}
       {!isSuccess && (
         <div className="flex-shrink-0">
-          <StepIndicator currentStep={step} skipStep2={true} />
+          <StepIndicator currentStep={step} skipStep2={skipStep2} />
         </div>
       )}
 
@@ -169,8 +177,15 @@ export default function SendMoneyPage() {
           <Step1Amount
             initialData={stepData}
             onNext={(data) => {
-              const isManual = user?.legalEntity === 'SRL' || user?.legalEntity === 'LLC'
-              nextStep({ ...data, payinMethod: isManual ? 'manual' : 'fintoc', _skipStep2: true }, 3)
+              if (isManualPayin) {
+                nextStep({ ...data, payinMethod: 'manual', _skipStep2: true }, 3)
+              } else if (FINTOC_ENABLED) {
+                nextStep({ ...data, payinMethod: 'fintoc', _skipStep2: true }, 3)
+              } else {
+                // Sin método de pay-in habilitado: que lo vea en Step2 en vez de
+                // avanzar con un proveedor oculto.
+                nextStep(data, 2)
+              }
             }}
           />
         )}

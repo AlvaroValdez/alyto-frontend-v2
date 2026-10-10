@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useId } from 'react'
 
 export default function Input({
   type        = 'text',
@@ -14,8 +14,15 @@ export default function Input({
   inputMode,
   disabled = false,
   className = '',
+  id,
 }) {
   const [focused, setFocused] = useState(false)
+  // El control va dentro de un div envoltorio, así que el label NO puede
+  // asociarse de forma implícita: necesita htmlFor. useId da un identificador
+  // estable y único por instancia, también con render en servidor. Se puede
+  // sobreescribir pasando `id` desde fuera.
+  const autoId  = useId()
+  const inputId = id ?? `input-${autoId}`
 
   const borderColor = error
     ? 'var(--color-error)'
@@ -32,7 +39,7 @@ export default function Input({
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
       {label && (
-        <label className="label-uppercase" style={{ display: 'block' }}>
+        <label htmlFor={inputId} className="label-uppercase" style={{ display: 'block' }}>
           {label}
         </label>
       )}
@@ -63,6 +70,7 @@ export default function Input({
         )}
 
         <input
+          id={inputId}
           type={type}
           name={name}
           value={value}

@@ -15,6 +15,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useQuoteContext } from '../../context/QuoteContext'
 import Sentry from '../../services/sentry.js'
 import { countryName } from '../../config/countries'
+import { FINTOC_ENABLED } from '../../config/featureFlags'
 
 // Tiempo máximo que consideramos válida una cotización si no viene quoteExpiresAt
 const QUOTE_MAX_AGE_MS = 4 * 60 * 1000  // 4 minutos
@@ -322,7 +323,9 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
   const payinMethodLabel = payinMethod?.startsWith('bankQr')
     ? 'QR Bancario'
     : ({
-        fintoc:  'Fintoc — Transferencia bancaria',
+        // Con FINTOC_ENABLED apagado no se nombra al proveedor, pero la etiqueta
+        // sigue resolviendo para transacciones creadas antes de ocultarlo.
+        fintoc:  FINTOC_ENABLED ? 'Fintoc — Transferencia bancaria' : 'Transferencia bancaria',
         vita:    'Pago digital',
         manual:  'Transferencia bancaria manual',
         owlpay:  'Transferencia internacional',

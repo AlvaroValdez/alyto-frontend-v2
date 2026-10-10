@@ -247,14 +247,14 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
       {/* Input monto */}
       {fixedAmount && (
         <div>
-          <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
+          <label htmlFor="WalletQRScreen-f1" className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
             Monto a cobrar
           </label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-bold text-[1.125rem]">
               {asset === 'USDC' ? '$' : 'Bs'}
             </span>
-            <input
+            <input id="WalletQRScreen-f1"
               type="number"
               inputMode="decimal"
               min="1"
@@ -272,10 +272,10 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
 
       {/* Motivo */}
       <div>
-        <label className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
+        <label htmlFor="WalletQRScreen-f2" className="block text-[0.75rem] font-semibold text-[#94A3B8] uppercase tracking-wide mb-2">
           Motivo (opcional)
         </label>
-        <input
+        <input id="WalletQRScreen-f2"
           type="text"
           value={description}
           onChange={e => setDescription(e.target.value)}
@@ -527,14 +527,14 @@ function TabPagar() {
 
           {preview.type === 'deposit' && (
             <div className="mt-3">
-              <label className="block text-[0.75rem] text-[#94A3B8] mb-1">
+              <label htmlFor="WalletQRScreen-f3" className="block text-[0.75rem] text-[#94A3B8] mb-1">
                 Monto a enviar {isUSDC ? '(USDC)' : '(BOB)'}
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-bold">
                   {isUSDC ? '$' : 'Bs'}
                 </span>
-                <input
+                <input id="WalletQRScreen-f3"
                   type="number"
                   inputMode="decimal"
                   min="1"

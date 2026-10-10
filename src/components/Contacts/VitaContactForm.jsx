@@ -317,7 +317,7 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
           <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#0D1F3C' }}>
             País destino
           </h3>
-          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%',
+          <button onClick={onClose} aria-label="Cerrar" style={{ width: 44, height: 44, borderRadius: '50%',
             background: '#F4F6FA', border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <X size={16} color="#4A5568" />
@@ -573,11 +573,11 @@ export default function VitaContactForm({
 
       {/* Alias del contacto */}
       <div>
-        <label className="block text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-wide mb-2">
+        <label htmlFor="VitaContactForm-f1" className="block text-[0.75rem] font-semibold text-[#4A5568] uppercase tracking-wide mb-2">
           Alias{' '}
           <span className="text-[0.625rem] normal-case font-normal text-[#94A3B8]">(opcional)</span>
         </label>
-        <input type="text" value={nickname} onChange={e => setNickname(e.target.value)}
+        <input id="VitaContactForm-f1" type="text" value={nickname} onChange={e => setNickname(e.target.value)}
           placeholder="Ej: Mamá, Proveedor Lima, Pedro trabajo"
           maxLength={50}
           className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3.5 text-[0.9375rem]

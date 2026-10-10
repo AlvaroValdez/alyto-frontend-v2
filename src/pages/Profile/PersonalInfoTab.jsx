@@ -172,10 +172,10 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
           <div className="divide-y divide-[#E2E8F0]">
             {/* Nombre */}
             <div className="px-4 py-3">
-              <label className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
+              <label htmlFor="PersonalInfoTab-f1" className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
                 Nombre
               </label>
-              <input
+              <input id="PersonalInfoTab-f1"
                 type="text"
                 value={form.firstName}
                 onChange={e => handleChange('firstName', e.target.value)}
@@ -186,10 +186,10 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
 
             {/* Apellido */}
             <div className="px-4 py-3">
-              <label className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
+              <label htmlFor="PersonalInfoTab-f2" className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
                 Apellido
               </label>
-              <input
+              <input id="PersonalInfoTab-f2"
                 type="text"
                 value={form.lastName}
                 onChange={e => handleChange('lastName', e.target.value)}
@@ -213,10 +213,10 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
 
             {/* Teléfono */}
             <div className="px-4 py-3">
-              <label className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
+              <label htmlFor="PersonalInfoTab-f3" className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
                 Teléfono
               </label>
-              <input
+              <input id="PersonalInfoTab-f3"
                 type="tel"
                 value={form.phone}
                 onChange={e => handleChange('phone', e.target.value)}
@@ -239,11 +239,11 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
 
             {/* Idioma */}
             <div className="px-4 py-3">
-              <label className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
+              <label htmlFor="PersonalInfoTab-f4" className="text-[0.6875rem] font-medium text-[#4A5568] uppercase tracking-wide block mb-1.5">
                 Idioma preferido
               </label>
               <div className="relative">
-                <select
+                <select id="PersonalInfoTab-f4"
                   value={form.preferredLanguage}
                   onChange={e => handleChange('preferredLanguage', e.target.value)}
                   className="w-full appearance-none bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
