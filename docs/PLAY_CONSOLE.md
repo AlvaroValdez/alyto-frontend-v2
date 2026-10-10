@@ -40,18 +40,17 @@ lectura de QR de pago, procesada en el dispositivo.
 |---|---|---|
 | `usesCleartextTraffic` | **`false`**, declarado explícitamente | No estaba declarado: con `targetSdk` 36 el default de plataforma ya es `false`, pero se hizo explícito para que la promesa de "cifrado en tránsito" de Data Safety sea auditable |
 | `targetSdkVersion` | `36` | Cumple el mínimo vigente de Play |
-| `allowBackup` | **`true`** | ⚠️ Ver el aviso de abajo |
+| `allowBackup` | **`false`** | Desactivado a propósito. Ver la nota de abajo |
 | `networkSecurityConfig` | no definido | No hay excepciones de dominio ni anclaje de certificados |
 | `debuggable` | solo en el build debug | El release no lo lleva |
 
-> ⚠️ **`allowBackup="true"` merece una decisión explícita.** Con este valor, los
-> datos de la app entran en la copia de seguridad de Android (Google Drive y
-> `adb backup`). En esta app la sesión viaja como **token Bearer guardado en el
-> `localStorage` del WebView** (`docs/ANDROID_RELEASE.md` §6), así que una copia
-> de seguridad puede llevarse una sesión válida fuera del dispositivo. Para una
-> billetera lo habitual es `allowBackup="false"`. **No se cambió** porque altera
-> el comportamiento de restauración y es una decisión de producto, no una
-> corrección técnica.
+> **Nota sobre `allowBackup="false"`.** Se desactivó la copia de seguridad por
+> decisión explícita. El motivo: la sesión viaja como **token Bearer guardado en
+> el `localStorage` del WebView** (`docs/ANDROID_RELEASE.md` §6), así que con la
+> copia activada una sesión válida podría salir del dispositivo por Google Drive
+> o `adb backup`. El coste es que al cambiar de teléfono el usuario no recupera
+> datos locales y tiene que iniciar sesión de nuevo, que para una billetera es el
+> comportamiento deseable. Verificado en el manifiesto fusionado del APK.
 
 ### 1.3 App Link
 
@@ -97,10 +96,11 @@ hay deep link por esquema custom.
 |---|---|---|---|---|---|
 | Nombre y apellidos | Sí | Stripe (verificación) | Obligatorio | Cifrado | Sin cifrado de campo |
 | Correo electrónico | Sí | Stripe, SendGrid | Obligatorio | Cifrado | Sin cifrado de campo |
-| Teléfono | Sí | **`verificar`** si se envía a Stripe | Obligatorio | Cifrado | Sin cifrado de campo |
+| Teléfono | Sí | **No se comparte** (verificado: no viaja a Stripe) | Obligatorio | Cifrado | Sin cifrado de campo |
 | Documento de identidad (nº) | Sí | Stripe (verificación) | Obligatorio | Cifrado | **`verificar`**: AES-256-GCM + KMS **solo si** `PII_ENCRYPTION_ENABLED` está activo |
 | Selfie / biometría | **Lo captura Stripe Identity, Alyto NO lo almacena** | Stripe | Obligatorio para operar | Cifrado | No aplica (no se guarda; solo el resultado y el id de sesión) |
-| Dirección, fecha de nacimiento, nacionalidad | Sí | **`verificar`** | Obligatorio | Cifrado | Sin cifrado de campo |
+| Dirección y fecha de nacimiento | Sí, pero **las devuelve Stripe, no se las enviamos** | No se comparten | Obligatorio | Cifrado | Sin cifrado de campo |
+| Nacionalidad y país de residencia | Sí (declarados por el usuario) | No se comparten | Obligatorio | Cifrado | Sin cifrado de campo |
 | Historial de transacciones | Sí | Vita Wallet, OwlPay Harbor, Banco Económico (según corredor) y **red Stellar, que es pública** | Obligatorio | Cifrado | Sin cifrado de campo |
 | Datos de beneficiarios | Sí | Vita Wallet, OwlPay Harbor | Obligatorio para enviar | Cifrado | Sin cifrado de campo |
 | Comprobantes de pago | Sí | No se comparten | Opcional (según corredor) | Cifrado | Archivo inmutable en S3 Object Lock, 5 años |
@@ -110,6 +110,73 @@ hay deep link por esquema custom.
 | Contraseña | Sí | No se comparte | Obligatorio | Cifrado | Hash bcrypt (no reversible) |
 | Ubicación precisa / GPS | **No** | — | — | — | — |
 | Contactos del teléfono, SMS, archivos | **No** | — | — | — | — |
+
+### 2.1 Qué se le envía realmente a Stripe (y qué no)
+
+Importa para rellenar "se comparte con" sin exagerar. Verificado en
+`kycController.js` (creación de la sesión) y `stripeWebhook.js` (lectura del
+resultado):
+
+- **Lo único que le enviamos** al crear la `VerificationSession` es el
+  `metadata`: `userId`, `legalEntity` y `email`. Nada más.
+- **El teléfono NO viaja a Stripe.** No aparece en los parámetros de la sesión ni
+  en la integración de pagos.
+- **La dirección y la fecha de nacimiento van en sentido contrario**: no se las
+  mandamos, Stripe las **devuelve** en `verified_outputs` tras leer el documento,
+  y la app las persiste solo si el usuario aún no tenía dirección
+  (`stripeWebhook.js`, rama `hasAddr`). En el formulario de Play esto se declara
+  como dato *recopilado*, no como dato *compartido con un tercero*.
+- El documento y el selfie los captura Stripe en su propia página alojada: nunca
+  pasan por nuestros servidores.
+
+### 2.2 Cómo comprobar el cifrado de campo sin leer secretos
+
+Tres formas, de la más fiable a la más cómoda:
+
+1. **La evidencia en la base de datos** (no depende de la bandera):
+   ```js
+   db.users.countDocuments({ 'identityDocument.numberCiphertext': { $exists: true } })
+   db.users.countDocuments({ 'identityDocument.number': 'ENCRYPTED' })
+   ```
+   Si los registros **recientes** tienen `numberCiphertext`, las escrituras se
+   están cifrando de verdad. Esta es la única comprobación que distingue "la
+   bandera está en true" de "el cifrado funciona": la bandera puede estar activa y
+   la DEK fallar.
+
+2. **El script de estado** `scripts/estado-produccion.mjs`, que imprime la
+   bandera y el recuento juntos (`bandera=true · N usuarios con el campo
+   cifrado`). Solo saca un booleano y un número, ningún secreto:
+   ```bash
+   docker compose exec alyto-backend node scripts/estado-produccion.mjs
+   ```
+
+3. **El log de arranque**. `src/app.js` precalienta la DEK y emite
+   `[Alyto Server] PII field-encryption: DEK precalentada ✅` **solo** si la
+   bandera está activa y la DEK se resuelve:
+   ```bash
+   docker compose logs alyto-backend | grep "PII field-encryption"
+   ```
+
+⚠️ **`docker compose exec ... printenv | grep PII` NO sirve** para esto. Los
+secretos se cargan en el proceso en tiempo de ejecución con
+`loadSecretsIntoEnv()` desde AWS Secrets Manager, así que un `exec` nuevo
+muestra el entorno estático del contenedor, no el entorno real del proceso que
+atiende las peticiones. Leer `/proc/1/environ` sí lo mostraría, pero volcaría
+además todos los secretos: no hacerlo.
+
+**Para cifrar los documentos ya guardados** existe
+`scripts/migrate-encrypt-identity-numbers.mjs`. Es idempotente y arranca en
+**dry-run**, que lista a quién migraría con el CI enmascarado:
+```bash
+# 1) simulacro
+docker compose exec alyto-backend node scripts/migrate-encrypt-identity-numbers.mjs
+# 2) ejecución real
+docker compose exec -e MIGRATE_CONFIRM=true alyto-backend \
+  node scripts/migrate-encrypt-identity-numbers.mjs
+```
+Orden obligatorio, según la cabecera del propio script: provisionar la DEK
+(`scripts/provision-pii-dek.mjs`) → `PII_ENCRYPTION_ENABLED=true` → redeploy →
+migrar, **primero en staging**.
 
 **Otras respuestas del formulario:**
 - ¿Se recopilan datos? **Sí.**
