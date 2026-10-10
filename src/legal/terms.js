@@ -287,7 +287,7 @@ Cada proveedor recibe únicamente los datos necesarios para la función que pres
 
 - Base de datos: MongoDB Atlas, región sa-east-1 (São Paulo, Brasil). Ahí residen tu identidad, tus transacciones y los datos de tus beneficiarios.
 - Infraestructura, claves de cifrado y archivo de comprobantes: Amazon Web Services, región us-east-1 (Virginia, Estados Unidos).
-- Servidor de la aplicación y de la API: alojado en Estados Unidos.
+- Servidor de la aplicación y de la API: alojado en infraestructura de Bluehost, en Estados Unidos.
 
 Bolivia y Chile son el domicilio legal de AV Finance SRL y AV Finance SpA, no el lugar donde se procesan los datos. La única operación que se procesa localmente en Bolivia es el cobro por QR a través de Banco Económico.
 
@@ -391,7 +391,7 @@ Each provider receives only the data required for the function it performs.`,
 
 - Database: MongoDB Atlas, sa-east-1 region (São Paulo, Brazil). This holds your identity, your transactions and your beneficiary details.
 - Infrastructure, encryption keys and receipt archive: Amazon Web Services, us-east-1 region (Virginia, United States).
-- Application and API server: hosted in the United States.
+- Application and API server: hosted on Bluehost infrastructure in the United States.
 
 Bolivia and Chile are the registered domiciles of AV Finance SRL and AV Finance SpA, not the place where data is processed. The only operation processed locally in Bolivia is QR collection through Banco Económico.
 
@@ -495,7 +495,7 @@ Cada fornecedor recebe apenas os dados necessários para a função que presta.`
 
 - Banco de dados: MongoDB Atlas, região sa-east-1 (São Paulo, Brasil). É onde residem sua identidade, suas transações e os dados dos seus beneficiários.
 - Infraestrutura, chaves de criptografia e arquivo de comprovantes: Amazon Web Services, região us-east-1 (Virgínia, Estados Unidos).
-- Servidor do aplicativo e da API: hospedado nos Estados Unidos.
+- Servidor do aplicativo e da API: hospedado em infraestrutura da Bluehost, nos Estados Unidos.
 
 A Bolívia e o Chile são o domicílio legal da AV Finance SRL e da AV Finance SpA, não o lugar onde os dados são processados. A única operação processada localmente na Bolívia é a cobrança por QR através do Banco Económico.
 
