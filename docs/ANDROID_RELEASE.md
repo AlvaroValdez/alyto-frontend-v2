@@ -95,13 +95,93 @@ apuntar a `https://api.alyto.app/api/v1`. La sesión viaja por **Bearer**
   entre reinicios.
 
 ## 7. Build del AAB de release
+
+### 7.1 Prerrequisitos del build
+Ambos son **condicionales por existencia de archivo**, así que el build nunca se
+rompe por su ausencia, solo degrada:
+
+| Archivo | Si falta | Dónde se decide |
+|---|---|---|
+| `android/app/google-services.json` | el plugin `com.google.gms.google-services` no se aplica y **el push nativo no funciona** | `android/app/build.gradle`, al final |
+| `android/keystore.properties` | el AAB sale **sin firmar** y Play lo rechaza | `signingConfigs.release` |
+
+Estado actual del repo: **ninguno de los dos existe**. Hay que colocarlos antes
+de generar el AAB que se sube. Los dos están en `.gitignore`.
+
+### 7.2 Generar el AAB
 ```bash
+npm run cap:sync            # vite build + inyecta SW + npx cap sync android
 cd android
-./gradlew bundleRelease      # genera app/build/outputs/bundle/release/app-release.aab
+./gradlew bundleRelease
 ```
-- Confirmar `versionCode`/`versionName` en `android/app/build.gradle` (cada
-  subida a Play requiere `versionCode` incremental).
-- `targetSdk`/`compileSdk` = 36 (Android 16) — cumple el mínimo de Play.
+El AAB queda en:
+```
+android/app/build/outputs/bundle/release/app-release.aab
+```
+Para un APK instalable de prueba (no sirve para Play): `./gradlew assembleRelease`
+→ `android/app/build/outputs/apk/release/app-release.apk`.
+
+- `versionCode` debe subir en **cada** envío a Play. Hoy: `versionCode 1`,
+  `versionName "2.0.0"`.
+- `targetSdk`/`compileSdk` = 36 (Android 16), cumple el mínimo de Play.
+- `minifyEnabled` está en **false** a propósito en el primer release (R8 no se ha
+  validado contra el WebView y los plugins). Activarlo exige probar un AAB
+  minificado de punta a punta antes.
+
+### 7.3 Verificar paquete y firma del artefacto
+`BT` apunta a las build-tools del SDK (ej. `$ANDROID_HOME/build-tools/36.0.0`).
+
+**Paquete** (debe decir exactamente `com.avfinance.alyto`):
+```bash
+# sobre un APK
+$BT/aapt2 dump packagename app/build/outputs/apk/release/app-release.apk
+
+# sobre el AAB (el manifiesto va en formato protobuf dentro del bundle)
+unzip -p app/build/outputs/bundle/release/app-release.aab base/manifest/AndroidManifest.xml \
+  | strings | grep -m1 com.avfinance.alyto
+```
+
+**Firma** (solo aplica al APK; el AAB lo refirma Play App Signing):
+```bash
+$BT/apksigner verify --print-certs --verbose \
+  app/build/outputs/apk/release/app-release.apk
+```
+Comprobar en la salida que el **SHA-256 del certificado** coincide con el de tu
+upload key, y que dice `Verifies`. Para ver el SHA-256 de la upload key sin
+compilar nada:
+```bash
+keytool -list -v -keystore alyto-upload.jks -alias alyto-upload | grep SHA256
+```
+
+### 7.4 El SHA-256 de Play App Signing hay que copiarlo a DOS sitios
+⚠️ Este es el paso que se olvida y rompe el push y los App Links en producción.
+
+Play App Signing **refirma** tu AAB con una clave que custodia Google, distinta
+de tu upload key. Esa es la firma que ven los dispositivos. Se obtiene en
+**Play Console → Release → Setup → App integrity → App signing** (en español,
+"Firma de apps"), campo *SHA-256 certificate fingerprint*.
+
+Hay que pegar ese valor en:
+
+1. **Firebase** (si no, el push nativo no llega a los builds de Play):
+   Firebase Console → proyecto `alyto-14283` → app Android `com.avfinance.alyto`
+   → Add fingerprint. Registrar **tanto el de Play App Signing como el de la
+   upload key**, porque los builds locales van firmados con el segundo.
+   Después hay que **volver a descargar `google-services.json`**.
+
+2. **`public/.well-known/assetlinks.json`** (si no, los App Links de `alyto.app`
+   no verifican y los enlaces abren en el navegador en vez de la app):
+   reemplazar el placeholder `REEMPLAZAR_CON_SHA256_DE_PLAY_APP_SIGNING` por el
+   SHA-256 **de Play App Signing**, en el formato de dos puntos que da la consola
+   (`AB:CD:EF:...`). Luego desplegar el frontend para que quede servido en
+   `https://alyto.app/.well-known/assetlinks.json` y verificar con:
+   ```bash
+   curl -s https://alyto.app/.well-known/assetlinks.json | jq .
+   adb shell pm verify-app-links --re-verify com.avfinance.alyto
+   adb shell pm get-app-links com.avfinance.alyto   # debe decir "verified"
+   ```
+   Ese archivo se copia a `android/app/src/main/assets/` en el `cap sync`, así que
+   hay que **re-sincronizar y recompilar** después de editarlo.
 
 ## 8. Play Console — App content (todas obligatorias)
 - **Privacy Policy URL** pública (`https://alyto.app/privacy`).

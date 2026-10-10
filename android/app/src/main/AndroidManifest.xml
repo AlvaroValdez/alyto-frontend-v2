@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- usesCleartextTraffic explícito, no implícito: con targetSdk 36 el default de
+         plataforma ya es false, pero declararlo deja auditable la promesa de "cifrado
+         en tránsito" de la ficha de Data Safety y protege de que una librería futura lo
+         active en el merge del manifiesto. -->
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="false"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"

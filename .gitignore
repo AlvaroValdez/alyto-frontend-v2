@@ -12,4 +12,13 @@ docs/*
 !docs/CHANGELOG_FLOWS.md
 !docs/ALYTO_ALTER_DESIGN_SPEC.md
 !docs/ANDROID_RELEASE.md
+!docs/PLAY_CONSOLE.md
 alyto-silver-preview.html
+
+# ── Claves de firma Android ──────────────────────────────────────────────────
+# android/.gitignore ya cubre estos patrones dentro de android/. Se repiten aquí
+# como red de seguridad: un keystore soltado por error en la raíz del repo no
+# quedaría cubierto por el .gitignore del subdirectorio.
+*.jks
+*.keystore
+keystore.properties
