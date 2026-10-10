@@ -11,10 +11,10 @@ if (keystorePropsFile.exists()) {
 }
 
 android {
-    namespace = "app.alyto.android"
+    namespace = "com.avfinance.alyto"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "app.alyto.android"
+        applicationId "com.avfinance.alyto"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

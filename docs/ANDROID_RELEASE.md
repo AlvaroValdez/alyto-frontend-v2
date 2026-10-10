@@ -1,7 +1,8 @@
 # Alyto Android — Build & Release Runbook (Google Play)
 
 App empaquetada con **Capacitor** sobre el frontend Vite existente. `appId` =
-`app.alyto.android` (**INMUTABLE** tras publicar). Cuenta Play = Organización
+`com.avfinance.alyto` (**INMUTABLE**: el paquete ya está registrado en Play
+Console y no se puede cambiar ni reutilizar). Cuenta Play = Organización
 (AV Finance). Doc complementario: plan `shimmying-hatching-llama.md`.
 
 > El código y la config nativa ya están en el repo (`android/`,
@@ -33,9 +34,15 @@ apuntar a `https://api.alyto.app/api/v1`. La sesión viaja por **Bearer**
 
 ## 2. Firebase / Push nativo (FCM)
 1. Firebase Console → proyecto **alyto-14283** → Add app → **Android**.
-2. Package name: `app.alyto.android`. Registrar **SHA-256** (de la upload key y
+2. Package name: `com.avfinance.alyto`. Registrar **SHA-256** (de la upload key y
    de la clave de Play App Signing — ver §4).
 3. Descargar **`google-services.json`** → colocar en `android/app/`.
+   - ⚠️ El `google-services.json` está atado al package name. Si ya existía uno
+     emitido para el paquete anterior (`app.alyto.android`), **no sirve**: el
+     plugin `com.google.gms.google-services` aborta el build con
+     *"No matching client found for package name"*. Hay que registrar una app
+     Android nueva en Firebase con `com.avfinance.alyto` y descargar el archivo
+     de nuevo.
    - Capacitor aplica el plugin `com.google.gms.google-services` automáticamente
      solo si el archivo existe (`android/app/build.gradle` líneas 47-54). Sin él
      el build funciona pero el push nativo no.
@@ -78,7 +85,7 @@ apuntar a `https://api.alyto.app/api/v1`. La sesión viaja por **Bearer**
   debe ser accesible públicamente, `Content-Type: application/json`).
 - El `intent-filter android:autoVerify="true"` (host `alyto.app`) ya está en
   `AndroidManifest.xml`. Verificar con:
-  `adb shell pm verify-app-links --re-verify app.alyto.android`.
+  `adb shell pm verify-app-links --re-verify com.avfinance.alyto`.
 
 ## 6. Sesión en el WebView (Bearer, no cookies)
 - El WebView corre en origin fijo `https://app.alyto.app`; las cookies

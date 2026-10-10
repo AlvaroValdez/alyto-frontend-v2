@@ -13,7 +13,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
  *   remoto: no se define `server.url`.
  */
 const config: CapacitorConfig = {
-  appId: 'app.alyto.android',
+  appId: 'com.avfinance.alyto',
   appName: 'Alyto',
   webDir: 'dist',
   server: {
