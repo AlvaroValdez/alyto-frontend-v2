@@ -407,7 +407,7 @@ export default function ReclamosPage() {
         <div className="flex items-start gap-2">
           <AlertCircle size={15} className="text-[#3B82F6] flex-shrink-0 mt-0.5" />
           <p className="text-[0.75rem] text-[#64748B] leading-relaxed">
-            Regulado por ASFI — Decreto Supremo N° 5384. Tienes derecho a recibir
+            Punto de Reclamo conforme al Decreto Supremo N° 5384. Tienes derecho a recibir
             respuesta en <span className="text-[#0F172A] font-semibold">10 días hábiles</span>.
             Sin resolución, tu caso puede escalar a la segunda instancia ASFI.
           </p>

@@ -81,9 +81,16 @@ function IntroState({ entName, entJuris, entity, terms, onStart, loading, error,
 
       {/* Trust badges */}
       <div className="flex gap-3">
+        {/* Solo afirmaciones verificables. NO declarar certificaciones que no
+            existen (había un badge "ISO 27001" sin certificación emitida) ni
+            "Cifrado E2E", que significa que solo los extremos pueden leer y no
+            es el caso: Alyto descifra para operar. Lo que sí es cierto y está
+            verificado en producción es AES-256-GCM con clave en AWS KMS sobre el
+            número de documento, y que la captura biométrica la hace Stripe
+            Identity sin que Alyto conserve las imágenes. */}
         {[
-          { icon: Lock,        label: 'Cifrado E2E' },
-          { icon: ShieldCheck, label: 'ISO 27001' },
+          { icon: Lock,        label: 'Cifrado AES-256' },
+          { icon: ShieldCheck, label: 'Verifica Stripe Identity' },
         ].map(({ icon: Icon, label }) => (
           <div
             key={label}
