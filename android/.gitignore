@@ -63,7 +63,12 @@ keystore.properties
 .cxx/
 
 # Google Services (e.g. APIs or Firebase)
-# google-services.json
+# Fuera del repo por decisión, no porque sea un secreto criptográfico: la clave de
+# API que contiene está restringida por package name + SHA-256 de firma, y Google
+# documenta el archivo como apto para commitear. Se mantiene ignorado para que el
+# repo no fije un proyecto Firebase concreto y cada entorno (local, CI) inyecte el
+# suyo. Procedimiento de obtención en docs/ANDROID_RELEASE.md §2.
+google-services.json
 
 # Freeline
 freeline.py

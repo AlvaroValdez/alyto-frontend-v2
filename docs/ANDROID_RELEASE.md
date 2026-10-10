@@ -43,12 +43,14 @@ apuntar a `https://api.alyto.app/api/v1`. La sesión viaja por **Bearer**
      *"No matching client found for package name"*. Hay que registrar una app
      Android nueva en Firebase con `com.avfinance.alyto` y descargar el archivo
      de nuevo.
-   - Capacitor aplica el plugin `com.google.gms.google-services` automáticamente
-     solo si el archivo existe (`android/app/build.gradle` líneas 47-54). Sin él
-     el build funciona pero el push nativo no.
-   - `google-services.json` **no** está en `.gitignore` por defecto (es config
-     pública de Firebase); si se prefiere mantenerlo fuera del repo, añadirlo al
-     `.gitignore` e inyectarlo en CI.
+   - El plugin `com.google.gms.google-services` se aplica solo si el archivo
+     existe (guard `servicesJSON.exists()` al final de `android/app/build.gradle`).
+     Sin él el build funciona, avisa por log y el push nativo no opera.
+   - `google-services.json` **está en `android/.gitignore`**, así que no se
+     commitea y cada entorno inyecta el suyo. No es un secreto criptográfico (su
+     clave de API está restringida por package name + SHA-256 de firma), pero se
+     mantiene fuera del repo para no fijar un proyecto Firebase concreto.
+     Verificar tras colocarlo: `git status --short` no debe listarlo.
 4. El token FCM nativo se registra solo vía `src/native/nativePush.js` →
    `POST /api/v1/auth/fcm-token` (mismo endpoint que el push web).
 
