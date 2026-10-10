@@ -317,7 +317,7 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
           <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#0D1F3C' }}>
             País destino
           </h3>
-          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%',
+          <button onClick={onClose} aria-label="Cerrar" style={{ width: 44, height: 44, borderRadius: '50%',
             background: '#F4F6FA', border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <X size={16} color="#4A5568" />

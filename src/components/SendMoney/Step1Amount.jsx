@@ -236,8 +236,11 @@ function CountryPickerModal({ countries, selected, onSelect, onClose }) {
           </h3>
           <button
             onClick={onClose}
+            aria-label="Cerrar"
             style={{
-              width: 32, height: 32, borderRadius: '50%',
+              // 44x44 es el mínimo táctil que audita el informe pre-lanzamiento de
+              // Play. Crece el área, no el icono, que se queda en 16px.
+              width: 44, height: 44, borderRadius: '50%',
               background: '#F4F6FA', border: 'none', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
