@@ -283,7 +283,15 @@ Cada proveedor recibe únicamente los datos necesarios para la función que pres
         },
         {
           title: '5. Transferencia Internacional de Datos',
-          content: `Tus datos se tratan en Bolivia, Chile y Estados Unidos. La infraestructura de la plataforma y el archivo de comprobantes están alojados en Amazon Web Services. Los proveedores de verificación de identidad, correo, notificaciones push y diagnóstico de errores operan desde Estados Unidos, y los de dispersión de fondos desde Estados Unidos y Uruguay. El cobro por QR en Bolivia se procesa localmente.
+          content: `Tus datos personales se almacenan y se tratan FUERA de Bolivia y de Chile:
+
+- Base de datos: MongoDB Atlas, región sa-east-1 (São Paulo, Brasil). Ahí residen tu identidad, tus transacciones y los datos de tus beneficiarios.
+- Infraestructura, claves de cifrado y archivo de comprobantes: Amazon Web Services, región us-east-1 (Virginia, Estados Unidos).
+- Servidor de la aplicación y de la API: alojado en Estados Unidos.
+
+Bolivia y Chile son el domicilio legal de AV Finance SRL y AV Finance SpA, no el lugar donde se procesan los datos. La única operación que se procesa localmente en Bolivia es el cobro por QR a través de Banco Económico.
+
+Los demás proveedores reciben solo los datos necesarios para su función: verificación de identidad, correo, notificaciones push y diagnóstico de errores operan desde Estados Unidos, y la dispersión de fondos desde Estados Unidos y Uruguay.
 
 ⚠️ IMPORTANTE: la red Stellar es un registro público y distribuido. El identificador de cada transacción, los montos y las claves públicas de las cuentas quedan visibles de forma permanente para cualquiera y NO se pueden borrar ni rectificar. En la red NO publicamos tu nombre, tu documento ni tus datos de contacto.`,
         },
@@ -379,7 +387,15 @@ Each provider receives only the data required for the function it performs.`,
         },
         {
           title: '5. International Data Transfers',
-          content: `Your data is processed in Bolivia, Chile and the United States. The platform infrastructure and the receipt archive are hosted on Amazon Web Services. The identity verification, email, push notification and error diagnostics providers operate from the United States, and the payout providers from the United States and Uruguay. QR collection in Bolivia is processed locally.
+          content: `Your personal data is stored and processed OUTSIDE Bolivia and Chile:
+
+- Database: MongoDB Atlas, sa-east-1 region (São Paulo, Brazil). This holds your identity, your transactions and your beneficiary details.
+- Infrastructure, encryption keys and receipt archive: Amazon Web Services, us-east-1 region (Virginia, United States).
+- Application and API server: hosted in the United States.
+
+Bolivia and Chile are the registered domiciles of AV Finance SRL and AV Finance SpA, not the place where data is processed. The only operation processed locally in Bolivia is QR collection through Banco Económico.
+
+The remaining providers receive only the data required for their function: identity verification, email, push notifications and error diagnostics operate from the United States, and payouts from the United States and Uruguay.
 
 ⚠️ IMPORTANT: the Stellar network is a public, distributed ledger. Each transaction identifier, the amounts and the account public keys remain permanently visible to anyone and CANNOT be deleted or rectified. We do NOT publish your name, ID document or contact details on the network.`,
         },
@@ -475,7 +491,15 @@ Cada fornecedor recebe apenas os dados necessários para a função que presta.`
         },
         {
           title: '5. Transferência Internacional de Dados',
-          content: `Seus dados são tratados na Bolívia, no Chile e nos Estados Unidos. A infraestrutura da plataforma e o arquivo de comprovantes estão hospedados na Amazon Web Services. Os fornecedores de verificação de identidade, email, notificações push e diagnóstico de erros operam a partir dos Estados Unidos, e os de dispersão de fundos a partir dos Estados Unidos e do Uruguai. A cobrança por QR na Bolívia é processada localmente.
+          content: `Seus dados pessoais são armazenados e tratados FORA da Bolívia e do Chile:
+
+- Banco de dados: MongoDB Atlas, região sa-east-1 (São Paulo, Brasil). É onde residem sua identidade, suas transações e os dados dos seus beneficiários.
+- Infraestrutura, chaves de criptografia e arquivo de comprovantes: Amazon Web Services, região us-east-1 (Virgínia, Estados Unidos).
+- Servidor do aplicativo e da API: hospedado nos Estados Unidos.
+
+A Bolívia e o Chile são o domicílio legal da AV Finance SRL e da AV Finance SpA, não o lugar onde os dados são processados. A única operação processada localmente na Bolívia é a cobrança por QR através do Banco Económico.
+
+Os demais fornecedores recebem apenas os dados necessários para a sua função: verificação de identidade, email, notificações push e diagnóstico de erros operam a partir dos Estados Unidos, e a dispersão de fundos a partir dos Estados Unidos e do Uruguai.
 
 ⚠️ IMPORTANTE: a rede Stellar é um registro público e distribuído. O identificador de cada transação, os montantes e as chaves públicas das contas ficam visíveis de forma permanente para qualquer pessoa e NÃO podem ser apagados nem retificados. Na rede NÃO publicamos o seu nome, o seu documento nem os seus dados de contato.`,
         },
