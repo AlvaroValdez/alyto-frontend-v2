@@ -1,0 +1,48 @@
+{
+  "name": "Alyto",
+  "short_name": "Alyto",
+  "description": "Billetera digital para enviar dinero desde Bolivia al exterior, en bolivianos y USDC.",
+  "lang": "es",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0D1F3C",
+  "background_color": "#F4F6FA",
+  "categories": ["finance"],
+  "icons": [
+    {
+      "src": "/logo192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Enviar dinero",
+      "short_name": "Enviar",
+      "url": "/send",
+      "icons": [{ "src": "/logo192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mi billetera",
+      "short_name": "Billetera",
+      "url": "/wallet",
+      "icons": [{ "src": "/logo192.png", "sizes": "192x192" }]
+    }
+  ]
+}

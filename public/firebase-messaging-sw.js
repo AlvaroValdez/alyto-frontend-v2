@@ -6,10 +6,76 @@
  * La seguridad real se maneja via Firebase Security Rules.
  */
 
-// ── Lifecycle: activar inmediatamente sin esperar tabs abiertas ──────────
-self.addEventListener('install', () => self.skipWaiting())
+// ── Caché de la PWA ───────────────────────────────────────────────────────
+// Este service worker hace DOS cosas: push en background y caché para que la
+// app sea instalable. Van juntas por obligación, no por gusto: el SDK de
+// Firebase registra este archivo en el ámbito raíz, así que un segundo service
+// worker ahí lo reemplazaría y perderíamos las notificaciones.
+//
+// ⚠️ REGLA INVIOLABLE: nunca se cachea una respuesta de la API. Servir un saldo
+// o un estado de transacción viejo es peor que no funcionar. La API vive en
+// otro origen (api.alyto.app), así que el filtro de same-origin ya la excluye;
+// el guard explícito de `/api/` es por si algún día se sirve tras un proxy.
+const CACHE = 'alyto-shell-v1'
+const SHELL = '/index.html'
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE)
+      .then((c) => c.addAll([SHELL, '/manifest.webmanifest', '/logo192.png']))
+      .catch(() => {})   // una precarga fallida no debe impedir la instalación
+      .then(() => self.skipWaiting())
+  )
+})
+
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim())
+  event.waitUntil(
+    caches.keys()
+      .then((names) => Promise.all(
+        names.filter((n) => n.startsWith('alyto-shell-') && n !== CACHE)
+             .map((n) => caches.delete(n))
+      ))
+      .then(() => self.clients.claim())
+  )
+})
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event
+  if (request.method !== 'GET') return
+
+  const url = new URL(request.url)
+  if (url.origin !== self.location.origin) return   // API y terceros: nunca
+  if (url.pathname.startsWith('/api/')) return
+  if (url.pathname.endsWith('firebase-messaging-sw.js')) return
+
+  // Navegación (SPA): red primero para no servir un shell viejo tras un
+  // despliegue; si no hay red, el shell cacheado y React resuelve la ruta.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          const copy = res.clone()
+          caches.open(CACHE).then((c) => c.put(SHELL, copy)).catch(() => {})
+          return res
+        })
+        .catch(() => caches.match(SHELL).then((r) => r ?? Response.error()))
+    )
+    return
+  }
+
+  // Estáticos: Vite les pone hash en el nombre, así que una URL siempre
+  // devuelve el mismo contenido y la caché puede ir primero.
+  if (/\.(js|css|png|jpg|jpeg|svg|webp|woff2?)$/.test(url.pathname)) {
+    event.respondWith(
+      caches.match(request).then((hit) => hit ?? fetch(request).then((res) => {
+        if (res.ok && res.type === 'basic') {
+          const copy = res.clone()
+          caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {})
+        }
+        return res
+      }))
+    )
+  }
 })
 
 importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js')
