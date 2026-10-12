@@ -7,8 +7,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+    <!-- ── PWA: instalable desde el navegador ───────────────────────────────
+         El service worker que la sostiene es public/firebase-messaging-sw.js.
+         Es uno solo para push y para caché: Firebase ya lo registra en el
+         ámbito raíz, y un segundo service worker ahí lo reemplazaría. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0D1F3C" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Alyto" />
+
+    <meta name="description" content="Billetera digital para enviar dinero desde Bolivia al exterior, en bolivianos y USDC." />
     <title>Alyto Wallet 2.0</title>
-    <script src="https://js.fintoc.com/v1/"></script>
   </head>
   <body>
     <div id="root"></div>
