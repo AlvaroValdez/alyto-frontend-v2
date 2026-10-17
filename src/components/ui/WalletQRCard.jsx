@@ -189,8 +189,16 @@ export default function WalletQRCard({
           </div>
         )}
 
-        {/* El depósito no vence, así que la pantalla simplemente no pasa nada. */}
-        {expirySlot && <div style={{ marginTop: 14 }}>{expirySlot}</div>}
+        {/* El depósito no vence, así que la pantalla simplemente no pasa nada.
+            El slot va en flex centrado y NO en un div a secas: `CountdownBadge`
+            es `display:flex` block-level, así que sin esto se estira de borde a
+            borde en vez de quedar como píldora. `text-align` no lo arregla:
+            no afecta a un hijo de nivel bloque. */}
+        {expirySlot && (
+          <div style={{ marginTop: 14, display: 'flex', justifyContent: 'center' }}>
+            {expirySlot}
+          </div>
+        )}
       </div>
 
       {/* Pie — el identificador corto le sirve a soporte para rastrear el QR. */}
