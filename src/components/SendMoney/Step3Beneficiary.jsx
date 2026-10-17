@@ -20,7 +20,7 @@ import { useAuth }                  from '../../context/AuthContext'
 import { createContact }            from '../../services/api'
 import ContactPicker                from '../Contacts/ContactPicker'
 import { OWLPAY_FORMS, GENERIC_OWLPAY_FORM } from './owlPayForms'
-import { runFieldValidator, ibanCountry } from './formValidators'
+import { runFieldValidator, ibanCountry, normalizaCampo } from './formValidators'
 
 // ── Prefijos de teléfono por país ─────────────────────────────────────────────
 
@@ -456,7 +456,10 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
         <input
           type={type === 'email' ? 'email' : type === 'date' ? 'date' : 'text'}
           value={value ?? ''}
-          onChange={e => onChange(key, e.target.value)}
+          // Se normaliza al escribir, no al salir del campo: así se evita el
+          // desfase de estado de React y el carácter inválido ni aparece.
+          // normalizaCampo sólo actúa en los campos del país que lo necesita.
+          onChange={e => onChange(key, normalizaCampo(key, e.target.value, countryCode))}
           onBlur={() => onBlur(key)}
           placeholder={placeholder}
           maxLength={type === 'date' ? undefined : (field.maxLength ?? field.max ?? undefined)}

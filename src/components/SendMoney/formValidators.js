@@ -214,6 +214,79 @@ export function validateNUBAN(value) {
   return null
 }
 
+// ─── Venezuela ──────────────────────────────────────────────────────────────
+// Tres envíos a Venezuela fallaron el 14-oct porque la app aceptaba formatos
+// que Vita rechaza, y el usuario se enteraba DESPUÉS de confirmar:
+//   VITA_INVALID_FIELD document_number (305): "Solo se permiten números"
+//   VITA_INVALID_FIELD account_bank    (305): "debe tener 20 dígitos y
+//                                              comenzar con un código de banco válido"
+// No había ningún validador de Venezuela en FIELD_VALIDATORS.
+
+/** Normaliza a dígitos: el beneficiario suele mandar el dato con puntos o guiones. */
+export function soloDigitos(value) {
+  return String(value ?? '').replace(/\D/g, '')
+}
+
+/**
+ * ⚠️ Valida el valor CRUDO, no el normalizado.
+ *
+ * Al escribir, `normalizaCampo` ya limpia el campo, así que un usuario tecleando
+ * nunca ve este error. Pero el valor puede llegar prefijado desde un contacto
+ * guardado antes de este cambio, con puntos o guiones, y ahí es donde hay que
+ * avisar: si el validador normalizara por dentro daría el dato por bueno y se
+ * enviaría sucio a Vita, que es exactamente el fallo que esto viene a corregir.
+ */
+export function validateVEDocumento(value) {
+  if (!value) return 'El número de documento es requerido'
+  const crudo = String(value).trim()
+  if (!/^\d+$/.test(crudo)) {
+    return 'El número de documento solo admite dígitos (sin puntos, guiones ni letras)'
+  }
+  if (crudo.length < 6 || crudo.length > 9) {
+    return `El número de documento debe tener entre 6 y 9 dígitos (tiene ${crudo.length})`
+  }
+  return null
+}
+
+/**
+ * Cuenta bancaria venezolana: 20 dígitos, los 4 primeros son el código del banco.
+ *
+ * A propósito NO se valida el código contra una lista de bancos: mantenerla al
+ * día es trabajo manual y una lista desactualizada rechazaría cuentas buenas.
+ * Ese filtro lo hace Vita, que es quien tiene el dato vigente. Aquí se corta lo
+ * que seguro está mal, que es lo que falló: longitud y caracteres.
+ */
+export function validateVECuenta(value) {
+  if (!value) return 'El número de cuenta es requerido'
+  const crudo = String(value).trim()
+  if (!/^\d+$/.test(crudo)) {
+    return 'El número de cuenta solo admite dígitos (sin espacios ni guiones)'
+  }
+  if (crudo.length !== 20) {
+    return `La cuenta debe tener 20 dígitos (tiene ${crudo.length})`
+  }
+  return null
+}
+
+/**
+ * Campos que sólo admiten dígitos, por país.
+ *
+ * El beneficiario suele mandar su cuenta o su cédula con puntos y guiones, y el
+ * remitente la pega tal cual. En vez de rechazarla, se limpia al escribir: el
+ * carácter inválido no llega a aparecer. Lo pidió un tester, poniendo de
+ * ejemplo Takenos y Airtm, sin saber que describía la causa de los envíos que
+ * se le caían a otro.
+ */
+const CAMPOS_SOLO_DIGITOS = {
+  VE: ['account_bank', 'document_number', 'beneficiary_document_number'],
+}
+
+/** Devuelve el valor normalizado para el campo, o el mismo valor si no aplica. */
+export function normalizaCampo(key, value, countryCode) {
+  if (!CAMPOS_SOLO_DIGITOS[countryCode]?.includes(key)) return value
+  return soloDigitos(value)
+}
+
 // ─── Email ──────────────────────────────────────────────────────────────────
 export function validateEmail(value) {
   if (!value) return null  // typically optional
@@ -243,6 +316,14 @@ export const FIELD_VALIDATORS = {
   account_number:            (v, ctx) => ctx?.country === 'NG' ? validateNUBAN(v) : null,
   email:                     validateEmail,
   beneficiary_email:         validateEmail,
+
+  // Venezuela. Acotados por país: en cualquier otro corredor devuelven null y
+  // no cambian nada. Se cubren las dos variantes de clave porque el backend usa
+  // `document_number` y `beneficiary_document_number` según el origen del campo
+  // (ver paymentController.js:3079).
+  account_bank:                 (v, ctx) => ctx?.country === 'VE' ? validateVECuenta(v)    : null,
+  document_number:              (v, ctx) => ctx?.country === 'VE' ? validateVEDocumento(v) : null,
+  beneficiary_document_number:  (v, ctx) => ctx?.country === 'VE' ? validateVEDocumento(v) : null,
 }
 
 /**

@@ -22,7 +22,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { AlertCircle, Loader2, X, Search, Check, Globe, Zap } from 'lucide-react'
 import { useWithdrawalRules } from '../../hooks/useWithdrawalRules'
 import { OWLPAY_FORMS, GENERIC_OWLPAY_FORM } from '../SendMoney/owlPayForms'
-import { runFieldValidator, ibanCountry } from '../SendMoney/formValidators'
+import { runFieldValidator, ibanCountry, normalizaCampo } from '../SendMoney/formValidators'
 import { listUserCorridors } from '../../services/paymentsService'
 import { COUNTRY_META, phonePrefix, flagUrl } from '../../config/countries'
 
@@ -272,7 +272,9 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
         <input
           type={type === 'email' ? 'email' : type === 'date' ? 'date' : 'text'}
           value={value ?? ''}
-          onChange={e => onChange(key, e.target.value)}
+          // Mismo normalizador que en el envío: un contacto guardado con puntos
+          // o guiones falla igual cuando se reutiliza para transferir.
+          onChange={e => onChange(key, normalizaCampo(key, e.target.value, countryCode))}
           onBlur={() => onBlur(key)}
           placeholder={placeholder}
           maxLength={type === 'date' ? undefined : (field.maxLength ?? field.max ?? undefined)}
