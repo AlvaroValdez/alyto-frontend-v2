@@ -198,7 +198,7 @@ function DynamicField({ field, value, error, onChange, onBlur, countryCode }) {
     : (FIELD_LABELS[key] ?? label)
 
   const base = `w-full bg-white border rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0D1F3C]
-    placeholder:text-[#94A3B8] focus:outline-none transition-all font-[inherit]`
+    placeholder:text-[#5A6A8A] focus:outline-none transition-all font-[inherit]`
   const ok  = 'border-[#E2E8F0] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#1D346120]'
   const err = 'border-[#EF4444] shadow-[0_0_0_2px_#EF44441A]'
 
@@ -583,7 +583,7 @@ export default function VitaContactForm({
           placeholder="Ej: Mamá, Proveedor Lima, Pedro trabajo"
           maxLength={50}
           className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3.5 text-[0.9375rem]
-            text-[#0D1F3C] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#1D3461]
+            text-[#0D1F3C] placeholder:text-[#5A6A8A] focus:outline-none focus:border-[#1D3461]
             focus:shadow-[0_0_0_2px_#1D346120] transition-all" />
       </div>
 

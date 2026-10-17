@@ -180,7 +180,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
                 value={form.firstName}
                 onChange={e => handleChange('firstName', e.target.value)}
                 placeholder="Tu nombre"
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#CBD5E1] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#5A6A8A] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
               />
             </div>
 
@@ -194,7 +194,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
                 value={form.lastName}
                 onChange={e => handleChange('lastName', e.target.value)}
                 placeholder="Tu apellido"
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#CBD5E1] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#5A6A8A] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
               />
             </div>
 
@@ -221,7 +221,7 @@ export default function PersonalInfoTab({ profile, saving, onUpdate }) {
                 value={form.phone}
                 onChange={e => handleChange('phone', e.target.value)}
                 placeholder="+56 9 1234 5678"
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#CBD5E1] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#5A6A8A] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
               />
             </div>
 

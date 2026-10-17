@@ -283,7 +283,7 @@ function ManualPayinScreen({ stepData }) {
           <div className="flex items-start gap-2.5 px-4 py-3.5 rounded-2xl bg-[#F59E0B0F] border border-[#F59E0B33]">
             <span className="text-base flex-shrink-0 leading-none mt-0.5">⚠️</span>
             <div>
-              <p className="text-[0.8125rem] font-semibold text-[#FBBF24] leading-tight">
+              <p className="text-[0.8125rem] font-semibold text-[#92400E] leading-tight">
                 Incluye el número de referencia
               </p>
               <p className="text-[0.75rem] text-[#4A5568] mt-0.5">

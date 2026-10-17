@@ -33,18 +33,18 @@ function SidebarLink({ to, icon: Icon, label, end }) {
 // ── Notification type config ─────────────────────────────────────────────────
 
 const NOTIF_CONFIG = {
-  admin_new_user:           { Icon: UserPlus,       color: '#3B82F6', bg: '#3B82F61A' },
-  admin_new_transaction:    { Icon: ArrowUpRight,   color: '#F59E0B', bg: '#F59E0B1A' },
-  admin_deposit_request:    { Icon: ArrowDownLeft,  color: '#F59E0B', bg: '#F59E0B1A' },
-  admin_withdrawal_request: { Icon: ArrowUpRight,   color: '#EF4444', bg: '#EF44441A' },
-  admin_conversion_request: { Icon: ArrowRightLeft, color: '#F59E0B', bg: '#F59E0B1A' },
-  admin_kyb_submitted:      { Icon: ShieldIcon,     color: '#3B82F6', bg: '#3B82F61A' },
+  admin_new_user:           { Icon: UserPlus,       color: '#1E40AF', bg: '#3B82F61A' },
+  admin_new_transaction:    { Icon: ArrowUpRight,   color: '#92400E', bg: '#F59E0B1A' },
+  admin_deposit_request:    { Icon: ArrowDownLeft,  color: '#92400E', bg: '#F59E0B1A' },
+  admin_withdrawal_request: { Icon: ArrowUpRight,   color: '#991B1B', bg: '#EF44441A' },
+  admin_conversion_request: { Icon: ArrowRightLeft, color: '#92400E', bg: '#F59E0B1A' },
+  admin_kyb_submitted:      { Icon: ShieldIcon,     color: '#1E40AF', bg: '#3B82F61A' },
   admin_payment_proof:      { Icon: FileText,       color: '#1D3461', bg: '#1D34611A' },
-  admin_p2p_transfer:       { Icon: Send,           color: '#3B82F6', bg: '#3B82F61A' },
+  admin_p2p_transfer:       { Icon: Send,           color: '#1E40AF', bg: '#3B82F61A' },
 }
 
 function getNotifConfig(type) {
-  return NOTIF_CONFIG[type] ?? { Icon: Bell, color: '#64748B', bg: '#64748B1A' }
+  return NOTIF_CONFIG[type] ?? { Icon: Bell, color: '#334155', bg: '#64748B1A' }
 }
 
 function timeAgo(dateStr) {

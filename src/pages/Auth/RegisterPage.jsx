@@ -35,9 +35,22 @@ const CURRENCY_DISPLAY = {
 }
 
 // Prefijos de países más comunes
+/** Ejemplo de número por prefijo. Antes era fijo "9 1234 5678" (formato chileno),
+ *  que contradecía al campo en cuanto el prefijo no era +56. */
+const PHONE_PLACEHOLDERS = {
+  '+591': '7 123 4567',
+  '+56':  '9 1234 5678',
+  '+1':   '555 123 4567',
+  '+54':  '11 1234 5678',
+  '+57':  '300 1234567',
+  '+52':  '55 1234 5678',
+  '+55':  '11 91234 5678',
+  '+51':  '912 345 678',
+}
+
 const PHONE_PREFIXES = [
-  { code: '+56', flag: '🇨🇱', label: 'CL' },
   { code: '+591', flag: '🇧🇴', label: 'BO' },
+  { code: '+56', flag: '🇨🇱', label: 'CL' },
   { code: '+1',  flag: '🇺🇸', label: 'US' },
   { code: '+54', flag: '🇦🇷', label: 'AR' },
   { code: '+57', flag: '🇨🇴', label: 'CO' },
@@ -96,7 +109,7 @@ function StrengthBar({ password }) {
 const INPUT_CLASS = `
   w-full rounded-xl px-4 py-3.5 text-[0.9375rem] text-[#0D1F3C]
   bg-white border border-[#E2E8F0]
-  placeholder:text-[#94A3B8]
+  placeholder:text-[#5A6A8A]
   focus:outline-none focus:border-[#1D3461] focus:shadow-[0_0_0_2px_rgba(29,52,97,0.12)]
   transition-colors duration-150
 `
@@ -267,7 +280,9 @@ export default function RegisterPage() {
     firstName:    '',
     lastName:     '',
     email:        '',
-    phonePrefix:  '+56',
+    phonePrefix:  '+591',   // Bolivia: es el origen de la mayoria de usuarios.
+                           // Estaba en +56 por herencia de cuando la app era chilena primero,
+                           // y hacia que algunos se registraran con el prefijo equivocado.
     phoneNumber:  '',
     country:      '',
     password:     '',
@@ -398,15 +413,20 @@ export default function RegisterPage() {
         }}
       >
         {/* Header con indicador de paso */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
+        {/* A 320px el titulo y la barra de progreso no caben en una fila: el
+            titulo partia en dos lineas. Poner `whitespace-nowrap` fue peor,
+            porque entonces se montaba ENCIMA de la barra. La solucion es que la
+            barra ceda ancho (w-8 y shrink) y que el titulo conserve su salto
+            natural si aun asi no cabe. */}
+        <div className="flex items-center justify-between mb-6 gap-3">
+          <div className="min-w-0">
             <h1 className="text-[1.375rem] font-bold text-[#0D1F3C]">Crear cuenta</h1>
             <p className="text-[0.8125rem] text-[#4A5568]">Paso {step} de 2</p>
           </div>
           {/* Barra de progreso */}
-          <div className="flex gap-2">
-            <div className={`h-1.5 w-10 rounded-full ${step >= 1 ? 'bg-[#1D3461]' : 'bg-[var(--color-border)]'}`} />
-            <div className={`h-1.5 w-10 rounded-full ${step >= 2 ? 'bg-[#1D3461]' : 'bg-[var(--color-border)]'}`} />
+          <div className="flex gap-1.5 flex-shrink">
+            <div className={`h-1.5 w-8 min-w-[20px] rounded-full ${step >= 1 ? 'bg-[#1D3461]' : 'bg-[var(--color-border)]'}`} />
+            <div className={`h-1.5 w-8 min-w-[20px] rounded-full ${step >= 2 ? 'bg-[#1D3461]' : 'bg-[var(--color-border)]'}`} />
           </div>
         </div>
 
@@ -470,7 +490,7 @@ export default function RegisterPage() {
                 </select>
                 <input
                   type="tel" name="phoneNumber" value={form.phoneNumber}
-                  onChange={handleChange} placeholder="9 1234 5678"
+                  onChange={handleChange} placeholder={PHONE_PLACEHOLDERS[form.phonePrefix] ?? "Número sin prefijo"}
                   className={`${INPUT_CLASS} flex-1`}
                 />
               </div>

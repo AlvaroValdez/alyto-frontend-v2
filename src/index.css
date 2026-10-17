@@ -24,6 +24,16 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Los marcadores de posición llevan instrucciones reales ("Mínimo 8 caracteres",
+     "ALY-B-… o WTX-…"), así que tienen que leerse. Había tres colores distintos
+     por el repositorio, uno de ellos a 1,48:1 sobre blanco, y los campos con
+     estilo en línea se quedaban con el color por defecto del navegador. Una sola
+     regla los unifica en el gris secundario, que da 5,44:1 sobre blanco. */
+  ::placeholder {
+    color: var(--color-text-secondary);
+    opacity: 1;              /* Firefox lo baja a 0.54 por su cuenta */
+  }
+
   /* En el WebView de Android, mantener pulsado o arrastrar un enlace o un botón
      abre el menú del navegador y deja ver la URL interna (app.alyto.app/...).
      Dos testers lo reportaron sobre la barra de navegación inferior.

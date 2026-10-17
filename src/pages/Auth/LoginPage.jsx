@@ -130,7 +130,9 @@ export default function LoginPage() {
 
         {/* Password */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* gap + wrap: a 320px (Samsung con "Zoom de pantalla") la etiqueta y el
+              enlace se tocaban y el enlace partía debajo, pisando la etiqueta. */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
             <label className="label-uppercase">Contraseña</label>
             <Link
               to="/forgot-password"

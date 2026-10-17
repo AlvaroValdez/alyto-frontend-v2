@@ -173,7 +173,7 @@ export default function ResetPasswordPage() {
               onChange={handleChange}
               placeholder="Mínimo 8 caracteres"
               autoComplete="new-password"
-              className="w-full rounded-xl px-4 py-3.5 pr-12 text-[0.9375rem] text-[#0F172A] bg-white border border-[#E2E8F0] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all duration-150"
+              className="w-full rounded-xl px-4 py-3.5 pr-12 text-[0.9375rem] text-[#0F172A] bg-white border border-[#E2E8F0] placeholder:text-[#5A6A8A] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all duration-150"
             />
             <button type="button" onClick={() => setShowPwd(v => !v)} tabIndex={-1}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#64748B] transition-colors">
@@ -196,7 +196,7 @@ export default function ResetPasswordPage() {
               onChange={handleChange}
               placeholder="Repite la contraseña"
               autoComplete="new-password"
-              className={`w-full rounded-xl px-4 py-3.5 pr-12 text-[0.9375rem] text-[#0F172A] bg-white border placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all duration-150 ${
+              className={`w-full rounded-xl px-4 py-3.5 pr-12 text-[0.9375rem] text-[#0F172A] bg-white border placeholder:text-[#5A6A8A] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all duration-150 ${
                 form.confirm && form.confirm !== form.password ? 'border-[#EF4444]' : 'border-[#E2E8F0]'
               }`}
             />

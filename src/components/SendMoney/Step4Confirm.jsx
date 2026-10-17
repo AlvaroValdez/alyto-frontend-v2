@@ -132,9 +132,12 @@ function BeneficiaryRows({ beneficiary = {}, destinationCountry }) {
 
 function Row({ label, value, valueClass = 'text-[#0D1F3C] text-[0.9375rem]' }) {
   return (
-    <div className="flex justify-between items-center py-2.5">
-      <span className="text-[0.8125rem] text-[#4A5568]">{label}</span>
-      <span className={`font-semibold ${valueClass}`}>{value}</span>
+    <div className="flex justify-between items-start py-2.5 gap-3">
+      <span className="text-[0.8125rem] text-[#4A5568] flex-shrink-0">{label}</span>
+      {/* min-w-0 + break-all + text-right: una clave PIX aleatoria es un UUID de
+          36 caracteres sin espacios. Sin esto el flex-item no podía encogerse por
+          debajo de su contenido y desbordaba la pantalla de CONFIRMAR el pago. */}
+      <span className={`font-semibold min-w-0 break-all text-right ${valueClass}`}>{value}</span>
     </div>
   )
 }
