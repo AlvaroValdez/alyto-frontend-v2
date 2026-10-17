@@ -110,16 +110,35 @@ export function AuthProvider({ children }) {
   // Guard: if token exists in localStorage, the 401 is likely a race condition
   // (request fired before token was sent). Don't redirect — log a warning.
   useEffect(() => {
-    function handleUnauthorized() {
+    function handleUnauthorized(evento) {
+      const code = evento?.detail?.code ?? null
+
+      // El servidor puede decir que la sesión está muerta de forma inequívoca.
+      // En ese caso el token que sigue en localStorage ES el token muerto, así
+      // que el guardián de carrera NO debe aplicarse: si lo hiciera, al usuario
+      // expulsado no se le redirige a ninguna parte y se queda en una pantalla
+      // que falla una y otra vez sin explicación.
+      const revocacionExplicita = code === 'SESSION_REPLACED'
+                               || code === 'SESSION_REVOKED'
+                               || code === 'TOKEN_VERSION_MISMATCH'
+
       const token = localStorage.getItem(TOKEN_KEY)
-      if (token) {
-        console.warn('[Auth] 401 received but token exists — skipping redirect (race condition)')
+      if (token && !revocacionExplicita) {
+        // 401 ambiguo con token presente: puede ser una petición en vuelo que
+        // llega justo después de renovar la sesión. Ahí sí conviene esperar.
+        console.warn('[Auth] 401 sin código de revocación y con token presente — posible carrera, no se redirige')
         return
       }
+
       localStorage.removeItem(TOKEN_KEY)
       setUser(null)
       Sentry.setUser(null)
-      window.location.replace('/login?expired=1')
+      // `motivo` en vez de `expired=1`: el usuario merece saber si su sesión
+      // caducó sola o si alguien entró con sus credenciales desde otro equipo.
+      // Esa segunda frase es una señal de seguridad y confundirla con la
+      // primera la desperdicia.
+      const motivo = code === 'SESSION_REPLACED' ? 'otro-dispositivo' : 'expirada'
+      window.location.replace(`/login?motivo=${motivo}`)
     }
     window.addEventListener('alyto:unauthorized', handleUnauthorized)
     return () => window.removeEventListener('alyto:unauthorized', handleUnauthorized)
