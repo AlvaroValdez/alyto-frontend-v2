@@ -22,6 +22,7 @@ import { getTransactionStatus, getPaymentQR, uploadComprobante } from '../../ser
 import { subscribeTxStatus } from '../../services/txStatusStream'
 import Sentry from '../../services/sentry.js'
 import { FINTOC_ENABLED } from '../../config/featureFlags'
+import { shareQRImage } from '../../utils/shareImage'
 
 const TIMEOUT_MS       = 15 * 60 * 1000
 const FINAL_STATUSES   = new Set(['payin_confirmed', 'payin_completed', 'completed', 'in_transit'])
@@ -200,12 +201,11 @@ function ManualPayinScreen({ stepData }) {
                   />
                   <span className="text-[0.75rem] text-[#4A5568] font-medium">{qr.label}</span>
                   <button
-                    onClick={() => {
-                      const a = document.createElement('a')
-                      a.href = qr.imageBase64
-                      a.download = `qr-${qr.label ?? 'pago'}-${transactionId ?? i}.png`
-                      a.click()
-                    }}
+                    onClick={() => shareQRImage({
+                      dataUrl:  qr.imageBase64,
+                      title:    qr.label ?? 'QR de pago',
+                      filename: `qr-${qr.label ?? 'pago'}-${transactionId ?? i}.png`,
+                    })}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#E2E8F0] text-[0.75rem] text-[#4A5568] hover:text-[#0D1F3C] hover:border-[#0D1F3C33] transition-colors"
                   >
                     <Download size={12} /> Descargar

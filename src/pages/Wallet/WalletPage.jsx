@@ -22,7 +22,7 @@ import { useAuth } from '../../context/AuthContext'
 import { request, requestFormData } from '../../services/api'
 import QRDisplay, { buildQRWithLogo } from '../../components/ui/QRDisplay'
 import BankQrActions from '../../components/ui/BankQrActions'
-import { shareQRImage } from '../../utils/shareImage'
+import { shareQRImage, shareFile } from '../../utils/shareImage'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -2171,6 +2171,7 @@ export default function WalletPage() {
   const [copiedMemo,        setCopiedMemo]        = useState(false)
   const [exportBobLoading,  setExportBobLoading]  = useState(false)
   const [exportUsdcLoading, setExportUsdcLoading] = useState(false)
+  const [exportMsg,         setExportMsg]         = useState('')
 
   // Guard — solo SRL
   useEffect(() => {
@@ -2278,19 +2279,38 @@ export default function WalletPage() {
     }
   }, [])
 
+  /**
+   * Exporta los movimientos a CSV.
+   *
+   * Antes esto creaba un `<a download>` con una URL `blob:`, que dentro del
+   * WebView de Android NO hace nada y falla en silencio: el botón parecía
+   * muerto. Lo reportaron los testers. Ahora va por `shareFile()`, que en
+   * nativo escribe el archivo y abre el share sheet, y en navegador conserva
+   * la descarga de siempre. El `catch` tampoco es ya silencioso.
+   */
+  function fallaExport() {
+    setExportMsg('No se pudo exportar. Vuelve a intentarlo.')
+    setTimeout(() => setExportMsg(''), 5000)
+  }
+
   async function exportCSV(currency) {
     const setLoading = currency === 'BOB' ? setExportBobLoading : setExportUsdcLoading
     setLoading(true)
+    setExportMsg('')
     try {
-      const res = await request(`/wallet/export?currency=${currency}`)
+      const res  = await request(`/wallet/export?currency=${currency}`)
       const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `movimientos_${currency.toLowerCase()}_${new Date().toISOString().slice(0, 7)}.csv`
-      a.click()
-      URL.revokeObjectURL(url)
-    } catch { /* silencioso */ } finally {
+      const ok   = await shareFile({
+        blob,
+        filename: `movimientos_${currency.toLowerCase()}_${new Date().toISOString().slice(0, 7)}.csv`,
+        title:    `Movimientos ${currency}`,
+        mimeType: 'text/csv',
+      })
+      if (!ok) fallaExport()
+    } catch (err) {
+      console.error('[Wallet] Error exportando CSV:', err?.message)
+      fallaExport()
+    } finally {
       setLoading(false)
     }
   }
@@ -2494,6 +2514,9 @@ export default function WalletPage() {
                 </button>
               </div>
             </div>
+            {exportMsg && (
+              <p className="text-[0.8125rem] text-[#EF4444] mb-2" role="status">{exportMsg}</p>
+            )}
             <div className="mb-3">
               <FilterChips
                 filters={[

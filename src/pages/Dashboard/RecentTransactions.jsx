@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
 import StatusBadge from '../../components/ui/StatusBadge'
+import { COUNTRY_META } from '../../config/countries'
 
 function statusColor(status) {
   if (status === 'completed')   return { color: 'var(--color-success)', bg: 'var(--color-success-bg)' }
@@ -28,13 +29,21 @@ function formatAmount(amount, currency) {
   return `${new Intl.NumberFormat('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(amount)} ${currency ?? ''}`
 }
 
+/**
+ * Monedas que identifican un país sin ambigüedad.
+ *
+ * El USD NO está aquí a propósito: lo usan Venezuela, Ecuador, Panamá, El
+ * Salvador y Estados Unidos, entre otros. Deducir el país de la moneda hacía
+ * que un envío a Venezuela se mostrara como "Envío a USD 🇺🇸". Un tester lo
+ * reportó, y quien analizó el informe también lo leyó como Estados Unidos
+ * teniendo la base de datos delante: si confunde a quien investiga, confunde
+ * al usuario que está mandando dinero.
+ *
+ * Esto es solo el respaldo. La fuente buena es `tx.destinationCountry`.
+ */
 const CURRENCY_TO_COUNTRY = {
-  CLP: 'CL', BOB: 'BO', USD: 'US', ARS: 'AR',
+  CLP: 'CL', BOB: 'BO', ARS: 'AR',
   COP: 'CO', PEN: 'PE', MXN: 'MX', BRL: 'BR', UYU: 'UY',
-}
-const COUNTRY_FLAGS = {
-  CL: '🇨🇱', BO: '🇧🇴', US: '🇺🇸', AR: '🇦🇷',
-  CO: '🇨🇴', PE: '🇵🇪', MX: '🇲🇽', BR: '🇧🇷', UY: '🇺🇾',
 }
 
 function SkeletonCard() {
@@ -63,8 +72,11 @@ function TransactionCard({ tx }) {
   const st          = statusColor(tx.status)
   const isActive    = !['completed','failed','refunded'].includes(tx.status)
   const benefName   = tx.beneficiary?.fullName && tx.beneficiary.fullName !== '—' ? tx.beneficiary.fullName : null
-  const destCode    = CURRENCY_TO_COUNTRY[tx.destinationCurrency]
-  const destFlag    = destCode ? COUNTRY_FLAGS[destCode] : null
+  // El país de destino manda; la moneda solo es respaldo y no cubre el USD.
+  // Si no hay ninguno de los dos, no se pinta bandera: mejor ninguna que la
+  // equivocada.
+  const destCode    = tx.destinationCountry ?? CURRENCY_TO_COUNTRY[tx.destinationCurrency] ?? null
+  const destFlag    = destCode ? (COUNTRY_META[destCode]?.flag ?? null) : null
   const title       = benefName ?? `Envío a ${tx.destinationCurrency ?? ''}${destFlag ? ` ${destFlag}` : ''}`
   const corridor    = tx.originCurrency && tx.destinationCurrency && tx.originCurrency !== tx.destinationCurrency
     ? `${tx.originCurrency} → ${tx.destinationCurrency}` : null

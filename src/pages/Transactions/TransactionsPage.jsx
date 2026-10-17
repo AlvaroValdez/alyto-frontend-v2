@@ -322,8 +322,8 @@ export default function TransactionsPage() {
                 </p>
                 <button
                   onClick={() => navigate('/send')}
-                  className="px-6 py-3 rounded-2xl font-bold text-[0.9375rem] text-[#0D1F3C]"
-                  style={{ background: '#233E58', boxShadow: '0 4px 20px rgba(35,62,88,0.25)' }}
+                  className="px-6 py-3 rounded-2xl font-bold text-[0.9375rem] text-white"
+                  style={{ background: 'var(--color-primary)', boxShadow: '0 4px 20px rgba(13,31,60,0.25)' }}
                 >
                   Enviar dinero
                 </button>

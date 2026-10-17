@@ -88,12 +88,15 @@ function PaymentInstructionsModal({ tx, onClose }) {
     setTimeout(() => setCopiedRef(false), 2000)
   }
 
+  // Mismo motivo que en handleDownloadImage: `<a download>` no funciona dentro
+  // del WebView de Android. shareQRImage escribe el archivo y abre el share sheet.
   const downloadQR = () => {
     if (!qrSrc) return
-    const a = document.createElement('a')
-    a.download = `qr-alyto-${tx.transactionId}.png`
-    a.href = qrSrc
-    a.click()
+    shareQRImage({
+      dataUrl:  qrSrc,
+      title:    'QR de pago Alyto',
+      filename: `qr-alyto-${tx.transactionId}.png`,
+    })
   }
 
   const bank = tx.payinInstructions ?? {}
@@ -209,6 +212,7 @@ function PaymentInstructionsModal({ tx, onClose }) {
 import { fetchTransactionDetail } from '../../services/transactionsService.js'
 import { getPaymentQR, uploadComprobante } from '../../services/paymentsService.js'
 import { downloadBusinessInvoice } from '../../services/api.js'
+import { shareQRImage }            from '../../utils/shareImage.js'
 import { useAuth }                 from '../../context/AuthContext.jsx'
 import { StellarInstructions }     from '../Sep24/Sep24Shared.jsx'
 import { stellarExpertTx }         from '../../utils/stellar.js'
@@ -535,36 +539,33 @@ export default function TransactionDetail() {
     })
   }
 
+  /**
+   * Comparte el comprobante como imagen.
+   *
+   * Esta función tenía su propia implementación en vez de usar `shareQRImage`,
+   * y dentro del WebView de Android fallaba dos veces seguidas: `navigator.share`
+   * con archivos no está soportado ahí, y el `<a download>` con una URL `blob:`
+   * tampoco hace nada. Luego mostraba "Imagen guardada", que era falso: el
+   * usuario iba a WhatsApp a buscar una imagen que nunca se escribió. Lo
+   * reportó un tester.
+   *
+   * `shareQRImage` ya resolvía esto: en nativo escribe el archivo con
+   * @capacitor/filesystem y abre el share sheet con @capacitor/share.
+   */
   async function handleShareWhatsApp() {
     if (!comprobanteRef.current || sharing) return
     setSharing(true)
     setShareMsg('')
     try {
       const canvas = await captureComprobante()
-      const blob = await new Promise((resolve, reject) => {
-        canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob null')), 'image/png')
+      await shareQRImage({
+        dataUrl:  canvas.toDataURL('image/png'),
+        title:    'Comprobante Alyto',
+        filename: `comprobante-alyto-${tx.transactionId}.png`,
       })
-      const filename = `comprobante-alyto-${tx.transactionId}.png`
-      const file = new File([blob], filename, { type: 'image/png' })
-
-      // 1. Web Share API con archivos (iOS Safari, Android Chrome — requiere HTTPS)
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Comprobante Alyto' })
-        return
-      }
-
-      // 2. Fallback: descargar imagen + abrir WhatsApp para que el usuario la adjunte
-      const url = URL.createObjectURL(blob)
-      const a   = document.createElement('a')
-      a.href     = url
-      a.download = filename
-      a.click()
-      URL.revokeObjectURL(url)
-      setShareMsg('Imagen guardada — ábrela desde WhatsApp para compartirla')
-      setTimeout(() => setShareMsg(''), 5000)
     } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.error('[WhatsApp] Error compartiendo comprobante:', err.message)
+      if (err?.name !== 'AbortError') {
+        console.error('[Comprobante] Error compartiendo:', err?.message)
         setShareMsg('No se pudo compartir. Usa "Guardar" y envíala desde tu galería.')
         setTimeout(() => setShareMsg(''), 5000)
       }
@@ -573,22 +574,28 @@ export default function TransactionDetail() {
     }
   }
 
+  /**
+   * Botón "Guardar". Tenía el mismo `<a download>` con URL `blob:` que no hace
+   * nada en el WebView de Android, y además el error se tragaba en la consola,
+   * así que el usuario no recibía ninguna señal de que no había pasado nada.
+   */
   async function handleDownloadImage() {
     if (!comprobanteRef.current || sharing) return
     setSharing(true)
+    setShareMsg('')
     try {
       const canvas = await captureComprobante()
-      const blob = await new Promise((resolve, reject) => {
-        canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob returned null')), 'image/png')
+      await shareQRImage({
+        dataUrl:  canvas.toDataURL('image/png'),
+        title:    'Comprobante Alyto',
+        filename: `comprobante-alyto-${tx.transactionId}.png`,
       })
-      const url = URL.createObjectURL(blob)
-      const a   = document.createElement('a')
-      a.href     = url
-      a.download = `comprobante-alyto-${tx.transactionId}.png`
-      a.click()
-      URL.revokeObjectURL(url)
     } catch (err) {
-      console.error('[Download] Error descargando comprobante:', err.message)
+      if (err?.name !== 'AbortError') {
+        console.error('[Comprobante] Error guardando:', err?.message)
+        setShareMsg('No se pudo guardar el comprobante. Vuelve a intentarlo.')
+        setTimeout(() => setShareMsg(''), 5000)
+      }
     } finally {
       setSharing(false)
     }

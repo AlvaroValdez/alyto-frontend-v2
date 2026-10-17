@@ -653,15 +653,15 @@ export const sendUSDC = (recipientAlias, amount, description, idempotencyKey) =>
   })
 
 // ── Factura B2B ──────────────────────────────────────────────────────────
+// Usaba `<a download>` con una URL `blob:`, que dentro del WebView de Android
+// no hace nada y falla en silencio. Nadie lo reportó porque sólo lo ven las
+// cuentas empresa, pero es el Comprobante Oficial de Transacción, así que el
+// fallo era el mismo que el de los testers en el comprobante y el CSV.
 export async function downloadBusinessInvoice(transactionId) {
-  const res = await request(`/payments/${transactionId}/business-invoice`)
+  const res  = await request(`/payments/${transactionId}/business-invoice`)
   const blob = await res.blob()
   const filename = res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1]
     ?? `factura_b2b_${transactionId}.pdf`
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
+  const { shareFile } = await import('../utils/shareImage.js')
+  return shareFile({ blob, filename, title: 'Comprobante Oficial', mimeType: 'application/pdf' })
 }

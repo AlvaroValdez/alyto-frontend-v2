@@ -214,6 +214,51 @@ export function validateNUBAN(value) {
   return null
 }
 
+// ─── Venezuela ──────────────────────────────────────────────────────────────
+// NO hay validadores de Venezuela escritos a mano, y es deliberado.
+//
+// Los hubo: se escribieron tras tres envíos rechazados por Vita el 14-oct. Al
+// consultar las reglas que Vita publica resultó que eran PEORES que las suyas:
+//
+//   documento : Vita admite min=6 max=10 con ^\d+$.
+//               El validador propio exigía entre 6 y 9 — un rango inventado que
+//               habría rechazado documentos válidos de 10 dígitos.
+//   cuenta    : Vita exige ^(0102|0156|…|0116)\d{16}$, con la lista de bancos
+//               venezolanos mantenida por ellos. El propio aceptaba cualquier
+//               combinación de 20 dígitos, incluido un código de banco falso.
+//
+// Esas reglas llegan ahora en `field.pattern` y `field.hint` desde el backend
+// (ver transformVitaField en paymentController), así que las aplica el guard
+// genérico de validateField. Mantener una copia a mano solo crearía una segunda
+// fuente de verdad que envejece.
+//
+// Escribir un validador aquí solo se justifica para lo que una expresión regular
+// no puede expresar: dígitos verificadores, como en validateCLABE o validateCPF.
+
+/** Normaliza a dígitos: el beneficiario suele mandar el dato con puntos o guiones. */
+export function soloDigitos(value) {
+  return String(value ?? '').replace(/\D/g, '')
+}
+
+/**
+ * Campos que sólo admiten dígitos, por país.
+ *
+ * El beneficiario suele mandar su cuenta o su cédula con puntos y guiones, y el
+ * remitente la pega tal cual. En vez de rechazarla, se limpia al escribir: el
+ * carácter inválido no llega a aparecer. Lo pidió un tester, poniendo de
+ * ejemplo Takenos y Airtm, sin saber que describía la causa de los envíos que
+ * se le caían a otro.
+ */
+const CAMPOS_SOLO_DIGITOS = {
+  VE: ['account_bank', 'document_number', 'beneficiary_document_number', 'associate_phone'],
+}
+
+/** Devuelve el valor normalizado para el campo, o el mismo valor si no aplica. */
+export function normalizaCampo(key, value, countryCode) {
+  if (!CAMPOS_SOLO_DIGITOS[countryCode]?.includes(key)) return value
+  return soloDigitos(value)
+}
+
 // ─── Email ──────────────────────────────────────────────────────────────────
 export function validateEmail(value) {
   if (!value) return null  // typically optional
@@ -243,6 +288,7 @@ export const FIELD_VALIDATORS = {
   account_number:            (v, ctx) => ctx?.country === 'NG' ? validateNUBAN(v) : null,
   email:                     validateEmail,
   beneficiary_email:         validateEmail,
+
 }
 
 /**
