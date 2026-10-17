@@ -19,10 +19,11 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { request } from '../../services/api'
-// El QR en sí lo dibuja WalletQRCard (que compone QRDisplay); acá solo queda
-// buildQRWithLogo, que arma el PNG para compartir y descargar.
-import { buildQRWithLogo } from '../../components/ui/QRDisplay'
+// El QR en sí lo dibuja WalletQRCard (que compone QRDisplay); el PNG que se
+// comparte y se descarga lo arma buildQRCardImage, que redibuja esa misma
+// tarjeta en un canvas (un canvas no puede renderizar el DOM de la tarjeta).
 import WalletQRCard from '../../components/ui/WalletQRCard'
+import { buildQRCardImage } from '../../components/ui/buildQRCardImage'
 import { shareQRImage } from '../../utils/shareImage'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -129,10 +130,39 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
     }
   }
 
+  /**
+   * Vencimiento en texto ESTÁTICO para la imagen.
+   *
+   * En pantalla es un contador vivo, pero una imagen se reenvía: un "04:32"
+   * congelado miente apenas se comparte. Se graba la hora, que sigue siendo
+   * cierta cuando el destinatario la mira.
+   */
+  function textoVencimiento(expiresAt) {
+    if (!expiresAt) return undefined
+    const d = new Date(expiresAt)
+    if (Number.isNaN(d.getTime())) return undefined
+    return `Vence ${d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}`
+  }
+
+  /** Los mismos datos que recibe la tarjeta en pantalla, para que la imagen coincida. */
+  function datosTarjeta() {
+    const qrAsset = qrData.asset ?? asset
+    return {
+      qrBase64:    qrData.qrBase64,
+      type:        qrData.type ?? (fixedAmount ? 'charge' : 'deposit'),
+      asset:       qrAsset,
+      amountText:  qrData.amount != null ? amountDisplay(qrData.amount, qrAsset) : undefined,
+      creatorName: `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
+      description: description || undefined,
+      expiryText:  textoVencimiento(qrData.expiresAt),
+      qrId:        qrData.qrId,
+    }
+  }
+
   async function handleShare() {
     if (!qrData?.qrBase64) return
     const qrAsset = qrData.asset ?? asset
-    const src = await buildQRWithLogo(qrData.qrBase64, qrAsset)
+    const src = await buildQRCardImage(datosTarjeta())
     const text = qrData.amount
       ? `Págame ${amountDisplay(qrData.amount, qrAsset)} con Alyto`
       : `Pagar con Alyto${description ? ' — ' + description : ''}`
@@ -143,7 +173,7 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
 
   async function handleDownload() {
     if (!qrData?.qrBase64) return
-    const src = await buildQRWithLogo(qrData.qrBase64, qrData.asset ?? asset)
+    const src = await buildQRCardImage(datosTarjeta())
     // `<a download>` no funciona en el WebView de Android: share sheet nativo.
     await shareQRImage({ dataUrl: src, title: 'QR Alyto', filename: `alyto-qr-${qrData.qrId}.png` })
   }
@@ -163,7 +193,10 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
             de CountdownBadge — la tarjeta solo le da lugar. */}
         <WalletQRCard
           qrBase64={qrData.qrBase64}
-          type={qrData.payload?.type ?? (fixedAmount ? 'charge' : 'deposit')}
+          // El tipo lo manda el backend; el ternario es red de seguridad. Antes
+          // se leía `qrData.payload?.type`, que no viene en la respuesta y por
+          // tanto nunca se cumplía: caía siempre al ternario.
+          type={qrData.type ?? (fixedAmount ? 'charge' : 'deposit')}
           asset={qrData.asset ?? asset}
           amountText={
             qrData.amount != null
@@ -729,16 +762,28 @@ function TabMiQR({ user }) {
     if (!qrData) handleGenerate()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  /** Mismos datos que la tarjeta de esta pestaña: depósito, sin monto y sin vencer. */
+  function datosTarjeta() {
+    return {
+      qrBase64:    qrData.qrBase64,
+      type:        'deposit',
+      creatorName: `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
+      description: 'QR permanente · Sin monto fijo',
+      expiryText:  'Sin expiración',
+      qrId:        qrData.qrId,
+    }
+  }
+
   async function handleShare() {
     if (!qrData?.qrBase64) return
-    const src  = await buildQRWithLogo(qrData.qrBase64)
+    const src  = await buildQRCardImage(datosTarjeta())
     const text = `Escanéame para enviarme dinero en Alyto`
     await shareQRImage({ dataUrl: src, text, title: `QR Alyto de ${user.firstName}`, filename: 'alyto-mi-qr.png' })
   }
 
   async function handleDownload() {
     if (!qrData?.qrBase64) return
-    const src = await buildQRWithLogo(qrData.qrBase64)
+    const src = await buildQRCardImage(datosTarjeta())
     // `<a download>` no funciona en el WebView de Android: share sheet nativo.
     await shareQRImage({ dataUrl: src, title: 'Mi QR Alyto', filename: `alyto-mi-qr-${user.firstName}.png` })
   }

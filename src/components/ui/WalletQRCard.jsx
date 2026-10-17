@@ -20,8 +20,14 @@
 
 import QRDisplay from './QRDisplay'
 
-/** Etiquetas por tipo de QR. */
-const TIPOS = {
+/**
+ * Etiquetas por tipo de QR.
+ *
+ * Se exporta porque `buildQRCardImage` dibuja la misma tarjeta en un canvas
+ * para compartir: si cada uno tuviera su copia, la imagen y la pantalla
+ * acabarían diciendo cosas distintas.
+ */
+export const TIPOS = {
   charge:  { titulo: 'Cobro',         montoLabel: 'Monto a cobrar', quienLabel: 'Pagar a'     },
   p2p:     { titulo: 'Transferencia', montoLabel: 'Monto a enviar', quienLabel: 'Enviar a'    },
   deposit: { titulo: 'Depósito',      montoLabel: null,             quienLabel: 'Depositar a' },
