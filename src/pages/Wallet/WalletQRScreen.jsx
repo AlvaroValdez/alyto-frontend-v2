@@ -19,7 +19,10 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { request } from '../../services/api'
-import QRDisplay, { buildQRWithLogo } from '../../components/ui/QRDisplay'
+// El QR en sí lo dibuja WalletQRCard (que compone QRDisplay); acá solo queda
+// buildQRWithLogo, que arma el PNG para compartir y descargar.
+import { buildQRWithLogo } from '../../components/ui/QRDisplay'
+import WalletQRCard from '../../components/ui/WalletQRCard'
 import { shareQRImage } from '../../utils/shareImage'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -155,23 +158,23 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
   if (qrData) {
     return (
       <div className="flex flex-col items-center gap-5 px-4 py-2">
-        {/* QR image */}
-        <div className="bg-white rounded-2xl p-4 shadow-[0_4px_24px_rgba(15,23,42,0.08)] border border-[#E2E8F0]">
-          <QRDisplay src={qrData.qrBase64} alt="QR Alyto" size={256} asset={qrData.asset ?? asset} />
-        </div>
-
-        {/* Monto + nombre */}
-        <div className="text-center">
-          {qrData.amount != null && (
-            <p className="text-[1.75rem] font-bold text-[#233E58]">
-              {amountDisplay(qrData.amount, qrData.asset ?? asset)}
-            </p>
-          )}
-          <p className="text-[0.875rem] text-[#64748B] mt-0.5">
-            {user.firstName} {user.lastName}
-          </p>
-          {qrData.expiresAt && <div className="mt-2 flex justify-center"><CountdownBadge expiresAt={qrData.expiresAt} /></div>}
-        </div>
+        {/* Tarjeta de marca: agrupa QR, monto, titular y vencimiento en una
+            sola pieza, en vez de apilarlos sueltos. El conteo sigue viniendo
+            de CountdownBadge — la tarjeta solo le da lugar. */}
+        <WalletQRCard
+          qrBase64={qrData.qrBase64}
+          type={qrData.payload?.type ?? (fixedAmount ? 'charge' : 'deposit')}
+          asset={qrData.asset ?? asset}
+          amountText={
+            qrData.amount != null
+              ? amountDisplay(qrData.amount, qrData.asset ?? asset)
+              : undefined
+          }
+          creatorName={`${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()}
+          description={description || undefined}
+          qrId={qrData.qrId}
+          expirySlot={qrData.expiresAt ? <CountdownBadge expiresAt={qrData.expiresAt} /> : null}
+        />
 
         {/* Acciones */}
         <div className="flex gap-3 w-full">
@@ -771,19 +774,20 @@ function TabMiQR({ user }) {
 
   return (
     <div className="flex flex-col items-center gap-5 px-4 py-2">
-      {/* QR */}
-      <div className="bg-white rounded-2xl p-4 shadow-[0_4px_24px_rgba(15,23,42,0.08)] border border-[#E2E8F0]">
-        <QRDisplay src={qrData.qrBase64} alt="Mi QR Alyto" size={256} />
-      </div>
-
-      {/* Nombre */}
-      <div className="text-center">
-        <p className="text-[1.125rem] font-bold text-[#0F172A]">{user.firstName} {user.lastName}</p>
-        <p className="text-[0.8125rem] text-[#64748B] mt-0.5">QR permanente · Sin monto fijo</p>
-        <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.6875rem] font-semibold bg-[#233E581A] text-[#233E58]">
-          Sin expiración
-        </div>
-      </div>
+      {/* QR permanente: la misma tarjeta, en su variante de depósito —
+          sin monto y sin vencimiento, porque este QR no caduca. */}
+      <WalletQRCard
+        qrBase64={qrData.qrBase64}
+        type="deposit"
+        creatorName={`${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()}
+        description="QR permanente · Sin monto fijo"
+        qrId={qrData.qrId}
+        expirySlot={
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.6875rem] font-semibold bg-[#233E581A] text-[#233E58]">
+            Sin expiración
+          </span>
+        }
+      />
 
       <p className="text-[0.75rem] text-[#94A3B8] text-center px-4">
         Cualquier usuario Alyto puede escanearlo para enviarte BOB directamente a tu wallet.
