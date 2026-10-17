@@ -30,7 +30,12 @@ export default function LoginPage() {
   const location  = useLocation()
   const { login } = useAuth()
 
-  const expired      = new URLSearchParams(location.search).get('expired') === '1'
+  const params       = new URLSearchParams(location.search)
+  // `motivo` es el parámetro nuevo; `expired=1` se sigue aceptando porque puede
+  // quedar en un enlace guardado o en una pestaña abierta de antes.
+  const motivo       = params.get('motivo')
+  const otroEquipo   = motivo === 'otro-dispositivo'
+  const expired      = motivo === 'expirada' || params.get('expired') === '1'
   const loggedOut    = new URLSearchParams(location.search).get('logout') === '1'
   const stateMessage = location.state?.message ?? null
 
@@ -95,10 +100,18 @@ export default function LoginPage() {
           <p style={{ fontSize: 'var(--font-sm)', color: 'var(--color-accent-teal)' }}>Sesión cerrada correctamente.</p>
         </div>
       )}
-      {stateMessage && !expired && !error && (
+      {stateMessage && !expired && !otroEquipo && !error && (
         <div style={{ ...bannerBase, background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}>
           <Clock size={15} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
           <p style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)' }}>{stateMessage}</p>
+        </div>
+      )}
+      {otroEquipo && !error && (
+        <div style={{ ...bannerBase, background: '#FEF5E7', border: '1px solid #92400E33' }}>
+          <Clock size={15} style={{ color: '#92400E', flexShrink: 0 }} />
+          <p style={{ fontSize: 'var(--font-sm)', color: '#92400E' }}>
+            Se inició sesión en otro dispositivo. Si no fuiste tú, cambia tu contraseña.
+          </p>
         </div>
       )}
       {expired && !error && (

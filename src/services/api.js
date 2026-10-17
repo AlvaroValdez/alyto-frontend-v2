@@ -68,7 +68,7 @@ export async function requestFormData(path, formData, method = 'POST') {
   const data = contentType.includes('application/json') ? await res.json() : {}
   if (!res.ok) {
     if (res.status === 401 && !isAuthPublicPath(path)) {
-      window.dispatchEvent(new CustomEvent('alyto:unauthorized'))
+      window.dispatchEvent(new CustomEvent('alyto:unauthorized', { detail: { code: data.code ?? null } }))
     }
     const err = new Error(data.error || data.message || `Error ${res.status}`)
     err.status = res.status
@@ -114,7 +114,7 @@ export async function request(path, options = {}) {
     // 401 → sesión expirada. No disparar para endpoints de auth públicos
     // (login/register → credenciales inválidas; /auth/me → check sesión inicial).
     if (res.status === 401 && !isAuthPublicPath(path)) {
-      window.dispatchEvent(new CustomEvent('alyto:unauthorized'))
+      window.dispatchEvent(new CustomEvent('alyto:unauthorized', { detail: { code: data.code ?? null } }))
     }
     const err = new Error(data.error || data.message || `Error ${res.status}`)
     err.status  = res.status
