@@ -295,7 +295,7 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
               value={amount}
               onChange={e => setAmount(e.target.value)}
               placeholder="0.00"
-              className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-12 pr-16 py-4 text-[#0F172A] text-[1.5rem] font-bold focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all placeholder:text-[#CBD5E1]"
+              className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-12 pr-16 py-4 text-[#0F172A] text-[1.5rem] font-bold focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all placeholder:text-[#5A6A8A]"
             />
             {asset === 'USDC' && (
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-semibold text-[0.875rem]">USDC</span>
@@ -315,7 +315,7 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
           onChange={e => setDescription(e.target.value)}
           maxLength={80}
           placeholder="Ej: café, servicio, producto..."
-          className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.9375rem] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all placeholder:text-[#CBD5E1]"
+          className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.9375rem] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] transition-all placeholder:text-[#5A6A8A]"
         />
       </div>
 
@@ -575,7 +575,7 @@ function TabPagar() {
                   value={depositAmt}
                   onChange={e => setDepositAmt(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3 text-[#0F172A] text-[1.25rem] font-bold focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] placeholder:text-[#CBD5E1]"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3 text-[#0F172A] text-[1.25rem] font-bold focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] placeholder:text-[#5A6A8A]"
                 />
               </div>
             </div>
@@ -713,7 +713,7 @@ function TabPagar() {
             onChange={e => setManualText(e.target.value)}
             rows={4}
             placeholder='Pega el JSON del QR aquí...'
-            className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.75rem] text-[#0F172A] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] placeholder:text-[#CBD5E1] font-mono resize-none"
+            className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.75rem] text-[#0F172A] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_3px_#233E5820] placeholder:text-[#5A6A8A] font-mono resize-none"
           />
           <button
             onClick={handleManualSubmit}

@@ -190,7 +190,7 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
                 value={current}
                 onChange={e => setCurrent(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 pr-10 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#CBD5E1] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 pr-10 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#5A6A8A] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
               />
               <button
                 type="button"
@@ -213,7 +213,7 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
                 value={newPw}
                 onChange={e => setNewPw(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 pr-10 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#CBD5E1] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 pr-10 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#5A6A8A] focus:border-[#1D3461] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all"
               />
               <button
                 type="button"
@@ -268,7 +268,7 @@ export default function SecurityTab({ profile, saving, onChangePassword, onRemov
                 value={confirm}
                 onChange={e => setConfirm(e.target.value)}
                 placeholder="••••••••"
-                className={`w-full bg-white border rounded-xl px-3 pr-10 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#CBD5E1] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all ${
+                className={`w-full bg-white border rounded-xl px-3 pr-10 py-2.5 text-[0.9375rem] text-[#0D1F3C] placeholder:text-[#5A6A8A] focus:shadow-[0_0_0_2px_#233E5820] outline-none transition-all ${
                   confirm.length > 0 && !match
                     ? 'border-[#EF4444] focus:border-[#EF4444]'
                     : 'border-[#E2E8F0] focus:border-[#1D3461]'

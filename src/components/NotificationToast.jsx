@@ -14,10 +14,10 @@ import { X, ArrowDownLeft, ArrowUpRight, Clock, AlertCircle, Bell, CheckCircle2 
 
 // ── Mapa de tipos — sincronizado con NOTIFICATIONS en backend/services/notifications.js
 const TYPE_CONFIG = {
-  payin_confirmed:   { Icon: ArrowDownLeft, color: '#22C55E', bg: '#22C55E1A' },
-  payment_completed: { Icon: CheckCircle2,  color: '#22C55E', bg: '#22C55E1A' },
+  payin_confirmed:   { Icon: ArrowDownLeft, color: '#166534', bg: '#22C55E1A' },
+  payment_completed: { Icon: CheckCircle2,  color: '#166534', bg: '#22C55E1A' },
   payout_sent:       { Icon: ArrowUpRight,  color: '#8AB4F8', bg: '#1D346133' },
-  payment_failed:    { Icon: AlertCircle,   color: '#EF4444', bg: '#EF44441A' },
+  payment_failed:    { Icon: AlertCircle,   color: '#991B1B', bg: '#EF44441A' },
 }
 
 function getConfig(type) {

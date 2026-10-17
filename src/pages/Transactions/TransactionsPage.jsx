@@ -38,31 +38,31 @@ const IN_PROGRESS_STATUSES = new Set([
 ])
 
 const STATUS_CONFIG = {
-  initiated:                      { label: 'Iniciada',                color: '#94A3B8', bg: '#94A3B81A',  Icon: Clock       },
-  pending_comprobante:            { label: 'Incompleto',              color: '#F59E0B', bg: '#F59E0B1A',  Icon: Clock       },
-  pending_customer_transfer_start:{ label: 'Preparando envío',        color: '#94A3B8', bg: '#94A3B81A',  Icon: Clock       },
-  transfer_initiated:             { label: 'Transferencia iniciada',   color: '#94A3B8', bg: '#94A3B81A',  Icon: Clock       },
-  payin_pending:                  { label: 'Comprobante recibido',    color: '#94A3B8', bg: '#94A3B81A',  Icon: Clock       },
-  payin_confirmed:                { label: 'Pago verificado',         color: '#64748B', bg: '#64748B1A',  Icon: RefreshCw   },
-  fintoc_payin_confirmed:         { label: 'Pago verificado',         color: '#64748B', bg: '#64748B1A',  Icon: RefreshCw   },
-  manual_payin_confirmed:         { label: 'Pago verificado',         color: '#64748B', bg: '#64748B1A',  Icon: RefreshCw   },
-  payin_completed:                { label: 'Pago recibido',           color: '#64748B', bg: '#64748B1A',  Icon: RefreshCw   },
-  harbor_source_received:         { label: 'Fondos recibidos',        color: '#3B82F6', bg: '#3B82F61A',  Icon: RefreshCw   },
-  processing:                     { label: 'Procesando',              color: '#3B82F6', bg: '#3B82F61A',  Icon: RefreshCw   },
-  in_transit:                     { label: 'En tránsito',             color: '#3B82F6', bg: '#3B82F61A',  Icon: RefreshCw   },
-  pending_funding:                { label: 'Fondos pendientes',       color: '#F59E0B', bg: '#F59E0B1A',  Icon: Clock       },
-  pending_funding_usdc:           { label: 'Fondos USDC pendientes',  color: '#F59E0B', bg: '#F59E0B1A',  Icon: Clock       },
-  payout_pending:                 { label: 'Enviando...',             color: '#64748B', bg: '#64748B1A',  Icon: RefreshCw   },
-  payout_pending_usdc_send:       { label: 'Procesando tu envío',     color: '#3B82F6', bg: '#3B82F61A',  Icon: RefreshCw   },
-  anchor_bolivia_payout_pending:  { label: 'Pago Bolivia en proceso', color: '#64748B', bg: '#64748B1A',  Icon: RefreshCw   },
-  payout_dispatched:              { label: 'Pago despachado',         color: '#3B82F6', bg: '#3B82F61A',  Icon: RefreshCw   },
-  payout_in_transit:              { label: 'En tránsito',             color: '#3B82F6', bg: '#3B82F61A',  Icon: RefreshCw   },
-  payout_sent:                    { label: 'Enviado al banco',        color: '#3B82F6', bg: '#3B82F61A',  Icon: RefreshCw   },
-  completed:                      { label: 'Entregado',               color: '#22C55E', bg: '#22C55E1A',  Icon: CheckCircle },
-  confirmed:                      { label: 'Confirmada',              color: '#22C55E', bg: '#22C55E1A',  Icon: CheckCircle },
-  failed:                         { label: 'No se pudo completar',    color: '#EF4444', bg: '#EF44441A',  Icon: XCircle     },
-  refunded:                       { label: 'Reembolsada',             color: '#F59E0B', bg: '#F59E0B1A',  Icon: RotateCcw   },
-  expired:                        { label: 'Expirada',                color: '#EF4444', bg: '#EF44441A',  Icon: XCircle     },
+  initiated:                      { label: 'Iniciada',                color: '#475569', bg: '#94A3B81A',  Icon: Clock       },
+  pending_comprobante:            { label: 'Incompleto',              color: '#92400E', bg: '#F59E0B1A',  Icon: Clock       },
+  pending_customer_transfer_start:{ label: 'Preparando envío',        color: '#475569', bg: '#94A3B81A',  Icon: Clock       },
+  transfer_initiated:             { label: 'Transferencia iniciada',   color: '#475569', bg: '#94A3B81A',  Icon: Clock       },
+  payin_pending:                  { label: 'Comprobante recibido',    color: '#475569', bg: '#94A3B81A',  Icon: Clock       },
+  payin_confirmed:                { label: 'Pago verificado',         color: '#334155', bg: '#64748B1A',  Icon: RefreshCw   },
+  fintoc_payin_confirmed:         { label: 'Pago verificado',         color: '#334155', bg: '#64748B1A',  Icon: RefreshCw   },
+  manual_payin_confirmed:         { label: 'Pago verificado',         color: '#334155', bg: '#64748B1A',  Icon: RefreshCw   },
+  payin_completed:                { label: 'Pago recibido',           color: '#334155', bg: '#64748B1A',  Icon: RefreshCw   },
+  harbor_source_received:         { label: 'Fondos recibidos',        color: '#1E40AF', bg: '#3B82F61A',  Icon: RefreshCw   },
+  processing:                     { label: 'Procesando',              color: '#1E40AF', bg: '#3B82F61A',  Icon: RefreshCw   },
+  in_transit:                     { label: 'En tránsito',             color: '#1E40AF', bg: '#3B82F61A',  Icon: RefreshCw   },
+  pending_funding:                { label: 'Fondos pendientes',       color: '#92400E', bg: '#F59E0B1A',  Icon: Clock       },
+  pending_funding_usdc:           { label: 'Fondos USDC pendientes',  color: '#92400E', bg: '#F59E0B1A',  Icon: Clock       },
+  payout_pending:                 { label: 'Enviando...',             color: '#334155', bg: '#64748B1A',  Icon: RefreshCw   },
+  payout_pending_usdc_send:       { label: 'Procesando tu envío',     color: '#1E40AF', bg: '#3B82F61A',  Icon: RefreshCw   },
+  anchor_bolivia_payout_pending:  { label: 'Pago Bolivia en proceso', color: '#334155', bg: '#64748B1A',  Icon: RefreshCw   },
+  payout_dispatched:              { label: 'Pago despachado',         color: '#1E40AF', bg: '#3B82F61A',  Icon: RefreshCw   },
+  payout_in_transit:              { label: 'En tránsito',             color: '#1E40AF', bg: '#3B82F61A',  Icon: RefreshCw   },
+  payout_sent:                    { label: 'Enviado al banco',        color: '#1E40AF', bg: '#3B82F61A',  Icon: RefreshCw   },
+  completed:                      { label: 'Entregado',               color: '#166534', bg: '#22C55E1A',  Icon: CheckCircle },
+  confirmed:                      { label: 'Confirmada',              color: '#166534', bg: '#22C55E1A',  Icon: CheckCircle },
+  failed:                         { label: 'No se pudo completar',    color: '#991B1B', bg: '#EF44441A',  Icon: XCircle     },
+  refunded:                       { label: 'Reembolsada',             color: '#92400E', bg: '#F59E0B1A',  Icon: RotateCcw   },
+  expired:                        { label: 'Expirada',                color: '#991B1B', bg: '#EF44441A',  Icon: XCircle     },
 }
 
 // ── Utilidades ────────────────────────────────────────────────────────────────
@@ -124,7 +124,7 @@ function SkeletonItem() {
 }
 
 function TransactionItem({ tx, onPress }) {
-  const cfg = STATUS_CONFIG[tx.status] ?? { label: tx.status, color: '#64748B', bg: '#64748B1A', Icon: Clock }
+  const cfg = STATUS_CONFIG[tx.status] ?? { label: tx.status, color: '#334155', bg: '#64748B1A', Icon: Clock }
   const { Icon } = cfg
 
   const corridorLabel = tx.originCurrency && tx.destinationCurrency

@@ -192,7 +192,7 @@ function PaymentInstructionsModal({ tx, onClose }) {
           {/* Warning */}
           <div className="flex items-start gap-2.5 px-4 py-3.5 rounded-2xl bg-[#FFFBEB] border border-[#F59E0B33]">
             <span className="text-base flex-shrink-0">⚠️</span>
-            <p className="text-[0.8125rem] text-[#FBBF24] font-medium">
+            <p className="text-[0.8125rem] text-[#92400E] font-medium">
               Incluye el número de referencia en el concepto de tu transferencia.
             </p>
           </div>
@@ -221,7 +221,7 @@ import { stellarExpertTx }         from '../../utils/stellar.js'
 
 const STATUS_CONFIG = {
   initiated:                      { label: 'Iniciada',                color: 'var(--color-text-secondary)', bg: '#64748B1A' },
-  pending_comprobante:            { label: 'Incompleto',              color: '#F59E0B',                     bg: '#F59E0B1A' },
+  pending_comprobante:            { label: 'Incompleto',              color: '#92400E',                     bg: '#F59E0B1A' },
   pending_customer_transfer_start:{ label: 'Preparando envío',        color: 'var(--color-text-secondary)', bg: '#64748B1A' },
   transfer_initiated:             { label: 'Transferencia iniciada',   color: 'var(--color-text-secondary)', bg: '#64748B1A' },
   payin_pending:                  { label: 'Comprobante recibido',    color: 'var(--color-text-secondary)', bg: '#64748B1A' },
@@ -229,26 +229,26 @@ const STATUS_CONFIG = {
   fintoc_payin_confirmed:         { label: 'Pago verificado',         color: 'var(--color-accent-teal)',    bg: '#233E581A' },
   manual_payin_confirmed:         { label: 'Pago verificado',         color: 'var(--color-accent-teal)',    bg: '#233E581A' },
   payin_completed:                { label: 'Pago recibido',           color: 'var(--color-accent-teal)',    bg: '#233E581A' },
-  harbor_source_received:         { label: 'Fondos recibidos',        color: '#3B82F6',                     bg: '#3B82F61A' },
-  processing:                     { label: 'Procesando',              color: '#3B82F6',                     bg: '#3B82F61A' },
-  in_transit:                     { label: 'En tránsito',             color: '#3B82F6',                     bg: '#3B82F61A' },
-  pending_funding:                { label: 'Fondos pendientes',       color: '#F59E0B',                     bg: '#F59E0B1A' },
-  pending_funding_usdc:           { label: 'Fondos USDC pendientes',  color: '#F59E0B',                     bg: '#F59E0B1A' },
+  harbor_source_received:         { label: 'Fondos recibidos',        color: '#1E40AF',                     bg: '#3B82F61A' },
+  processing:                     { label: 'Procesando',              color: '#1E40AF',                     bg: '#3B82F61A' },
+  in_transit:                     { label: 'En tránsito',             color: '#1E40AF',                     bg: '#3B82F61A' },
+  pending_funding:                { label: 'Fondos pendientes',       color: '#92400E',                     bg: '#F59E0B1A' },
+  pending_funding_usdc:           { label: 'Fondos USDC pendientes',  color: '#92400E',                     bg: '#F59E0B1A' },
   payout_pending:                 { label: 'Enviando...',             color: 'var(--color-accent-teal)',    bg: '#233E581A' },
-  payout_pending_usdc_send:       { label: 'Procesando tu envío',     color: '#3B82F6',                     bg: '#3B82F61A' },
+  payout_pending_usdc_send:       { label: 'Procesando tu envío',     color: '#1E40AF',                     bg: '#3B82F61A' },
   anchor_bolivia_payout_pending:  { label: 'Pago Bolivia en proceso', color: 'var(--color-accent-teal)',    bg: '#233E581A' },
-  payout_dispatched:              { label: 'Pago despachado',         color: '#3B82F6',                     bg: '#3B82F61A' },
-  payout_in_transit:              { label: 'En tránsito',             color: '#3B82F6',                     bg: '#3B82F61A' },
-  payout_sent:                    { label: 'Enviado al banco',        color: '#3B82F6',                     bg: '#3B82F61A' },
+  payout_dispatched:              { label: 'Pago despachado',         color: '#1E40AF',                     bg: '#3B82F61A' },
+  payout_in_transit:              { label: 'En tránsito',             color: '#1E40AF',                     bg: '#3B82F61A' },
+  payout_sent:                    { label: 'Enviado al banco',        color: '#1E40AF',                     bg: '#3B82F61A' },
   completed:                      { label: 'Entregado',               color: 'var(--color-accent-teal)',    bg: '#233E581A' },
   confirmed:                      { label: 'Confirmada',              color: 'var(--color-accent-teal)',    bg: '#233E581A' },
-  failed:                         { label: 'No se pudo completar',    color: '#EF4444',                     bg: '#EF44441A' },
-  refunded:                       { label: 'Reembolsada',             color: '#F59E0B',                     bg: '#F59E0B1A' },
-  expired:                        { label: 'Expirada',                color: '#EF4444',                     bg: '#EF44441A' },
+  failed:                         { label: 'No se pudo completar',    color: '#991B1B',                     bg: '#EF44441A' },
+  refunded:                       { label: 'Reembolsada',             color: '#92400E',                     bg: '#F59E0B1A' },
+  expired:                        { label: 'Expirada',                color: '#991B1B',                     bg: '#EF44441A' },
   // ── SEP-24 / SEP-31 — depósito/retiro de activo digital ──
-  sep24_deposit_pending:          { label: 'Esperando tu depósito',   color: '#F59E0B',                     bg: '#F59E0B1A' },
-  sep24_withdraw_pending:         { label: 'Procesando tu retiro',    color: '#3B82F6',                     bg: '#3B82F61A' },
-  sep31_waiting:                  { label: 'En proceso',              color: '#3B82F6',                     bg: '#3B82F61A' },
+  sep24_deposit_pending:          { label: 'Esperando tu depósito',   color: '#92400E',                     bg: '#F59E0B1A' },
+  sep24_withdraw_pending:         { label: 'Procesando tu retiro',    color: '#1E40AF',                     bg: '#3B82F61A' },
+  sep31_waiting:                  { label: 'En proceso',              color: '#1E40AF',                     bg: '#3B82F61A' },
 }
 
 /** Convierte un status técnico desconocido en una etiqueta legible:
@@ -636,7 +636,7 @@ export default function TransactionDetail() {
           </div>
           <p className="text-[#0D1F3C] font-semibold mb-1">No se pudo cargar</p>
           <p className="text-[#4A5568] text-sm mb-4">{error}</p>
-          <button onClick={loadDetail} className="px-4 py-2 rounded-xl font-semibold text-sm text-[#0D1F3C]" style={{ background: '#233E58' }}>
+          <button onClick={loadDetail} className="px-4 py-2 rounded-xl font-semibold text-sm text-white" style={{ background: '#233E58' }}>
             Reintentar
           </button>
         </div>
@@ -917,7 +917,7 @@ export default function TransactionDetail() {
               <div className="flex items-start gap-3 mb-4">
                 <span className="text-xl flex-shrink-0">⏳</span>
                 <div>
-                  <p className="text-[0.875rem] font-bold text-[#FBBF24]">Verificando tu pago</p>
+                  <p className="text-[0.875rem] font-bold text-[#92400E]">Verificando tu pago</p>
                   <p className="text-[0.8125rem] text-[#4A5568] mt-0.5">
                     Recibimos tu comprobante. Estamos verificando tu transferencia.
                     Te notificaremos cuando sea confirmada.
@@ -926,7 +926,7 @@ export default function TransactionDetail() {
               </div>
               <button
                 onClick={() => setShowPaymentInstructions(true)}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#FBBF2430] text-[#FBBF24] text-[0.875rem] font-semibold hover:bg-[#FBBF2410] transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#FBBF2430] text-[#92400E] text-[0.875rem] font-semibold hover:bg-[#FBBF2410] transition-colors"
               >
                 <span>🏦</span>
                 Ver instrucciones de pago

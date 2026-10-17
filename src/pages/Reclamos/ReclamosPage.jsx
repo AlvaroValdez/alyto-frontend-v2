@@ -32,15 +32,15 @@ const TIPO_LABELS = {
 }
 
 const STATUS_CONFIG = {
-  recibido:       { label: 'Recibido',        color: '#3B82F6', bg: '#3B82F61A' },
-  en_revision:    { label: 'En revisión',     color: '#EAB308', bg: '#EAB3081A' },
+  recibido:       { label: 'Recibido',        color: '#1E40AF', bg: '#3B82F61A' },
+  en_revision:    { label: 'En revisión',     color: '#854D0E', bg: '#EAB3081A' },
   resuelto:       { label: 'Resuelto',        color: '#233E58', bg: '#233E581A' },
-  escalado_asfi:  { label: 'Escalado ASFI',   color: '#F97316', bg: '#F973161A' },
-  cerrado:        { label: 'Cerrado',         color: '#64748B', bg: '#64748B1A' },
+  escalado_asfi:  { label: 'Escalado ASFI',   color: '#9A3412', bg: '#F973161A' },
+  cerrado:        { label: 'Cerrado',         color: '#334155', bg: '#64748B1A' },
 }
 
 function StatusBadge({ status }) {
-  const cfg = STATUS_CONFIG[status] ?? { label: status, color: '#64748B', bg: '#64748B1A' }
+  const cfg = STATUS_CONFIG[status] ?? { label: status, color: '#334155', bg: '#64748B1A' }
   return (
     <span
       className="text-[0.6875rem] font-semibold px-2 py-0.5 rounded-full"
@@ -153,7 +153,7 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
               name="descripcion" value={form.descripcion} onChange={handleChange}
               rows={4} maxLength={1000}
               placeholder="Describe detalladamente el problema..."
-              className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_2px_#233E5820] resize-none"
+              className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#5A6A8A] focus:outline-none focus:border-[#233E58] focus:shadow-[0_0_0_2px_#233E5820] resize-none"
               required
             />
             <p className="text-[0.6875rem] text-[#94A3B8] mt-1 text-right">{form.descripcion.length}/1000</p>
@@ -169,7 +169,7 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
                 type="number" name="montoReclamado" value={form.montoReclamado}
                 onChange={handleChange} min="0" step="any"
                 placeholder="0.00"
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58]"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#5A6A8A] focus:outline-none focus:border-[#233E58]"
               />
             </div>
             <div>
@@ -180,7 +180,7 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
                 type="text" name="currency" value={form.currency}
                 onChange={handleChange} placeholder="BOB, CLP, USD..."
                 maxLength={5}
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58]"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#5A6A8A] focus:outline-none focus:border-[#233E58]"
               />
             </div>
           </div>
@@ -193,7 +193,7 @@ function PresentarReclamoModal({ onClose, onSuccess }) {
             <input id="ReclamosPage-f5"
               type="text" name="transactionId" value={form.transactionId}
               onChange={handleChange} placeholder="ALY-B-... o WTX-..."
-              className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#CBD5E1] focus:outline-none focus:border-[#233E58] font-mono text-[0.8125rem]"
+              className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[0.875rem] text-[#0F172A] placeholder:text-[#5A6A8A] focus:outline-none focus:border-[#233E58] font-mono text-[0.8125rem]"
             />
           </div>
 

@@ -10,12 +10,12 @@ import { Copy, CheckCheck, Clock, Loader2, CheckCircle2, AlertCircle, Info } fro
 
 // Mapeo de estados SEP-24 → UI
 export const STATUS_UI = {
-  pending_user_transfer_start: { label: 'Esperando tu transferencia', color: '#F59E0B', bg: '#F59E0B1A', icon: Clock,        spin: false },
-  pending_external:            { label: 'Confirmando en la red',       color: '#F59E0B', bg: '#F59E0B1A', icon: Loader2,      spin: true  },
+  pending_user_transfer_start: { label: 'Esperando tu transferencia', color: '#92400E', bg: '#F59E0B1A', icon: Clock,        spin: false },
+  pending_external:            { label: 'Confirmando en la red',       color: '#92400E', bg: '#F59E0B1A', icon: Loader2,      spin: true  },
   pending_anchor:              { label: 'Procesando',                  color: '#0D1F3C', bg: '#0D1F3C0D', icon: Loader2,      spin: true  },
-  completed:                   { label: 'Completado',                  color: '#22C55E', bg: '#22C55E1A', icon: CheckCircle2, spin: false },
-  error:                       { label: 'Error',                       color: '#EF4444', bg: '#EF44441A', icon: AlertCircle,  spin: false },
-  refunded:                    { label: 'Reembolsado',                 color: '#64748B', bg: '#64748B1A', icon: Info,         spin: false },
+  completed:                   { label: 'Completado',                  color: '#166534', bg: '#22C55E1A', icon: CheckCircle2, spin: false },
+  error:                       { label: 'Error',                       color: '#991B1B', bg: '#EF44441A', icon: AlertCircle,  spin: false },
+  refunded:                    { label: 'Reembolsado',                 color: '#334155', bg: '#64748B1A', icon: Info,         spin: false },
 }
 
 export function StatusPill({ status }) {
