@@ -34,7 +34,7 @@ export const COUNTRY_META = {
   PE: { name: 'Perú',            currency: 'PEN', currencyName: 'Sol Peruano',         flagCode: 'pe', flag: '🇵🇪', phonePrefix: '+51' },
   PY: { name: 'Paraguay',        currency: 'PYG', currencyName: 'Guaraní',             flagCode: 'py', flag: '🇵🇾', phonePrefix: '+595' },
   UY: { name: 'Uruguay',         currency: 'UYU', currencyName: 'Peso Uruguayo',       flagCode: 'uy', flag: '🇺🇾', phonePrefix: '+598' },
-  VE: { name: 'Venezuela',       currency: 'USD', currencyName: 'Dólar Americano',     flagCode: 've', flag: '🇻🇪', phonePrefix: '+58' },
+  VE: { name: 'Venezuela',       currency: 'VES', currencyName: 'Bolívar Venezolano',  flagCode: 've', flag: '🇻🇪', phonePrefix: '+58' },
 
   // ── Global ─────────────────────────────────────────────────────────────────
   AE: { name: 'Emiratos Árabes', currency: 'AED', currencyName: 'Dírham Emiratí',      flagCode: 'ae', flag: '🇦🇪', phonePrefix: '+971' },
@@ -73,6 +73,7 @@ export const CURRENCY_NAMES = {
   KRW: 'Won Coreano',     MXN: 'Peso Mexicano',   NGN: 'Naira Nigeriana',
   PEN: 'Sol Peruano',     PLN: 'Zloty',           PYG: 'Guaraní',
   SGD: 'Dólar Singapur',  USD: 'Dólar Americano', UYU: 'Peso Uruguayo',
+  VES: 'Bolívar Venezolano',
   ZAR: 'Rand Sudafricano',
 }
 
