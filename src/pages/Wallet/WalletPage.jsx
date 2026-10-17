@@ -86,18 +86,18 @@ function StatusBadge({ status }) {
 
 function TxIcon({ type }) {
   const map = {
-    deposit:     { icon: ArrowDownToLine, color: '#22C55E', bg: '#22C55E1A' },
-    withdrawal:  { icon: ArrowUpRight,    color: '#F87171', bg: '#EF44441A' },
-    send:        { icon: ArrowUpRight,    color: '#F87171', bg: '#EF44441A' },
-    receive:     { icon: ArrowDownToLine, color: '#22C55E', bg: '#22C55E1A' },
+    deposit:     { icon: ArrowDownToLine, color: '#166534', bg: '#22C55E1A' },
+    withdrawal:  { icon: ArrowUpRight,    color: '#991B1B', bg: '#EF44441A' },
+    send:        { icon: ArrowUpRight,    color: '#991B1B', bg: '#EF44441A' },
+    receive:     { icon: ArrowDownToLine, color: '#166534', bg: '#22C55E1A' },
     freeze:      { icon: AlertCircle,     color: '#8A96B8', bg: '#C4CBD81A' },
-    unfreeze:    { icon: CheckCircle2,    color: '#22C55E', bg: '#22C55E1A' },
+    unfreeze:    { icon: CheckCircle2,    color: '#166534', bg: '#22C55E1A' },
     fee:         { icon: ArrowRightLeft,  color: '#8A96B8', bg: '#C4CBD81A' },
-    bob_to_usdc: { icon: ArrowRightLeft,  color: '#F59E0B', bg: '#F59E0B1A' },
-    usdc_to_bob: { icon: ArrowRightLeft,  color: '#F59E0B', bg: '#F59E0B1A' },
-    usdc_deposit:{ icon: ArrowDownToLine, color: '#22C55E', bg: '#22C55E1A' },
-    p2p_send:    { icon: ArrowUpRight,    color: '#F87171', bg: '#EF44441A' },
-    p2p_receive: { icon: ArrowDownToLine, color: '#22C55E', bg: '#22C55E1A' },
+    bob_to_usdc: { icon: ArrowRightLeft,  color: '#92400E', bg: '#F59E0B1A' },
+    usdc_to_bob: { icon: ArrowRightLeft,  color: '#92400E', bg: '#F59E0B1A' },
+    usdc_deposit:{ icon: ArrowDownToLine, color: '#166534', bg: '#22C55E1A' },
+    p2p_send:    { icon: ArrowUpRight,    color: '#991B1B', bg: '#EF44441A' },
+    p2p_receive: { icon: ArrowDownToLine, color: '#166534', bg: '#22C55E1A' },
   }
   const m = map[type] ?? map.receive
   const Icon = m.icon

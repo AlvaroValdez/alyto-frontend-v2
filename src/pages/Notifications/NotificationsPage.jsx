@@ -20,39 +20,39 @@ import { fetchNotifications, markNotificationsRead } from '../../services/api'
 const TYPE_CONFIG = {
   payin_confirmed:      { Icon: ArrowDownLeft,  color: '#1D3461', bg: '#1D34611A' },
   payment_completed:    { Icon: CheckCircle2,   color: '#1D3461', bg: '#1D34611A' },
-  payout_sent:          { Icon: ArrowUpRight,   color: '#3B82F6', bg: '#3B82F61A' },
-  payment_failed:       { Icon: AlertCircle,    color: '#EF4444', bg: '#EF44441A' },
+  payout_sent:          { Icon: ArrowUpRight,   color: '#1E40AF', bg: '#3B82F61A' },
+  payment_failed:       { Icon: AlertCircle,    color: '#991B1B', bg: '#EF44441A' },
   deposit_confirmed:    { Icon: ArrowDownLeft,  color: '#1D3461', bg: '#1D34611A' },
-  withdrawal_requested: { Icon: ArrowUpRight,   color: '#F59E0B', bg: '#F59E0B1A' },
-  wallet_frozen:        { Icon: Snowflake,      color: '#EF4444', bg: '#EF44441A' },
+  withdrawal_requested: { Icon: ArrowUpRight,   color: '#92400E', bg: '#F59E0B1A' },
+  wallet_frozen:        { Icon: Snowflake,      color: '#991B1B', bg: '#EF44441A' },
   wallet_unfrozen:      { Icon: Sun,            color: '#1D3461', bg: '#1D34611A' },
   p2p_received:         { Icon: Wallet,         color: '#1D3461', bg: '#1D34611A' },
   conversion_confirmed: { Icon: ArrowRightLeft, color: '#1D3461', bg: '#1D34611A' },
-  conversion_rejected:  { Icon: AlertCircle,    color: '#EF4444', bg: '#EF44441A' },
+  conversion_rejected:  { Icon: AlertCircle,    color: '#991B1B', bg: '#EF44441A' },
   usdc_to_bob_confirmed:{ Icon: ArrowRightLeft, color: '#1D3461', bg: '#1D34611A' },
-  usdc_to_bob_rejected: { Icon: AlertCircle,    color: '#EF4444', bg: '#EF44441A' },
-  qr_payment:           { Icon: Wallet,         color: '#3B82F6', bg: '#3B82F61A' },
-  kyc:                  { Icon: CheckCircle2,   color: '#F59E0B', bg: '#F59E0B1A' },
+  usdc_to_bob_rejected: { Icon: AlertCircle,    color: '#991B1B', bg: '#EF44441A' },
+  qr_payment:           { Icon: Wallet,         color: '#1E40AF', bg: '#3B82F61A' },
+  kyc:                  { Icon: CheckCircle2,   color: '#92400E', bg: '#F59E0B1A' },
   // ── KYB / cuenta business ──
-  kyb_approved:         { Icon: Shield,         color: '#22C55E', bg: '#22C55E1A' },
-  kyb_rejected:         { Icon: AlertCircle,    color: '#EF4444', bg: '#EF44441A' },
-  kyb_more_info:        { Icon: FileText,       color: '#F59E0B', bg: '#F59E0B1A' },
-  kyb_under_review:     { Icon: Shield,         color: '#3B82F6', bg: '#3B82F61A' },
-  system:               { Icon: Bell,           color: '#64748B', bg: '#64748B1A' },
+  kyb_approved:         { Icon: Shield,         color: '#166534', bg: '#22C55E1A' },
+  kyb_rejected:         { Icon: AlertCircle,    color: '#991B1B', bg: '#EF44441A' },
+  kyb_more_info:        { Icon: FileText,       color: '#92400E', bg: '#F59E0B1A' },
+  kyb_under_review:     { Icon: Shield,         color: '#1E40AF', bg: '#3B82F61A' },
+  system:               { Icon: Bell,           color: '#334155', bg: '#64748B1A' },
   // ── Admin-facing ──
   transfer_initiated:      { Icon: ArrowUpRight,  color: '#233E58', bg: '#233E581A' },
-  admin_new_user:          { Icon: UserPlus,      color: '#3B82F6', bg: '#3B82F61A' },
-  admin_new_transaction:   { Icon: ArrowUpRight,  color: '#F59E0B', bg: '#F59E0B1A' },
-  admin_deposit_request:   { Icon: ArrowDownLeft, color: '#F59E0B', bg: '#F59E0B1A' },
-  admin_withdrawal_request:{ Icon: ArrowUpRight,  color: '#EF4444', bg: '#EF44441A' },
-  admin_conversion_request:{ Icon: ArrowRightLeft,color: '#F59E0B', bg: '#F59E0B1A' },
-  admin_kyb_submitted:     { Icon: Shield,        color: '#3B82F6', bg: '#3B82F61A' },
+  admin_new_user:          { Icon: UserPlus,      color: '#1E40AF', bg: '#3B82F61A' },
+  admin_new_transaction:   { Icon: ArrowUpRight,  color: '#92400E', bg: '#F59E0B1A' },
+  admin_deposit_request:   { Icon: ArrowDownLeft, color: '#92400E', bg: '#F59E0B1A' },
+  admin_withdrawal_request:{ Icon: ArrowUpRight,  color: '#991B1B', bg: '#EF44441A' },
+  admin_conversion_request:{ Icon: ArrowRightLeft,color: '#92400E', bg: '#F59E0B1A' },
+  admin_kyb_submitted:     { Icon: Shield,        color: '#1E40AF', bg: '#3B82F61A' },
   admin_payment_proof:     { Icon: FileText,      color: '#1D3461', bg: '#1D34611A' },
-  admin_p2p_transfer:      { Icon: Send,          color: '#3B82F6', bg: '#3B82F61A' },
+  admin_p2p_transfer:      { Icon: Send,          color: '#1E40AF', bg: '#3B82F61A' },
 }
 
 function getConfig(type) {
-  return TYPE_CONFIG[type] ?? { Icon: Bell, color: '#64748B', bg: '#64748B1A' }
+  return TYPE_CONFIG[type] ?? { Icon: Bell, color: '#334155', bg: '#64748B1A' }
 }
 
 // ── Tiempo relativo ──────────────────────────────────────────────────────────

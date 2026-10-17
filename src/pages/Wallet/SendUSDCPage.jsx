@@ -221,7 +221,7 @@ export default function SendUSDCPage() {
                   value={alias}
                   onChange={e => { setAlias(e.target.value); setError('') }}
                   placeholder="usuarioalyto"
-                  className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-14 pr-4 py-4 text-[#0F172A] text-[1.125rem] font-semibold focus:outline-none focus:border-[#0D6E52] focus:shadow-[0_0_0_3px_#0D6E521A] transition-all placeholder:text-[#CBD5E1]"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-14 pr-4 py-4 text-[#0F172A] text-[1.125rem] font-semibold focus:outline-none focus:border-[#0D6E52] focus:shadow-[0_0_0_3px_#0D6E521A] transition-all placeholder:text-[#5A6A8A]"
                 />
               </div>
               <p className="text-[0.6875rem] text-[#94A3B8] mt-1.5">
@@ -295,7 +295,7 @@ export default function SendUSDCPage() {
                   value={amount}
                   onChange={e => { setAmount(e.target.value); setError('') }}
                   placeholder="0.00"
-                  className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-20 py-4 text-[#0F172A] text-[1.5rem] font-bold focus:outline-none focus:border-[#0D6E52] focus:shadow-[0_0_0_3px_#0D6E521A] transition-all placeholder:text-[#CBD5E1]"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-20 py-4 text-[#0F172A] text-[1.5rem] font-bold focus:outline-none focus:border-[#0D6E52] focus:shadow-[0_0_0_3px_#0D6E521A] transition-all placeholder:text-[#5A6A8A]"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] font-semibold text-[0.875rem]">USDC</span>
               </div>
@@ -321,7 +321,7 @@ export default function SendUSDCPage() {
                 onChange={e => setDescription(e.target.value)}
                 maxLength={100}
                 placeholder="Ej: pago servicio, alquiler..."
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.9375rem] focus:outline-none focus:border-[#0D6E52] focus:shadow-[0_0_0_3px_#0D6E521A] transition-all placeholder:text-[#CBD5E1]"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] text-[0.9375rem] focus:outline-none focus:border-[#0D6E52] focus:shadow-[0_0_0_3px_#0D6E521A] transition-all placeholder:text-[#5A6A8A]"
               />
             </div>
 
