@@ -20,7 +20,11 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { request, requestFormData } from '../../services/api'
-import QRDisplay, { buildQRWithLogo } from '../../components/ui/QRDisplay'
+// El cobro en USDC usa la MISMA tarjeta que el de BOB. Antes esta pantalla
+// apilaba QR, monto y titular por su cuenta, así que se veía distinta al resto
+// y la imagen compartida salía sin diseño.
+import WalletQRCard from '../../components/ui/WalletQRCard'
+import { buildQRCardImage } from '../../components/ui/buildQRCardImage'
 import BankQrActions from '../../components/ui/BankQrActions'
 import { shareQRImage, shareFile } from '../../utils/shareImage'
 
@@ -1999,9 +2003,31 @@ function ReceiveUSDCModal({ open, onClose, user }) {
     }
   }
 
+  /** Monto ya formateado con su activo. Es lo que ve el usuario y lo que va a la imagen. */
+  const montoUSDC = qrData?.amount != null
+    ? `${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(qrData.amount)} USDC`
+    : undefined
+
+  /** Un solo origen de datos para la tarjeta en pantalla y para la imagen compartida. */
+  function datosTarjeta() {
+    return {
+      qrBase64:    qrData.qrBase64,
+      type:        qrData.type ?? (fixedAmount ? 'charge' : 'deposit'),
+      asset:       'USDC',
+      amountText:  montoUSDC,
+      creatorName: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim(),
+      description: description || undefined,
+      // Vencimiento como hora fija: la imagen se reenvía y un conteo vivo mentiría.
+      expiryText:  qrData.expiresAt
+        ? `Vence ${new Date(qrData.expiresAt).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}`
+        : undefined,
+      qrId:        qrData.qrId,
+    }
+  }
+
   async function handleShare() {
     if (!qrData?.qrBase64) return
-    const src  = await buildQRWithLogo(qrData.qrBase64, 'USDC')
+    const src  = await buildQRCardImage(datosTarjeta())
     const text = qrData.amount
       ? `Págame ${qrData.amount} USDC con Alyto`
       : `Envíame USDC en Alyto${description ? ` — ${description}` : ''}`
@@ -2013,32 +2039,25 @@ function ReceiveUSDCModal({ open, onClose, user }) {
     <Modal open={open} onClose={handleClose} title="Cobrar USDC">
       {qrData ? (
         <div className="flex flex-col items-center gap-5 py-2">
-          <div className="bg-white rounded-2xl p-4 border border-[#E2E8F0] shadow-sm flex items-center justify-center">
-            <QRDisplay src={qrData.qrBase64} alt="QR USDC Alyto" size={256} asset="USDC" />
-          </div>
-
-          <div className="text-center">
-            {qrData.amount != null && (
-              <p className="text-[1.5rem] font-bold text-[#0D6E52]">
-                {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(qrData.amount)} USDC
-              </p>
-            )}
-            <p className="text-[0.875rem] text-[#64748B] mt-0.5">
-              {user?.firstName} {user?.lastName}
-            </p>
-            {countdown != null && !expired && (
-              // #233E58 y no #94A3B8: en gris claro el contador daba 2.3:1 y el usuario no
-              // podía leer cuánto le queda, que es justo el dato por el que existe el chip.
-              <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.75rem] font-semibold bg-[#F1F5F9] text-[#233E58]">
-                <Clock size={12} /> Expira en {mm}:{ss}
-              </div>
-            )}
-            {expired && (
-              <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.75rem] font-semibold bg-[#EF44441A] text-[#EF4444]">
-                <AlertCircle size={12} /> QR expirado
-              </div>
-            )}
-          </div>
+          {/* La tarjeta compone QRDisplay, así que el anillo verde de USDC y los
+              módulos sin recortar siguen saliendo de ahí. El conteo NO se mueve
+              acá dentro: se pasa por slot, igual que en la pantalla de BOB. */}
+          <WalletQRCard
+            {...datosTarjeta()}
+            expirySlot={
+              countdown != null && !expired ? (
+                // #233E58 y no #94A3B8: en gris claro el contador daba 2.3:1 y el
+                // usuario no podía leer cuánto le queda, que es el dato del chip.
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.75rem] font-semibold bg-[#F1F5F9] text-[#233E58]">
+                  <Clock size={12} /> Expira en {mm}:{ss}
+                </span>
+              ) : expired ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.75rem] font-semibold bg-[#EF44441A] text-[#EF4444]">
+                  <AlertCircle size={12} /> QR expirado
+                </span>
+              ) : null
+            }
+          />
 
           <div className="flex gap-3 w-full">
             <button onClick={handleShare}
