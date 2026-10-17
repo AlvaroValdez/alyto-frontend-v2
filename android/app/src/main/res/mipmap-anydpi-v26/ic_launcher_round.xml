@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Icono adaptativo. El fondo va A SANGRE: la capa de fondo debe cubrir los
+  108x108dp completos, porque el launcher recorta con su propia máscara
+  (círculo, squircle, etc.). El andamiaje de Capacitor aplicaba inset="16.7%"
+  también al fondo, lo que dejaba los bordes transparentes.
+
+  El chevron del foreground ya se genera al 58% del lienzo, dentro de la zona
+  segura del 66,6%, así que tampoco necesita inset.
+-->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background>
-        <inset android:drawable="@mipmap/ic_launcher_background" android:inset="16.7%" />
-    </background>
-    <foreground>
-        <inset android:drawable="@mipmap/ic_launcher_foreground" android:inset="16.7%" />
-    </foreground>
+    <background android:drawable="@mipmap/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
 </adaptive-icon>

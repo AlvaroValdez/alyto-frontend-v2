@@ -23,6 +23,24 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  /* En el WebView de Android, mantener pulsado o arrastrar un enlace o un botón
+     abre el menú del navegador y deja ver la URL interna (app.alyto.app/...).
+     Dos testers lo reportaron sobre la barra de navegación inferior.
+
+     Se aplica SOLO a controles e imágenes. No se toca `user-select` del texto:
+     el usuario necesita poder copiar su alias, su dirección Stellar y los
+     identificadores de transacción. */
+  a, button, [role='button'], img, svg {
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
+  }
+
+  a, button, [role='button'] {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
 }
 
 @layer utilities {

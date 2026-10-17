@@ -141,10 +141,8 @@ function TabCobrar({ user, initialAmount = '', initialDescription = '' }) {
   async function handleDownload() {
     if (!qrData?.qrBase64) return
     const src = await buildQRWithLogo(qrData.qrBase64, qrData.asset ?? asset)
-    const a = document.createElement('a')
-    a.href     = src
-    a.download = `alyto-qr-${qrData.qrId}.png`
-    a.click()
+    // `<a download>` no funciona en el WebView de Android: share sheet nativo.
+    await shareQRImage({ dataUrl: src, title: 'QR Alyto', filename: `alyto-qr-${qrData.qrId}.png` })
   }
 
   function handleReset() {
@@ -738,10 +736,8 @@ function TabMiQR({ user }) {
   async function handleDownload() {
     if (!qrData?.qrBase64) return
     const src = await buildQRWithLogo(qrData.qrBase64)
-    const a = document.createElement('a')
-    a.href     = src
-    a.download = `alyto-mi-qr-${user.firstName}.png`
-    a.click()
+    // `<a download>` no funciona en el WebView de Android: share sheet nativo.
+    await shareQRImage({ dataUrl: src, title: 'Mi QR Alyto', filename: `alyto-mi-qr-${user.firstName}.png` })
   }
 
   if (loading) {
