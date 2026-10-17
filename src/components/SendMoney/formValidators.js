@@ -215,57 +215,29 @@ export function validateNUBAN(value) {
 }
 
 // ─── Venezuela ──────────────────────────────────────────────────────────────
-// Tres envíos a Venezuela fallaron el 14-oct porque la app aceptaba formatos
-// que Vita rechaza, y el usuario se enteraba DESPUÉS de confirmar:
-//   VITA_INVALID_FIELD document_number (305): "Solo se permiten números"
-//   VITA_INVALID_FIELD account_bank    (305): "debe tener 20 dígitos y
-//                                              comenzar con un código de banco válido"
-// No había ningún validador de Venezuela en FIELD_VALIDATORS.
+// NO hay validadores de Venezuela escritos a mano, y es deliberado.
+//
+// Los hubo: se escribieron tras tres envíos rechazados por Vita el 14-oct. Al
+// consultar las reglas que Vita publica resultó que eran PEORES que las suyas:
+//
+//   documento : Vita admite min=6 max=10 con ^\d+$.
+//               El validador propio exigía entre 6 y 9 — un rango inventado que
+//               habría rechazado documentos válidos de 10 dígitos.
+//   cuenta    : Vita exige ^(0102|0156|…|0116)\d{16}$, con la lista de bancos
+//               venezolanos mantenida por ellos. El propio aceptaba cualquier
+//               combinación de 20 dígitos, incluido un código de banco falso.
+//
+// Esas reglas llegan ahora en `field.pattern` y `field.hint` desde el backend
+// (ver transformVitaField en paymentController), así que las aplica el guard
+// genérico de validateField. Mantener una copia a mano solo crearía una segunda
+// fuente de verdad que envejece.
+//
+// Escribir un validador aquí solo se justifica para lo que una expresión regular
+// no puede expresar: dígitos verificadores, como en validateCLABE o validateCPF.
 
 /** Normaliza a dígitos: el beneficiario suele mandar el dato con puntos o guiones. */
 export function soloDigitos(value) {
   return String(value ?? '').replace(/\D/g, '')
-}
-
-/**
- * ⚠️ Valida el valor CRUDO, no el normalizado.
- *
- * Al escribir, `normalizaCampo` ya limpia el campo, así que un usuario tecleando
- * nunca ve este error. Pero el valor puede llegar prefijado desde un contacto
- * guardado antes de este cambio, con puntos o guiones, y ahí es donde hay que
- * avisar: si el validador normalizara por dentro daría el dato por bueno y se
- * enviaría sucio a Vita, que es exactamente el fallo que esto viene a corregir.
- */
-export function validateVEDocumento(value) {
-  if (!value) return 'El número de documento es requerido'
-  const crudo = String(value).trim()
-  if (!/^\d+$/.test(crudo)) {
-    return 'El número de documento solo admite dígitos (sin puntos, guiones ni letras)'
-  }
-  if (crudo.length < 6 || crudo.length > 9) {
-    return `El número de documento debe tener entre 6 y 9 dígitos (tiene ${crudo.length})`
-  }
-  return null
-}
-
-/**
- * Cuenta bancaria venezolana: 20 dígitos, los 4 primeros son el código del banco.
- *
- * A propósito NO se valida el código contra una lista de bancos: mantenerla al
- * día es trabajo manual y una lista desactualizada rechazaría cuentas buenas.
- * Ese filtro lo hace Vita, que es quien tiene el dato vigente. Aquí se corta lo
- * que seguro está mal, que es lo que falló: longitud y caracteres.
- */
-export function validateVECuenta(value) {
-  if (!value) return 'El número de cuenta es requerido'
-  const crudo = String(value).trim()
-  if (!/^\d+$/.test(crudo)) {
-    return 'El número de cuenta solo admite dígitos (sin espacios ni guiones)'
-  }
-  if (crudo.length !== 20) {
-    return `La cuenta debe tener 20 dígitos (tiene ${crudo.length})`
-  }
-  return null
 }
 
 /**
@@ -278,7 +250,7 @@ export function validateVECuenta(value) {
  * se le caían a otro.
  */
 const CAMPOS_SOLO_DIGITOS = {
-  VE: ['account_bank', 'document_number', 'beneficiary_document_number'],
+  VE: ['account_bank', 'document_number', 'beneficiary_document_number', 'associate_phone'],
 }
 
 /** Devuelve el valor normalizado para el campo, o el mismo valor si no aplica. */
@@ -317,13 +289,6 @@ export const FIELD_VALIDATORS = {
   email:                     validateEmail,
   beneficiary_email:         validateEmail,
 
-  // Venezuela. Acotados por país: en cualquier otro corredor devuelven null y
-  // no cambian nada. Se cubren las dos variantes de clave porque el backend usa
-  // `document_number` y `beneficiary_document_number` según el origen del campo
-  // (ver paymentController.js:3079).
-  account_bank:                 (v, ctx) => ctx?.country === 'VE' ? validateVECuenta(v)    : null,
-  document_number:              (v, ctx) => ctx?.country === 'VE' ? validateVEDocumento(v) : null,
-  beneficiary_document_number:  (v, ctx) => ctx?.country === 'VE' ? validateVEDocumento(v) : null,
 }
 
 /**
