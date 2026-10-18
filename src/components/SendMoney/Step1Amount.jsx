@@ -13,6 +13,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { ChevronDown, ChevronUp, Clock, AlertCircle, RefreshCw, WifiOff, Loader2, Search, X, ChevronRight } from 'lucide-react'
 import { useQuoteContext } from '../../context/QuoteContext'
+import { INTEGER_CURRENCIES, formatOriginAmount } from '../../utils/money'
 import { useAuth }        from '../../context/AuthContext'
 import { listUserCorridors, getCurrentExchangeRates } from '../../services/paymentsService'
 import { COUNTRY_META, CURRENCY_NAMES, flagUrl } from '../../config/countries'
@@ -73,8 +74,6 @@ function corridorsToCountries(corridors) {
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 
-// Monedas que no usan decimales (enteros puros)
-const INTEGER_CURRENCIES = new Set(['CLP', 'PYG', 'JPY', 'KRW'])
 
 function formatAmount(value) {
   if (!value) return ''
@@ -92,28 +91,6 @@ function formatDestAmount(amount, currency) {
   })} ${currency}`
 }
 
-/** Símbolo local de la moneda de ORIGEN. Espejo de utils/currencyDisplay.js del backend. */
-const ORIGIN_SYMBOLS = { BOB: 'Bs', CLP: '$', USD: 'US$' }
-
-/**
- * El dinero del usuario, en SU moneda: símbolo local y sin el código ISO al lado.
- *
- * El código ISO se reserva para el importe de DESTINO (`formatDestAmount`), donde
- * sí aporta: ahí el usuario necesita saber en qué moneda cobra el beneficiario. En
- * el lado origen sólo duplica ("Bs21,67 BOB") o, peor, obliga a convertir
- * mentalmente cuando se anuncia en una moneda que no es la suya.
- */
-function formatOriginAmount(amount, currency) {
-  const n = Number(amount)
-  if (!isFinite(n)) return '—'
-  const decimals = INTEGER_CURRENCIES.has(currency) ? 0 : 2
-  const numero   = n.toLocaleString('es-CL', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  })
-  const simbolo = ORIGIN_SYMBOLS[currency]
-  return simbolo ? `${simbolo} ${numero}` : `${numero} ${currency}`
-}
 
 function timeAgoShort(iso) {
   if (!iso) return null
