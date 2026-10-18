@@ -25,6 +25,7 @@ import { request, requestFormData } from '../../services/api'
 // y la imagen compartida salía sin diseño.
 import WalletQRCard from '../../components/ui/WalletQRCard'
 import { buildQRCardImage } from '../../components/ui/buildQRCardImage'
+import { buildReceiptImage } from '../../components/ui/buildReceiptImage'
 import BankQrActions from '../../components/ui/BankQrActions'
 import { shareQRImage, shareFile } from '../../utils/shareImage'
 
@@ -113,15 +114,19 @@ function TxIcon({ type }) {
   )
 }
 
+// Se exporta del ámbito del componente porque el resumen compartible usa las
+// MISMAS etiquetas: si cada uno tuviera la suya, la imagen podría decir un
+// estado distinto del que muestra la pantalla.
+const ESTADOS = {
+  awaiting_proof: { bg: '#F59E0B1A', text: '#D97706', label: 'Pendiente de comprobante' },
+  pending:        { bg: '#64748B1A', text: '#64748B', label: 'Pendiente' },
+  completed:      { bg: '#22C55E1A', text: '#22C55E', label: 'Completado' },
+  failed:         { bg: '#EF44441A', text: '#F87171', label: 'Fallido' },
+  reversed:       { bg: '#64748B1A', text: '#64748B', label: 'Revertido' },
+}
+
 function TxStatusBadge({ status }) {
-  const map = {
-    awaiting_proof: { bg: '#F59E0B1A', text: '#D97706', label: 'Pendiente de comprobante' },
-    pending:        { bg: '#64748B1A', text: '#64748B', label: 'Pendiente' },
-    completed:      { bg: '#22C55E1A', text: '#22C55E', label: 'Completado' },
-    failed:         { bg: '#EF44441A', text: '#F87171', label: 'Fallido' },
-    reversed:       { bg: '#64748B1A', text: '#64748B', label: 'Revertido' },
-  }
-  const s = map[status] ?? map.pending
+  const s = ESTADOS[status] ?? ESTADOS.pending
   return (
     <span className="text-[0.625rem] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
       style={{ background: s.bg, color: s.text }}>
@@ -1597,9 +1602,10 @@ function TxDetailModal({ tx, open, onClose, currency }) {
   const [proof, setProof]     = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
+  const [sharing, setSharing] = useState(false)
 
   useEffect(() => {
-    if (!open) { setProof(null); setError(''); setLoading(false) }
+    if (!open) { setProof(null); setError(''); setLoading(false); setSharing(false) }
   }, [open])
 
   if (!tx) return null
@@ -1623,9 +1629,53 @@ function TxDetailModal({ tx, open, onClose, currency }) {
   const isPdf = proof?.mimeType === 'application/pdf'
   const src   = proof ? `data:${proof.mimeType};base64,${proof.base64}` : ''
 
+  /**
+   * Comparte un RESUMEN del movimiento como imagen.
+   *
+   * No confundir con el bloque de abajo: ese muestra el comprobante bancario
+   * que Alyto adjunta al procesar un retiro. Esto es una imagen generada acá,
+   * sin valor fiscal, y la propia imagen lo dice.
+   *
+   * El saldo NO se le pasa a propósito, aunque `tx` lo traiga: un resumen dice
+   * cuánto se movió, no cuánto tenés, y esta imagen se reenvía.
+   */
+  async function compartirResumen() {
+    setSharing(true); setError('')
+    try {
+      const dataUrl = await buildReceiptImage({
+        type:        tx.type,
+        amountText:  currency === 'USDC' ? formatUSDC(tx.amount) : formatBOB(tx.amount),
+        estado:      (ESTADOS[tx.status] ?? ESTADOS.pending).label,
+        fecha:       formatDate(tx.createdAt),
+        contraparte: m.recipientAlias ? `@${m.recipientAlias}` : m.senderAlias ? `@${m.senderAlias}` : undefined,
+        concepto:    tx.description || undefined,
+        wtxId:       tx.wtxId,
+        stellarTxId: tx.stellarTxId || undefined,
+      })
+      await shareQRImage({
+        dataUrl,
+        text:     `${txLabel(tx)} · ${currency === 'USDC' ? formatUSDC(tx.amount) : formatBOB(tx.amount)}`,
+        title:    'Movimiento Alyto',
+        filename: `alyto-movimiento-${tx.wtxId}.png`,
+      })
+    } catch (err) {
+      setError(err.message ?? 'No se pudo generar el resumen.')
+    } finally {
+      setSharing(false)
+    }
+  }
+
   return (
     <Modal open={open} onClose={onClose} title="Detalle del movimiento">
       <div className="space-y-4">
+        <button onClick={compartirResumen} disabled={sharing}
+          className="w-full py-3 rounded-xl font-semibold text-[0.875rem] text-white flex items-center justify-center gap-2 disabled:opacity-40"
+          style={{ background: '#233E58' }}>
+          {sharing
+            ? <><Loader2 size={16} className="animate-spin" /> Generando…</>
+            : <><Share2 size={16} /> Compartir resumen</>}
+        </button>
+
         <div className="bg-[#F8FAFC] rounded-2xl p-4 border border-[#E2E8F0] space-y-2.5">
           <div className="flex justify-between"><span className="text-[0.75rem] text-[#94A3B8]">Tipo</span>
             <span className="text-[0.875rem] font-semibold text-[#0F172A]">{txLabel(tx)}</span></div>
@@ -1725,11 +1775,14 @@ function TxList({ txs, txLoading, txPages, txPage, setTxPage, currency }) {
     <div>
       <div className="space-y-2">
         {txs.map(tx => {
-          const clickable = tx.type === 'withdrawal'
+          // Antes solo los retiros abrían el detalle, así que un pago por QR o
+          // una conversión no tenían dónde consultarse ni desde dónde
+          // compartirse. Ahora abre cualquier movimiento; el bloque del
+          // comprobante bancario sigue siendo exclusivo del retiro.
           return (
           <button key={tx._id ?? tx.wtxId} type="button"
-            onClick={clickable ? () => setSelectedTx(tx) : undefined}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left ${clickable ? 'hover:border-[#CBD5E1] transition-colors cursor-pointer' : 'cursor-default'}`}
+            onClick={() => setSelectedTx(tx)}
+            className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left hover:border-[#CBD5E1] transition-colors cursor-pointer"
             style={{ background: 'white', border: '1px solid #E2E8F0' }}>
             <TxIcon type={tx.type} />
             <div className="flex-1 min-w-0">
