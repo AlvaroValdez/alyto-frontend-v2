@@ -5,53 +5,7 @@
  * Ejecutar: node scripts/checkProduction.js
  */
 
-const REQUIRED_VARS = [
-  {
-    key: 'VITE_API_URL',
-    validate: (v) => v.startsWith('https://'),
-    hint: 'Debe comenzar con https://',
-  },
-  {
-    key: 'VITE_WS_URL',
-    validate: (v) => v.startsWith('wss://'),
-    hint: 'Debe comenzar con wss://',
-  },
-  {
-    key: 'VITE_SENTRY_DSN',
-    validate: (v) => v.length > 0,
-    hint: 'Requerida para monitoreo de errores en producción',
-  },
-  {
-    key: 'VITE_FIREBASE_API_KEY',
-    validate: (v) => v.length > 0,
-    hint: 'Requerida para autenticación y notificaciones push',
-  },
-  {
-    key: 'VITE_FIREBASE_PROJECT_ID',
-    validate: (v) => v.length > 0,
-    hint: 'Requerida para identificar el proyecto Firebase',
-  },
-  {
-    key: 'VITE_FIREBASE_MESSAGING_SENDER_ID',
-    validate: (v) => v.length > 0,
-    hint: 'Requerida para Firebase Cloud Messaging',
-  },
-  {
-    key: 'VITE_FIREBASE_APP_ID',
-    validate: (v) => v.length > 0,
-    hint: 'Requerida para inicializar Firebase App',
-  },
-  {
-    key: 'VITE_FIREBASE_VAPID_KEY',
-    validate: (v) => v.length > 0,
-    hint: 'Requerida para notificaciones push web (VAPID)',
-  },
-  {
-    key: 'VITE_SUPPORT_WHATSAPP',
-    validate: (v) => v.startsWith('+'),
-    hint: 'Debe incluir código de país, ej: +56949705364',
-  },
-];
+import { REQUIRED_VARS } from './requiredEnv.js';
 
 // ── Colores ANSI ──────────────────────────────────────────────────────────────
 const c = {
