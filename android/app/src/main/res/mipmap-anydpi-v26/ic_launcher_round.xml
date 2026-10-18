@@ -5,8 +5,14 @@
   (círculo, squircle, etc.). El andamiaje de Capacitor aplicaba inset="16.7%"
   también al fondo, lo que dejaba los bordes transparentes.
 
-  El chevron del foreground ya se genera al 58% del lienzo, dentro de la zona
-  segura del 66,6%, así que tampoco necesita inset.
+  El foreground lleva el LOGOTIPO, igual que la ficha de Google Play. Se genera
+  al 57% del ancho del lienzo y no necesita inset: de los 108dp solo está
+  garantizado el círculo central de 66dp, y con una relación de 2,778:1 ese es
+  el ancho máximo que cabe dentro (0,575 del lienzo). Se usa 57% por margen.
+
+  Antes aquí iba el isotipo. El icono heredado (ic_launcher.png, solo Android
+  7.x con minSdk 24) ya era el logotipo, así que los teléfonos modernos veían
+  un icono distinto al de la ficha.
 -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@mipmap/ic_launcher_background" />
