@@ -7,6 +7,30 @@ export default defineConfig(({ mode }) => {
   // Carga TODAS las variables del .env (con y sin prefijo VITE_)
   const env = loadEnv(mode, process.cwd(), '')
 
+  // ── Barrera: no permitir una compilacion de produccion sin API ────────────
+  //
+  // `src/services/api.js` tiene este respaldo:
+  //     VITE_API_URL ?? 'http://localhost:3000/api/v1'
+  // que es correcto en desarrollo y CATASTROFICO en un binario publicado: la
+  // app queda hablando con el propio telefono y NADIE puede iniciar sesion,
+  // sin ningun error visible en el servidor porque las peticiones no salen.
+  //
+  // Paso de verdad: el versionCode 3 se publico en Google Play apuntando a
+  // localhost. Se compilo en un arbol limpio y `.env.production`, que tiene la
+  // URL buena, esta en .gitignore, asi que no existia alli. Vite no avisa de una
+  // variable ausente, simplemente la deja sin definir.
+  //
+  // Compilar Android NO pasa por docker-compose, que es donde viven los build
+  // args del despliegue web, de modo que ese camino no estaba cubierto por nada.
+  if (mode === 'production' && !env.VITE_API_URL) {
+    throw new Error(
+      '\n\n  VITE_API_URL no esta definida y se esta compilando en modo produccion.\n' +
+      '  El binario quedaria apuntando a http://localhost:3000 y nadie podria entrar.\n\n' +
+      '  Copia .env.production al directorio de compilacion antes de construir:\n' +
+      '    cp /ruta/al/repo/.env.production .\n\n'
+    );
+  }
+
   return {
     plugins: [
       react(),
