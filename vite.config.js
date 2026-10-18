@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import fs    from 'fs'
 import path  from 'path'
+import { revisarEntorno } from './scripts/requiredEnv.js'
 
 export default defineConfig(({ mode }) => {
   // Carga TODAS las variables del .env (con y sin prefijo VITE_)
@@ -22,13 +23,28 @@ export default defineConfig(({ mode }) => {
   //
   // Compilar Android NO pasa por docker-compose, que es donde viven los build
   // args del despliegue web, de modo que ese camino no estaba cubierto por nada.
-  if (mode === 'production' && !env.VITE_API_URL) {
-    throw new Error(
-      '\n\n  VITE_API_URL no esta definida y se esta compilando en modo produccion.\n' +
-      '  El binario quedaria apuntando a http://localhost:3000 y nadie podria entrar.\n\n' +
-      '  Copia .env.production al directorio de compilacion antes de construir:\n' +
-      '    cp /ruta/al/repo/.env.production .\n\n'
-    );
+  // La comprobacion vive AQUI y no solo en `npm run check:production` porque ese
+  // script lo encadena `build:production`, mientras que el binario de Android se
+  // construye con `cap:sync`, que llama a `build` a secas. El camino por el que
+  // sale la app era justo el unico sin verificar.
+  //
+  // Ademas `loadEnv` resuelve la precedencia real (.env, .env.production,
+  // .env.local...), cosa que checkProduction.js no hace: ese lee solo
+  // .env.production y no ve que un valor VACIO ahi anula el bueno de .env. Asi
+  // se estuvo a punto de publicar un binario sin Firebase ni Sentry.
+  if (mode === 'production') {
+    const problemas = revisarEntorno(env)
+    if (problemas.length) {
+      throw new Error(
+        '\n\n  Compilacion de produccion detenida: ' +
+        `${problemas.length} variable(s) de entorno sin valor valido.\n\n` +
+        problemas.map(p => `    ${p.key} — ${p.motivo}\n      ${p.hint}`).join('\n') +
+        '\n\n  El binario saldria roto y sin aviso: sin VITE_API_URL queda apuntando\n' +
+        '  a http://localhost:3000 y no puede entrar nadie.\n\n' +
+        '  Copia el .env.production del repositorio al directorio de compilacion:\n' +
+        '    cp /ruta/al/repo/.env.production .\n\n'
+      );
+    }
   }
 
   return {
