@@ -22,67 +22,9 @@
 
 import { buildQRWithLogo } from './QRDisplay'
 import { TIPOS } from './WalletQRCard'
-
-// Paleta — la misma de la tarjeta (tokens.css), acá en literal porque el canvas
-// no resuelve variables CSS.
-const C = {
-  fondo:      '#FFFFFF',
-  borde:      '#E2E8F0',
-  cabecera:   '#233E58',
-  texto:      '#0D1F3C',
-  secundario: '#5A6A8A',
-  tenue:      '#9AA5C0',
-}
-
-const FUENTE = "'Manrope', system-ui, -apple-system, sans-serif"
-const LOGO_RATIO = 604 / 217
-
-/** Rectángulo redondeado. `ctx.roundRect` no está en WebViews viejas de Android. */
-function rectRedondo(ctx, x, y, w, h, r) {
-  const rr = Math.min(r, w / 2, h / 2)
-  ctx.beginPath()
-  ctx.moveTo(x + rr, y)
-  ctx.lineTo(x + w - rr, y)
-  ctx.quadraticCurveTo(x + w, y, x + w, y + rr)
-  ctx.lineTo(x + w, y + h - rr)
-  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h)
-  ctx.lineTo(x + rr, y + h)
-  ctx.quadraticCurveTo(x, y + h, x, y + h - rr)
-  ctx.lineTo(x, y + rr)
-  ctx.quadraticCurveTo(x, y, x + rr, y)
-  ctx.closePath()
-}
-
-/**
- * Texto con tracking, letra por letra.
- *
- * `ctx.letterSpacing` existe pero es reciente (Chrome 99+, Safari 16+) y acá
- * corre dentro de una WebView que puede ser más vieja; si no está, el chip
- * perdería las versalitas sin avisar.
- */
-function textoConTracking(ctx, texto, x, y, tracking) {
-  let cursor = x
-  for (const ch of texto) {
-    ctx.fillText(ch, cursor, y)
-    cursor += ctx.measureText(ch).width + tracking
-  }
-}
-
-function anchoConTracking(ctx, texto, tracking) {
-  let w = 0
-  for (const ch of texto) w += ctx.measureText(ch).width + tracking
-  return w - tracking
-}
-
-/** Carga una imagen y resuelve a null si falla, para no colgar el compartir. */
-function cargarImagen(src) {
-  return new Promise((resolve) => {
-    const img = new Image()
-    img.onload = () => resolve(img)
-    img.onerror = () => resolve(null)
-    img.src = src
-  })
-}
+import {
+  C, FUENTE, LOGO_RATIO, rectRedondo, cargarImagen, esperarFuentes, dibujarCabecera,
+} from './cardCanvas'
 
 /**
  * @param {object}  o
@@ -114,7 +56,7 @@ export async function buildQRCardImage({
 
   // Esperar a que Manrope esté lista; si no, el canvas cae a una genérica y la
   // tarjeta compartida no se parece a la de la pantalla.
-  try { await document.fonts?.ready } catch { /* navegador sin Font Loading API */ }
+  await esperarFuentes()
 
   const [qrImg, logoImg] = await Promise.all([
     cargarImagen(qrConLogo),
@@ -173,33 +115,11 @@ export async function buildQRCardImage({
   ctx.fillRect(0, 0, W, H)
 
   // ── Cabecera ────────────────────────────────────────────────────────────────
-  ctx.fillStyle = C.cabecera
-  ctx.fillRect(0, 0, W, cabeceraH)
-
-  if (logoImg) {
-    ctx.imageSmoothingEnabled = true
-    ctx.imageSmoothingQuality = 'high'
-    ctx.drawImage(logoImg, padCuerpo, Math.round((cabeceraH - logoH) / 2), logoW, logoH)
-  }
-
-  // Chip del tipo: versalitas, traslúcido, para acompañar al logotipo sin competirle.
-  const chipTxt = tipo.titulo.toUpperCase()
-  const tracking = F.chip * 0.12
-  ctx.font = `600 ${F.chip}px ${FUENTE}`
-  const chipTxtW = anchoConTracking(ctx, chipTxt, tracking)
-  const chipPadX = 26
-  const chipW = chipTxtW + chipPadX * 2
-  const chipH = F.chip + 24
-  const chipX = W - padCuerpo - chipW
-  const chipY = Math.round((cabeceraH - chipH) / 2)
-  ctx.fillStyle = 'rgba(255,255,255,0.12)'
-  rectRedondo(ctx, chipX, chipY, chipW, chipH, chipH / 2)
-  ctx.fill()
-  ctx.strokeStyle = 'rgba(255,255,255,0.18)'
-  ctx.lineWidth = 2
-  ctx.stroke()
-  ctx.fillStyle = 'rgba(255,255,255,0.82)'
-  textoConTracking(ctx, chipTxt, chipX + chipPadX, chipY + 12, tracking)
+  // Compartida con el comprobante de movimiento: misma marca, mismo chip.
+  dibujarCabecera(ctx, {
+    W, logoImg, chipTexto: tipo.titulo,
+    padLateral: padCuerpo, logoW, fontChip: F.chip,
+  })
 
   // ── Cuerpo ──────────────────────────────────────────────────────────────────
   let y = cabeceraH + 44
