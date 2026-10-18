@@ -16,6 +16,7 @@ import { useQuoteContext } from '../../context/QuoteContext'
 import Sentry from '../../services/sentry.js'
 import { countryName } from '../../config/countries'
 import { FINTOC_ENABLED } from '../../config/featureFlags'
+import { formatOriginAmount } from '../../utils/money'
 
 // Tiempo máximo que consideramos válida una cotización si no viene quoteExpiresAt
 const QUOTE_MAX_AGE_MS = 4 * 60 * 1000  // 4 minutos
@@ -479,7 +480,7 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
 
         <Row
           label="Envías"
-          value={`$${Number(originAmount).toLocaleString('es-CL')} ${originCurrency}`}
+          value={formatOriginAmount(originAmount, originCurrency)}
           valueClass="text-[#0D1F3C] text-[0.9375rem]"
         />
         <Row
@@ -501,7 +502,7 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
               }
             </div>
             <span className="text-[0.8125rem] font-semibold text-[#4A5568]">
-              {costoEnvio > 0 ? `$${costoEnvio.toLocaleString('es-CL')} ${originCurrency}` : '—'}
+              {costoEnvio > 0 ? formatOriginAmount(costoEnvio, originCurrency) : '—'}
             </span>
           </button>
 
@@ -511,7 +512,7 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
                 <div className="flex justify-between">
                   <span className="text-[0.75rem] text-[#94A3B8]">· Comisión de servicio</span>
                   <span className="text-[0.75rem] text-[#94A3B8]">
-                    ${comisionServicio.toLocaleString('es-CL')} {originCurrency}
+                    {formatOriginAmount(comisionServicio, originCurrency)}
                   </span>
                 </div>
               )}
@@ -519,7 +520,7 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
                 <div className="flex justify-between">
                   <span className="text-[0.75rem] text-[#94A3B8]">· Fee de procesamiento</span>
                   <span className="text-[0.75rem] text-[#94A3B8]">
-                    ${feeProcesamiento.toLocaleString('es-CL')} {originCurrency}
+                    {formatOriginAmount(feeProcesamiento, originCurrency)}
                   </span>
                 </div>
               )}
