@@ -7,12 +7,19 @@
 // Tema CLARO (tokens.css): navy #0D1F3C primary, cards blancos, Manrope.
 // El historial vive solo en el cliente; el backend degrada a soporte humano
 // si la IA está apagada o falla (source: 'fallback').
+//
+// Cada respuesta generada por la IA lleva un control para denunciarla. No es
+// decorativo: la política de IA generativa de Google Play exige que se pueda
+// denunciar contenido ofensivo sin salir de la app, y sin eso no se puede
+// declarar a Aly en la ficha. Se ofrece solo en los mensajes que ha escrito el
+// modelo: ni en la bienvenida ni en los de respaldo, que son texto fijo nuestro
+// y denunciarlos no significaría nada.
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
-import { MessageCircle, X, Send, Loader2 } from 'lucide-react'
+import { MessageCircle, X, Send, Loader2, Flag, Check } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { sendSupportMessage } from '../../services/supportService'
+import { sendSupportMessage, reportSupportMessage, MOTIVOS_DENUNCIA } from '../../services/supportService'
 
 const FONT = "'Manrope', sans-serif"
 const MAX_HISTORY = 10 // turnos que se reenvían al backend (también lo capa el server)
@@ -93,6 +100,12 @@ export default function SupportChatWidget() {
     }
   }, [input, loading, messages])
 
+  // Marca el mensaje i como denunciado para que no se pueda repetir y quede
+  // constancia visible de que se envió.
+  const marcarDenunciado = useCallback((i) => {
+    setMessages((prev) => prev.map((m, j) => (j === i ? { ...m, reported: true } : m)))
+  }, [])
+
   const onKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -159,11 +172,21 @@ export default function SupportChatWidget() {
           {/* Mensajes */}
           <div
             ref={scrollRef}
+            data-chat-scroll
             className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-2"
             style={{ background: 'var(--color-bg-app)' }}
           >
             {messages.map((m, i) => (
-              <Bubble key={i} role={m.role} text={m.text} fallback={m.fallback} />
+              <Bubble
+                key={i}
+                role={m.role}
+                text={m.text}
+                fallback={m.fallback}
+                intro={m.intro}
+                reported={m.reported}
+                mensajeUsuario={messages[i - 1]?.role === 'user' ? messages[i - 1].text : null}
+                onReported={() => marcarDenunciado(i)}
+              />
             ))}
             {loading && <TypingBubble />}
           </div>
@@ -233,10 +256,14 @@ export default function SupportChatWidget() {
 
 // ── Subcomponentes ────────────────────────────────────────────────────────────
 
-function Bubble({ role, text, fallback }) {
+function Bubble({ role, text, fallback, intro, reported, mensajeUsuario, onReported }) {
   const isUser = role === 'user'
+  // Solo lo que ha escrito el modelo es denunciable. La bienvenida (intro) y los
+  // mensajes de respaldo (fallback) son texto fijo nuestro.
+  const denunciable = !isUser && !intro && !fallback
+
   return (
-    <div className="flex" style={{ justifyContent: isUser ? 'flex-end' : 'flex-start' }}>
+    <div className="flex flex-col" style={{ alignItems: isUser ? 'flex-end' : 'flex-start' }}>
       <div
         style={{
           maxWidth: '82%',
@@ -260,6 +287,164 @@ function Bubble({ role, text, fallback }) {
             Soporte
           </span>
         )}
+      </div>
+
+      {denunciable && (
+        <ReportControl
+          contenido={text}
+          mensajeUsuario={mensajeUsuario}
+          reported={reported}
+          onReported={onReported}
+        />
+      )}
+    </div>
+  )
+}
+
+/**
+ * Control de denuncia de una respuesta de Aly.
+ *
+ * Arranca como un enlace discreto. Al abrirlo pide motivo (obligatorio) y un
+ * comentario opcional. Si el envío falla se dice y se deja reintentar: tragarse
+ * el error dejaría al usuario creyendo que denunció algo que nadie recibió.
+ */
+function ReportControl({ contenido, mensajeUsuario, reported, onReported }) {
+  const [abierto, setAbierto]   = useState(false)
+  const [motivo, setMotivo]     = useState(null)
+  const [comentario, setComent] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const [error, setError]       = useState(null)
+  const panelRef                = useRef(null)
+
+  // El panel se abre al final de la lista y el botón de enviar queda bajo el
+  // borde del scroll: sin esto el usuario ve los motivos, no ve cómo enviarlos
+  // y abandona. El auto-scroll del chat solo salta con mensajes nuevos.
+  useEffect(() => {
+    if (!abierto) return
+    // Se lleva el contenedor del chat al fondo, no el panel a la vista: el panel
+    // es mas alto que el hueco que queda y scrollIntoView lo deja a medias, con
+    // el boton de enviar debajo del borde.
+    const cont = panelRef.current?.closest('[data-chat-scroll]')
+    if (cont) cont.scrollTop = cont.scrollHeight
+    else panelRef.current?.scrollIntoView({ block: 'end' })
+  }, [abierto])
+
+  if (reported) {
+    return (
+      <span
+        className="flex items-center gap-1"
+        style={{ marginTop: 3, marginLeft: 4, fontSize: '0.6875rem', color: 'var(--color-text-muted)' }}
+      >
+        <Check size={11} /> Denuncia enviada. Gracias por avisar.
+      </span>
+    )
+  }
+
+  if (!abierto) {
+    return (
+      <button
+        onClick={() => setAbierto(true)}
+        aria-label="Denunciar esta respuesta"
+        className="flex items-center gap-1"
+        style={{
+          marginTop: 3, marginLeft: 4, padding: 0, border: 'none', background: 'none',
+          color: 'var(--color-text-muted)', fontFamily: FONT, fontSize: '0.6875rem', cursor: 'pointer',
+        }}
+      >
+        <Flag size={11} /> Denunciar
+      </button>
+    )
+  }
+
+  const enviar = async () => {
+    if (!motivo || enviando) return
+    setEnviando(true)
+    setError(null)
+    try {
+      await reportSupportMessage({ contenido, motivo, mensajeUsuario, comentario })
+      onReported()
+    } catch {
+      setError('No se pudo enviar. Intenta de nuevo.')
+      setEnviando(false)
+    }
+  }
+
+  return (
+    <div
+      ref={panelRef}
+      style={{
+        marginTop: 5, marginLeft: 4, maxWidth: '82%', padding: '10px 12px',
+        background:   'var(--color-bg-secondary)',
+        border:       '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-md)',
+      }}
+    >
+      <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-text-primary)', fontWeight: 600 }}>
+        ¿Qué problema tiene esta respuesta?
+      </p>
+
+      <div className="flex flex-wrap gap-1" style={{ marginTop: 7 }}>
+        {MOTIVOS_DENUNCIA.map((m) => (
+          <button
+            key={m.clave}
+            onClick={() => setMotivo(m.clave)}
+            style={{
+              padding: '4px 9px', borderRadius: 999, cursor: 'pointer', fontFamily: FONT, fontSize: '0.6875rem',
+              border:     motivo === m.clave ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
+              background: motivo === m.clave ? 'var(--color-primary)' : 'var(--color-bg-app)',
+              color:      motivo === m.clave ? '#FFFFFF' : 'var(--color-text-primary)',
+            }}
+          >
+            {m.etiqueta}
+          </button>
+        ))}
+      </div>
+
+      <textarea
+        rows={2}
+        value={comentario}
+        onChange={(e) => setComent(e.target.value)}
+        placeholder="Cuéntanos más (opcional)"
+        maxLength={1000}
+        style={{
+          width: '100%', marginTop: 8, resize: 'none', outline: 'none',
+          background:   'var(--color-bg-app)',
+          border:       '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-md)',
+          color:        'var(--color-text-primary)',
+          fontFamily:   FONT, fontSize: '0.75rem', padding: '7px 9px', lineHeight: 1.35,
+        }}
+      />
+
+      {error && (
+        <p style={{ margin: '6px 0 0', fontSize: '0.6875rem', color: 'var(--color-danger, #DC2626)' }}>
+          {error}
+        </p>
+      )}
+
+      <div className="flex items-center gap-2" style={{ marginTop: 8 }}>
+        <button
+          onClick={enviar}
+          disabled={!motivo || enviando}
+          style={{
+            padding: '6px 12px', borderRadius: 'var(--radius-md)', border: 'none',
+            fontFamily: FONT, fontSize: '0.75rem', fontWeight: 600,
+            background: !motivo || enviando ? 'var(--color-bg-elevated)' : 'var(--color-primary)',
+            color:      !motivo || enviando ? 'var(--color-text-muted)' : '#FFFFFF',
+            cursor:     !motivo || enviando ? 'default' : 'pointer',
+          }}
+        >
+          {enviando ? 'Enviando…' : 'Enviar denuncia'}
+        </button>
+        <button
+          onClick={() => { setAbierto(false); setMotivo(null); setComent(''); setError(null) }}
+          style={{
+            padding: '6px 4px', border: 'none', background: 'none', cursor: 'pointer',
+            fontFamily: FONT, fontSize: '0.75rem', color: 'var(--color-text-muted)',
+          }}
+        >
+          Cancelar
+        </button>
       </div>
     </div>
   )
