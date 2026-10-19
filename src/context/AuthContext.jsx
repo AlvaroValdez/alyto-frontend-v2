@@ -19,6 +19,17 @@ import Sentry from '../services/sentry.js'
 const TOKEN_KEY = 'alyto_token'
 const REFRESH_COOLDOWN_MS = 10_000 // 10 seconds debounce for refreshUser
 
+// ── Plazo de inactividad: fuente de verdad única ───────────────────────────
+// Este es el ÚNICO lugar donde se decide cuánto dura una sesión inactiva. El
+// default de 10 min es el valor que declara la Política de Privacidad (sección
+// 8 "Seguridad y Sesión", en es/en/pt): si se cambia aquí, hay que actualizar
+// ese texto en los tres idiomas o queda desalineado.
+const IDLE_MIN        = Number(import.meta.env.VITE_IDLE_TIMEOUT_MIN) || 10
+const IDLE_TIMEOUT_MS = IDLE_MIN * 60 * 1000
+// La advertencia se muestra 60s antes del cierre, nunca más de la mitad del
+// plazo: con VITE_IDLE_TIMEOUT_MIN=1 un aviso de 60s saldría en el instante 0.
+const IDLE_WARNING_MS = Math.min(60_000, IDLE_TIMEOUT_MS / 2)
+
 // ── Contexto ───────────────────────────────────────────────────────────────
 
 const AuthContext = createContext(null)
@@ -35,8 +46,15 @@ export function AuthProvider({ children }) {
    * la verificación devuelve al acceso, que es el comportamiento correcto.
    */
   const [challenge, setChallenge] = useState(null)
+  /**
+   * Segundos que quedan antes del cierre por inactividad, o null si no hay
+   * advertencia activa. Un solo dato codifica las dos cosas que necesita la UI:
+   * si mostrar el modal (!== null) y qué número pintar.
+   */
+  const [idleCountdown, setIdleCountdown] = useState(null)
   const lastRefreshRef   = useRef(0)
   const justLoggedInRef  = useRef(false) // prevents stale-token clear right after fresh login
+  const idleRearmRef     = useRef(null)  // rearma el contador; lo expone continueIdleSession
 
   /**
    * refreshUser() — re-fetch /auth/me con la cookie actual y sincroniza estado.
@@ -262,21 +280,37 @@ export function AuthProvider({ children }) {
 
   // ── Cierre de sesión por inactividad ──────────────────────────────────────
   // El JWT del backend dura 24h fijo (sin idle-timeout server-side). Para que
-  // una sesión no quede abierta indefinidamente, el frontend cierra sesión tras
-  // IDLE_TIMEOUT_MS sin actividad del usuario: revoca server-side (logout) y
-  // redirige a /login?expired=1 (mismo destino que el 401 global).
-  // Configurable vía VITE_IDLE_TIMEOUT_MIN (default 10 min — política compliance).
+  // una sesión no quede abierta indefinidamente, el frontend corta en dos pasos
+  // sobre un MISMO plazo (IDLE_TIMEOUT_MS):
+  //   · en T-IDLE_WARNING_MS abre la advertencia con cuenta atrás (la pinta
+  //     AppLayout leyendo idleCountdown de este contexto), y
+  //   · en T revoca server-side (logout) y redirige a /login?expired=1,
+  //     el mismo destino que el 401 global.
+  // Antes esto vivían dos mecanismos con defaults distintos (10 min aquí, 30
+  // min en un hook aparte) y el cierre duro se adelantaba siempre al aviso, así
+  // que la advertencia no llegaba a verse nunca.
   useEffect(() => {
     if (!user) return // solo con sesión activa
 
-    const IDLE_MIN = Number(import.meta.env.VITE_IDLE_TIMEOUT_MIN) || 10
-    const IDLE_TIMEOUT_MS = IDLE_MIN * 60 * 1000
     const THROTTLE_MS = 1000 // no reprogramar el timer más de 1×/s
 
-    let timerId = null
+    let warnId    = null
+    let tickId    = null
     let lastReset = 0
+    let warning   = false // durante la advertencia la actividad no rearma
+    // Instante real de la última actividad. Los temporizadores no bastan: ver
+    // el control de reanudación más abajo.
+    let ultimaActividad = Date.now()
+
+    const clearTimers = () => {
+      if (warnId) clearTimeout(warnId)
+      if (tickId) clearInterval(tickId)
+      warnId = null
+      tickId = null
+    }
 
     const onIdle = async () => {
+      clearTimers()
       try {
         await logout()
       } finally {
@@ -284,27 +318,85 @@ export function AuthProvider({ children }) {
       }
     }
 
+    const openWarning = () => {
+      warning = true
+      // Cuenta atrás contra un instante fijo, no restando 1 por tick: en una
+      // pestaña de fondo el navegador estrangula los timers y un contador
+      // incremental se desviaría del cierre real.
+      const deadline = Date.now() + IDLE_WARNING_MS
+      const paint = () => {
+        const left = Math.ceil((deadline - Date.now()) / 1000)
+        if (left <= 0) {
+          onIdle()
+          return
+        }
+        setIdleCountdown(left)
+      }
+      paint()
+      tickId = setInterval(paint, 1000)
+    }
+
     const arm = () => {
-      if (timerId) clearTimeout(timerId)
-      timerId = setTimeout(onIdle, IDLE_TIMEOUT_MS)
+      clearTimers()
+      warning = false
+      setIdleCountdown(null)
+      warnId = setTimeout(openWarning, IDLE_TIMEOUT_MS - IDLE_WARNING_MS)
     }
 
     const onActivity = () => {
+      // Con la advertencia abierta sólo la reanuda el botón "Continuar": un
+      // mousemove accidental no debe silenciar el aviso y dejar la sesión viva.
+      if (warning) return
       const now = Date.now()
       if (now - lastReset < THROTTLE_MS) return // throttle: evita coste en mousemove
       lastReset = now
+      ultimaActividad = now
       arm()
+    }
+
+    // ── Reanudación: el reloj manda sobre los temporizadores ────────────────
+    // En Android, al pasar la app a segundo plano el WebView CONGELA los
+    // setTimeout. Al volver, el temporizador reanuda donde se quedó, así que una
+    // sesión dejada toda la noche seguía abierta: el cierre por inactividad
+    // sencillamente no ocurría en el teléfono, que es donde se reportó.
+    //
+    // Por eso al recuperar el primer plano no se confía en el temporizador: se
+    // compara el tiempo transcurrido de verdad contra el plazo y, si ya venció,
+    // se cierra en el acto. Si no venció, se rearma por el tiempo que quede.
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      const inactivo = Date.now() - ultimaActividad
+      if (inactivo >= IDLE_TIMEOUT_MS) {
+        onIdle()
+        return
+      }
+      const restante = IDLE_TIMEOUT_MS - inactivo
+      clearTimers()
+      warning = false
+      setIdleCountdown(null)
+      if (restante <= IDLE_WARNING_MS) openWarning()
+      else warnId = setTimeout(openWarning, restante - IDLE_WARNING_MS)
     }
 
     const EVENTS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click']
     EVENTS.forEach(e => window.addEventListener(e, onActivity, { passive: true }))
+    document.addEventListener('visibilitychange', onVisible)
+    idleRearmRef.current = () => { ultimaActividad = Date.now(); arm() }
     arm() // inicia el contador al montar / al haber sesión
 
     return () => {
-      if (timerId) clearTimeout(timerId)
+      clearTimers()
+      idleRearmRef.current = null
+      setIdleCountdown(null)
       EVENTS.forEach(e => window.removeEventListener(e, onActivity))
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [user, logout])
+
+  /** continueIdleSession() — "Continuar" en el modal: reinicia el plazo completo. */
+  const continueIdleSession = useCallback(() => {
+    idleRearmRef.current?.()
+  }, [])
 
   /**
    * updateUser(partial) — actualiza campos del usuario en contexto sin re-login.
@@ -325,6 +417,8 @@ export function AuthProvider({ children }) {
     challenge,
     completeTwoFactor,
     clearChallenge,
+    idleCountdown,
+    continueIdleSession,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
