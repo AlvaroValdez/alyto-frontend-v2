@@ -21,10 +21,10 @@ const REFRESH_COOLDOWN_MS = 10_000 // 10 seconds debounce for refreshUser
 
 // ── Plazo de inactividad: fuente de verdad única ───────────────────────────
 // Este es el ÚNICO lugar donde se decide cuánto dura una sesión inactiva. El
-// default de 10 min es el valor que declara la Política de Privacidad (sección
+// default de 15 min es el valor que declara la Política de Privacidad (sección
 // 8 "Seguridad y Sesión", en es/en/pt): si se cambia aquí, hay que actualizar
 // ese texto en los tres idiomas o queda desalineado.
-const IDLE_MIN        = Number(import.meta.env.VITE_IDLE_TIMEOUT_MIN) || 10
+const IDLE_MIN        = Number(import.meta.env.VITE_IDLE_TIMEOUT_MIN) || 15
 const IDLE_TIMEOUT_MS = IDLE_MIN * 60 * 1000
 // La advertencia se muestra 60s antes del cierre, nunca más de la mitad del
 // plazo: con VITE_IDLE_TIMEOUT_MIN=1 un aviso de 60s saldría en el instante 0.

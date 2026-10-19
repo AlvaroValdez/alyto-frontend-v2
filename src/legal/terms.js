@@ -321,7 +321,7 @@ Notificaciones: 5 años. Telemetría de procesos internos: 180 días.`,
 
 Sesión: en la web la sesión viaja en una cookie "alyto_token" marcada HttpOnly y Secure, con SameSite Lax o None según el despliegue, y caduca a las 24 horas (7 días si eliges mantener la sesión abierta). En la app Android la sesión NO usa cookies: viaja en el encabezado Authorization como token Bearer guardado en el almacenamiento local del dispositivo, porque las cookies entre dominios no circulan dentro del WebView.
 
-Cerramos la sesión por inactividad (10 minutos por defecto), revocamos todas las sesiones abiertas cuando cambias la contraseña y bloqueamos la cuenta de forma temporal tras varios intentos fallidos de acceso.
+Cerramos la sesión por inactividad (15 minutos por defecto), revocamos todas las sesiones abiertas cuando cambias la contraseña y bloqueamos la cuenta de forma temporal tras varios intentos fallidos de acceso.
 
 NO usamos cookies de analítica, de publicidad ni de rastreo de terceros.`,
         },
@@ -425,7 +425,7 @@ Notifications: 5 years. Internal process telemetry: 180 days.`,
 
 Sessions: on the web, the session travels in an "alyto_token" cookie marked HttpOnly and Secure, with SameSite Lax or None depending on the deployment, expiring after 24 hours (7 days if you choose to stay signed in). In the Android app the session does NOT use cookies: it travels in the Authorization header as a Bearer token held in the device's local storage, because cross-domain cookies do not flow inside the WebView.
 
-We close the session on inactivity (10 minutes by default), revoke all open sessions when you change your password, and temporarily lock the account after repeated failed sign-in attempts.
+We close the session on inactivity (15 minutes by default), revoke all open sessions when you change your password, and temporarily lock the account after repeated failed sign-in attempts.
 
 We do NOT use analytics, advertising or third-party tracking cookies.`,
         },
@@ -529,7 +529,7 @@ Notificações: 5 anos. Telemetria de processos internos: 180 dias.`,
 
 Sessão: na web a sessão trafega num cookie "alyto_token" marcado HttpOnly e Secure, com SameSite Lax ou None conforme o ambiente, e expira em 24 horas (7 dias se você optar por manter a sessão aberta). No app Android a sessão NÃO usa cookies: trafega no cabeçalho Authorization como token Bearer guardado no armazenamento local do dispositivo, porque cookies entre domínios não circulam dentro do WebView.
 
-Encerramos a sessão por inatividade (10 minutos por padrão), revogamos todas as sessões abertas quando você troca a senha e bloqueamos a conta temporariamente após várias tentativas falhadas de acesso.
+Encerramos a sessão por inatividade (15 minutos por padrão), revogamos todas as sessões abertas quando você troca a senha e bloqueamos a conta temporariamente após várias tentativas falhadas de acesso.
 
 NÃO usamos cookies de analítica, de publicidade nem de rastreamento de terceiros.`,
         },
