@@ -3,7 +3,6 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { Bell, Shield, LogOut } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { fetchUnreadCount } from '../../services/api'
-import { useInactivityTimeout } from '../../hooks/useInactivityTimeout'
 import BottomNavBar from '../layout/BottomNavBar'
 import SideNavBar   from '../layout/SideNavBar'
 import SupportChatWidget from '../support/SupportChatWidget'
@@ -22,7 +21,7 @@ const PAGE_TITLES = {
 }
 
 export default function AppLayout() {
-  const { user, isLoading, logout } = useAuth()
+  const { user, isLoading, logout, idleCountdown, continueIdleSession } = useAuth()
   const location = useLocation()
   const navigate  = useNavigate()
 
@@ -70,17 +69,8 @@ export default function AppLayout() {
     navigate('/login?logout=1', { replace: true })
   }, [logout, navigate])
 
-  const handleInactivityLogout = useCallback(async () => {
-    setLoggingOut(true)
-    await logout()
-    navigate('/login', {
-      replace: true,
-      state: { message: 'Tu sesión fue cerrada por inactividad.' },
-    })
-  }, [logout, navigate])
-
-  const { showModal: showInactivityModal, countdown, continueSession, endSession } =
-    useInactivityTimeout({ onLogout: handleInactivityLogout })
+  // El cierre duro por inactividad lo ejecuta AuthContext (revoca server-side y
+  // redirige a /login?expired=1). Aquí sólo se pinta su advertencia previa.
 
   return (
     <>
@@ -288,7 +278,7 @@ export default function AppLayout() {
       )}
 
       {/* ── MODAL DE INACTIVIDAD ──────────────────────────────────────── */}
-      {showInactivityModal && (
+      {idleCountdown !== null && (
         <div
           style={{
             position: 'fixed', inset: 0, zIndex: 999,
@@ -327,11 +317,11 @@ export default function AppLayout() {
               Tu sesión se cerrará por inactividad en
             </p>
             <p style={{ fontSize: '2rem', fontWeight: 800, color: '#1D3461', marginBottom: 20, fontVariantNumeric: 'tabular-nums' }}>
-              {countdown}<span style={{ fontSize: '1rem', fontWeight: 400, color: 'var(--color-text-muted)', marginLeft: 4 }}>seg</span>
+              {idleCountdown}<span style={{ fontSize: '1rem', fontWeight: 400, color: 'var(--color-text-muted)', marginLeft: 4 }}>seg</span>
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
               <button
-                onClick={endSession}
+                onClick={handleLogout}
                 style={{
                   flex: 1, padding: '12px 0', borderRadius: 14,
                   background: 'transparent', border: '1px solid var(--color-border)',
@@ -342,7 +332,7 @@ export default function AppLayout() {
                 Cerrar sesión
               </button>
               <button
-                onClick={continueSession}
+                onClick={continueIdleSession}
                 style={{
                   flex: 1, padding: '12px 0', borderRadius: 14,
                   background: '#1D3461', border: 'none',
