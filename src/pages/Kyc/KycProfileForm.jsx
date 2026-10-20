@@ -19,7 +19,7 @@ import { ClipboardCheck, AlertCircle, Loader2 } from 'lucide-react'
 import Input  from '../../components/ui/Input'
 import Select from '../../components/ui/Select'
 import { useAuth } from '../../context/AuthContext'
-import { getUserProfile, updateKycProfile } from '../../services/api'
+import { getUserProfile, updateKycProfile, declararPep, RELACIONES_PEP } from '../../services/api'
 import { COUNTRIES, SOURCE_OF_FUNDS } from '../../utils/kycOptions'
 
 const SectionLabel = ({ children }) => (
@@ -99,8 +99,17 @@ export default function KycProfileForm({ onComplete }) {
     return e
   }
 
+  // Declaración PEP. Es obligatoria en el sentido de que hay que RESPONDER,
+  // no de que haya que ser PEP: dejarla en blanco deja al usuario en riesgo
+  // "desconocido", que no es lo mismo que riesgo bajo.
+  const [esPep, setEsPep]       = useState(null)   // null = sin responder
+  const [relacionPep, setRelPep] = useState(null)
+  const [cargoPep, setCargoPep]  = useState('')
+
   async function handleSubmit() {
     const e = validate()
+    if (esPep === null) e.pep = 'Indica si eres una persona expuesta políticamente.'
+    if (esPep === true && !relacionPep) e.pep = 'Indica cuál es tu relación con el cargo.'
     if (Object.keys(e).length > 0) {
       setErrors(e)
       setTopError('Revisa los campos marcados.')
@@ -123,6 +132,15 @@ export default function KycProfileForm({ onComplete }) {
           country: form.country,
         },
       })
+      // Va después del perfil y en llamada aparte: si esta fallara, el perfil ya
+      // quedó guardado y el usuario no pierde lo escrito. El backend trata la
+      // ausencia de declaración como riesgo desconocido, no como riesgo bajo.
+      await declararPep({
+        esPep,
+        relacion: esPep ? relacionPep : undefined,
+        cargo:    esPep ? cargoPep.trim() : undefined,
+      })
+
       updateUser({ kycProfileCompleted: true })
       onComplete?.()
     } catch (err) {
@@ -216,6 +234,75 @@ export default function KycProfileForm({ onComplete }) {
           <p className="text-[0.8125rem] text-[#EF4444]">{topError}</p>
         </div>
       )}
+
+      {/* ── Declaración de Persona Expuesta Políticamente ──────────────────
+          Control primario de identificación de PEP: no hay lista pública fiable
+          para Bolivia. Se explica para qué sirve, porque un usuario que no
+          entiende la pregunta responde que no por si acaso. */}
+      <div className="flex flex-col gap-3 p-4 rounded-2xl bg-white border border-[#E2E8F0]">
+        <div>
+          <p className="text-[0.9375rem] font-semibold text-[#0D1F3C]">
+            ¿Eres una persona expuesta políticamente?
+          </p>
+          <p className="text-[0.75rem] text-[#64748B] mt-1 leading-relaxed">
+            Son quienes ocupan o han ocupado cargos públicos destacados, y sus familiares
+            cercanos y allegados. Responder que sí <strong>no limita tu cuenta</strong>:
+            solo nos obliga a una revisión adicional, como exige la normativa.
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          {[{ v: false, t: 'No' }, { v: true, t: 'Sí' }].map(o => (
+            <button
+              key={String(o.v)}
+              type="button"
+              onClick={() => { setEsPep(o.v); if (!o.v) { setRelPep(null); setCargoPep('') } }}
+              className="flex-1 py-2.5 rounded-xl text-[0.875rem] font-semibold transition-colors"
+              style={{
+                border:     esPep === o.v ? '1px solid #0D1F3C' : '1px solid #E2E8F0',
+                background: esPep === o.v ? '#0D1F3C' : '#FFFFFF',
+                color:      esPep === o.v ? '#FFFFFF' : '#0D1F3C',
+              }}
+            >
+              {o.t}
+            </button>
+          ))}
+        </div>
+
+        {esPep === true && (
+          <div className="flex flex-col gap-2">
+            <p className="text-[0.8125rem] font-medium text-[#0D1F3C]">¿Cuál es tu relación con el cargo?</p>
+            {RELACIONES_PEP.map(r => (
+              <button
+                key={r.clave}
+                type="button"
+                onClick={() => setRelPep(r.clave)}
+                className="text-left px-3 py-2.5 rounded-xl text-[0.8125rem] transition-colors"
+                style={{
+                  border:     relacionPep === r.clave ? '1px solid #0D1F3C' : '1px solid #E2E8F0',
+                  background: relacionPep === r.clave ? '#0D1F3C0D' : '#FFFFFF',
+                  color:      '#0D1F3C',
+                }}
+              >
+                {r.etiqueta}
+              </button>
+            ))}
+            <input
+              type="text"
+              value={cargoPep}
+              onChange={(e) => setCargoPep(e.target.value)}
+              placeholder="Cargo e institución (opcional)"
+              maxLength={300}
+              className="w-full px-3 py-2.5 rounded-xl text-[0.8125rem] outline-none"
+              style={{ border: '1px solid #E2E8F0', color: '#0D1F3C' }}
+            />
+          </div>
+        )}
+
+        {errors.pep && (
+          <p className="text-[0.75rem] text-[#EF4444]">{errors.pep}</p>
+        )}
+      </div>
 
       <button
         type="button"
