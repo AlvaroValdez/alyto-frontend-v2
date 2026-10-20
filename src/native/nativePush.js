@@ -18,12 +18,51 @@ export function isNativePlatform() {
   return Capacitor.isNativePlatform();
 }
 
+/**
+ * Canal al que el backend dirige TODAS las push de Android: manda
+ * `android.notification.channelId = 'payments'` (services/notifications.js).
+ *
+ * Desde Android 8 toda notificación necesita un canal existente, y el canal lo
+ * crea la app, no el servidor. Si no se crea, el nombre que manda el backend no
+ * apunta a nada y la notificación queda a merced del canal de reserva del SDK de
+ * Firebase. El id tiene que coincidir EXACTAMENTE con el del backend.
+ *
+ * Las propiedades de un canal son inmutables tras crearlo: para cambiar el sonido
+ * o la importancia hay que cambiar el id, acá y en el backend a la vez.
+ */
+const CHANNEL_ID = 'payments';
+
 let listenersReady = false;
 
 /** Carga diferida del plugin (evita romper el bundle web). */
 async function getPlugin() {
   const mod = await import('@capacitor/push-notifications');
   return mod.PushNotifications;
+}
+
+/**
+ * Crea el canal de notificaciones de pagos. Idempotente: volver a crearlo con el
+ * mismo id no duplica nada ni pisa las preferencias que haya elegido el usuario.
+ */
+async function ensureChannel(PushNotifications) {
+  try {
+    await PushNotifications.createChannel({
+      id:          CHANNEL_ID,
+      name:        'Pagos y movimientos',
+      description: 'Avisos de cobros, envíos y movimientos de tu cuenta.',
+      importance:  4,  // HIGH — suena y aparece como aviso emergente
+      // visibility PRIVATE: en la pantalla bloqueada se ve que llegó un aviso de
+      // Alyto, pero no su contenido. El cuerpo de estas notificaciones lleva
+      // importes ("Recibiste Bs 240"), y eso no debe quedar legible para
+      // cualquiera que levante el teléfono.
+      visibility:  0,
+      vibration:   true,
+      // `sound` se omite a propósito: espera el nombre de un archivo en res/raw,
+      // no la cadena 'default'. Sin él el canal usa el sonido del sistema.
+    });
+  } catch (err) {
+    console.error('[NativePush] No se pudo crear el canal de notificaciones:', err?.message ?? err);
+  }
 }
 
 /**
@@ -35,6 +74,9 @@ export async function setupNativePushListeners() {
   listenersReady = true;
 
   const PushNotifications = await getPlugin();
+
+  // El canal tiene que existir ANTES de que llegue la primera notificación.
+  await ensureChannel(PushNotifications);
 
   // Token FCM nativo → backend (idempotente: el backend usa $addToSet).
   await PushNotifications.addListener('registration', (token) => {
@@ -54,6 +96,35 @@ export async function setupNativePushListeners() {
     const data = action?.notification?.data ?? {};
     goTo(resolveNotificationUrl(data));
   });
+}
+
+/**
+ * Suscribe un callback a las notificaciones que llegan con la app EN PRIMER PLANO.
+ *
+ * Con la app abierta, Capacitor NO dibuja la notificación del sistema: emite
+ * `pushNotificationReceived` y espera que la app la muestre. Sin este listener una
+ * push que llega mientras el usuario está dentro de Alyto no produce nada visible,
+ * ni bandeja ni toast.
+ *
+ * El payload se normaliza a la forma que ya usa el toast en web
+ * (`{ notification: { title, body }, data }`), para que NotificationToast no tenga
+ * que saber de qué plataforma viene.
+ *
+ * @param {(payload: object) => void} onPayload
+ * @returns {Promise<() => void>} función para desuscribirse
+ */
+export async function subscribeNativeForeground(onPayload) {
+  if (!isNativePlatform()) return () => {};
+
+  const PushNotifications = await getPlugin();
+  const handle = await PushNotifications.addListener('pushNotificationReceived', (n) => {
+    onPayload({
+      notification: { title: n?.title, body: n?.body },
+      data:         n?.data ?? {},
+    });
+  });
+
+  return () => { handle.remove().catch(() => {}); };
 }
 
 /**

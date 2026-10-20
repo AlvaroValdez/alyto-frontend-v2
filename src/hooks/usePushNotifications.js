@@ -19,6 +19,7 @@ import {
   isNativePlatform,
   requestNativePushPermission,
   checkNativePushPermission,
+  subscribeNativeForeground,
 } from '../native/nativePush'
 
 const IS_NATIVE = isNativePlatform()
@@ -198,6 +199,16 @@ export function usePushNotifications() {
    * @returns {() => void} Función de limpieza para useEffect
    */
   const setupForegroundNotifications = useCallback((onPayload) => {
+    // ── Camino nativo ───────────────────────────────────────────────────
+    // `messaging` es el SDK web y en el WebView no sirve: sin esta rama, una push
+    // que llega con la app abierta en Android no mostraba nada. La suscripción es
+    // asíncrona (carga diferida del plugin) pero el efecto necesita una limpieza
+    // sincrónica, así que se devuelve una que espera a la promesa.
+    if (IS_NATIVE) {
+      const pendiente = subscribeNativeForeground(onPayload)
+      return () => { pendiente.then((off) => off()).catch(() => {}) }
+    }
+
     if (!messaging) return () => {}
 
     // Cancelar listener previo antes de registrar uno nuevo

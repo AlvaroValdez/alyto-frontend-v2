@@ -53,9 +53,19 @@ export default function AppNotifications() {
   // ── Efecto principal: activar tras login ─────────────────────────────────
   useEffect(() => {
     if (!isAuth) return
-    if (!('Notification' in window)) return
 
-    // Delay para asegurar que el componente está montado antes de mostrar el banner
+    // ⚠️ NO agregar acá un guard sobre `window.Notification`.
+    //
+    // Había uno (`if (!('Notification' in window)) return`) y dejó a Android sin
+    // notificaciones desde que existe la app: `Notification` es la API WEB, que el
+    // WebView de Capacitor no expone, así que el efecto salía antes de llamar a
+    // `triggerBannerCheck()`. Y ese es el único camino al registro: sin él no se
+    // muestra el banner, no se pide el permiso nativo, nunca se llama a
+    // `PushNotifications.register()` y el backend no recibe ningún token. En
+    // producción eso se veía como 0 tokens de Android y todos de navegador.
+    //
+    // Quien decide por plataforma es `triggerBannerCheck`, que ramifica nativo en
+    // su primera línea, y el camino web ya revisa `Notification` por su cuenta.
     const timer = setTimeout(() => triggerBannerCheck(), 1500)
 
     // Escuchar notificaciones con la app en primer plano

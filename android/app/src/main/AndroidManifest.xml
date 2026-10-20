@@ -51,6 +51,22 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Canal de reserva para las push de FCM.
+
+             Desde Android 8 toda notificación necesita un canal. El backend nombra
+             'payments' en cada mensaje y la app lo crea al arrancar
+             (src/native/nativePush.js), pero si una notificación llega antes de que
+             el canal exista —primer arranque tras instalar, o app cerrada— el SDK de
+             Firebase necesita saber a qué canal recurrir. Sin esta declaración cae a
+             un canal genérico propio, fuera de nuestro control y sin la importancia
+             ni la privacidad que definimos.
+
+             El valor debe coincidir con CHANNEL_ID en nativePush.js y con el
+             channelId que manda el backend. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="payments" />
     </application>
 
     <!-- Permissions -->
