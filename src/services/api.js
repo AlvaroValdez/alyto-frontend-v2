@@ -665,3 +665,26 @@ export async function downloadBusinessInvoice(transactionId) {
   const { shareFile } = await import('../utils/shareImage.js')
   return shareFile({ blob, filename, title: 'Comprobante Oficial', mimeType: 'application/pdf' })
 }
+
+/** Relaciones admitidas en la declaración PEP. Mismo orden y claves que el backend. */
+export const RELACIONES_PEP = [
+  { clave: 'self',      etiqueta: 'Yo ocupo o ocupé el cargo' },
+  { clave: 'family',    etiqueta: 'Un familiar cercano' },
+  { clave: 'associate', etiqueta: 'Un socio o allegado' },
+]
+
+/**
+ * Declaración de Persona Expuesta Políticamente.
+ *
+ * Es el control primario de identificación de PEP: no existe lista pública
+ * fiable para Bolivia. Declararse PEP NO bloquea la cuenta — abre una revisión
+ * de diligencia reforzada, y el usuario puede seguir operando.
+ *
+ * @param {{ esPep: boolean, relacion?: string, cargo?: string }} datos
+ */
+export function declararPep({ esPep, relacion, cargo }) {
+  return request('/user/pep-declaration', {
+    method: 'POST',
+    body:   JSON.stringify({ esPep, relacion, cargo }),
+  })
+}
