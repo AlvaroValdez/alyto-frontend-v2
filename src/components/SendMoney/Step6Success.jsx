@@ -4,9 +4,12 @@
  * Pantalla de confirmación con ícono animado, resumen y acciones.
  */
 
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, Share2, Loader2 } from 'lucide-react'
 import { countryName } from '../../config/countries'
+import { buildReceiptImage } from '../ui/buildReceiptImage'
+import { shareQRImage } from '../../utils/shareImage'
 
 
 function formatTransactionId(id) {
@@ -17,6 +20,43 @@ function formatTransactionId(id) {
 export default function Step6Success({ stepData, onReset }) {
   const navigate = useNavigate()
   const { transactionId, originAmount, destinationCountry, beneficiary, quote } = stepData
+  const [compartiendo, setCompartiendo] = useState(false)
+
+  /**
+   * Compartir el comprobante.
+   *
+   * Lo pidieron los probadores: al terminar un pago no habia forma de mandarle
+   * el comprobante a quien recibe, y es lo primero que uno quiere hacer. Se
+   * reutiliza el mismo generador de imagen que usa el historial, para que el
+   * comprobante sea EL MISMO en los dos sitios y no dos documentos distintos
+   * para la misma operacion.
+   */
+  async function compartirComprobante() {
+    if (compartiendo) return
+    setCompartiendo(true)
+    try {
+      const destinatario = [beneficiary?.beneficiary_first_name, beneficiary?.beneficiary_last_name]
+        .filter(Boolean).join(' ').trim()
+      const dataUrl = await buildReceiptImage({
+        type:        'send',
+        amountText:  `${Number(originAmount ?? 0).toLocaleString('es-CL')} ${quote?.originCurrency ?? 'BOB'}`,
+        estado:      'Enviado',
+        fecha:       new Date().toLocaleString('es-CL'),
+        contraparte: destinatario || countryName(destinationCountry) || '—',
+        concepto:    `Envio a ${countryName(destinationCountry) ?? destinationCountry ?? ''}`.trim(),
+        wtxId:       transactionId,
+      })
+      await shareQRImage({
+        dataUrl,
+        title:    'Comprobante Alyto',
+        filename: `comprobante-${String(transactionId ?? '').slice(0, 12)}.png`,
+      })
+    } catch (err) {
+      console.error('[Comprobante] No se pudo compartir:', err?.message)
+    } finally {
+      setCompartiendo(false)
+    }
+  }
 
   return (
     <div className="flex flex-col items-center gap-6 px-4 pb-28 pt-4">
@@ -117,6 +157,15 @@ export default function Step6Success({ stepData, onReset }) {
         >
           <ArrowUpRight size={18} />
           Ver mis transacciones
+        </button>
+
+        <button
+          onClick={compartirComprobante}
+          disabled={compartiendo}
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-transparent border border-[#E2E8F0] text-[#0D1F3C] text-[0.9375rem] font-semibold hover:border-[#0D1F3C33] transition-all disabled:opacity-60"
+        >
+          {compartiendo ? <Loader2 size={17} className="animate-spin" /> : <Share2 size={17} />}
+          {compartiendo ? 'Preparando…' : 'Compartir comprobante'}
         </button>
 
         <button

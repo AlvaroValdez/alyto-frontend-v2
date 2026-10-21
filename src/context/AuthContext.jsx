@@ -29,6 +29,8 @@ const IDLE_TIMEOUT_MS = IDLE_MIN * 60 * 1000
 // La advertencia se muestra 60s antes del cierre, nunca más de la mitad del
 // plazo: con VITE_IDLE_TIMEOUT_MIN=1 un aviso de 60s saldría en el instante 0.
 const IDLE_WARNING_MS = Math.min(60_000, IDLE_TIMEOUT_MS / 2)
+/** Marca de la ultima actividad, en disco: sobrevive al cierre de la app. */
+const IDLE_LAST_KEY = 'alyto_last_activity'
 
 // ── Contexto ───────────────────────────────────────────────────────────────
 
@@ -300,7 +302,29 @@ export function AuthProvider({ children }) {
     let warning   = false // durante la advertencia la actividad no rearma
     // Instante real de la última actividad. Los temporizadores no bastan: ver
     // el control de reanudación más abajo.
-    let ultimaActividad = Date.now()
+    // La marca se PERSISTE, no vive solo en memoria.
+    //
+    // Guardarla en memoria cubria el paso a segundo plano, pero no el caso que
+    // reportaron los probadores: al reiniciar el telefono el proceso muere, al
+    // abrir de nuevo esta variable volvia a cero y la sesion sobrevivia intacta
+    // por mucho tiempo que hubiera pasado. Con la marca en disco, el arranque en
+    // frio se compara igual que la vuelta de segundo plano.
+    const leerUltimaActividad = () => {
+      const v = Number(localStorage.getItem(IDLE_LAST_KEY))
+      return Number.isFinite(v) && v > 0 ? v : Date.now()
+    }
+    const guardarUltimaActividad = (t) => {
+      try { localStorage.setItem(IDLE_LAST_KEY, String(t)) } catch { /* modo privado */ }
+    }
+
+    let ultimaActividad = leerUltimaActividad()
+
+    // Arranque en frio: si ya vencio mientras la app estaba cerrada, se cierra
+    // ahora. Se comprueba antes de armar nada, para no dar un plazo nuevo.
+    if (Date.now() - ultimaActividad >= IDLE_TIMEOUT_MS) {
+      logout().finally(() => window.location.replace('/login?expired=1'))
+      return
+    }
 
     const clearTimers = () => {
       if (warnId) clearTimeout(warnId)
@@ -351,6 +375,7 @@ export function AuthProvider({ children }) {
       if (now - lastReset < THROTTLE_MS) return // throttle: evita coste en mousemove
       lastReset = now
       ultimaActividad = now
+      guardarUltimaActividad(now)
       arm()
     }
 
@@ -381,7 +406,15 @@ export function AuthProvider({ children }) {
     const EVENTS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click']
     EVENTS.forEach(e => window.addEventListener(e, onActivity, { passive: true }))
     document.addEventListener('visibilitychange', onVisible)
-    idleRearmRef.current = () => { ultimaActividad = Date.now(); arm() }
+    idleRearmRef.current = () => {
+      ultimaActividad = Date.now()
+      guardarUltimaActividad(ultimaActividad)
+      arm()
+    }
+    // Se sella la marca al montar, no solo con la primera interaccion: si el
+    // usuario abre la app y la deja sin tocar, sin esto no habria marca que
+    // comparar en el siguiente arranque y la sesion quedaria sin plazo.
+    guardarUltimaActividad(ultimaActividad)
     arm() // inicia el contador al montar / al haber sesión
 
     return () => {

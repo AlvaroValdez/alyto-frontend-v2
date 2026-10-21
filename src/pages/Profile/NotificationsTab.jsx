@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react'
 import { Mail, Bell, BellOff, RefreshCw } from 'lucide-react'
 import Toggle from '../../components/ui/Toggle'
 import { usePushNotifications } from '../../hooks/usePushNotifications'
+import { isNativePlatform } from '../../native/nativePush'
 
 // ── Browser-specific unblock instructions ─────────────────────────────────────
 
@@ -71,7 +72,11 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
     if (notifPrefs) {
       setEmailEnabled(notifPrefs.email ?? true)
       const profilePush   = notifPrefs.push ?? false
-      const hasPermission = typeof Notification !== 'undefined' && Notification.permission === 'granted'
+      // En nativo `Notification` no existe: preguntarlo daba siempre false y el
+      // interruptor no se podia activar nunca. El estado real lo tiene el hook.
+      const hasPermission = isNativePlatform()
+        ? permission === 'granted'
+        : (typeof Notification !== 'undefined' && Notification.permission === 'granted')
       setPushEnabled(profilePush && !!token && hasPermission)
     }
   }, [profile, token])
@@ -114,7 +119,9 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
     try {
       await requestPermission()
 
-      const granted = typeof Notification !== 'undefined' && Notification.permission === 'granted'
+      const granted = isNativePlatform()
+        ? permission === 'granted'
+        : (typeof Notification !== 'undefined' && Notification.permission === 'granted')
 
       if (granted) {
         setPushEnabled(true)

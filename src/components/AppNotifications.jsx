@@ -17,6 +17,7 @@ import { useAuth } from '../context/AuthContext'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 import NotificationBanner from './NotificationBanner'
 import NotificationToast from './NotificationToast'
+import { isNativePlatform } from '../native/nativePush'
 
 const TOAST_DURATION_MS = 6000
 
@@ -53,7 +54,11 @@ export default function AppNotifications() {
   // ── Efecto principal: activar tras login ─────────────────────────────────
   useEffect(() => {
     if (!isAuth) return
-    if (!('Notification' in window)) return
+    // `window.Notification` es la API WEB y NO existe en el WebView de Android.
+    // Este guard cortaba aqui en nativo, asi que nunca se pedia permiso, nunca
+    // se registraba token y NINGUNA push llegaba a la app. En produccion habia
+    // 11 tokens y ni uno nativo. En nativo el permiso lo gestiona Capacitor.
+    if (!isNativePlatform() && !('Notification' in window)) return
 
     // Delay para asegurar que el componente está montado antes de mostrar el banner
     const timer = setTimeout(() => triggerBannerCheck(), 1500)
