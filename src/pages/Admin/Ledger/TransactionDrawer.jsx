@@ -372,15 +372,15 @@ function PayinManualBanner({ tx, onConfirmed }) {
  * selector esconde la deuda y esta vía la cierra.
  */
 const METODOS_DEVOLUCION = [
-  { id: 'bankTransfer', label: 'Transferencia', ayuda: 'Transferiste desde la app del banco' },
-  { id: 'walletBOB',    label: 'A la billetera', ayuda: 'Se acreditó saldo en su wallet BOB' },
+  { id: 'walletBOB',    label: 'A la billetera', ayuda: 'Se acredita ahora mismo en su saldo de Alyto' },
+  { id: 'bankTransfer', label: 'Transferencia',  ayuda: 'Transferiste desde la app del banco' },
   { id: 'external',     label: 'Otro medio',     ayuda: 'Efectivo u otra vía, con respaldo' },
 ]
 
 const MAX_PROOF_BYTES = 5 * 1024 * 1024
 
 function RefundBanner({ tx, onRegistered }) {
-  const [method,    setMethod]    = useState('bankTransfer')
+  const [method,    setMethod]    = useState('walletBOB')
   const [reference, setReference] = useState('')
   const [wtxId,     setWtxId]     = useState('')
   const [amount,    setAmount]    = useState(String(tx.originalAmount ?? ''))
@@ -394,7 +394,10 @@ function RefundBanner({ tx, onRegistered }) {
   // no se exige. En las otras dos no hay rastro en nuestros sistemas, así que el
   // respaldo es lo único que queda.
   const exigeArchivo = method !== 'walletBOB'
-  const identificadorOk = method === 'walletBOB' ? wtxId.trim() !== '' : reference.trim() !== ''
+  // En la devolución a billetera no se pide NADA: el backend acredita el saldo y
+  // genera el `wtxId`, que es la evidencia. El campo queda solo para el caso en que
+  // el crédito ya se hizo por otra vía y acá únicamente se asienta.
+  const identificadorOk = method === 'walletBOB' ? true : reference.trim() !== ''
   const montoNum = Number(amount)
   const montoOk  = Number.isFinite(montoNum) && montoNum > 0
   const puedeEnviar = identificadorOk && montoOk && (!exigeArchivo || proof) && !saving
@@ -476,17 +479,30 @@ function RefundBanner({ tx, onRegistered }) {
 
       {/* Identificador — lo que hace verificable la devolución */}
       {method === 'walletBOB' ? (
-        <div>
-          <label className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5 block">
-            wtxId del movimiento <span className="text-[#EF4444]">*</span>
-          </label>
-          <input
-            type="text"
-            value={wtxId}
-            onChange={e => setWtxId(e.target.value)}
-            placeholder="WTX-..."
-            className="w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white font-mono border border-[#263050] bg-[#1A2340] focus:outline-none focus:border-[#C4CBD8] transition-colors placeholder-[#4E5A7A]"
-          />
+        <div className="space-y-2">
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-[#22C55E0A] border border-[#22C55E33]">
+            <CheckCircle2 size={14} className="text-[#22C55E] flex-shrink-0 mt-0.5" />
+            <p className="text-[0.75rem] text-[#CBD5E1]">
+              Se le acreditarán{' '}
+              <span className="font-bold text-white tabular-nums">
+                {montoOk ? montoNum.toLocaleString('es-BO') : '—'} {tx.originCurrency ?? 'BOB'}
+              </span>{' '}
+              a su saldo de Alyto al confirmar. El movimiento y el cierre del pasivo
+              quedan en el mismo acto, y puede retirarlo o reenviarlo desde la app.
+            </p>
+          </div>
+          <details>
+            <summary className="text-[0.6875rem] text-[#4E5A7A] cursor-pointer hover:text-[#8A96B8] transition-colors">
+              Ya lo acredité por otra vía
+            </summary>
+            <input
+              type="text"
+              value={wtxId}
+              onChange={e => setWtxId(e.target.value)}
+              placeholder="WTX-… (solo si el crédito ya existe)"
+              className="w-full mt-2 rounded-xl px-3 py-2.5 text-[0.875rem] text-white font-mono border border-[#263050] bg-[#1A2340] focus:outline-none focus:border-[#C4CBD8] transition-colors placeholder-[#4E5A7A]"
+            />
+          </details>
         </div>
       ) : (
         <div>
@@ -567,7 +583,9 @@ function RefundBanner({ tx, onRegistered }) {
         style={puedeEnviar ? { boxShadow: '0 4px 20px rgba(196, 203, 216, 0.3)' } : undefined}
       >
         {saving && <Loader size={13} className="animate-spin" />}
-        {saving ? 'Registrando…' : 'Registrar devolución'}
+        {saving
+          ? (method === 'walletBOB' && !wtxId.trim() ? 'Acreditando…' : 'Registrando…')
+          : (method === 'walletBOB' && !wtxId.trim() ? 'Acreditar y registrar' : 'Registrar devolución')}
       </button>
 
       {exigeArchivo && !proof && (
