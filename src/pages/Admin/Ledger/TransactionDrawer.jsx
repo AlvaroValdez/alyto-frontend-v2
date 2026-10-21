@@ -9,9 +9,9 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   X, Copy, CheckCheck, ChevronDown, ChevronRight,
   Clock, CheckCircle2, XCircle, AlertCircle, Loader,
-  User, Banknote, List, Edit3, ArrowRight, Paperclip, ZoomIn, FileText,
+  User, Banknote, List, Edit3, ArrowRight, Paperclip, ZoomIn, FileText, RotateCcw,
 } from 'lucide-react'
-import { getTransactionDetail, updateTransactionStatus, getTransactionComprobante, getBusinessInvoice, getComprobanteOficial, simulateBankQrPayment } from '../../../services/adminService'
+import { getTransactionDetail, updateTransactionStatus, getTransactionComprobante, getBusinessInvoice, getComprobanteOficial, simulateBankQrPayment, registrarDevolucion } from '../../../services/adminService'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -355,6 +355,257 @@ function PayinManualBanner({ tx, onConfirmed }) {
         {saving && <Loader size={13} className="animate-spin" />}
         {saving ? 'Confirmando…' : '✅ Confirmar pago recibido'}
       </button>
+    </div>
+  )
+}
+
+// ── RefundBanner — registrar la devolución de una operación cobrada y fallida ─
+
+/**
+ * La devolución del dinero se hace FUERA de la app (Alvaro transfiere desde la app
+ * del banco). Esto no mueve plata: registra que se movió, con su evidencia.
+ *
+ * Por qué importa que exista este formulario y no solo el selector de estado:
+ * poner `refunded` a mano en el selector no libera la deuda. `getBOBCommitted` sigue
+ * contando el monto como pasivo hasta que haya `wtxId` o `bankReference`, porque la
+ * etiqueta se puede poner sin mover un centavo y en producción pasó. O sea que el
+ * selector esconde la deuda y esta vía la cierra.
+ */
+const METODOS_DEVOLUCION = [
+  { id: 'bankTransfer', label: 'Transferencia', ayuda: 'Transferiste desde la app del banco' },
+  { id: 'walletBOB',    label: 'A la billetera', ayuda: 'Se acreditó saldo en su wallet BOB' },
+  { id: 'external',     label: 'Otro medio',     ayuda: 'Efectivo u otra vía, con respaldo' },
+]
+
+const MAX_PROOF_BYTES = 5 * 1024 * 1024
+
+function RefundBanner({ tx, onRegistered }) {
+  const [method,    setMethod]    = useState('bankTransfer')
+  const [reference, setReference] = useState('')
+  const [wtxId,     setWtxId]     = useState('')
+  const [amount,    setAmount]    = useState(String(tx.originalAmount ?? ''))
+  const [reason,    setReason]    = useState('')
+  const [proof,     setProof]     = useState(null)
+  const [saving,    setSaving]    = useState(false)
+  const [error,     setError]     = useState(null)
+
+  // La evidencia que cierra la deuda depende del método: en una devolución a la
+  // billetera el propio movimiento (wtxId) ES la evidencia, así que ahí el archivo
+  // no se exige. En las otras dos no hay rastro en nuestros sistemas, así que el
+  // respaldo es lo único que queda.
+  const exigeArchivo = method !== 'walletBOB'
+  const identificadorOk = method === 'walletBOB' ? wtxId.trim() !== '' : reference.trim() !== ''
+  const montoNum = Number(amount)
+  const montoOk  = Number.isFinite(montoNum) && montoNum > 0
+  const puedeEnviar = identificadorOk && montoOk && (!exigeArchivo || proof) && !saving
+
+  const elegirArchivo = (e) => {
+    const f = e.target.files?.[0] ?? null
+    if (f && f.size > MAX_PROOF_BYTES) {
+      setError('El respaldo supera los 5 MB.')
+      setProof(null)
+      return
+    }
+    setError(null)
+    setProof(f)
+  }
+
+  const handleRegistrar = async () => {
+    setSaving(true)
+    setError(null)
+    try {
+      await registrarDevolucion(
+        tx.alytoTransactionId,
+        {
+          method,
+          ...(method === 'walletBOB' ? { wtxId: wtxId.trim() } : { bankReference: reference.trim() }),
+          amount: montoNum,
+          reason: reason.trim() || undefined,
+        },
+        proof ?? undefined,
+      )
+      onRegistered()
+    } catch (err) {
+      setError(err.message || 'No se pudo registrar la devolución.')
+      setSaving(false)
+    }
+  }
+
+  const metodoActivo = METODOS_DEVOLUCION.find(m => m.id === method)
+
+  return (
+    <div className="mb-5 p-4 rounded-2xl border border-[#C4CBD833] bg-[#C4CBD80A] space-y-4">
+
+      {/* Header */}
+      <div className="flex items-start gap-2">
+        <RotateCcw size={18} className="text-[#C4CBD8] flex-shrink-0 mt-0.5" />
+        <div>
+          <p className="text-[0.875rem] font-bold text-[#C4CBD8]">
+            Registrar devolución
+          </p>
+          <p className="text-[0.75rem] text-[#8A96B8] mt-0.5">
+            El cobro sigue tomado y cuenta como pasivo. Devolvé el dinero por fuera y
+            registralo acá con su respaldo.
+          </p>
+        </div>
+      </div>
+
+      {/* Método */}
+      <div>
+        <label className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5 block">
+          Cómo se devolvió
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          {METODOS_DEVOLUCION.map(m => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => { setMethod(m.id); setError(null) }}
+              className={`min-h-[44px] px-2 py-2 rounded-xl text-[0.75rem] font-semibold border transition-colors ${
+                method === m.id
+                  ? 'bg-[#C4CBD81A] border-[#C4CBD8] text-[#C4CBD8]'
+                  : 'bg-[#1A2340] border-[#263050] text-[#8A96B8] hover:border-[#C4CBD833]'
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[0.6875rem] text-[#4E5A7A] mt-1.5">{metodoActivo?.ayuda}</p>
+      </div>
+
+      {/* Identificador — lo que hace verificable la devolución */}
+      {method === 'walletBOB' ? (
+        <div>
+          <label className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5 block">
+            wtxId del movimiento <span className="text-[#EF4444]">*</span>
+          </label>
+          <input
+            type="text"
+            value={wtxId}
+            onChange={e => setWtxId(e.target.value)}
+            placeholder="WTX-..."
+            className="w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white font-mono border border-[#263050] bg-[#1A2340] focus:outline-none focus:border-[#C4CBD8] transition-colors placeholder-[#4E5A7A]"
+          />
+        </div>
+      ) : (
+        <div>
+          <label className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5 block">
+            Referencia del banco <span className="text-[#EF4444]">*</span>
+          </label>
+          <input
+            type="text"
+            value={reference}
+            onChange={e => setReference(e.target.value)}
+            placeholder="Nro. de documento del débito"
+            className="w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white font-mono border border-[#263050] bg-[#1A2340] focus:outline-none focus:border-[#C4CBD8] transition-colors placeholder-[#4E5A7A]"
+          />
+        </div>
+      )}
+
+      {/* Monto */}
+      <div>
+        <label className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5 block">
+          Monto devuelto ({tx.originCurrency ?? 'BOB'})
+        </label>
+        <input
+          type="number"
+          step="0.01"
+          min="0"
+          value={amount}
+          onChange={e => setAmount(e.target.value)}
+          className="w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white tabular-nums border border-[#263050] bg-[#1A2340] focus:outline-none focus:border-[#C4CBD8] transition-colors"
+        />
+        {montoOk && montoNum !== tx.originalAmount && (
+          <p className="text-[0.6875rem] text-[#F59E0B] mt-1.5">
+            Distinto de lo cobrado ({tx.originalAmount} {tx.originCurrency ?? 'BOB'}). La diferencia sigue contando como pasivo.
+          </p>
+        )}
+      </div>
+
+      {/* Respaldo */}
+      <div>
+        <label className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5 block">
+          Respaldo {exigeArchivo
+            ? <span className="text-[#EF4444]">*</span>
+            : <span className="text-[#4E5A7A] normal-case tracking-normal font-normal">(opcional: el wtxId ya es evidencia)</span>}
+        </label>
+        <label className="flex items-center gap-2 min-h-[44px] px-3 py-2.5 rounded-xl border border-dashed border-[#263050] bg-[#1A2340] cursor-pointer hover:border-[#C4CBD833] transition-colors">
+          <Paperclip size={14} className="text-[#8A96B8] flex-shrink-0" />
+          <span className={`text-[0.8125rem] truncate ${proof ? 'text-white' : 'text-[#4E5A7A]'}`}>
+            {proof ? proof.name : 'Captura del banco o PDF, hasta 5 MB'}
+          </span>
+          <input type="file" accept="image/*,application/pdf" onChange={elegirArchivo} className="hidden" />
+        </label>
+      </div>
+
+      {/* Motivo */}
+      <div>
+        <label className="text-[0.625rem] font-semibold text-[#4E5A7A] uppercase tracking-wider mb-1.5 block">
+          Motivo
+        </label>
+        <textarea
+          value={reason}
+          onChange={e => setReason(e.target.value)}
+          rows={2}
+          placeholder='Ej: "Vita revirtió el payout, devuelto por transferencia"'
+          className="w-full rounded-xl px-3 py-2.5 text-[0.875rem] text-white border border-[#263050] bg-[#1A2340] focus:outline-none focus:border-[#C4CBD8] transition-colors resize-none placeholder-[#4E5A7A]"
+        />
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#EF44441A] border border-[#EF444433]">
+          <AlertCircle size={12} className="text-[#F87171] flex-shrink-0" />
+          <p className="text-[0.75rem] text-[#F87171]">{error}</p>
+        </div>
+      )}
+
+      <button
+        onClick={handleRegistrar}
+        disabled={!puedeEnviar}
+        className="w-full min-h-[44px] py-2.5 rounded-xl bg-[#C4CBD8] text-[#0F1628] text-[0.875rem] font-bold flex items-center justify-center gap-2 hover:bg-[#A8B0C0] active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-[#C4CBD8] transition-all"
+        style={puedeEnviar ? { boxShadow: '0 4px 20px rgba(196, 203, 216, 0.3)' } : undefined}
+      >
+        {saving && <Loader size={13} className="animate-spin" />}
+        {saving ? 'Registrando…' : 'Registrar devolución'}
+      </button>
+
+      {exigeArchivo && !proof && (
+        <p className="text-[0.6875rem] text-[#4E5A7A] text-center">
+          Falta adjuntar el respaldo
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ── RefundDoneCard — devolución ya registrada, con su evidencia ───────────────
+
+function RefundDoneCard({ refund, currency }) {
+  const etiqueta = METODOS_DEVOLUCION.find(m => m.id === refund.method)?.label ?? refund.method
+  return (
+    <div className="mb-5 p-4 rounded-2xl border border-[#22C55E40] bg-[#22C55E0A] space-y-3">
+      <div className="flex items-center gap-2">
+        <CheckCircle2 size={18} className="text-[#22C55E] flex-shrink-0" />
+        <p className="text-[0.875rem] font-bold text-[#22C55E]">
+          Devolución registrada
+        </p>
+      </div>
+      <div className="pl-1 space-y-1.5">
+        <Field label="Método"     value={etiqueta} />
+        {refund.amount != null && (
+          <Field label="Monto" value={`${refund.amount} ${currency ?? 'BOB'}`} />
+        )}
+        {refund.bankReference && <Field label="Referencia del banco" value={refund.bankReference} mono />}
+        {refund.wtxId         && <Field label="Movimiento de billetera" value={refund.wtxId} mono />}
+        {refund.at && (
+          <Field label="Registrada" value={new Date(refund.at).toLocaleString('es-BO')} dim />
+        )}
+        {refund.reason && <Field label="Motivo" value={refund.reason} dim />}
+        <p className="text-[0.6875rem] text-[#22C55E] pt-1">
+          ✓ Con evidencia: el monto dejó de contar como pasivo
+        </p>
+      </div>
     </div>
   )
 }
@@ -796,6 +1047,28 @@ export default function TransactionDrawer({ transactionId, onClose, onStatusUpda
                   </div>
                 </div>
               )}
+
+              {/* ── Devolución ──────────────────────────────────────────
+                  Con evidencia se muestra como cerrada; sin ella se ofrece el
+                  formulario. 'refunded' SIN evidencia entra acá a propósito: es el
+                  caso que el backend sigue contando como pasivo, así que el panel
+                  tiene que pedir el respaldo en vez de darlo por saldado. */}
+              {(() => {
+                const r = tx.refund
+                const conEvidencia = Boolean(r?.bankReference || r?.wtxId)
+                if (conEvidencia) {
+                  return <RefundDoneCard refund={r} currency={tx.originCurrency} />
+                }
+                if (tx.status === 'failed' || tx.status === 'refunded') {
+                  return (
+                    <RefundBanner
+                      tx={tx}
+                      onRegistered={() => { load(); onStatusUpdated?.() }}
+                    />
+                  )
+                }
+                return null
+              })()}
 
               {/* ── Banner USDC pendiente de envío (Harbor off-ramp) ─── */}
               {tx.status === 'payout_pending_usdc_send' && tx.harborTransfer?.instructionAddress && (

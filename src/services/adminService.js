@@ -48,6 +48,34 @@ export function getTransactionDetail(transactionId) {
 }
 
 /**
+ * Registra la devolución de una operación cobrada y no ejecutada, con evidencia.
+ *
+ * ⚠️ No confundir con cambiar el estado a 'refunded' a mano. El selector de estado
+ * del drawer permite poner esa etiqueta sin mover un centavo, y el backend lo sabe:
+ * `getBOBCommitted` sigue contando el monto como pasivo hasta que exista `wtxId`
+ * (devolución a billetera) o `bankReference` (devolución por transferencia). O sea
+ * que la etiqueta sin evidencia no libera la deuda, solo la esconde. Esta es la vía
+ * que sí la cierra.
+ *
+ * @param {string} transactionId
+ * @param {{ method: 'bankTransfer'|'walletBOB'|'external',
+ *           bankReference?: string, wtxId?: string,
+ *           amount?: number, reason?: string }} datos
+ * @param {File} [proof] — imagen o PDF del respaldo, hasta 5 MB
+ * @returns {Promise<{ ok: boolean, refund: object }>}
+ */
+export function registrarDevolucion(transactionId, datos, proof) {
+  const fd = new FormData()
+  fd.append('method', datos.method)
+  if (datos.bankReference) fd.append('bankReference', datos.bankReference)
+  if (datos.wtxId)         fd.append('wtxId',         datos.wtxId)
+  if (datos.amount != null) fd.append('amount', String(datos.amount))
+  if (datos.reason)        fd.append('reason',        datos.reason)
+  if (proof)               fd.append('proof',         proof)
+  return requestFormData(`/admin/transactions/${encodeURIComponent(transactionId)}/refund`, fd)
+}
+
+/**
  * Actualización manual de status con nota de auditoría.
  * @param {string} transactionId
  * @param {string} status  — nuevo status
