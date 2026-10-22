@@ -32,6 +32,18 @@ const IDLE_WARNING_MS = Math.min(60_000, IDLE_TIMEOUT_MS / 2)
 /** Marca de la ultima actividad, en disco: sobrevive al cierre de la app. */
 const IDLE_LAST_KEY = 'alyto_last_activity'
 
+// La marca se toca desde fuera del efecto de inactividad (al entrar y al salir),
+// asi que los accesos viven aqui. Todos protegidos: en modo privado, o con el
+// almacenamiento deshabilitado, `localStorage` lanza, y esto corre en el camino
+// de arranque de la sesion. Que falle guardar la marca degrada el cierre por
+// inactividad; que lance, tumba el arbol entero.
+const sellarActividad = () => {
+  try { localStorage.setItem(IDLE_LAST_KEY, String(Date.now())) } catch { /* modo privado */ }
+}
+const olvidarActividad = () => {
+  try { localStorage.removeItem(IDLE_LAST_KEY) } catch { /* modo privado */ }
+}
+
 // ── Contexto ───────────────────────────────────────────────────────────────
 
 const AuthContext = createContext(null)
@@ -186,7 +198,15 @@ export function AuthProvider({ children }) {
       console.error('[Auth] NO TOKEN IN RESPONSE — backend may still be in cookie-only mode')
     }
 
-    // 3. Update React state — the response already contains the full user object
+    // 3. Sellar la marca de inactividad ANTES de que el efecto la lea.
+    //    Sin esto, quien fuera expulsado por inactividad quedaba fuera para
+    //    siempre: al volver a entrar, el efecto leia la marca vieja (la de la
+    //    sesion anterior, que nadie borraba), la daba por vencida y cerraba la
+    //    sesion recien abierta. Y en /login no hay escuchas de actividad que la
+    //    refresquen, asi que la marca solo envejecia. Bucle sin salida.
+    sellarActividad()
+
+    // 4. Update React state — the response already contains the full user object
     setUser(data.user)
     Sentry.setUser({
       id:     data.user.id,
@@ -253,7 +273,10 @@ export function AuthProvider({ children }) {
       localStorage.setItem(TOKEN_KEY, data.token)
     }
 
-    // 2. Now safe to update React state
+    // 2. Misma razon que en finishLogin: sellar antes de que el efecto lea.
+    sellarActividad()
+
+    // 3. Now safe to update React state
     setUser(data.user)
     Sentry.setUser({
       id:     data.user.id,
@@ -275,6 +298,9 @@ export function AuthProvider({ children }) {
       console.warn('[Auth] Logout API failed:', err.message)
     } finally {
       localStorage.removeItem(TOKEN_KEY)
+      // La marca muere con la sesion. Si sobrevive, la siguiente queda tasada
+      // por la inactividad de la anterior.
+      olvidarActividad()
       setUser(null)
       Sentry.setUser(null)
     }
@@ -310,21 +336,16 @@ export function AuthProvider({ children }) {
     // por mucho tiempo que hubiera pasado. Con la marca en disco, el arranque en
     // frio se compara igual que la vuelta de segundo plano.
     const leerUltimaActividad = () => {
-      const v = Number(localStorage.getItem(IDLE_LAST_KEY))
-      return Number.isFinite(v) && v > 0 ? v : Date.now()
+      try {
+        const v = Number(localStorage.getItem(IDLE_LAST_KEY))
+        return Number.isFinite(v) && v > 0 ? v : Date.now()
+      } catch { return Date.now() } // sin almacenamiento, plazo desde ahora
     }
     const guardarUltimaActividad = (t) => {
       try { localStorage.setItem(IDLE_LAST_KEY, String(t)) } catch { /* modo privado */ }
     }
 
     let ultimaActividad = leerUltimaActividad()
-
-    // Arranque en frio: si ya vencio mientras la app estaba cerrada, se cierra
-    // ahora. Se comprueba antes de armar nada, para no dar un plazo nuevo.
-    if (Date.now() - ultimaActividad >= IDLE_TIMEOUT_MS) {
-      logout().finally(() => window.location.replace('/login?expired=1'))
-      return
-    }
 
     const clearTimers = () => {
       if (warnId) clearTimeout(warnId)
@@ -342,12 +363,17 @@ export function AuthProvider({ children }) {
       }
     }
 
-    const openWarning = () => {
+    // `restanteMs` es lo que queda de plazo de verdad. Por defecto la ventana
+    // completa de aviso, que es el caso normal (se entra en el aviso justo a
+    // T-IDLE_WARNING_MS). Al volver de segundo plano o al abrir la app puede
+    // quedar menos, y entonces hay que respetarlo: fijar siempre la ventana
+    // entera regalaba hasta 60s de sesión en cada reanudación.
+    const openWarning = (restanteMs = IDLE_WARNING_MS) => {
       warning = true
       // Cuenta atrás contra un instante fijo, no restando 1 por tick: en una
       // pestaña de fondo el navegador estrangula los timers y un contador
       // incremental se desviaría del cierre real.
-      const deadline = Date.now() + IDLE_WARNING_MS
+      const deadline = Date.now() + Math.max(0, Math.min(restanteMs, IDLE_WARNING_MS))
       const paint = () => {
         const left = Math.ceil((deadline - Date.now()) / 1000)
         if (left <= 0) {
@@ -388,8 +414,12 @@ export function AuthProvider({ children }) {
     // Por eso al recuperar el primer plano no se confía en el temporizador: se
     // compara el tiempo transcurrido de verdad contra el plazo y, si ya venció,
     // se cierra en el acto. Si no venció, se rearma por el tiempo que quede.
-    const onVisible = () => {
-      if (document.visibilityState !== 'visible') return
+    //
+    // El mismo criterio sirve para el arranque: tras reiniciar el telefono el
+    // proceso muere y no hay temporizador que reanudar, solo la marca en disco.
+    // Por eso lo usan los dos, y por eso `arm()` (plazo completo) queda para la
+    // actividad real del usuario, que es lo unico que debe renovarlo.
+    const rearmarSegunReloj = () => {
       const inactivo = Date.now() - ultimaActividad
       if (inactivo >= IDLE_TIMEOUT_MS) {
         onIdle()
@@ -399,8 +429,13 @@ export function AuthProvider({ children }) {
       clearTimers()
       warning = false
       setIdleCountdown(null)
-      if (restante <= IDLE_WARNING_MS) openWarning()
+      if (restante <= IDLE_WARNING_MS) openWarning(restante)
       else warnId = setTimeout(openWarning, restante - IDLE_WARNING_MS)
+    }
+
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      rearmarSegunReloj()
     }
 
     const EVENTS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click']
@@ -415,7 +450,10 @@ export function AuthProvider({ children }) {
     // usuario abre la app y la deja sin tocar, sin esto no habria marca que
     // comparar en el siguiente arranque y la sesion quedaria sin plazo.
     guardarUltimaActividad(ultimaActividad)
-    arm() // inicia el contador al montar / al haber sesión
+    // Al montar se arma por lo que QUEDE, no por el plazo entero: Android mata
+    // el proceso al pasar a segundo plano con poca memoria, y dar plazo nuevo
+    // en cada relanzamiento dejaba una sesion que no caducaba nunca.
+    rearmarSegunReloj()
 
     return () => {
       clearTimers()
