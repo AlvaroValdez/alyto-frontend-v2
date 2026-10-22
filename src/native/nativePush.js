@@ -18,6 +18,17 @@ export function isNativePlatform() {
   return Capacitor.isNativePlatform();
 }
 
+/**
+ * Misma clave que usa el camino web. El token nativo lo entrega el plugin por
+ * un listener asíncrono, así que sin guardarlo aquí el resto de la app no tenía
+ * forma de conocerlo: el hook lo dejaba en null para siempre y, con él, el
+ * interruptor de ajustes no podía mostrarse activo ni se podía desvincular el
+ * dispositivo, porque ambas cosas se apoyan en tener el token a mano.
+ */
+export const FCM_TOKEN_KEY = 'alyto_fcm_token';
+/** Aviso de token recién emitido, para quien ya esté montado cuando llegue. */
+export const PUSH_TOKEN_EVENT = 'alyto:push-token';
+
 let listenersReady = false;
 
 /** Carga diferida del plugin (evita romper el bundle web). */
@@ -39,6 +50,8 @@ export async function setupNativePushListeners() {
   // Token FCM nativo → backend (idempotente: el backend usa $addToSet).
   await PushNotifications.addListener('registration', (token) => {
     if (token?.value) {
+      try { localStorage.setItem(FCM_TOKEN_KEY, token.value); } catch { /* modo privado */ }
+      window.dispatchEvent(new CustomEvent(PUSH_TOKEN_EVENT, { detail: token.value }));
       registerFcmToken(token.value).catch((err) =>
         console.error('[NativePush] registerFcmToken falló:', err?.message),
       );
@@ -47,6 +60,21 @@ export async function setupNativePushListeners() {
 
   await PushNotifications.addListener('registrationError', (err) => {
     console.error('[NativePush] Error de registro:', err?.error ?? err);
+  });
+
+  // Push recibida con la app ABIERTA. Android no pinta la notificación del
+  // sistema en ese caso, y el camino web (onMessage del SDK de Firebase) no se
+  // dispara nunca en el WebView, así que sin esto el aviso se perdía entero:
+  // ni toast, ni actualización del contador de no leídas. Se reemite como el
+  // mismo evento de toast que ya escucha AppNotifications, con la forma de
+  // payload que espera NotificationToast.
+  await PushNotifications.addListener('pushNotificationReceived', (notif) => {
+    window.dispatchEvent(new CustomEvent('alyto:show-toast', {
+      detail: {
+        notification: { title: notif?.title, body: notif?.body },
+        data:         notif?.data ?? {},
+      },
+    }));
   });
 
   // Tap en una notificación (app en background o cerrada) → deep link interno.

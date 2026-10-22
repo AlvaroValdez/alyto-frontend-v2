@@ -11,9 +11,17 @@ import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Lock, Smartphone, LogOut, Loader2, Check, X, Shield } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { messaging, getToken, registerFirebaseSW, VAPID_KEY } from '../../services/firebase'
+import { isNativePlatform, FCM_TOKEN_KEY } from '../../native/nativePush'
 
 async function getCurrentDeviceFcmToken() {
   try {
+    // En nativo el token lo emite el plugin de Capacitor y vive en disco: el
+    // SDK web no lo conoce y este camino devolvia null, asi que "desvincular
+    // dispositivo" salia sin hacer nada ni avisar, y el telefono seguia
+    // recibiendo push. Se nota ahora que el token nativo si se registra.
+    if (isNativePlatform()) {
+      try { return localStorage.getItem(FCM_TOKEN_KEY) } catch { return null }
+    }
     if (!messaging) return null
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return null
     const swRegistration = await registerFirebaseSW()

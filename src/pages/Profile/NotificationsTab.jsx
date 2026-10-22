@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react'
 import { Mail, Bell, BellOff, RefreshCw } from 'lucide-react'
 import Toggle from '../../components/ui/Toggle'
 import { usePushNotifications } from '../../hooks/usePushNotifications'
+import { isNativePlatform } from '../../native/nativePush'
 
 // ── Browser-specific unblock instructions ─────────────────────────────────────
 
@@ -61,7 +62,12 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
   } = usePushNotifications()
 
   const pushBlocked = permission === 'denied'
-  const pushGranted = permission === 'granted' && !!token
+  // En nativo el token lo emite el plugin de forma asíncrona y puede tardar, o
+  // haberse emitido en un arranque anterior. Exigirlo aquí dejaba el interruptor
+  // apagado de forma permanente por mucho que Android concediera el permiso.
+  // Quien manda en nativo es el permiso del sistema; el token es cosa del web,
+  // donde sin él no hay a quién enviar.
+  const pushGranted = permission === 'granted' && (isNativePlatform() || !!token)
   const pushDefault = permission === 'default'
 
   // Sincronizar desde el perfil cargado — push activo solo si el dispositivo
@@ -70,11 +76,16 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
     const notifPrefs = profile?.preferences?.notifications ?? profile?.notifications
     if (notifPrefs) {
       setEmailEnabled(notifPrefs.email ?? true)
-      const profilePush   = notifPrefs.push ?? false
-      const hasPermission = typeof Notification !== 'undefined' && Notification.permission === 'granted'
-      setPushEnabled(profilePush && !!token && hasPermission)
+      const profilePush = notifPrefs.push ?? false
+      // En nativo `Notification` no existe: preguntarlo daba siempre false y el
+      // interruptor no se podia activar nunca. El estado real lo tiene el hook,
+      // y `pushGranted` ya resuelve la diferencia entre nativo y navegador.
+      setPushEnabled(profilePush && pushGranted)
     }
-  }, [profile, token])
+  // `permission` entra en las dependencias: en nativo se resuelve de forma
+  // asincrona DESPUES del montaje, y sin el la preferencia guardada se
+  // descartaba con el permiso todavia sin comprobar.
+  }, [profile, token, permission, pushGranted])
 
   async function handleEmailToggle(val) {
     setEmailEnabled(val)
@@ -112,9 +123,12 @@ export default function NotificationsTab({ profile, saving, onUpdate, onRemoveDe
     // CASO 2 y 3 unificados: Activar (con o sin permiso/token previos)
     setSavingPush(true)
     try {
-      await requestPermission()
-
-      const granted = typeof Notification !== 'undefined' && Notification.permission === 'granted'
+      // Se usa lo que DEVUELVE requestPermission, no el estado del hook: aqui
+      // la variable `permission` sigue siendo la del render en el que se pulso,
+      // asi que en nativo valia 'default' aunque Android acabara de conceder el
+      // permiso. Resultado: el interruptor se apagaba solo y la preferencia no
+      // llegaba a guardarse hasta el segundo intento.
+      const granted = await requestPermission()
 
       if (granted) {
         setPushEnabled(true)

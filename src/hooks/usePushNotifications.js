@@ -19,13 +19,14 @@ import {
   isNativePlatform,
   requestNativePushPermission,
   checkNativePushPermission,
+  FCM_TOKEN_KEY,
+  PUSH_TOKEN_EVENT,
 } from '../native/nativePush'
 
 const IS_NATIVE = isNativePlatform()
 
 // ── Claves de storage ──────────────────────────────────────────────────────
 const FCM_REGISTERED_KEY  = 'alyto_fcm_registered'
-const FCM_TOKEN_KEY        = 'alyto_fcm_token'
 const ASKED_AT_KEY        = 'alyto_notif_asked_at'
 const BANNER_SHOWN_KEY    = 'alyto_notif_banner_shown'   // sessionStorage
 const BANNER_DENIED_KEY   = 'alyto_notif_banner_denied'  // localStorage (permanente)
@@ -51,12 +52,19 @@ export function usePushNotifications() {
   // ── Hydrate token from localStorage on mount ───────────────────────────
   useEffect(() => {
     if (IS_NATIVE) {
-      // En nativo el token lo gestiona el plugin (listener 'registration').
-      // Solo sincronizamos el estado del permiso del sistema.
+      // En nativo el token lo emite el plugin por el listener 'registration'.
+      // Se recoge por los dos lados porque puede llegar antes o después de este
+      // montaje: lo ya guardado, y el aviso del que llegue a partir de ahora.
       checkNativePushPermission().then((p) => {
         setPermission(p === 'prompt' ? 'default' : p)
       }).catch(() => {})
-      return
+      try {
+        const guardado = localStorage.getItem(FCM_TOKEN_KEY)
+        if (guardado) setToken(guardado)
+      } catch { /* modo privado */ }
+      const alLlegarToken = (e) => setToken(e.detail)
+      window.addEventListener(PUSH_TOKEN_EVENT, alLlegarToken)
+      return () => window.removeEventListener(PUSH_TOKEN_EVENT, alLlegarToken)
     }
     try {
       const saved = localStorage.getItem(FCM_TOKEN_KEY)
@@ -121,20 +129,28 @@ export function usePushNotifications() {
     if (IS_NATIVE) {
       try {
         const result = await requestNativePushPermission()
-        setPermission(result === 'granted' ? 'granted' : 'denied')
+        const estado = result === 'granted' ? 'granted' : 'denied'
+        setPermission(estado)
         setShowBanner(false)
         localStorage.setItem(
           BANNER_DENIED_KEY,
           result === 'granted' ? 'accepted' : 'dismissed',
         )
+        // Se DEVUELVE el resultado, no solo se guarda en el estado de React:
+        // quien llama lo necesita inmediatamente despues del await, y ahi su
+        // variable de `permission` sigue siendo la del render anterior. En web
+        // se leia `Notification.permission`, un global vivo, y por eso nunca se
+        // noto. El valor es "se pudo activar", que es la pregunta real de quien
+        // llama, y no solo el permiso: en web hace falta ademas el token.
+        return estado === 'granted'
       } catch (err) {
         console.error('[NativePush] requestPermission error:', err?.message)
         setError(err?.message ?? 'No se pudo habilitar las notificaciones.')
+        return false
       }
-      return
     }
 
-    if (!('Notification' in window) || !messaging) return
+    if (!('Notification' in window) || !messaging) return false
 
     try {
       // Pedir permiso solo si no está ya concedido
@@ -144,7 +160,7 @@ export function usePushNotifications() {
         if (result !== 'granted') {
           setShowBanner(false)
           localStorage.removeItem(FCM_TOKEN_KEY)
-          return
+          return false
         }
       }
 
@@ -153,7 +169,7 @@ export function usePushNotifications() {
       if (!swRegistration) {
         console.error('[Alyto FCM] SW registration unavailable — push will not work')
         setError('Service Worker registration failed')
-        return
+        return false
       }
       const fcmToken = await getToken(messaging, {
         vapidKey: VAPID_KEY,
@@ -163,7 +179,7 @@ export function usePushNotifications() {
       if (!fcmToken) {
         console.error('[FCM_TOKEN] getToken returned null — cannot register push')
         setError('FCM token unavailable')
-        return
+        return false
       }
 
       // Siempre enviamos el token al backend: la autoridad sobre qué tokens
@@ -175,7 +191,7 @@ export function usePushNotifications() {
       } catch (err) {
         console.error('[FCM] Token registration failed:', err.message)
         setError('No se pudo habilitar las notificaciones. Intenta de nuevo.')
-        return
+        return false
       }
 
       localStorage.setItem(FCM_REGISTERED_KEY, '1')
@@ -185,9 +201,11 @@ export function usePushNotifications() {
       setShowBanner(false)
       // Marcar como aceptado permanentemente para no volver a mostrar el banner
       localStorage.setItem(BANNER_DENIED_KEY, 'accepted')
+      return true
     } catch (err) {
       console.error('[FCM_TOKEN] requestPermission error:', err)
       setError(err.message)
+      return false
     }
   }, [])
 
