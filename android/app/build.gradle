@@ -17,9 +17,10 @@ android {
         applicationId "com.avfinance.alyto"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // 1 a 6 ya consumidos en Play (el 6 publicado el 19-oct).
-        versionCode 7
-        versionName "2.0.5"
+        // 1 a 7 ya consumidos en Play. Publicadas de verdad: la 5 (18-oct) y la 7
+        // (22-oct). La 6 se compilo y nunca se subio; la 7 salio sin Firebase.
+        versionCode 8
+        versionName "2.0.6"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -72,13 +73,39 @@ dependencies {
 apply from: 'capacitor.build.gradle'
 
 // El plugin de Google Services SOLO se aplica si existe android/app/google-services.json.
-// Sin el archivo el build sigue funcionando, pero el push nativo (FCM) no. Antes esto
-// dependía de que `servicesJSON.text` lanzara excepción al faltar el archivo; con
-// .exists() la condición es explícita y un archivo vacío falla ruidosamente en vez de
-// saltarse el plugin en silencio. Ver docs/ANDROID_RELEASE.md §2.
+// Sin el archivo el push nativo (FCM) NO funciona: el binario sale sin `google_app_id`,
+// FirebaseMessaging no puede inicializarse y la llamada de registro del plugin de push
+// se queda colgada para siempre, sin resolver ni fallar. En la app se ve como un
+// interruptor que gira eternamente. Ver docs/ANDROID_RELEASE.md §2.
+//
+// Esto NO es hipotetico: la version 7 (2.0.5) se publico asi en Play el 22-10-2026.
+// Se compilo en un worktree, donde el archivo no estaba por estar gitignorado, y el
+// aviso de abajo era `logger.lifecycle`, que `gradle -q` oculta por completo. Build en
+// verde, binario firmado, revision de Google superada, y push imposible para todos.
+//
+// De ahi las dos decisiones de este bloque:
+//   1. En RELEASE se ABORTA. Una app de pagos sin avisos no es una degradacion
+//      aceptable, y quien compila casi nunca es quien descubre que faltaba.
+//   2. En debug se avisa por `logger.error`, no `lifecycle`: es el unico nivel que
+//      sobrevive a `-q`. Un aviso que una bandera puede silenciar no es una barrera.
 def servicesJSON = file('google-services.json')
 if (servicesJSON.exists()) {
     apply plugin: 'com.google.gms.google-services'
 } else {
-    logger.lifecycle("[alyto] google-services.json ausente: plugin no aplicado, el push nativo no funcionara en este build.")
+    gradle.taskGraph.whenReady { graph ->
+        def esRelease = graph.allTasks.any { t ->
+            t.project == project && t.name ==~ /(?i)(assemble|bundle).*Release.*/
+        }
+        if (esRelease) {
+            throw new GradleException(
+                "[alyto] FALTA android/app/google-services.json y esto es una compilacion de RELEASE.\n" +
+                "El binario saldria sin configuracion de Firebase y las notificaciones push\n" +
+                "no funcionarian en NINGUN dispositivo.\n" +
+                "Copia el archivo desde el checkout principal antes de compilar:\n" +
+                "  cp <repo>/android/app/google-services.json android/app/\n" +
+                "Esta comprobacion existe porque la version 7 se publico sin el."
+            )
+        }
+    }
+    logger.error("[alyto] google-services.json ausente: el push nativo NO funcionara en este build (debug).")
 }
