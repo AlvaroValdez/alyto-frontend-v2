@@ -696,7 +696,7 @@ function PollingPayinScreen({ stepData, onNext }) {
           🏦
         </div>
         <h3 className="text-[1rem] font-semibold text-[#0D1F3C] mb-1">
-          {isFintoc ? 'Fintoc — Pago bancario directo' : 'Widget de pago'}
+          {isFintoc ? 'Pago bancario directo' : 'Widget de pago'}
         </h3>
         <p className="text-[0.8125rem] text-[#4A5568] mb-4">
           {isFintoc

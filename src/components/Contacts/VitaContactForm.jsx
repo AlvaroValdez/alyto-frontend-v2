@@ -629,13 +629,20 @@ export default function VitaContactForm({
               : <Globe size={12} color="#15803D" />}
           </div>
           <div>
+            {/* El NOMBRE DEL PROVEEDOR no se muestra al usuario, ni aquí ni en
+                ninguna otra pantalla. Quién liquida por detrás es una decisión
+                nuestra de enrutamiento, puede cambiar sin avisar (de hecho
+                `bo-br` y `bo-mx` ya cambiaron de proveedor) y al usuario no le
+                aporta nada: su relación es con Alyto. Nombrarlo además invita a
+                que busque soporte en el proveedor equivocado.
+                Se conserva el aviso, pero describiendo el SERVICIO. */}
             <span style={{ fontSize: '0.8125rem', fontWeight: 700,
               color: isOwlPay ? '#1D4ED8' : '#15803D' }}>
-              {isOwlPay ? 'OwlPay Harbor' : 'Vita Wallet'}
+              {isOwlPay ? 'Transferencia internacional' : 'Transferencia a Latinoamérica'}
             </span>
             <span style={{ fontSize: '0.6875rem', color: isOwlPay ? '#3B82F6' : '#22C55E',
               marginLeft: 6 }}>
-              {isOwlPay ? '· Transferencia internacional' : '· Red Latinoamérica'}
+              · Depósito a cuenta bancaria
             </span>
           </div>
         </div>

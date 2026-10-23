@@ -14,7 +14,8 @@ const PAYIN_METHODS = {
   CL: [
     {
       id: 'fintoc',
-      name: 'Fintoc',
+      // El nombre del proveedor no se muestra: el usuario paga con Alyto.
+      name: 'Transferencia bancaria',
       description: 'Transferencia bancaria instantánea A2A',
       badge: 'Instantáneo',
       badgeType: 'instant',

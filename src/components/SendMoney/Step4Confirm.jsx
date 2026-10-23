@@ -329,7 +329,7 @@ export default function Step4Confirm({ stepData, onNext, onRefreshQuote }) {
     : ({
         // Con FINTOC_ENABLED apagado no se nombra al proveedor, pero la etiqueta
         // sigue resolviendo para transacciones creadas antes de ocultarlo.
-        fintoc:  FINTOC_ENABLED ? 'Fintoc — Transferencia bancaria' : 'Transferencia bancaria',
+        fintoc:  'Transferencia bancaria',
         vita:    'Pago digital',
         manual:  'Transferencia bancaria manual',
         owlpay:  'Transferencia internacional',
