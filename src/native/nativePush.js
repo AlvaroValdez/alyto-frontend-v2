@@ -29,12 +29,55 @@ export const FCM_TOKEN_KEY = 'alyto_fcm_token';
 /** Aviso de token recién emitido, para quien ya esté montado cuando llegue. */
 export const PUSH_TOKEN_EVENT = 'alyto:push-token';
 
+/**
+ * Canal al que el backend dirige TODAS las push de Android: manda
+ * `android.notification.channelId = 'payments'` (services/notifications.js).
+ *
+ * Desde Android 8 toda notificación necesita un canal existente, y **el canal lo
+ * crea la app, no el servidor**. Sin crearlo, el nombre que manda el backend no
+ * apunta a nada y la notificación queda a merced del canal de reserva del SDK de
+ * Firebase, fuera de nuestro control y sin la importancia ni la privacidad que
+ * definimos acá.
+ *
+ * El id tiene que coincidir EXACTAMENTE con el del backend y con el
+ * `default_notification_channel_id` del manifiesto.
+ *
+ * Las propiedades de un canal son inmutables tras crearlo: para cambiar el sonido
+ * o la importancia hay que cambiar el id, en los tres lugares a la vez.
+ */
+const CHANNEL_ID = 'payments';
+
 let listenersReady = false;
 
 /** Carga diferida del plugin (evita romper el bundle web). */
 async function getPlugin() {
   const mod = await import('@capacitor/push-notifications');
   return mod.PushNotifications;
+}
+
+/**
+ * Crea el canal de notificaciones de pagos. Idempotente: volver a crearlo con el
+ * mismo id no duplica nada ni pisa las preferencias que haya elegido el usuario.
+ */
+async function ensureChannel(PushNotifications) {
+  try {
+    await PushNotifications.createChannel({
+      id:          CHANNEL_ID,
+      name:        'Pagos y movimientos',
+      description: 'Avisos de cobros, envíos y movimientos de tu cuenta.',
+      importance:  4,  // HIGH — suena y aparece como aviso emergente
+      // visibility PRIVATE: en la pantalla bloqueada se ve que llegó un aviso de
+      // Alyto, pero no su contenido. El cuerpo de estas notificaciones lleva
+      // importes ("Recibiste Bs 240"), y eso no debe quedar legible para
+      // cualquiera que levante el teléfono.
+      visibility:  0,
+      vibration:   true,
+      // `sound` se omite a propósito: espera el nombre de un archivo en res/raw,
+      // no la cadena 'default'. Sin él el canal usa el sonido del sistema.
+    });
+  } catch (err) {
+    console.error('[NativePush] No se pudo crear el canal de notificaciones:', err?.message ?? err);
+  }
 }
 
 /**
@@ -46,6 +89,9 @@ export async function setupNativePushListeners() {
   listenersReady = true;
 
   const PushNotifications = await getPlugin();
+
+  // El canal tiene que existir ANTES de que llegue la primera notificación.
+  await ensureChannel(PushNotifications);
 
   // Token FCM nativo → backend (idempotente: el backend usa $addToSet).
   await PushNotifications.addListener('registration', (token) => {
