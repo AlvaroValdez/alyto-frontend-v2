@@ -49,10 +49,36 @@ const CHANNEL_ID = 'payments';
 
 let listenersReady = false;
 
-/** Carga diferida del plugin (evita romper el bundle web). */
-async function getPlugin() {
+/**
+ * Carga diferida del plugin (evita romper el bundle web).
+ *
+ * ⚠️ El plugin se devuelve ENVUELTO en un objeto, y no es un capricho de estilo:
+ * es la diferencia entre que el push funcione y que no.
+ *
+ * `PushNotifications` es un Proxy de Capacitor que responde a CUALQUIER propiedad
+ * reenviándola a nativo como un método. Al devolverlo pelado desde una función
+ * `async`, el motor de JavaScript lo resuelve: comprueba si tiene `.then`, el
+ * Proxy contesta que sí, y lo trata como una promesa. Entonces llama a `.then()`,
+ * Capacitor lo reenvía a Android, y allí:
+ *
+ *     Error: "PushNotifications.then()" is not implemented on android
+ *
+ * Ese `then` nunca invoca resolve ni reject, así que **la promesa no se resuelve
+ * jamás**. Quien hiciera `await getPlugin()` se quedaba colgado para siempre. En
+ * la app se veía como el interruptor de notificaciones girando sin fin, y es la
+ * razón de fondo por la que el push nativo NUNCA funcionó: el bug entró con el
+ * primer andamiaje de Capacitor (6b61e61) y sobrevivió a todos los arreglos
+ * posteriores, porque ninguno miraba aquí.
+ *
+ * Verificado en un Samsung A21s (Android 12) leyendo la consola del WebView con
+ * una compilación de depuración: el error sale literal, tres veces, una por cada
+ * pulsación del interruptor.
+ *
+ * Envuelto en un objeto plano, el motor ya no ve un thenable y lo entrega tal cual.
+ */
+async function cargarPlugin() {
   const mod = await import('@capacitor/push-notifications');
-  return mod.PushNotifications;
+  return { PushNotifications: mod.PushNotifications };
 }
 
 /**
@@ -88,7 +114,7 @@ export async function setupNativePushListeners() {
   if (!isNativePlatform() || listenersReady) return;
   listenersReady = true;
 
-  const PushNotifications = await getPlugin();
+  const { PushNotifications } = await cargarPlugin();
 
   // El canal tiene que existir ANTES de que llegue la primera notificación.
   await ensureChannel(PushNotifications);
@@ -137,7 +163,7 @@ export async function setupNativePushListeners() {
 export async function requestNativePushPermission() {
   if (!isNativePlatform()) return 'denied';
 
-  const PushNotifications = await getPlugin();
+  const { PushNotifications } = await cargarPlugin();
   await setupNativePushListeners();
 
   let perm = await PushNotifications.checkPermissions();
@@ -155,7 +181,7 @@ export async function requestNativePushPermission() {
 /** Devuelve el estado actual del permiso nativo ('granted'|'denied'|'prompt'). */
 export async function checkNativePushPermission() {
   if (!isNativePlatform()) return 'denied';
-  const PushNotifications = await getPlugin();
+  const { PushNotifications } = await cargarPlugin();
   const perm = await PushNotifications.checkPermissions();
   if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') return 'prompt';
   return perm.receive; // 'granted' | 'denied'
