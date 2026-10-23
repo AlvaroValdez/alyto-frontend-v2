@@ -17,10 +17,13 @@ android {
         applicationId "com.avfinance.alyto"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // 1 a 7 ya consumidos en Play. Publicadas de verdad: la 5 (18-oct) y la 7
-        // (22-oct). La 6 se compilo y nunca se subio; la 7 salio sin Firebase.
-        versionCode 8
-        versionName "2.0.6"
+        // 1 a 8 ya consumidos en Play. Publicadas: 5 (18-oct), 7 (22-oct) y 8
+        // (23-oct). La 6 nunca se subio. La 7 salio sin Firebase. La 8 llevaba
+        // Firebase pero se subio minutos ANTES del arreglo del `then()`, asi que
+        // el push seguia colgado. La 9 es la primera con la cadena completa,
+        // probada en un dispositivo real.
+        versionCode 9
+        versionName "2.0.7"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
