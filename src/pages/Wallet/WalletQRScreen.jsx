@@ -382,6 +382,24 @@ function TabPagar() {
   const [result,      setResult]      = useState(null)
   const [payError,    setPayError]    = useState(null)
 
+  /**
+   * Proporción REAL del fotograma de la cámara, leída de `loadedmetadata`.
+   *
+   * El visor era cuadrado fijo (`aspectRatio: 1/1`) con el video en
+   * `object-cover`, y eso rompía la correspondencia entre lo que el usuario ve y
+   * lo que se escanea: `jsQR` analiza el fotograma COMPLETO (abajo se hace
+   * `canvas.width = video.videoWidth` y se dibuja todo), mientras la pantalla
+   * mostraba solo la franja central. Con una cámara 4:3 en un visor 1:1 se
+   * recortaba el 25% del ancho; con 16:9, el 44%. Resultado: un QR perfectamente
+   * visible para la cámara quedaba fuera de la imagen, y el usuario lo centraba
+   * donde no correspondía.
+   *
+   * Adoptando la proporción de la cámara no se recorta nada y lo que se ve es
+   * exactamente lo que se lee. Arranca en 1 para que la tarjeta de "Activar
+   * cámara" siga siendo cuadrada.
+   */
+  const [camAspect, setCamAspect] = useState(1)
+
   const stopCamera = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
     streamRef.current?.getTracks().forEach(t => t.stop())
@@ -628,7 +646,9 @@ function TabPagar() {
       {/* Visor cámara */}
       <div
         className="relative rounded-2xl overflow-hidden flex items-center justify-center bg-[#F1F5F9] border border-[#E2E8F0]"
-        style={{ aspectRatio: '1/1' }}
+        // Mientras no hay cámara es cuadrado; al abrirla toma la proporción real
+        // del fotograma, así no se recorta nada y lo que se ve es lo que se lee.
+        style={{ aspectRatio: scanning ? camAspect : 1 }}
       >
         {/*
           Video siempre en el DOM para que videoRef.current esté disponible
@@ -639,13 +659,25 @@ function TabPagar() {
           className={`absolute inset-0 w-full h-full object-cover ${scanning ? '' : 'hidden'}`}
           playsInline
           muted
+          // El visor se adapta a la cámara, no al revés. Si el navegador no
+          // informa dimensiones, se deja el cuadrado y no se rompe nada.
+          onLoadedMetadata={(e) => {
+            const { videoWidth: w, videoHeight: h } = e.currentTarget
+            if (w > 0 && h > 0) setCamAspect(w / h)
+          }}
         />
 
         {scanning && (
           <>
             {/* Marco de escaneo */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-48 h-48 border-2 border-[#233E58] rounded-2xl opacity-80" />
+              {/*
+                Se dimensiona por ALTURA (70%) y se mantiene cuadrado. Antes eran
+                192 px fijos: en un visor 16:9 de 375 px de ancho la altura es
+                ~193 px, así que el marco lo desbordaba. Tomando la altura como
+                base nunca desborda, porque la cámara siempre es apaisada.
+              */}
+              <div className="h-[70%] aspect-square border-2 border-[#233E58] rounded-2xl opacity-80" />
             </div>
             <button
               onClick={stopCamera}
