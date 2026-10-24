@@ -49,6 +49,9 @@ import KycPage            from '../pages/Kyc/KycPage'
 import KycReturnPage      from '../pages/Kyc/KycReturnPage'
 import ReclamosPage       from '../pages/Reclamos/ReclamosPage'
 
+// ── Apartado de estilo (no reemplaza nada) ───────────────────────────────────
+import WalletLabPage      from '../pages/WalletLab/WalletLabPage'
+
 // ── Páginas KYB ──────────────────────────────────────────────────────────────
 import KybPage       from '../pages/Kyb/KybPage'
 import KybForm       from '../pages/Kyb/KybForm'
@@ -124,6 +127,16 @@ export default function AppRouter() {
       <Route path="/privacy"         element={<LegalPage docType="privacy" />} />
       <Route path="/eliminar-cuenta" element={<DeleteAccountPage />} />
       <Route path="/delete-account"  element={<DeleteAccountPage />} />
+
+      {/* ── Apartado de estilo "Dark Minimal" — FUERA de AppLayout ────────
+          Propuesta visual para la wallet, sobre los datos reales del usuario.
+          Va sin AppLayout porque trae su propio header y barra inferior en
+          tema oscuro; el header claro de la app rompería la evaluación.
+          La wallet vigente sigue intacta en /wallet. ───────────────────── */}
+      <Route
+        path="/lab/wallet"
+        element={<ProtectedRoute><WalletLabPage /></ProtectedRoute>}
+      />
 
       {/* ══════════════════════════════════════════════════════════════════
           RUTAS PRIVADAS — todas dentro de AppLayout
