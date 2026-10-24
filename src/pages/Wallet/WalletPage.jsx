@@ -27,7 +27,8 @@ import WalletQRCard from '../../components/ui/WalletQRCard'
 import { buildQRCardImage } from '../../components/ui/buildQRCardImage'
 import { buildReceiptImage } from '../../components/ui/buildReceiptImage'
 import BankQrActions from '../../components/ui/BankQrActions'
-import { shareQRImage, shareFile } from '../../utils/shareImage'
+import { shareQRImage, shareFile, downloadDataUrl } from '../../utils/shareImage'
+import { Capacitor } from '@capacitor/core'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -84,6 +85,59 @@ function StatusBadge({ status }) {
       style={{ background: s.bg, color: s.text }}>
       {s.label}
     </span>
+  )
+}
+
+/**
+ * Lo que ocupa el lugar del importe cuando NO se pudo leer el saldo.
+ *
+ * Hasta ahora el fallo de la consulta se tragaba en silencio y la tarjeta
+ * calculaba el saldo sobre un objeto nulo, así que una red intermitente o un
+ * 500 del backend pintaban "Bs. 0,00" junto a la insignia "Activa": un saldo
+ * inventado con aspecto de dato bueno, en una app de dinero. No hay importe
+ * que mostrar acá, solo el aviso y el reintento.
+ *
+ * Va sobre las tarjetas de saldo, que tienen fondo oscuro: de ahí el texto en
+ * blanco.
+ */
+function SaldoNoDisponible({ onRetry, reintentando = false }) {
+  return (
+    <div className="mt-1">
+      <div className="flex items-center gap-2">
+        <AlertCircle size={18} className="text-white/80 flex-shrink-0" />
+        <p className="text-[1rem] font-bold text-white leading-tight">No pudimos leer tu saldo</p>
+      </div>
+      <p className="text-[0.75rem] text-white/70 leading-snug mt-1.5 max-w-[16rem]">
+        No mostramos un importe porque ahora mismo no sabemos cuál es. Revisa tu conexión y vuelve a intentarlo.
+      </p>
+      <button type="button" onClick={onRetry} disabled={reintentando}
+        className="mt-3 flex items-center gap-2 px-3.5 py-2 rounded-xl text-[0.75rem] font-semibold text-white disabled:opacity-50"
+        style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)' }}>
+        {reintentando
+          ? <Loader2 size={13} className="animate-spin" />
+          : <RefreshCw size={13} />}
+        Reintentar
+      </button>
+    </div>
+  )
+}
+
+/**
+ * Aviso para cuando SÍ hay un saldo leído antes pero el último refresco falló.
+ *
+ * La tarjeta se refresca sola cada 30 segundos. Si ese refresco falla no tiene
+ * sentido esconder el último saldo conocido, que es un dato real, pero tampoco
+ * presentarlo como si estuviera al día.
+ */
+function SaldoDesactualizado({ onRetry, reintentando = false }) {
+  return (
+    <button type="button" onClick={onRetry} disabled={reintentando}
+      className="mt-2 flex items-center gap-1.5 text-[0.6875rem] font-medium text-white/70 disabled:opacity-50">
+      {reintentando
+        ? <Loader2 size={11} className="animate-spin" />
+        : <AlertCircle size={11} />}
+      Sin actualizar. Toca para reintentar.
+    </button>
   )
 }
 
@@ -1253,7 +1307,7 @@ function WithdrawModal({ open, onClose, onSuccess, balanceAvailable }) {
 
 // ── Modal Depósito USDC (instrucciones Stellar) ────────────────────────────────
 
-function USDCDepositModal({ open, onClose, instructions }) {
+function USDCDepositModal({ open, onClose, instructions, error = '', onRetry }) {
   const [copiedField, setCopiedField] = useState(null)
 
   function copy(field, text) {
@@ -1289,9 +1343,24 @@ function USDCDepositModal({ open, onClose, instructions }) {
   return (
     <Modal open={open} onClose={onClose} title="Depositar USDC vía Stellar">
       {!instructions ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 size={24} className="animate-spin text-[#233E58]" />
-        </div>
+        error ? (
+          <div className="py-6 text-center">
+            <AlertCircle size={28} className="mx-auto text-[#F87171] mb-3" />
+            <p className="text-[0.875rem] font-semibold text-[#0F172A]">No se pudieron cargar las instrucciones</p>
+            <p className="text-[0.75rem] text-[#94A3B8] mt-1">
+              No te mostramos una dirección a medias: depositar sobre un dato incompleto puede costarte los fondos.
+            </p>
+            <button type="button" onClick={onRetry}
+              className="mt-4 mx-auto flex items-center gap-2 px-4 py-2.5 rounded-xl text-[0.8125rem] font-semibold text-white"
+              style={{ background: '#233E58' }}>
+              <RefreshCw size={14} /> Reintentar
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 size={24} className="animate-spin text-[#233E58]" />
+          </div>
+        )
       ) : (
         <div className="space-y-4">
           {/* Aviso: cuenta preparándose (trustline USDC estableciéndose) */}
@@ -1603,9 +1672,10 @@ function TxDetailModal({ tx, open, onClose, currency }) {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
   const [sharing, setSharing] = useState(false)
+  const [guardando, setGuardando] = useState(false)
 
   useEffect(() => {
-    if (!open) { setProof(null); setError(''); setLoading(false); setSharing(false) }
+    if (!open) { setProof(null); setError(''); setLoading(false); setSharing(false); setGuardando(false) }
   }, [open])
 
   if (!tx) return null
@@ -1628,6 +1698,47 @@ function TxDetailModal({ tx, open, onClose, currency }) {
 
   const isPdf = proof?.mimeType === 'application/pdf'
   const src   = proof ? `data:${proof.mimeType};base64,${proof.base64}` : ''
+
+  // En la app el botón abre el share sheet del sistema, que deja guardar o
+  // reenviar; en el navegador baja el archivo. Que el botón diga lo que hace.
+  const esNativo        = Capacitor.isNativePlatform()
+  const etiquetaGuardar = esNativo ? 'Guardar' : 'Descargar'
+
+  /**
+   * Guarda o descarga el comprobante bancario del retiro.
+   *
+   * Antes era un `<a href="data:..." download>`. Dentro del WebView de Android
+   * eso NO hace nada y falla en silencio: no hay gestor de descargas conectado
+   * y el intent de una URL `data:` no se puede lanzar, así que el usuario
+   * pulsaba y no pasaba nada. Es el mismo fallo que ya se corrigió en el CSV de
+   * movimientos y en la factura B2B, y la salida es la misma: en la app se
+   * escribe el archivo con Filesystem y se abre el share sheet; en el navegador
+   * se conserva la descarga directa, que ahí sí funciona.
+   */
+  async function guardarComprobante() {
+    if (!proof || guardando) return
+    const filename = proof.filename ?? (isPdf ? 'comprobante.pdf' : 'comprobante.png')
+    setGuardando(true); setError('')
+    try {
+      if (esNativo) {
+        const blob = await (await fetch(src)).blob()
+        const ok   = await shareFile({
+          blob,
+          filename,
+          title:    'Comprobante de transferencia',
+          mimeType: proof.mimeType,
+        })
+        if (!ok) setError('No se pudo guardar el comprobante. Vuelve a intentarlo.')
+      } else {
+        downloadDataUrl(src, filename)
+      }
+    } catch (err) {
+      console.error('[Comprobante] Error al guardar:', err?.message)
+      setError('No se pudo guardar el comprobante. Vuelve a intentarlo.')
+    } finally {
+      setGuardando(false)
+    }
+  }
 
   /**
    * Comparte un RESUMEN del movimiento como imagen.
@@ -1724,18 +1835,24 @@ function TxDetailModal({ tx, open, onClose, currency }) {
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <><Eye size={16} /> Ver comprobante</>}
                 </button>
               ) : isPdf ? (
-                <a href={src} download={proof.filename ?? 'comprobante.pdf'} target="_blank" rel="noreferrer"
-                  className="w-full py-3 rounded-xl font-semibold text-[0.875rem] text-white flex items-center justify-center gap-2"
+                <button type="button" onClick={guardarComprobante} disabled={guardando}
+                  className="w-full py-3 rounded-xl font-semibold text-[0.875rem] text-white flex items-center justify-center gap-2 disabled:opacity-40"
                   style={{ background: '#233E58' }}>
-                  <Download size={16} /> Descargar {proof.filename ?? 'comprobante.pdf'}
-                </a>
+                  {guardando
+                    ? <Loader2 size={16} className="animate-spin" />
+                    : <Download size={16} />}
+                  {etiquetaGuardar} {proof.filename ?? 'comprobante.pdf'}
+                </button>
               ) : (
                 <div className="space-y-3">
                   <img src={src} alt="Comprobante" className="w-full rounded-xl" style={{ border: '1px solid #E2E8F0' }} />
-                  <a href={src} download={proof.filename ?? 'comprobante.png'} target="_blank" rel="noreferrer"
-                    className="w-full py-2.5 rounded-xl font-semibold text-[0.8125rem] flex items-center justify-center gap-2 border border-[#E2E8F0] text-[#64748B]">
-                    <Download size={14} /> Descargar
-                  </a>
+                  <button type="button" onClick={guardarComprobante} disabled={guardando}
+                    className="w-full py-2.5 rounded-xl font-semibold text-[0.8125rem] flex items-center justify-center gap-2 border border-[#E2E8F0] text-[#64748B] disabled:opacity-40">
+                    {guardando
+                      ? <Loader2 size={14} className="animate-spin" />
+                      : <Download size={14} />}
+                    {etiquetaGuardar}
+                  </button>
                 </div>
               )}
               {error && <p className="text-[0.8125rem] text-[#F87171] mt-2">{error}</p>}
@@ -1747,7 +1864,7 @@ function TxDetailModal({ tx, open, onClose, currency }) {
   )
 }
 
-function TxList({ txs, txLoading, txPages, txPage, setTxPage, currency }) {
+function TxList({ txs, txLoading, txPages, txPage, setTxPage, currency, error = '', onRetry }) {
   const isCredit = (type) => ['deposit', 'receive', 'unfreeze', 'usdc_deposit', 'p2p_receive'].includes(type)
   const [selectedTx, setSelectedTx] = useState(null)
 
@@ -1755,6 +1872,25 @@ function TxList({ txs, txLoading, txPages, txPage, setTxPage, currency }) {
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 size={24} className="animate-spin text-[#233E58]" />
+      </div>
+    )
+  }
+
+  // Si la consulta falló y no hay nada que mostrar, el cartel de "Sin
+  // movimientos aún" sería una afirmación que no podemos sostener.
+  if (error && txs.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl p-8 text-center border border-[#E2E8F0]">
+        <AlertCircle size={28} className="mx-auto text-[#F87171] mb-3" />
+        <p className="text-[0.875rem] font-semibold text-[#0F172A]">No pudimos cargar tus movimientos</p>
+        <p className="text-[0.75rem] text-[#94A3B8] mt-1">
+          No sabemos si hay movimientos o no, así que preferimos no decirlo.
+        </p>
+        <button type="button" onClick={onRetry}
+          className="mt-4 mx-auto flex items-center gap-2 px-4 py-2.5 rounded-xl text-[0.8125rem] font-semibold text-white"
+          style={{ background: '#233E58' }}>
+          <RefreshCw size={14} /> Reintentar
+        </button>
       </div>
     )
   }
@@ -2208,6 +2344,11 @@ export default function WalletPage() {
   const [txTotal, setTxTotal]       = useState(0)
   const [loading, setLoading]       = useState(true)
   const [txLoading, setTxLoading]   = useState(false)
+  // Un fallo de lectura no es lo mismo que "no hay nada": sin esto, el error se
+  // perdía y la pantalla afirmaba cero saldo y cero movimientos.
+  const [walletError, setWalletError]   = useState('')
+  const [walletRetry, setWalletRetry]   = useState(false)
+  const [txsError, setTxsError]         = useState('')
 
   const [showDeposit, setShowDeposit]   = useState(false)
   const [showSend, setShowSend]         = useState(false)
@@ -2220,8 +2361,11 @@ export default function WalletPage() {
   const [usdcTxTotal, setUsdcTxTotal]       = useState(0)
   const [usdcLoading, setUsdcLoading]       = useState(false)
   const [usdcTxLoading, setUsdcTxLoading]   = useState(false)
+  const [usdcError, setUsdcError]           = useState('')
+  const [usdcTxsError, setUsdcTxsError]     = useState('')
   const [depositInstructions, setDepositInstructions] = useState(null)
   const [instrLoading, setInstrLoading]     = useState(false)
+  const [instrError, setInstrError]         = useState('')
 
   const [showUSDCDeposit,   setShowUSDCDeposit]   = useState(false)
   const [showConvert,       setShowConvert]       = useState(false)
@@ -2254,11 +2398,20 @@ export default function WalletPage() {
 
   // ── BOB fetchers ────────────────────────────────────────────────────────────
 
+  /**
+   * El `catch` era silencioso y dejaba `wallet` en null, con lo que el titular
+   * caía a cero y se renderizaba como si fuera el saldo real. Guardamos el
+   * fallo para que la tarjeta pueda decir que no pudo leerlo.
+   */
   const fetchWallet = useCallback(async () => {
     try {
       const data = await request('/wallet/balance')
       setWallet(data)
-    } catch { /* silencioso */ } finally {
+      setWalletError('')
+    } catch (err) {
+      console.warn('[fetchWallet] no se pudo leer el saldo BOB:', err?.status, err?.message)
+      setWalletError(err?.message || 'No se pudo leer el saldo.')
+    } finally {
       setLoading(false)
     }
   }, [])
@@ -2270,7 +2423,13 @@ export default function WalletPage() {
       const data = await request(`/wallet/transactions?page=${page}&limit=10${typeParam}`)
       setTxs(data.transactions ?? [])
       setTxTotal(data.pagination?.total ?? 0)
-    } catch { /* silencioso */ } finally {
+      setTxsError('')
+    } catch (err) {
+      // Sin esto la lista vacía decía "Sin movimientos aún", que ante un fallo
+      // de lectura es tan falso como el saldo en cero.
+      console.warn('[fetchTxs] no se pudieron leer los movimientos BOB:', err?.status, err?.message)
+      setTxsError(err?.message || 'No se pudieron cargar los movimientos.')
+    } finally {
       setTxLoading(false)
     }
   }, [])
@@ -2282,7 +2441,11 @@ export default function WalletPage() {
     try {
       const data = await request('/wallet/usdc/balance')
       setWalletUSDC(data)
-    } catch { /* silencioso */ } finally {
+      setUsdcError('')
+    } catch (err) {
+      console.warn('[fetchWalletUSDC] no se pudo leer el saldo USDC:', err?.status, err?.message)
+      setUsdcError(err?.message || 'No se pudo leer el saldo.')
+    } finally {
       setUsdcLoading(false)
     }
   }, [])
@@ -2294,7 +2457,11 @@ export default function WalletPage() {
       const data = await request(`/wallet/usdc/transactions?page=${page}&limit=10${typeParam}`)
       setUsdcTxs(data.transactions ?? [])
       setUsdcTxTotal(data.pagination?.total ?? 0)
-    } catch { /* silencioso */ } finally {
+      setUsdcTxsError('')
+    } catch (err) {
+      console.warn('[fetchUSDCTxs] no se pudieron leer los movimientos USDC:', err?.status, err?.message)
+      setUsdcTxsError(err?.message || 'No se pudieron cargar los movimientos.')
+    } finally {
       setUsdcTxLoading(false)
     }
   }, [])
@@ -2387,17 +2554,28 @@ export default function WalletPage() {
     }
   }
 
-  async function openUSDCDeposit() {
-    setShowUSDCDeposit(true)
-    if (!depositInstructions) {
-      setInstrLoading(true)
-      try {
-        const data = await request('/wallet/usdc/deposit-instructions')
-        setDepositInstructions(data)
-      } catch { /* silencioso */ } finally {
-        setInstrLoading(false)
-      }
+  /**
+   * El `catch` silencioso dejaba `depositInstructions` en null, y el modal
+   * interpreta ese null como "todavía cargando": el usuario se quedaba mirando
+   * un spinner eterno sin saber que la consulta ya había fallado.
+   */
+  const cargarInstruccionesDeposito = useCallback(async () => {
+    setInstrLoading(true)
+    setInstrError('')
+    try {
+      const data = await request('/wallet/usdc/deposit-instructions')
+      setDepositInstructions(data)
+    } catch (err) {
+      console.warn('[deposit-instructions] no se pudieron obtener:', err?.status, err?.message)
+      setInstrError(err?.message || 'No se pudieron cargar las instrucciones.')
+    } finally {
+      setInstrLoading(false)
     }
+  }, [])
+
+  function openUSDCDeposit() {
+    setShowUSDCDeposit(true)
+    if (!depositInstructions) cargarInstruccionesDeposito()
   }
 
   // ── Effects ─────────────────────────────────────────────────────────────────
@@ -2420,6 +2598,19 @@ export default function WalletPage() {
     }, 30000)
     return () => clearInterval(id)
   }, [fetchWallet, fetchWalletUSDC])
+
+  /**
+   * Reintento manual del saldo BOB desde la propia tarjeta.
+   *
+   * No reutiliza `loading`: ese estado tapa la pantalla entera con un spinner,
+   * y durante un reintento el usuario tiene que seguir viendo dónde pulsó.
+   */
+  async function reintentarSaldoBOB() {
+    if (walletRetry) return
+    setWalletRetry(true)
+    await fetchWallet()
+    setWalletRetry(false)
+  }
 
   function handleRefresh() {
     fetchWallet(); fetchTxs(txPage, bobTxFilter)
@@ -2494,10 +2685,19 @@ export default function WalletPage() {
             <div className="flex items-start justify-between mb-3">
               <div>
                 <p className="text-[0.6875rem] font-medium uppercase tracking-widest text-white/70 mb-1">Saldo disponible</p>
-                <p className="text-[2.5rem] font-extrabold text-white leading-none tracking-tight">{formatBOB(bobAvailable)}</p>
+                {!wallet && walletError ? (
+                  <SaldoNoDisponible onRetry={reintentarSaldoBOB} reintentando={walletRetry} />
+                ) : (
+                  <>
+                    <p className="text-[2.5rem] font-extrabold text-white leading-none tracking-tight">{formatBOB(bobAvailable)}</p>
+                    {walletError && <SaldoDesactualizado onRetry={reintentarSaldoBOB} reintentando={walletRetry} />}
+                  </>
+                )}
               </div>
               <div className="flex flex-col items-end gap-2">
-                <StatusBadge status={wallet?.status ?? 'active'} />
+                {/* Sin lectura no hay estado que declarar: la insignia caía a
+                    "Activa" por defecto y acompañaba al saldo inventado. */}
+                {wallet && <StatusBadge status={wallet.status ?? 'active'} />}
                 {bobHistory.length >= 2 && <Sparkline data={bobHistory} id="bob" width={80} height={28} />}
               </div>
             </div>
@@ -2604,7 +2804,8 @@ export default function WalletPage() {
                 accent="#233E58"
               />
             </div>
-            <TxList txs={txs} txLoading={txLoading} txPages={txPages} txPage={txPage} setTxPage={setTxPage} currency="BOB" />
+            <TxList txs={txs} txLoading={txLoading} txPages={txPages} txPage={txPage} setTxPage={setTxPage} currency="BOB"
+              error={txsError} onRetry={() => fetchTxs(txPage, bobTxFilter)} />
           </div>
         </>
       )}
@@ -2642,14 +2843,21 @@ export default function WalletPage() {
                 </div>
                 {usdcLoading ? (
                   <Loader2 size={24} className="animate-spin text-white/60 mt-2" />
+                ) : !walletUSDC && usdcError ? (
+                  <SaldoNoDisponible onRetry={fetchWalletUSDC} reintentando={usdcLoading} />
                 ) : (
-                  <p className="text-[2.25rem] font-extrabold text-white leading-none tracking-tight">
-                    {formatUSDC(usdcAvailable)}
-                  </p>
+                  <>
+                    <p className="text-[2.25rem] font-extrabold text-white leading-none tracking-tight">
+                      {formatUSDC(usdcAvailable)}
+                    </p>
+                    {usdcError && <SaldoDesactualizado onRetry={fetchWalletUSDC} reintentando={usdcLoading} />}
+                  </>
                 )}
               </div>
               <div className="flex flex-col items-end gap-2">
-                <StatusBadge status={walletUSDC?.status ?? 'active'} />
+                {/* Mismo criterio que en la tarjeta BOB: no afirmamos el estado
+                    de la cuenta si no pudimos leerla. */}
+                {walletUSDC && <StatusBadge status={walletUSDC.status ?? 'active'} />}
                 {usdcHistory.length >= 2 && <Sparkline data={usdcHistory} id="usdc" width={80} height={28} />}
               </div>
             </div>
@@ -2782,7 +2990,8 @@ export default function WalletPage() {
                 accent="#0D6E52"
               />
             </div>
-            <TxList txs={usdcTxs} txLoading={usdcTxLoading} txPages={usdcTxPages} txPage={usdcTxPage} setTxPage={setUsdcTxPage} currency="USDC" />
+            <TxList txs={usdcTxs} txLoading={usdcTxLoading} txPages={usdcTxPages} txPage={usdcTxPage} setTxPage={setUsdcTxPage} currency="USDC"
+              error={usdcTxsError} onRetry={() => fetchUSDCTxs(usdcTxPage, usdcTxFilter)} />
           </div>
         </>
       )}
@@ -2797,6 +3006,8 @@ export default function WalletPage() {
         open={showUSDCDeposit}
         onClose={() => setShowUSDCDeposit(false)}
         instructions={instrLoading ? null : depositInstructions}
+        error={instrLoading ? '' : instrError}
+        onRetry={cargarInstruccionesDeposito}
       />
       <ConvertModal
         open={showConvert}
