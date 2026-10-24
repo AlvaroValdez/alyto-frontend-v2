@@ -112,8 +112,33 @@ export default function BankQrActions({ src, reference, amountLabel, className =
     })
   }
 
-  const descargar = () => {
+  /**
+   * ⚠️ En el WebView de Android un `<a download>` NO hace nada y falla EN
+   * SILENCIO: no hay gestor de descargas conectado. El usuario pulsa, no pasa
+   * nada, y vuelve a pulsar. Reportado por un probador el 2026-10-23, que lo
+   * intentó varias veces y comprobó que no quedaba nada en la galería.
+   *
+   * En nativo se abre el menú del sistema, que incluye "Guardar en Archivos" y
+   * las apps de galería. No es literalmente "descargar", pero es lo que de
+   * verdad deja el archivo en el teléfono. Guardarlo directo en la galería
+   * exigiría permisos de almacenamiento de medios y un plugin aparte.
+   *
+   * En el navegador de escritorio el `<a download>` sí funciona, y por eso este
+   * fallo pasaba desapercibido en desarrollo.
+   */
+  const descargar = async () => {
     if (!listo) return
+    if (Capacitor.isNativePlatform()) {
+      await shareQRImage({
+        dataUrl:  pngUrl,
+        title:    'Guardar QR',
+        text:     amountLabel
+          ? `QR para pagar ${amountLabel} desde tu app bancaria`
+          : 'QR para pagar desde tu app bancaria',
+        filename: nombre,
+      })
+      return
+    }
     downloadDataUrl(pngUrl, nombre)
   }
 
