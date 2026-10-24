@@ -1,0 +1,498 @@
+/* ================================================================
+   Alyto Dark Minimal — tema de laboratorio para la wallet
+   ================================================================
+
+   APARTADO AISLADO. Nada de este archivo toca el diseño vigente:
+   todas las variables viven DENTRO de `.adm` (Alyto Dark Minimal),
+   no en `:root`, así que `src/styles/tokens.css` sigue mandando en
+   el resto de la app.
+
+   Por qué existe un tema oscuro de usuario: la skill `alyto-ux` fija
+   "app de usuario = tema CLARO" y eso sigue siendo verdad para
+   /wallet. Este apartado es una propuesta deliberada en contra de esa
+   regla, acotada a /lab/wallet, para evaluarla en vivo antes de
+   decidir si reemplaza algo. Mientras viva acá, no es la regla.
+
+   Reglas heredadas que NO se negocian:
+     - El amarillo #F5D410 es del logo y solo del logo.
+     - El monto reservado siempre visible.
+     - Áreas táctiles mínimas de 44x44px.
+     - Nunca la palabra "remesa".
+   ================================================================ */
+
+.adm {
+  /* ── FONDOS ─────────────────────────────────────────────────── */
+  /* Azul marino carbón, nunca negro plano: el #000 chupa el
+     degradado de las tarjetas y las deja flotando sin profundidad. */
+  --adm-bg-base:       #080E18;
+  --adm-surface:       #0E1726;
+  --adm-surface-hover: #131F33;
+  --adm-surface-soft:  rgba(255, 255, 255, 0.06);
+  --adm-overlay:       rgba(8, 14, 24, 0.72);
+
+  /* ── BORDES ─────────────────────────────────────────────────── */
+  --adm-border:        rgba(255, 255, 255, 0.08);
+  --adm-border-strong: rgba(255, 255, 255, 0.14);
+
+  /* ── TEXTO ──────────────────────────────────────────────────── */
+  --adm-text:           #FFFFFF;
+  --adm-text-70:        rgba(255, 255, 255, 0.70);
+  --adm-text-60:        rgba(255, 255, 255, 0.60);
+  --adm-text-secondary: #8E9DB7;
+  --adm-text-muted:     #5A6A85;
+
+  /* ── MONEDA: BOB (azul institucional) ───────────────────────── */
+  --adm-bob:          #233E58;
+  --adm-bob-tint:     rgba(35, 62, 88, 0.35);
+  --adm-bob-gradient: linear-gradient(135deg, #162C40 0%, #0F2030 60%, #0A1624 100%);
+  --adm-bob-ink:      #0A1624;  /* texto sobre el botón primario claro */
+
+  /* ── MONEDA: USDC (verde esmeralda) ─────────────────────────── */
+  --adm-usdc:          #1D9E75;
+  --adm-usdc-tint:     rgba(29, 158, 117, 0.16);
+  --adm-usdc-border:   rgba(29, 158, 117, 0.32);
+  --adm-usdc-gradient: linear-gradient(135deg, #0A3828 0%, #0E4D38 60%, #07261B 100%);
+  --adm-usdc-ink:      #0A3828;
+
+  /* ── ESTADOS ────────────────────────────────────────────────── */
+  --adm-success:    #22C55E;
+  --adm-success-bg: rgba(34, 197, 94, 0.12);
+  --adm-pending:    #6366F1;
+  --adm-pending-bg: rgba(99, 102, 241, 0.14);
+  --adm-transit:    #0891B2;
+  --adm-transit-bg: rgba(8, 145, 178, 0.14);
+  --adm-error:      #EF4444;
+  --adm-error-bg:   rgba(239, 68, 68, 0.12);
+
+  /* ── SOMBRAS (tonales, no negras planas) ────────────────────── */
+  --adm-shadow-card: 0 2px 16px rgba(0, 0, 0, 0.35);
+  --adm-shadow-hero: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --adm-shadow-cta:  0 6px 20px rgba(255, 255, 255, 0.10);
+
+  /* ── RADIOS ─────────────────────────────────────────────────── */
+  --adm-r-md:   14px;
+  --adm-r-lg:   20px;
+  --adm-r-xl:   24px;
+  --adm-r-full: 9999px;
+
+  /* ── BASE DE LA PANTALLA ────────────────────────────────────── */
+  min-height: 100vh;
+  background: var(--adm-bg-base);
+  color: var(--adm-text);
+  font-family: 'Manrope', sans-serif;
+  /* Respira el notch arriba y deja aire para la nav fija abajo. */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
+/* Centrado en escritorio: el diseño nace a 390px de ancho. */
+.adm__frame {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+/* ── Tipografía ───────────────────────────────────────────────── */
+
+.adm__label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--adm-text-70);
+}
+
+.adm__section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--adm-text);
+}
+
+.adm__link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--adm-text-secondary);
+  background: none;
+  border: none;
+  padding: 6px 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.adm__link:hover { color: var(--adm-text); }
+
+/* ── Tarjetas ─────────────────────────────────────────────────── */
+
+.adm__card {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-lg);
+  padding: 16px;
+  box-shadow: var(--adm-shadow-card);
+}
+
+/* Tarjeta de saldo. El degradado y la trama los pone el modificador
+   de moneda, para que BOB y USDC compartan geometría y no color. */
+.adm__hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-xl);
+  padding: 20px;
+  box-shadow: var(--adm-shadow-hero);
+}
+
+.adm__hero--bob  { background: var(--adm-bob-gradient); }
+.adm__hero--usdc { background: var(--adm-usdc-gradient); }
+
+/* Micro-cuadrícula: 1px cada 22px, al 3,5%. Más contraste que esto
+   y deja de leerse como textura y empieza a leerse como error. */
+.adm__hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right,  rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Halo tonal detrás del monto, para que el número no quede plano. */
+.adm__hero::after {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -40px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.adm__hero > * { position: relative; z-index: 1; }
+
+.adm__amount {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--adm-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.adm__reserved {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--adm-text-60);
+}
+
+/* ── Píldoras y badges ───────────────────────────────────────── */
+
+.adm__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--adm-r-full);
+  padding: 5px 11px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--adm-surface-soft);
+  border: 1px solid var(--adm-border);
+  color: var(--adm-text-70);
+  white-space: nowrap;
+}
+
+.adm__pill--usdc {
+  background: var(--adm-usdc-tint);
+  border-color: var(--adm-usdc-border);
+  color: #6EE7B7;
+}
+
+.adm__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--adm-r-full);
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.adm__badge--success { background: var(--adm-success-bg); color: var(--adm-success); }
+.adm__badge--pending { background: var(--adm-pending-bg); color: #A5B4FC; }
+.adm__badge--transit { background: var(--adm-transit-bg); color: #67E8F9; }
+.adm__badge--error   { background: var(--adm-error-bg);   color: #F87171; }
+
+/* ── Botonera táctil de la tarjeta de saldo ──────────────────── */
+
+.adm__actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+}
+.adm__actions--4 { grid-template-columns: repeat(4, 1fr); }
+.adm__actions--3 { grid-template-columns: repeat(3, 1fr); }
+
+.adm__action {
+  /* 44px de alto mínimo real: el área táctil no se negocia. */
+  min-height: 62px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 4px;
+  border-radius: var(--adm-r-md);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--adm-border);
+  color: var(--adm-text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.adm__action:hover:not(:disabled)  { background: rgba(255, 255, 255, 0.14); }
+.adm__action:active:not(:disabled) { transform: scale(0.97); }
+.adm__action:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Primaria: la única superficie clara de la pantalla. Una por tarjeta. */
+.adm__action--primary {
+  background: #F2F5FA;
+  border-color: #F2F5FA;
+  box-shadow: var(--adm-shadow-cta);
+}
+.adm__action--primary:hover:not(:disabled) { background: #FFFFFF; }
+
+.adm__hero--bob  .adm__action--primary { color: var(--adm-bob-ink); }
+.adm__hero--usdc .adm__action--primary { color: var(--adm-usdc-ink); }
+
+/* ── Chips de filtro / selector de moneda ────────────────────── */
+
+.adm__chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  /* 5px arriba y abajo no son aire decorativo: `overflow-x: auto` también
+     recorta en vertical, y sin este margen el área táctil de 44px del chip
+     (ver `.adm__chip::after`) queda cortada por el contenedor de scroll. */
+  padding: 5px 0;
+}
+
+.adm__chip {
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 7px 14px;
+  border-radius: var(--adm-r-full);
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid transparent;
+  color: var(--adm-text-secondary);
+  cursor: pointer;
+  transition: var(--transition-fast, all 0.15s ease);
+}
+.adm__chip:hover { color: var(--adm-text); }
+
+/* La píldora mide 34px porque a 44 se ve como un botón y compite con las
+   acciones de la tarjeta. El área TÁCTIL sí llega a 44px, extendida con un
+   pseudo-elemento invisible: el dedo tiene su objetivo sin engordar el diseño.
+   Los chips van separados 8px, así que las áreas no se pisan. */
+.adm__chip::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+}
+
+.adm__chip--on-bob {
+  background: var(--adm-bob);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: var(--adm-text);
+}
+.adm__chip--on-usdc {
+  background: var(--adm-usdc);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #04221A;
+}
+
+/* Selector de moneda: dos pestañas píldora de 44px. */
+.adm__tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 5px;
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-full);
+}
+
+.adm__tab {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: none;
+  border-radius: var(--adm-r-full);
+  background: transparent;
+  color: var(--adm-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.adm__tab:hover { color: var(--adm-text); }
+
+.adm__tab--active-bob  { background: var(--adm-bob);  color: var(--adm-text); }
+.adm__tab--active-usdc { background: var(--adm-usdc); color: #04221A; }
+
+.adm__tab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ── Barras de progreso (límites diarios) ────────────────────── */
+
+.adm__bar {
+  height: 6px;
+  border-radius: var(--adm-r-full);
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.adm__bar-fill {
+  height: 100%;
+  border-radius: var(--adm-r-full);
+  background: linear-gradient(90deg, #2F5578 0%, #4A7BA8 100%);
+  transition: width 0.4s ease;
+}
+
+/* Cerca del tope el color avisa, sin recurrir al amarillo del logo. */
+.adm__bar-fill--warn   { background: linear-gradient(90deg, #B45309 0%, #F59E0B 100%); }
+.adm__bar-fill--maxed  { background: linear-gradient(90deg, #991B1B 0%, #EF4444 100%); }
+
+/* ── Lista de movimientos ────────────────────────────────────── */
+
+.adm__tx {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--adm-r-md);
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.adm__tx:hover { background: var(--adm-surface-hover); }
+
+.adm__tx-icon {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--adm-text-70);
+}
+
+.adm__tx-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--adm-text);
+}
+
+.adm__tx-meta {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--adm-text-muted);
+  margin-top: 2px;
+}
+
+.adm__tx-amount {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.adm__tx-amount--in  { color: var(--adm-success); }
+.adm__tx-amount--out { color: var(--adm-text); }
+
+/* ── Navegación inferior ─────────────────────────────────────── */
+
+.adm__nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: space-around;
+  background: rgba(8, 14, 24, 0.94);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--adm-border);
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+}
+
+.adm__nav-item {
+  min-width: 56px;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  color: var(--adm-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.adm__nav-item--active { color: var(--adm-text); }
+
+/* ── Carga ───────────────────────────────────────────────────── */
+
+.adm__skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--adm-surface) 25%,
+    var(--adm-surface-hover) 50%,
+    var(--adm-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;   /* definido en styles/tokens.css */
+  border-radius: var(--adm-r-md);
+}
+
+.adm__dot-live {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--adm-success);
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
+  animation: admPulse 2s infinite;
+}
+
+@keyframes admPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55); }
+  70%  { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
